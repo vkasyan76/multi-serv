@@ -9,9 +9,9 @@ import { buildConfig } from "payload";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
 
-import { Users } from "./collections/Users";
-import { Media } from "./collections/Media";
-import { Categories } from "./collections/Categories";
+import { Users } from "./collections/Users.ts";
+import { Media } from "./collections/Media.ts";
+import { Categories } from "./collections/Categories.ts";
 
 import { Config } from "@payload-types";
 import { isSuperAdmin } from "./lib/access.ts";
