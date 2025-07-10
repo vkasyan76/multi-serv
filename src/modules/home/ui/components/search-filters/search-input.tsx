@@ -9,19 +9,19 @@ import { Button } from "@/components/ui/button";
 // import { useTRPC } from "@/trpc/client";
 // import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { CustomCategory } from "../types";
+// import { CustomCategory } from "../types";
 import { CategoriesSidebar } from "./categories-sidebar";
 
 interface Props {
   disabled?: boolean;
-  data: CustomCategory[];
+  // data: CustomCategory[];
   defaultValue?: string | undefined;
   onChange?: (value: string) => void;
 }
 
 export const SearchInput = ({
   disabled,
-  data,
+  // data,
   defaultValue,
   onChange,
 }: Props) => {
@@ -38,7 +38,7 @@ export const SearchInput = ({
   return (
     <div className="flex items-center gap-2 w-full">
       <CategoriesSidebar
-        data={data}
+        // data={data}
         open={isSidebarOpen}
         onOpenChange={setIsSidebarOpen}
       />

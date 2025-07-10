@@ -2,7 +2,8 @@
 
 import { useParams } from "next/navigation";
 // import { Category } from "@/payload-types";
-import { CustomCategory } from "../types";
+// import { CustomCategory } from "../types";
+import { CategoriesGetManyOutput } from "@/modules/categories/types";
 import { CategoryDropdown } from "./categories-dropdown";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { CategoriesSidebar } from "./categories-sidebar";
 interface Props {
   // data: Category[];
   // data: any
-  data: CustomCategory[];
+  data: CategoriesGetManyOutput;
 }
 export const Categories = ({ data }: Props) => {
   // client way of accessing params:
@@ -95,7 +96,7 @@ export const Categories = ({ data }: Props) => {
       <CategoriesSidebar
         open={isSidebarOpen}
         onOpenChange={setIsSidebarOpen} // passed as OnClick in the ViewAll button
-        data={data}
+        // data={data}
       />
 
       <div
