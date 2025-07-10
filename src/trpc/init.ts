@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { cache } from "react";
-
+import superjson from "superjson";
 import config from "@payload-config";
 import { getPayload } from "payload";
 import { headers as getHeaders } from "next/headers";
@@ -19,7 +19,7 @@ const t = initTRPC.create({
   /**
    * @see https://trpc.io/docs/server/data-transformers
    */
-  // transformer: superjson,
+  transformer: superjson,
 });
 // Base router and procedure helpers
 export const createTRPCRouter = t.router;
