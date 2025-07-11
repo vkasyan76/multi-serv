@@ -1,7 +1,7 @@
 // import { z } from "zod";
 
 import { createTRPCRouter } from "../init";
-// import { authRouter } from "@/modules/auth/server/procedures";
+import { authRouter } from "@/modules/auth/server/procedures";
 import { categoriesRouter } from "@/modules/categories/server/procedures";
 // import { checkoutRouter } from "@/modules/checkout/server/procedures";
 // import { libraryRouter } from "@/modules/library/server/procedures";
@@ -22,7 +22,7 @@ export const appRouter = createTRPCRouter({
   //       greeting: `hello ${opts.input.text}`,
   //     };
   //   }),
-  // auth: authRouter,
+  auth: authRouter,
   // tags: tagsRouter,
   // tenants: tenantsRouter,
   // library: libraryRouter,
