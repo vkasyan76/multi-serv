@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 
 import { NavbarSidebar } from "./navbar-sidebar";
 import { MenuIcon } from "lucide-react";
-// import { useTRPC } from "@/trpc/client";
-// import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -48,8 +48,8 @@ const navbarItems = [
 ];
 
 export const Navbar = () => {
-  //   const trpc = useTRPC();
-  //   const session = useQuery(trpc.auth.session.queryOptions());
+  const trpc = useTRPC();
+  const session = useQuery(trpc.auth.session.queryOptions());
 
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -79,9 +79,9 @@ export const Navbar = () => {
           </NavbarItem>
         ))}
       </div>
-      <div className="hidden lg:flex">Clerk Login</div>
+      {/* <div className="hidden lg:flex">Clerk Login</div> */}
       {/* show the log-in /sign-up buttons only if the user has not yet signed in || otherwise show dashboard button */}
-      {/* {session.data?.user ? (
+      {session.data?.user ? (
         <div className="hidden lg:flex">
           <Button
             asChild
@@ -110,7 +110,7 @@ export const Navbar = () => {
             </Link>
           </Button>
         </div>
-      )} */}
+      )}
 
       {/* oposite of large screens */}
 
