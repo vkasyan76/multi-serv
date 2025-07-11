@@ -18,7 +18,7 @@ export const authRouter = createTRPCRouter({
     return session;
   }),
 
-  // logout procedure:
+  // logout procedure:  - can be deleted - because we'll neber be using it like this.
   logout: baseProcedure.mutation(async () => {
     const cookies = await getCookies();
 

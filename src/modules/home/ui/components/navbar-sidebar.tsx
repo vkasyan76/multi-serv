@@ -36,6 +36,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
               {item.children}
             </Link>
           ))}
+          {/* TODO: hide the login and start selling if the user is loged in - see session method in the navbar */}
           <div className="border-t">
             <Link
               href="/sign-in"

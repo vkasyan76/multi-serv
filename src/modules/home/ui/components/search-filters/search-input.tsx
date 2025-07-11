@@ -6,8 +6,8 @@ import { BookmarkCheckIcon, ListFilterIcon, SearchIcon } from "lucide-react";
 // import { CategoriesSidebar } from "./categories-sidebar";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-// import { useTRPC } from "@/trpc/client";
-// import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 // import { CustomCategory } from "../types";
 import { CategoriesSidebar } from "./categories-sidebar";
@@ -25,6 +25,9 @@ export const SearchInput = ({
   defaultValue,
   onChange,
 }: Props) => {
+  const trpc = useTRPC();
+  const session = useQuery(trpc.auth.session.queryOptions());
+
   const [searchValue, setSearchValue] = useState(defaultValue || "");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -58,7 +61,19 @@ export const SearchInput = ({
       >
         <ListFilterIcon className="size-4" />
       </Button>
-      {/* TODO: Add library button */}
+      {/* library button */}
+      {session.data?.user && (
+        <Button
+          asChild
+          variant="elevated"
+          className="h-12" // to match the input height
+        >
+          <Link href="/library">
+            <BookmarkCheckIcon />
+            Library
+          </Link>
+        </Button>
+      )}
     </div>
   );
 };

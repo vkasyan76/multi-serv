@@ -28,6 +28,7 @@ export default buildConfig({
     },
   },
   collections: [Users, Media, Categories, Tenants],
+  // cookiePrefix: "funroad",  // optional: if we want to change the cookie prefix
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
