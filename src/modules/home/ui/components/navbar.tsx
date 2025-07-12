@@ -9,9 +9,17 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 import { NavbarSidebar } from "./navbar-sidebar";
-import { MenuIcon } from "lucide-react";
+import { MenuIcon, User } from "lucide-react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -80,6 +88,17 @@ export const Navbar = () => {
         ))}
       </div>
       {/* <div className="hidden lg:flex">Clerk Login</div> */}
+
+      <div className="hidden lg:flex">
+        {/* <UserButton /> */}
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
+        <SignedOut>
+          <SignInButton />
+        </SignedOut>
+      </div>
+
       {/* show the log-in /sign-up buttons only if the user has not yet signed in || otherwise show dashboard button */}
       {session.data?.user ? (
         <div className="hidden lg:flex">
