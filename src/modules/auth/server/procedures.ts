@@ -1,5 +1,5 @@
 import { headers as getHeaders, cookies as getCookies } from "next/headers";
-import { baseProcedure, createTRPCRouter } from "@/trpc/init";
+import { baseProcedure, createTRPCRouter, clerkProcedure } from "@/trpc/init";
 // import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { AUTH_COOKIE } from "../constants";
@@ -14,6 +14,10 @@ export const authRouter = createTRPCRouter({
     const session = await ctx.db.auth({
       headers,
     });
+
+    // console.log("session headers", headers);
+
+    // console.log("session", session);
 
     return session;
   }),
@@ -139,45 +143,48 @@ export const authRouter = createTRPCRouter({
       return data;
     }),
   // Login Procedure:
-  login: baseProcedure
-    .input(
-      // z.object({
-      //   email: z.string().email(),
-      //   password: z.string().min(6),
-      // })
-      loginSchema
-    )
-    .mutation(async ({ ctx, input }) => {
-      const data = await ctx.db.login({
-        collection: "users",
-        data: {
-          email: input.email,
-          password: input.password,
-        },
+  login: baseProcedure.input(loginSchema).mutation(async ({ ctx, input }) => {
+    const data = await ctx.db.login({
+      collection: "users",
+      data: {
+        email: input.email,
+        password: input.password,
+      },
+    });
+    if (!data.token) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Invalid email or password",
       });
-      if (!data.token) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid email or password",
-        });
-      }
-      // const cookies = await getCookies();
-      // cookies.set({
-      //   // name: AUTH_COOKIE,
-      //   name: `${ctx.db.config.cookiePrefix}-token`, // payload default cookie name
-      //   value: data.token,
-      //   httpOnly: true,
-      //   path: "/",
-      //   // TODO: ensure cross-domain coookie sharing
-      //   // sameSite: "none",
-      //   // domain: ""
-      //   // "funroad.com" // initial cookie
-      //   // antonio.funroad.com // cookie does not exist here
-      // });
-      await generateAuthCookie({
-        prefix: ctx.db.config.cookiePrefix,
-        value: data.token,
-      });
-      return data;
-    }),
+    }
+    await generateAuthCookie({
+      prefix: ctx.db.config.cookiePrefix,
+      value: data.token,
+    });
+    return data;
+  }),
+
+  clerkSession: clerkProcedure.query(async ({ ctx }) => {
+    // Now you have ctx.db (payload instance) and ctx.auth (if present in your context)
+    const userId = ctx.auth?.userId;
+    if (!userId) return null;
+
+    // Use ctx.db (no need to call getPayload again)
+    const users = await ctx.db.find({
+      collection: "users",
+      where: { clerkUserId: { equals: userId } },
+    });
+
+    if (users.totalDocs === 0) return null;
+
+    const user = users.docs[0];
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        clerkUserId: user.clerkUserId,
+      },
+    };
+  }),
 });

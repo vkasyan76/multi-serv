@@ -55,6 +55,13 @@ export const Users: CollectionConfig = {
       unique: true,
       type: "text",
     },
+    // added clerk userId field
+    {
+      name: "clerkUserId",
+      type: "text",
+      unique: true,
+      required: false, // initially optional to avoid breaking existing records
+    },
     {
       admin: { position: "sidebar" },
       name: "roles",

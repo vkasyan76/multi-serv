@@ -128,6 +128,7 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   username: string;
+  clerkUserId?: string | null;
   roles?: ('super-admin' | 'user')[] | null;
   tenants?:
     | {
@@ -281,6 +282,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   username?: T;
+  clerkUserId?: T;
   roles?: T;
   tenants?:
     | T
