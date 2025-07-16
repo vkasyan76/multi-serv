@@ -4,6 +4,7 @@ import "./globals.css";
 import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "sonner";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkUserSync } from "@/modules/auth/ui/views/clerk-user-sync";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <TRPCReactProvider>
+            <ClerkUserSync />
             {children}
             <Toaster />
           </TRPCReactProvider>

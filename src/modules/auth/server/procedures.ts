@@ -1,11 +1,12 @@
 import { headers as getHeaders, cookies as getCookies } from "next/headers";
-import { baseProcedure, createTRPCRouter } from "@/trpc/init";
+import { baseProcedure, createTRPCRouter, clerkProcedure } from "@/trpc/init";
 // import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { AUTH_COOKIE } from "../constants";
 import { registerSchema, loginSchema } from "../schemas";
 import { generateAuthCookie } from "../utils";
 import { stripe } from "@/lib/stripe";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
@@ -14,6 +15,10 @@ export const authRouter = createTRPCRouter({
     const session = await ctx.db.auth({
       headers,
     });
+
+    // console.log("session headers", headers);
+
+    // console.log("session", session);
 
     return session;
   }),
@@ -139,45 +144,134 @@ export const authRouter = createTRPCRouter({
       return data;
     }),
   // Login Procedure:
-  login: baseProcedure
-    .input(
-      // z.object({
-      //   email: z.string().email(),
-      //   password: z.string().min(6),
-      // })
-      loginSchema
-    )
-    .mutation(async ({ ctx, input }) => {
-      const data = await ctx.db.login({
-        collection: "users",
-        data: {
-          email: input.email,
-          password: input.password,
-        },
+  login: baseProcedure.input(loginSchema).mutation(async ({ ctx, input }) => {
+    const data = await ctx.db.login({
+      collection: "users",
+      data: {
+        email: input.email,
+        password: input.password,
+      },
+    });
+    if (!data.token) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Invalid email or password",
       });
-      if (!data.token) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid email or password",
-        });
-      }
-      // const cookies = await getCookies();
-      // cookies.set({
-      //   // name: AUTH_COOKIE,
-      //   name: `${ctx.db.config.cookiePrefix}-token`, // payload default cookie name
-      //   value: data.token,
-      //   httpOnly: true,
-      //   path: "/",
-      //   // TODO: ensure cross-domain coookie sharing
-      //   // sameSite: "none",
-      //   // domain: ""
-      //   // "funroad.com" // initial cookie
-      //   // antonio.funroad.com // cookie does not exist here
-      // });
-      await generateAuthCookie({
-        prefix: ctx.db.config.cookiePrefix,
-        value: data.token,
-      });
-      return data;
-    }),
+    }
+    await generateAuthCookie({
+      prefix: ctx.db.config.cookiePrefix,
+      value: data.token,
+    });
+    return data;
+  }),
+
+  // Clerk session procedure: clerkSession only fetches a record; it never creates one. This causes the “no record created” behavior.
+  clerkSession: clerkProcedure.query(async ({ ctx }) => {
+    // Now you have ctx.db (payload instance) and ctx.auth (if present in your context)
+    const userId = ctx.auth?.userId;
+    if (!userId) return null;
+
+    // Use ctx.db (no need to call getPayload again)
+    const users = await ctx.db.find({
+      collection: "users",
+      where: { clerkUserId: { equals: userId } },
+    });
+
+    if (users.totalDocs === 0) return null;
+
+    const user = users.docs[0];
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        clerkUserId: user.clerkUserId,
+      },
+    };
+  }),
+
+  // Introduce a server‑side handler (via tRPC mutation or Clerk webhook) that creates the user in Payload on first Clerk sign‑in.
+  // syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
+  //   const userId = ctx.userId;
+  //   const clerkUser = await clerkClient.users.getUser(userId);
+  //   const email =
+  //     clerkUser.primaryEmailAddress?.emailAddress ||
+  //     clerkUser.emailAddresses[0]?.emailAddress ||
+  //     "";
+  //   const username = clerkUser.username || email.split("@")[0];
+
+  //   const existing = await ctx.db.find({
+  //     collection: "users",
+  //     where: { clerkUserId: { equals: userId } },
+  //     limit: 1,
+  //   });
+
+  //   let user = existing.docs[0];
+
+  //   if (!user) {
+  //     user = await ctx.db.create({
+  //       collection: "users",
+  //       data: { email, username, clerkUserId: userId },
+  //     });
+  //   }
+
+  //   return user;
+  // }),
+
+  // syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
+  //   try {
+  //     console.log("SYNC MUTATION START", ctx.userId);
+  //     const userId = ctx.userId;
+  //     const clerkUser = await clerkClient.users.getUser(userId);
+  //     const email =
+  //       clerkUser.primaryEmailAddress?.emailAddress ||
+  //       clerkUser.emailAddresses[0]?.emailAddress ||
+  //       "";
+  //     const username = clerkUser.username || email.split("@")[0];
+
+  //     const existing = await ctx.db.find({
+  //       collection: "users",
+  //       where: { clerkUserId: { equals: userId } },
+  //       limit: 1,
+  //     });
+
+  //     let user = existing.docs[0];
+
+  //     if (!user) {
+  //       user = await ctx.db.create({
+  //         collection: "users",
+  //         data: { email, username, clerkUserId: userId },
+  //       });
+  //     }
+  //     console.log("SYNC MUTATION DONE", user);
+  //     return user;
+  //   } catch (err) {
+  //     console.error("SYNC MUTATION FAILED", err);
+  //     throw new TRPCError({
+  //       code: "INTERNAL_SERVER_ERROR",
+  //       message: (err as Error)?.message || "Sync failed",
+  //       cause: err,
+  //     });
+  //   }
+  // }),
+
+  syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.userId;
+    const clerkUser = await clerkClient.users.getUser(userId);
+    const email = clerkUser.primaryEmailAddress?.emailAddress || "";
+    const username = clerkUser.username || email.split("@")[0];
+
+    const existing = await ctx.db.find({
+      collection: "users",
+      where: { clerkUserId: { equals: userId } },
+      limit: 1,
+    });
+
+    if (existing.docs.length > 0) return existing.docs[0];
+
+    return await ctx.db.create({
+      collection: "users",
+      data: { email, username, clerkUserId: userId },
+    });
+  }),
 });
