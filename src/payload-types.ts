@@ -128,6 +128,7 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   username: string;
+  email?: string | null;
   clerkUserId?: string | null;
   roles?: ('super-admin' | 'user')[] | null;
   tenants?:
@@ -138,14 +139,6 @@ export interface User {
     | null;
   updatedAt: string;
   createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  password?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -282,6 +275,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   username?: T;
+  email?: T;
   clerkUserId?: T;
   roles?: T;
   tenants?:
@@ -292,13 +286,6 @@ export interface UsersSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

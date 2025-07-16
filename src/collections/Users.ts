@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 import { tenantsArrayField } from "@payloadcms/plugin-multi-tenant/fields";
 import { isSuperAdmin } from "../lib/access.ts";
+import { ClerkAuthStrategy } from "@/lib/auth/clerk-strategy.ts";
 
 const defaultTenantArrayField = tenantsArrayField({
   tenantsArrayFieldName: "tenants",
@@ -38,6 +39,8 @@ export const Users: CollectionConfig = {
   // auth: true,
   // In production, the custom auth.cookies config ensures that authentication cookies work correctly across subdomains, allowing loging out.
   auth: {
+    disableLocalStrategy: true, // Crucial for Clerk-only authentication
+    strategies: [ClerkAuthStrategy], // Use your custom Clerk strategy
     cookies: {
       ...(process.env.NODE_ENV !== "development" && {
         sameSite: "None",
@@ -54,6 +57,13 @@ export const Users: CollectionConfig = {
       required: true,
       unique: true,
       type: "text",
+    },
+    // Email field is required for Clerk integration
+    {
+      name: "email",
+      type: "email",
+      required: false,
+      unique: true, // initially optional to avoid breaking existing records
     },
     // added clerk userId field
     {
