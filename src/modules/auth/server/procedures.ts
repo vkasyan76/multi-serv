@@ -191,69 +191,7 @@ export const authRouter = createTRPCRouter({
   }),
 
   // Introduce a server‑side handler (via tRPC mutation or Clerk webhook) that creates the user in Payload on first Clerk sign‑in.
-  // syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
-  //   const userId = ctx.userId;
-  //   const clerkUser = await clerkClient.users.getUser(userId);
-  //   const email =
-  //     clerkUser.primaryEmailAddress?.emailAddress ||
-  //     clerkUser.emailAddresses[0]?.emailAddress ||
-  //     "";
-  //   const username = clerkUser.username || email.split("@")[0];
-
-  //   const existing = await ctx.db.find({
-  //     collection: "users",
-  //     where: { clerkUserId: { equals: userId } },
-  //     limit: 1,
-  //   });
-
-  //   let user = existing.docs[0];
-
-  //   if (!user) {
-  //     user = await ctx.db.create({
-  //       collection: "users",
-  //       data: { email, username, clerkUserId: userId },
-  //     });
-  //   }
-
-  //   return user;
-  // }),
-
-  // syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
-  //   try {
-  //     console.log("SYNC MUTATION START", ctx.userId);
-  //     const userId = ctx.userId;
-  //     const clerkUser = await clerkClient.users.getUser(userId);
-  //     const email =
-  //       clerkUser.primaryEmailAddress?.emailAddress ||
-  //       clerkUser.emailAddresses[0]?.emailAddress ||
-  //       "";
-  //     const username = clerkUser.username || email.split("@")[0];
-
-  //     const existing = await ctx.db.find({
-  //       collection: "users",
-  //       where: { clerkUserId: { equals: userId } },
-  //       limit: 1,
-  //     });
-
-  //     let user = existing.docs[0];
-
-  //     if (!user) {
-  //       user = await ctx.db.create({
-  //         collection: "users",
-  //         data: { email, username, clerkUserId: userId },
-  //       });
-  //     }
-  //     console.log("SYNC MUTATION DONE", user);
-  //     return user;
-  //   } catch (err) {
-  //     console.error("SYNC MUTATION FAILED", err);
-  //     throw new TRPCError({
-  //       code: "INTERNAL_SERVER_ERROR",
-  //       message: (err as Error)?.message || "Sync failed",
-  //       cause: err,
-  //     });
-  //   }
-  // }),
+  // If a user exists but has no tenant, create a Stripe account and new tenant, then update the user. If tenant is already present, return as-is.
 
   syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.userId;
@@ -267,11 +205,62 @@ export const authRouter = createTRPCRouter({
       limit: 1,
     });
 
-    if (existing.docs.length > 0) return existing.docs[0];
+    if (existing.docs.length > 0) {
+      const existingUser = existing.docs[0];
 
-    return await ctx.db.create({
-      collection: "users",
-      data: { email, username, clerkUserId: userId },
+      if (!existingUser.tenants || existingUser.tenants.length === 0) {
+        const account = await stripe.accounts.create();
+
+        const tenant = await ctx.db.create({
+          collection: "tenants",
+          data: {
+            name: username,
+            slug: username,
+            stripeAccountId: account.id,
+          },
+        });
+
+        const updatedUser = await ctx.db.update({
+          collection: "users",
+          id: existingUser.id,
+          data: {
+            tenants: [{ tenant: tenant.id }],
+          },
+        });
+
+        console.log("ADDED TENANT TO EXISTING USER:", updatedUser);
+        return updatedUser;
+      }
+
+      return existingUser;
+    }
+
+    // New user flow
+    const account = await stripe.accounts.create();
+
+    const tenant = await ctx.db.create({
+      collection: "tenants",
+      data: {
+        name: username,
+        slug: username,
+        stripeAccountId: account.id,
+      },
     });
+    console.log("CREATED TENANT OBJECT:", tenant);
+
+    const user = await ctx.db.create({
+      collection: "users",
+      data: {
+        email,
+        username,
+        clerkUserId: userId,
+        roles: ["user"],
+        tenants: [{ tenant: tenant.id }],
+      },
+    });
+
+    console.log("CREATED USER OBJECT WITH TENANT:", user);
+
+    return user;
   }),
 });
