@@ -71,11 +71,17 @@ export async function POST(req: Request) {
     // Delete the user itself:// HARD DELETE
 
     try {
-      // Delete each tenant referenced by this user
+      // Delete each tenant referenced by this user: extract the real ID as a string
       for (const t of tenantsArray) {
-        const rawId = t.tenant || t;
-        const tenantId = typeof rawId === "string" ? rawId : rawId.toString();
-        await payload.delete({ collection: "tenants", id: tenantId });
+        const tenantId =
+          typeof t === "string"
+            ? t
+            : typeof t.tenant === "string"
+              ? t.tenant
+              : t.tenant?.id?.toString?.();
+        if (tenantId) {
+          await payload.delete({ collection: "tenants", id: tenantId });
+        }
       }
       // Delete the user itself: HARD DELETE
       await payload.delete({ collection: "users", id: userDoc.id });
