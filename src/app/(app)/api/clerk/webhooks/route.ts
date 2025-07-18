@@ -7,7 +7,9 @@ import configPromise from "@payload-config";
 export async function POST(req: Request) {
   const signingSecret = process.env.SIGNING_SECRET;
   if (!signingSecret) {
-    throw new Error("SIGNING_SECRET missing from env");
+    // Controlled error, clean 500
+    console.error("SIGNING_SECRET missing from env");
+    return new Response("Server configuration error", { status: 500 });
   }
 
   const webhook = new Webhook(signingSecret);
@@ -65,14 +67,22 @@ export async function POST(req: Request) {
     const tenantsArray = userDoc.tenants || [];
 
     // Delete each tenant referenced by this user
-    for (const t of tenantsArray) {
-      // t.tenant is likely an ObjectId or string: If you use MongoDB, ObjectId fields need .toString()
-      const rawId = t.tenant || t;
-      const tenantId = typeof rawId === "string" ? rawId : rawId.toString();
-      await payload.delete({ collection: "tenants", id: tenantId });
-    }
+    // t.tenant is likely an ObjectId or string: If you use MongoDB, ObjectId fields need .toString()
     // Delete the user itself:// HARD DELETE
-    await payload.delete({ collection: "users", id: userDoc.id });
+
+    try {
+      // Delete each tenant referenced by this user
+      for (const t of tenantsArray) {
+        const rawId = t.tenant || t;
+        const tenantId = typeof rawId === "string" ? rawId : rawId.toString();
+        await payload.delete({ collection: "tenants", id: tenantId });
+      }
+      // Delete the user itself: HARD DELETE
+      await payload.delete({ collection: "users", id: userDoc.id });
+    } catch (error) {
+      console.error("Failed to delete user and associated tenants:", error);
+      return new Response("Failed to process deletion", { status: 500 });
+    }
   }
 
   return new Response("Webhook received", { status: 200 });
