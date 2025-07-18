@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 import { NavbarSidebar } from "./navbar-sidebar";
-import { MenuIcon, User } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -17,7 +17,7 @@ import {
   SignedIn,
   SignedOut,
   SignInButton,
-  SignUpButton,
+  // SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
 

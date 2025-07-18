@@ -28,6 +28,7 @@ export const SearchInput = ({
   const trpc = useTRPC();
   const session = useQuery(trpc.auth.session.queryOptions());
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [searchValue, setSearchValue] = useState(defaultValue || "");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 

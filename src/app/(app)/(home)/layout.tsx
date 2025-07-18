@@ -13,6 +13,11 @@ import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Suspense } from "react";
 
+// //  fix for most projects using Clerk, Next.js App Router, and dynamic session UI.
+// lerk can do its server-side/session stuff at runtime, when all required context is present.
+
+export const dynamic = "force-dynamic";
+
 interface Props {
   children: React.ReactNode;
 }

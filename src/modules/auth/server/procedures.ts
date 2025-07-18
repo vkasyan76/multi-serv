@@ -102,7 +102,7 @@ export const authRouter = createTRPCRouter({
         data: {
           email: input.email,
           username: input.username,
-          password: input.password, // This will be hashed by payload
+          // password: input.password,
           tenants: [
             {
               tenant: tenant.id, // this is an array becaue plugin allows user to have multiple tenants / not reflected in this app

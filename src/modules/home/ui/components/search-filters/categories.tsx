@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+// import { useParams } from "next/navigation";
 // import { Category } from "@/payload-types";
 // import { CustomCategory } from "../types";
 import { CategoriesGetManyOutput } from "@/modules/categories/types";
@@ -18,7 +18,7 @@ interface Props {
 }
 export const Categories = ({ data }: Props) => {
   // client way of accessing params:
-  const params = useParams();
+  // const params = useParams();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
