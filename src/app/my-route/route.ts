@@ -1,12 +1,9 @@
-import configPromise from '@payload-config'
-import { getPayload } from 'payload'
+import configPromise from "@payload-config";
+import { getPayload } from "payload";
 
-export const GET = async (request: Request) => {
-  const payload = await getPayload({
-    config: configPromise,
-  })
+export const GET = async () => {
+  const payload = await getPayload({ config: configPromise });
+  const data = await payload.find({ collection: "users" });
 
-  return Response.json({
-    message: 'This is an example of a custom route.',
-  })
-}
+  return Response.json(data);
+};

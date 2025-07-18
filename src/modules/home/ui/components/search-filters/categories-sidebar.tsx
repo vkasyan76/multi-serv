@@ -52,9 +52,12 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
     onOpenChange(open);
   };
 
+  // TODO: infer types from your tRPC backend: (inferRouterOutputs<AppRouter>["categories"]["getMany"])
   const handleCategoryClick = (category: CategoriesGetManyOutput[1]) => {
     if (category.subcategories && category.subcategories.length > 0) {
-      setParentCategories(category.subcategories as CategoriesGetManyOutput);
+      setParentCategories(
+        category.subcategories as unknown as CategoriesGetManyOutput
+      );
       setSelectedCategory(category);
     } else {
       // this is a leaf category (no subcategories)
