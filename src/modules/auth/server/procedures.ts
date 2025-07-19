@@ -7,6 +7,7 @@ import { registerSchema, loginSchema } from "../schemas";
 import { generateAuthCookie } from "../utils";
 import { stripe } from "@/lib/stripe";
 import { clerkClient } from "@clerk/clerk-sdk-node";
+import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
@@ -193,6 +194,199 @@ export const authRouter = createTRPCRouter({
   // Introduce a server‑side handler (via tRPC mutation or Clerk webhook) that creates the user in Payload on first Clerk sign‑in.
   // If a user exists but has no tenant, create a Stripe account and new tenant, then update the user. If tenant is already present, return as-is.
 
+  // syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
+  //   const userId = ctx.userId;
+  //   const clerkUser = await clerkClient.users.getUser(userId);
+  //   const email = clerkUser.primaryEmailAddress?.emailAddress || "";
+  //   const username = clerkUser.username || email.split("@")[0];
+
+  //   const existing = await ctx.db.find({
+  //     collection: "users",
+  //     where: { clerkUserId: { equals: userId } },
+  //     limit: 1,
+  //   });
+
+  //   if (existing.docs.length > 0) {
+  //     const existingUser = existing.docs[0];
+
+  //     if (!existingUser.tenants || existingUser.tenants.length === 0) {
+  //       const account = await stripe.accounts.create();
+
+  //       const tenant = await ctx.db.create({
+  //         collection: "tenants",
+  //         data: {
+  //           name: username,
+  //           slug: username,
+  //           stripeAccountId: account.id,
+  //         },
+  //       });
+
+  //       const updatedUser = await ctx.db.update({
+  //         collection: "users",
+  //         id: existingUser.id,
+  //         data: {
+  //           tenants: [{ tenant: tenant.id }],
+  //         },
+  //       });
+
+  //       console.log("ADDED TENANT TO EXISTING USER:", updatedUser);
+  //       return updatedUser;
+  //     }
+
+  //     return existingUser;
+  //   }
+
+  //   // New user flow
+  //   const account = await stripe.accounts.create();
+
+  //   const tenant = await ctx.db.create({
+  //     collection: "tenants",
+  //     data: {
+  //       name: username,
+  //       slug: username,
+  //       stripeAccountId: account.id,
+  //     },
+  //   });
+  //   console.log("CREATED TENANT OBJECT:", tenant);
+
+  //   const user = await ctx.db.create({
+  //     collection: "users",
+  //     data: {
+  //       email,
+  //       username,
+  //       clerkUserId: userId,
+  //       roles: ["user"],
+  //       tenants: [{ tenant: tenant.id }],
+  //     },
+  //   });
+
+  //   console.log("CREATED USER OBJECT WITH TENANT:", user);
+
+  //   // === INJECT PAYLOAD USER ID INTO CLERK METADATA ===
+  //   try {
+  //     await clerkClient.users.updateUserMetadata(userId, {
+  //       publicMetadata: {
+  //         userId: user.id,
+  //       },
+  //     });
+  //     console.log("Injected Payload User ID into Clerk metadata:", user.id);
+  //   } catch (err) {
+  //     console.error("Failed to update Clerk user metadata:", err);
+  //   }
+
+  //   return user;
+  // }),
+
+  // syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
+  //   const userId = ctx.userId;
+  //   const clerkUser = await clerkClient.users.getUser(userId);
+  //   const email = clerkUser.primaryEmailAddress?.emailAddress || "";
+  //   const username = clerkUser.username || email.split("@")[0];
+
+  //   const existing = await ctx.db.find({
+  //     collection: "users",
+  //     where: { clerkUserId: { equals: userId } },
+  //     limit: 1,
+  //   });
+
+  //   if (existing.docs.length > 0) {
+  //     const existingUser = existing.docs[0];
+
+  //     if (!existingUser.tenants || existingUser.tenants.length === 0) {
+  //       const account = await stripe.accounts.create();
+
+  //       const tenant = await ctx.db.create({
+  //         collection: "tenants",
+  //         data: {
+  //           name: username,
+  //           slug: username,
+  //           stripeAccountId: account.id,
+  //         },
+  //       });
+
+  //       const updatedUser = await ctx.db.update({
+  //         collection: "users",
+  //         id: existingUser.id,
+  //         data: {
+  //           tenants: [{ tenant: tenant.id }],
+  //         },
+  //       });
+
+  //       // Inject metadata after adding tenants
+  //       try {
+  //         await clerkClient.users.updateUserMetadata(userId, {
+  //           publicMetadata: { userId: updatedUser.id },
+  //         });
+  //         console.log(
+  //           "Injected Payload User ID into Clerk metadata (update):",
+  //           updatedUser.id
+  //         );
+  //       } catch (err) {
+  //         console.error("Failed to update Clerk user metadata (update):", err);
+  //       }
+
+  //       console.log("ADDED TENANT TO EXISTING USER:", updatedUser);
+  //       return updatedUser;
+  //     }
+
+  //     // If tenants exist, optionally update metadata here too (can skip)
+  //     try {
+  //       await clerkClient.users.updateUserMetadata(userId, {
+  //         publicMetadata: { userId: existingUser.id },
+  //       });
+  //       console.log(
+  //         "Injected Payload User ID into Clerk metadata (exists):",
+  //         existingUser.id
+  //       );
+  //     } catch (err) {
+  //       console.error("Failed to update Clerk user metadata (exists):", err);
+  //     }
+
+  //     return existingUser;
+  //   }
+
+  //   // New user flow
+  //   const account = await stripe.accounts.create();
+
+  //   const tenant = await ctx.db.create({
+  //     collection: "tenants",
+  //     data: {
+  //       name: username,
+  //       slug: username,
+  //       stripeAccountId: account.id,
+  //     },
+  //   });
+  //   console.log("CREATED TENANT OBJECT:", tenant);
+
+  //   const user = await ctx.db.create({
+  //     collection: "users",
+  //     data: {
+  //       email,
+  //       username,
+  //       clerkUserId: userId,
+  //       roles: ["user"],
+  //       tenants: [{ tenant: tenant.id }],
+  //     },
+  //   });
+
+  //   // Inject metadata after creating the user
+  //   try {
+  //     await clerkClient.users.updateUserMetadata(userId, {
+  //       publicMetadata: { userId: user.id },
+  //     });
+  //     console.log(
+  //       "Injected Payload User ID into Clerk metadata (create):",
+  //       user.id
+  //     );
+  //   } catch (err) {
+  //     console.error("Failed to update Clerk user metadata (create):", err);
+  //   }
+
+  //   console.log("CREATED USER OBJECT WITH TENANT:", user);
+
+  //   return user;
+  // }),
+
   syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.userId;
     const clerkUser = await clerkClient.users.getUser(userId);
@@ -228,9 +422,14 @@ export const authRouter = createTRPCRouter({
           },
         });
 
+        await updateClerkUserMetadata(userId, updatedUser.id);
+
         console.log("ADDED TENANT TO EXISTING USER:", updatedUser);
         return updatedUser;
       }
+
+      // Optional: Keep Clerk in sync if needed
+      await updateClerkUserMetadata(userId, existingUser.id);
 
       return existingUser;
     }
@@ -258,6 +457,8 @@ export const authRouter = createTRPCRouter({
         tenants: [{ tenant: tenant.id }],
       },
     });
+
+    await updateClerkUserMetadata(userId, user.id);
 
     console.log("CREATED USER OBJECT WITH TENANT:", user);
 
