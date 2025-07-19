@@ -6,6 +6,15 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import {
+  SignInButton,
+  SignedIn,
+  SignedOut,
+  // SignOutButton,
+} from "@clerk/nextjs";
+import { useClerk } from "@clerk/nextjs";
 
 interface NavbarItem {
   href: string;
@@ -19,10 +28,19 @@ interface Props {
 }
 
 export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
+  const trpc = useTRPC();
+  const session = useQuery(trpc.auth.session.queryOptions());
+  const user = session.data?.user;
+
+  const isAdmin = user?.roles?.includes("super-admin");
+  const hasTenant = !!user?.tenants?.length;
+
+  const { signOut } = useClerk();
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="p-0 transition-none">
-        <SheetHeader className="p-4 border-b">
+        <SheetHeader className="p-4 border-b pr-12">
           <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex flex-col overflow-y-auto h-full pb-2">
@@ -36,22 +54,81 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
               {item.children}
             </Link>
           ))}
-          {/* TODO: hide the login and start selling if the user is loged in - see session method in the navbar */}
+          {/* Clerk Auth Buttons and User Profile / Dashboard Links */}
           <div className="border-t">
-            <Link
-              href="/sign-in"
-              className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-              onClick={() => onOpenChange(false)}
-            >
-              Log in
-            </Link>
-            <Link
-              href="/sign-up"
-              className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-              onClick={() => onOpenChange(false)}
-            >
-              Start selling
-            </Link>
+            <SignedOut>
+              <SignInButton mode="modal" forceRedirectUrl="/">
+                <button
+                  className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                  onClick={() => onOpenChange(false)}
+                  type="button"
+                >
+                  Log in
+                </button>
+              </SignInButton>
+            </SignedOut>
+
+            <SignedIn>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Admin panel
+                </Link>
+              )}
+
+              {!isAdmin && !hasTenant && (
+                <Link
+                  href="/profile"
+                  className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Profile
+                </Link>
+              )}
+
+              {hasTenant && (
+                <>
+                  <Link
+                    href="/profile"
+                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Profile
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Dashboard
+                  </Link>
+                </>
+              )}
+              {/* Clerk SignOutButton does not accept custom onClick handlers -> const { signOut } = useClerk(); */}
+              <div className="border-t">
+                {/* <SignOutButton redirectUrl="/">
+                  <button
+                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                    type="button"
+                  >
+                    Sign out
+                  </button>
+                </SignOutButton> */}
+                <button
+                  className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                  type="button"
+                  onClick={async () => {
+                    await signOut();
+                    onOpenChange(false);
+                  }}
+                >
+                  Sign out
+                </button>
+              </div>
+            </SignedIn>
           </div>
         </ScrollArea>
       </SheetContent>
