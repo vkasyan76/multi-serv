@@ -20,6 +20,7 @@ import {
   // SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
+// import ClerkUserButton from "@/components/clerk/clerk-user-button";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -63,7 +64,7 @@ export const Navbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <nav className="h-20 flex border-b justify-between font-medium bg-white">
+    <nav className="h-16 flex border-b justify-between font-medium bg-white">
       <Link href="/" className="pl-6 flex items-center">
         <span className={cn("text-5xl font-semibold", poppins.className)}>
           Infinisimo
@@ -87,49 +88,65 @@ export const Navbar = () => {
           </NavbarItem>
         ))}
       </div>
-      {/* <div className="hidden lg:flex">Clerk Login</div> */}
 
-      <div className="hidden lg:flex">
-        {/* <UserButton /> */}
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
+      {/* Right Section - Clerk Auth Buttons */}
+      <div className="hidden lg:flex gap-2 items-center pr-6">
         <SignedOut>
-          <SignInButton />
+          {/* Only show Clerk SignInButton for unauthenticated users */}
+          <SignInButton>
+            <Button
+              asChild
+              variant="secondary"
+              className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
+            >
+              <span>Log in</span>
+            </Button>
+          </SignInButton>
         </SignedOut>
-      </div>
+        <SignedIn>
+          {/* Show role/tenant-based buttons for authenticated users */}
+          {session.data?.user?.roles?.includes("super-admin") ? (
+            <Button
+              asChild
+              className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
+            >
+              <Link href="/admin">Admin panel</Link>
+            </Button>
+          ) : session.data?.user?.tenants?.length ? (
+            <>
+              <Button
+                asChild
+                variant="secondary"
+                className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
+              >
+                <Link href="/profile">Profile</Link>
+              </Button>
+              <Button
+                asChild
+                className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
+              >
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+            </>
+          ) : (
+            <Button
+              asChild
+              variant="secondary"
+              className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
+            >
+              <Link href="/profile">Profile</Link>
+            </Button>
+          )}
 
-      {/* show the log-in /sign-up buttons only if the user has not yet signed in || otherwise show dashboard button */}
-      {session.data?.user ? (
-        <div className="hidden lg:flex">
-          <Button
-            asChild
-            className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
-          >
-            <Link href="/admin">Dashboard</Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="hidden lg:flex">
-          <Button
-            asChild
-            variant="secondary"
-            className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
-          >
-            <Link prefetch href="/sign-in">
-              Log in
-            </Link>
-          </Button>
-          <Button
-            asChild
-            className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
-          >
-            <Link prefetch href="/sign-up">
-              Start selling
-            </Link>
-          </Button>
-        </div>
-      )}
+          {/* Clerk user avatar/profile button (always shown when logged in) */}
+          <div className="ml-4">
+            <UserButton
+              userProfileMode="navigation"
+              userProfileUrl="/profile"
+            />
+          </div>
+        </SignedIn>
+      </div>
 
       {/* oposite of large screens */}
 
