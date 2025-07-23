@@ -4,7 +4,12 @@ import { Client, Language } from "@googlemaps/google-maps-services-js";
 
 const client = new Client();
 export const autocomplete = async (input: string, language = Language.en) => {
-  if (!input) return [];
+  if (!input || input.trim().length === 0) return [];
+
+  if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+    console.error("Google Maps API key is not configured");
+    return [];
+  }
 
   try {
     const response = await client.textSearch({

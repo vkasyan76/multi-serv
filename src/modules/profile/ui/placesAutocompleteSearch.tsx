@@ -1,4 +1,4 @@
-"use cllient";
+"use client";
 
 import { useJsApiLoader, StandaloneSearchBox } from "@react-google-maps/api";
 
@@ -12,6 +12,14 @@ export const PlacesAutocompleteSearch = () => {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: ["places"],
   });
+
+  if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+    return (
+      <div className="text-red-500 text-sm">
+        Google Maps API key is not configured
+      </div>
+    );
+  }
 
   console.log("isLoaded", isLoaded);
 

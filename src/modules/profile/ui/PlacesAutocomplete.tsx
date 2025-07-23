@@ -18,6 +18,7 @@ export const PlacesAutocomplete = () => {
   const [input, setInput] = useState("");
 
   function detectLanguage(): Language {
+    if (typeof navigator === "undefined") return Language.en;
     const langCode = navigator.language.slice(0, 2); // e.g. "it", "fr"
     const mapped = (Language as Record<string, Language>)[langCode];
     return mapped ?? Language.en; // fallback if not in enum
@@ -29,12 +30,16 @@ export const PlacesAutocomplete = () => {
   console.log("User language:", userLang);
   console.log(navigator.language);
 
+  // Add debouncing to prevent excessive API calls.
   useEffect(() => {
-    const fetchPredictions = async () => {
-      const predictions = await autocomplete(input, userLang);
-      setPredictions(predictions as PlaceData[]);
-    };
-    fetchPredictions();
+    const debounceTimer = setTimeout(() => {
+      const fetchPredictions = async () => {
+        const predictions = await autocomplete(input, userLang);
+        setPredictions(predictions as PlaceData[]);
+      };
+      fetchPredictions();
+    }, 300);
+    return () => clearTimeout(debounceTimer);
   }, [input, userLang]);
 
   return (

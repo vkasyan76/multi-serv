@@ -1,4 +1,4 @@
-import { ProfileForm } from "@/modules/profile/ui/ProfileFrom";
+import { ProfileForm } from "@/modules/profile/ui/ProfileForm";
 
 const ProfilePage = () => {
   return <ProfileForm />;
