@@ -9,9 +9,11 @@ import { useQuery } from "@tanstack/react-query";
 export default function Home() {
   const trpc = useTRPC();
 
-  const { data: session, isLoading } = useQuery(
-    trpc.auth.session.queryOptions()
-  );
+  const {
+    data: session,
+    isLoading,
+    error,
+  } = useQuery(trpc.auth.session.queryOptions());
 
   // function handleRoleSelection(role: string) {
   //   alert("Selected role: " + role);
@@ -24,6 +26,8 @@ export default function Home() {
 
   // Loading state
   if (isLoading) return <div>Loading...</div>;
+
+  if (error) return <div>Error loading session: {error.message}</div>;
 
   // If user is logged in but hasn't selected a role, show onboarding
   if (session?.user) {

@@ -13,7 +13,7 @@ const ROLE_OPTIONS = [
     // desc: "I want to order freelance services.",
   },
   {
-    value: "provider",
+    value: "service-provider",
     label: "I offer services",
     // desc: "I want to offer services.",
   },
