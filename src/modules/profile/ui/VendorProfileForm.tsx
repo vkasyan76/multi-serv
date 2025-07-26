@@ -28,6 +28,7 @@ import type { FieldErrors } from "react-hook-form";
 
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 // Create a Zod schema for the tenant/vendor
 
@@ -37,7 +38,7 @@ export function VendorProfileForm() {
     trpc.categories.getMany.queryOptions()
   );
 
-  console.log("categories:", categories);
+  // console.log("categories:", categories);
 
   const form = useForm<z.infer<typeof vendorSchema>>({
     mode: "onBlur",
@@ -53,6 +54,21 @@ export function VendorProfileForm() {
     },
   });
 
+  // File upload:
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setSelectedFile(null);
+      setPreviewUrl(null);
+    }
+  };
+
   const onSubmit = (values: z.infer<typeof vendorSchema>) => {
     // Add upload/image API logic here
     // Create slug from name (simple example)
@@ -64,6 +80,10 @@ export function VendorProfileForm() {
     const submission = { ...values, slug };
     alert(JSON.stringify(submission, null, 2));
     toast.success("Vendor profile saved successfully!");
+    // File upload logic can be added here:
+    if (selectedFile) {
+      console.log("File to upload:", selectedFile.name, selectedFile);
+    }
   };
 
   const onError = (errors: FieldErrors<z.infer<typeof vendorSchema>>) => {
@@ -86,7 +106,7 @@ export function VendorProfileForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit, onError)}
-        className="flex flex-col gap-8 p-4 lg:p-16 overflow-y-auto max-h-[80vh]" // form scrollable:
+        className="flex flex-col gap-8 p-4 lg:p-16 overflow-y-auto max-h-[80vh]"
         autoComplete="off"
       >
         <div className="flex items-center gap-4 mb-8">
@@ -100,155 +120,217 @@ export function VendorProfileForm() {
           />
           <h1 className="text-3xl font-bold">Service Provider Settings</h1>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* First Name */}
-          <FormField
-            name="firstName"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>First Name</FormLabel>
-                <FormControl>
-                  <Input {...field} autoComplete="off" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          {/* Last Name */}
-          <FormField
-            name="lastName"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Last Name</FormLabel>
-                <FormControl>
-                  <Input {...field} autoComplete="off" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          {/* Business Name */}
-          <FormField
-            name="name"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Business Name (one word)</FormLabel>
-                <FormControl>
-                  <Input {...field} autoComplete="off" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          {/* Website */}
-          <FormField
-            name="website"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Website (optional)</FormLabel>
-                <FormControl>
-                  <Input {...field} autoComplete="off" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="category"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <FormControl>
-                  <Select
-                    disabled={isLoading}
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger>
-                      {categories?.find((c) => c.slug === field.value)?.name ||
-                        "Select a category"}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories?.map((cat) => (
-                        <SelectItem key={cat.slug} value={cat.slug}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormItem>
-            )}
-          />
 
-          {/* Services Checkboxes */}
-          <FormField
-            name="services"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Type of Service</FormLabel>
-                <FormControl>
-                  <div className="flex gap-6 bg-white rounded px-2 py-2">
-                    {SERVICE_OPTIONS.map((opt) => (
-                      <label
-                        key={opt.value}
-                        className="flex items-center gap-2 cursor-pointer"
+        {/* 2 column grid; for wider right column adjsut container - md:grid-cols-5, left: md:col-span-2, right:md:col-span-3  */}
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
+          {/* Left Column */}
+          <div className="md:col-span-3 flex flex-col gap-4">
+            {/* First Name */}
+            <FormField
+              name="firstName"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        // auto-update business name if empty
+                        if (!form.getValues("name")) {
+                          form.setValue(
+                            "name",
+                            `${e.target.value}_${form.getValues("lastName")}`
+                          );
+                        }
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {/* Last Name */}
+            <FormField
+              name="lastName"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        // auto-update business name if empty
+                        if (!form.getValues("name")) {
+                          form.setValue(
+                            "name",
+                            `${form.getValues("firstName")}_${e.target.value}`
+                          );
+                        }
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {/* Business Name */}
+            <FormField
+              name="name"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business Name (one word)</FormLabel>
+                  <FormControl>
+                    <Input {...field} autoComplete="off" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {/* Website */}
+            <FormField
+              name="website"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Website (optional)</FormLabel>
+                  <FormControl>
+                    <Input {...field} autoComplete="off" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {/* Type of Service */}
+            <FormField
+              name="services"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type of Service</FormLabel>
+                  <FormControl>
+                    <div className="flex justify-center gap-12 bg-white rounded px-2 py-2">
+                      {SERVICE_OPTIONS.map((opt) => (
+                        <label
+                          key={opt.value}
+                          className="flex items-center gap-2 cursor-pointer flex-1 justify-center"
+                        >
+                          <Checkbox
+                            checked={field.value?.includes(opt.value)}
+                            onCheckedChange={(checked) => {
+                              const newValue = checked
+                                ? [...(field.value || []), opt.value]
+                                : (field.value || []).filter(
+                                    (v: string) => v !== opt.value
+                                  );
+                              field.onChange(newValue);
+                            }}
+                          />
+                          <span>{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Right Column (wider) */}
+          <div className="md:col-span-4 flex flex-col gap-2">
+            {/* Profile Image */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-full h-60 aspect-square  flex items-center justify-center rounded-2xl overflow-hidden bg-white border shadow relative">
+                <Image
+                  src={previewUrl || "/images/placeholder.png"}
+                  alt="Profile preview"
+                  // width={160}
+                  // height={160}
+                  fill
+                  className="object-cover w-full h-full"
+                  priority
+                />
+              </div>
+              <label className="cursor-pointer px-4 py-2 bg-gray-100 rounded-lg border text-sm font-medium hover:bg-gray-200 transition-colors">
+                {selectedFile ? selectedFile.name : "Upload Image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            <FormField
+              name="image"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem className="hidden">
+                  {/* Hide the manual URL input; keep it for possible backend compatibility */}
+                  <FormControl>
+                    <Input {...field} autoComplete="off" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Description */}
+            <FormField
+              name="bio"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <textarea
+                      {...field}
+                      rows={6}
+                      maxLength={600}
+                      className="w-full border rounded px-2 py-2 bg-white"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* Category dropdown (at bottom of col 2) */}
+            <FormField
+              name="category"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <FormControl>
+                    <Select
+                      disabled={isLoading}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        {categories?.find((c) => c.slug === field.value)
+                          ?.name || "Select a category"}
+                      </SelectTrigger>
+                      <SelectContent
+                        side="bottom"
+                        className="max-h-60 overflow-y-auto"
                       >
-                        <Checkbox
-                          checked={field.value?.includes(opt.value)}
-                          onCheckedChange={(checked) => {
-                            const newValue = checked
-                              ? [...(field.value || []), opt.value]
-                              : (field.value || []).filter(
-                                  (v: string) => v !== opt.value
-                                );
-                            field.onChange(newValue);
-                          }}
-                        />
-                        <span>{opt.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          {/* Description */}
-          <FormField
-            name="bio"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <textarea
-                    {...field}
-                    rows={5}
-                    maxLength={600}
-                    className="w-full border rounded px-2 py-2 bg-white"
-                    autoComplete="off"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {/* Profile Image */}
-          <FormField
-            name="image"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Profile Image URL</FormLabel>
-                <FormControl>
-                  <Input {...field} autoComplete="off" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+                        {categories?.map((cat) => (
+                          <SelectItem key={cat.slug} value={cat.slug}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
+
         <Button
           type="submit"
           size="lg"
