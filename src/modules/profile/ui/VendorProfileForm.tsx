@@ -12,13 +12,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+// } from "@/components/ui/select";
+// import { Checkbox } from "@/components/ui/checkbox";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
@@ -29,14 +29,14 @@ import type { FieldErrors } from "react-hook-form";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { useUser } from "@clerk/nextjs";
 
 // Create a Zod schema for the tenant/vendor
 
 export function VendorProfileForm() {
   const trpc = useTRPC();
-  const { data: categories, isLoading } = useQuery(
-    trpc.categories.getMany.queryOptions()
-  );
+  const { data: categories } = useQuery(trpc.categories.getMany.queryOptions());
 
   // console.log("categories:", categories);
 
@@ -54,7 +54,22 @@ export function VendorProfileForm() {
     },
   });
 
+  // Watch selected categories
+  const selectedCategories = form.watch("categories") || [];
+
+  // Get subcategories for the selected categories
+  const availableSubcategories =
+    categories
+      ?.filter((cat) => selectedCategories.includes(cat.slug))
+      .flatMap((cat) =>
+        (cat.subcategories || []).map((sub) => ({ ...sub, parent: cat.slug }))
+      ) || [];
+
   // File upload:
+  // obtaining image placeholder:
+  const { user } = useUser(); // user is null if not signed in
+  const imageUrl = user?.imageUrl; // This is the profile photo Clerk provides
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -211,27 +226,65 @@ export function VendorProfileForm() {
                 <FormItem>
                   <FormLabel>Type of Service</FormLabel>
                   <FormControl>
-                    <div className="flex justify-center gap-12 bg-white rounded px-2 py-2">
-                      {SERVICE_OPTIONS.map((opt) => (
-                        <label
-                          key={opt.value}
-                          className="flex items-center gap-2 cursor-pointer flex-1 justify-center"
-                        >
-                          <Checkbox
-                            checked={field.value?.includes(opt.value)}
-                            onCheckedChange={(checked) => {
-                              const newValue = checked
-                                ? [...(field.value || []), opt.value]
-                                : (field.value || []).filter(
-                                    (v: string) => v !== opt.value
-                                  );
-                              field.onChange(newValue);
-                            }}
-                          />
-                          <span>{opt.label}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <MultiSelect
+                      options={SERVICE_OPTIONS}
+                      defaultValue={field.value || []}
+                      value={field.value || []}
+                      onValueChange={field.onChange}
+                      placeholder="Select service types"
+                      maxCount={2}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {/* Category dropdown (at bottom of col 1) */}
+            <FormField
+              name="categories"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categories</FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      options={
+                        categories
+                          ? categories.map((cat) => ({
+                              label: cat.name,
+                              value: cat.slug,
+                            }))
+                          : []
+                      }
+                      defaultValue={field.value || []}
+                      onValueChange={field.onChange}
+                      placeholder="Select categories"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {/* SUBCATEGORIES Multi-select */}
+            <FormField
+              name="subcategories"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subcategories</FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      disabled={availableSubcategories.length === 0}
+                      options={availableSubcategories.map((sub) => ({
+                        label: sub.name,
+                        value: sub.slug,
+                      }))}
+                      value={field.value || []}
+                      onValueChange={field.onChange}
+                      placeholder={
+                        availableSubcategories.length === 0
+                          ? "Select categories first"
+                          : "Select subcategories"
+                      }
+                    />
                   </FormControl>
                 </FormItem>
               )}
@@ -242,9 +295,13 @@ export function VendorProfileForm() {
           <div className="md:col-span-4 flex flex-col gap-2">
             {/* Profile Image */}
             <div className="flex flex-col items-center gap-2">
-              <div className="w-full h-60 aspect-square  flex items-center justify-center rounded-2xl overflow-hidden bg-white border shadow relative">
+              <div className="w-full h-60 aspect-square  flex items-center justify-center overflow-hidden  bg-white relative">
                 <Image
-                  src={previewUrl || "/images/placeholder.png"}
+                  src={
+                    previewUrl ||
+                    imageUrl ||
+                    "https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=256&h=256&facepad=2"
+                  }
                   alt="Profile preview"
                   // width={160}
                   // height={160}
@@ -254,7 +311,7 @@ export function VendorProfileForm() {
                 />
               </div>
               <label className="cursor-pointer px-4 py-2 bg-gray-100 rounded-lg border text-sm font-medium hover:bg-gray-200 transition-colors">
-                {selectedFile ? selectedFile.name : "Upload Image"}
+                {selectedFile ? selectedFile.name : "Select Image"}
                 <input
                   type="file"
                   accept="image/*"
@@ -276,58 +333,29 @@ export function VendorProfileForm() {
               )}
             />
 
-            {/* Description */}
-            <FormField
-              name="bio"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <textarea
-                      {...field}
-                      rows={6}
-                      maxLength={600}
-                      className="w-full border rounded px-2 py-2 bg-white"
-                      autoComplete="off"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {/* Category dropdown (at bottom of col 2) */}
-            <FormField
-              name="category"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <FormControl>
-                    <Select
-                      disabled={isLoading}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger className="w-full">
-                        {categories?.find((c) => c.slug === field.value)
-                          ?.name || "Select a category"}
-                      </SelectTrigger>
-                      <SelectContent
-                        side="bottom"
-                        className="max-h-60 overflow-y-auto"
-                      >
-                        {categories?.map((cat) => (
-                          <SelectItem key={cat.slug} value={cat.slug}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            {/* Description - Make Only the Description Stretch Without Changing the Grid */}
+
+            <div className="flex-1 flex flex-col">
+              <FormField
+                name="bio"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem className="h-full flex flex-col">
+                    <FormLabel>Description</FormLabel>
+                    <FormControl className="flex-1 flex flex-col">
+                      <textarea
+                        {...field}
+                        maxLength={600}
+                        className="w-full h-full border rounded px-2 py-2 bg-white flex-1 resize-none"
+                        autoComplete="off"
+                        style={{ minHeight: 150 }} // optional: ensures minimum height on all screens
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         </div>
 

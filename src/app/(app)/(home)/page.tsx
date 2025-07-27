@@ -5,6 +5,7 @@ import { RoleSelectionDialog } from "@/modules/auth/ui/views/onboarding/RoleSele
 import { useTRPC } from "@/trpc/client";
 // import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
+import LoadingPage from "@/components/shared/loading";
 
 export default function Home() {
   const trpc = useTRPC();
@@ -25,7 +26,7 @@ export default function Home() {
   }
 
   // Loading state
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <LoadingPage />;
 
   if (error) return <div>Error loading session: {error.message}</div>;
 

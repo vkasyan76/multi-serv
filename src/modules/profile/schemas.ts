@@ -34,7 +34,9 @@ export const vendorSchema = z.object({
   services: z
     .array(z.enum(["on-site", "on-line"]))
     .min(1, "Select at least one service type"),
-  category: z.string().min(1, "Please select a category"),
+  // category: z.string().min(1, "Please select a category"),
+  categories: z.array(z.string()).min(1, "Select at least one category"),
+  subcategories: z.array(z.string()).optional(),
   website: z
     .string()
     .optional()
@@ -56,7 +58,12 @@ export const VENDOR_FIELD_LABELS = {
 };
 
 // Checkbox choices
+// export const SERVICE_OPTIONS = [
+//   { label: "On-site", value: "on-site" },
+//   { label: "On-line", value: "on-line" },
+// ] as const;
+
 export const SERVICE_OPTIONS = [
   { label: "On-site", value: "on-site" },
   { label: "On-line", value: "on-line" },
-] as const;
+];
