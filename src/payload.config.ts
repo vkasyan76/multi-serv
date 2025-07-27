@@ -2,7 +2,7 @@
 import { mongooseAdapter } from "@payloadcms/db-mongodb";
 import { payloadCloudPlugin } from "@payloadcms/payload-cloud";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
-// import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
+import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import path from "path";
 import { buildConfig } from "payload";
@@ -54,15 +54,15 @@ export default buildConfig({
         isSuperAdmin(user), // import from "@/lib/access.ts"
     }),
     // vercel blob storage plugin:
-    // vercelBlobStorage({
-    //   enabled: true, // Optional, defaults to true
-    //   clientUploads: true, // to enable client uploads
-    //   // Specify which collections should use Vercel Blob
-    //   collections: {
-    //     media: true,
-    //   },
-    //   // Token provided by Vercel once Blob storage is added to your Vercel project
-    //   token: process.env.BLOB_READ_WRITE_TOKEN,
-    // }),
+    vercelBlobStorage({
+      enabled: true, // Optional, defaults to true
+      clientUploads: true, // to enable client uploads
+      // Specify which collections should use Vercel Blob
+      collections: {
+        media: true,
+      },
+      // Token provided by Vercel once Blob storage is added to your Vercel project
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    }),
   ],
 });

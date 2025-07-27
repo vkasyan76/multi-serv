@@ -1,13 +1,39 @@
 "use client";
 
+// import { RoleSelection } from "@/modules/auth/ui/views/onboarding/RoleSelection";
+import { RoleSelectionDialog } from "@/modules/auth/ui/views/onboarding/RoleSelectionDialog";
 import { useTRPC } from "@/trpc/client";
 // import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
+import LoadingPage from "@/components/shared/loading";
 
 export default function Home() {
   const trpc = useTRPC();
 
-  const { data } = useQuery(trpc.auth.session.queryOptions());
+  const {
+    data: session,
+    isLoading,
+    error,
+  } = useQuery(trpc.auth.session.queryOptions());
 
-  return <div>{JSON.stringify(data?.user, null, 2)}</div>;
+  // function handleRoleSelection(role: string) {
+  //   alert("Selected role: " + role);
+  //   // In the real flow, you will call a mutation here!
+  // }
+
+  function handleRoleSelection(roles: string[]) {
+    alert("Selected roles: " + roles.join(", "));
+  }
+
+  // Loading state
+  if (isLoading) return <LoadingPage />;
+
+  if (error) return <div>Error loading session: {error.message}</div>;
+
+  // If user is logged in but hasn't selected a role, show onboarding
+  if (session?.user) {
+    return <RoleSelectionDialog onSelectAction={handleRoleSelection} />;
+  }
+
+  return <div>{JSON.stringify(session?.user, null, 2)}</div>;
 }
