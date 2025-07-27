@@ -20,8 +20,6 @@ export function ProfileTabs() {
     if (storedRoles) {
       parsedRoles = JSON.parse(storedRoles);
     } else {
-      // parsedRoles = ["client"];
-      // localStorage.setItem("infinisimo_roles", JSON.stringify(parsedRoles));
       parsedRoles = []; // <-- no auto-assignment
     }
     setRoles(parsedRoles);

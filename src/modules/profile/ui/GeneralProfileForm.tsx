@@ -13,7 +13,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +30,8 @@ import { autocomplete } from "@/lib/google";
 import { PlaceData } from "@googlemaps/google-maps-services-js";
 import Image from "next/image";
 import { toast } from "sonner";
+import { FieldErrors } from "react-hook-form";
+import { PROFILE_FIELD_LABELS } from "@/modules/profile/schemas";
 
 export function GeneralProfileForm() {
   const form = useForm<z.infer<typeof profileSchema>>({
@@ -97,10 +98,30 @@ export function GeneralProfileForm() {
     alert(JSON.stringify(submission, null, 2));
   };
 
+  const onError = (errors: FieldErrors<z.infer<typeof profileSchema>>) => {
+    const messages = Object.entries(errors)
+      .map(([field, err]) => {
+        const label =
+          PROFILE_FIELD_LABELS[field as keyof typeof PROFILE_FIELD_LABELS] ||
+          field;
+        if (Array.isArray(err)) {
+          return err.map((e) => `${label}: ${e?.message}`).join("\n");
+        }
+        return `${label}: ${err?.message}`;
+      })
+      .filter(Boolean)
+      .join("\n");
+    toast.error(
+      <span style={{ whiteSpace: "pre-line" }}>
+        {messages || "Please fix the errors in the form."}
+      </span>
+    );
+  };
+
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit, onError)}
         className="flex flex-col gap-8 p-4 lg:p-10"
         autoComplete="off"
       >
@@ -126,7 +147,6 @@ export function GeneralProfileForm() {
                 <FormControl>
                   <Input {...field} autoComplete="off" />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -165,7 +185,6 @@ export function GeneralProfileForm() {
                       )}
                   </div>
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -178,7 +197,6 @@ export function GeneralProfileForm() {
                 <FormControl>
                   <Input {...field} type="email" autoComplete="off" />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -197,7 +215,6 @@ export function GeneralProfileForm() {
                     tabIndex={-1}
                   />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -222,7 +239,6 @@ export function GeneralProfileForm() {
                     </SelectContent>
                   </Select>
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />

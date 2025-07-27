@@ -1,4 +1,3 @@
-// src/modules/profile/ui/VendorProfileForm.tsx
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -12,13 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-// } from "@/components/ui/select";
-// import { Checkbox } from "@/components/ui/checkbox";
+
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
@@ -114,7 +107,12 @@ export function VendorProfileForm() {
       })
       .filter(Boolean)
       .join("\n");
-    toast.error(messages || "Please fix the errors in the form.");
+    // toast.error(messages || "Please fix the errors in the form.");
+    toast.error(
+      <span style={{ whiteSpace: "pre-line" }}>
+        {messages || "Please fix the errors in the form."}
+      </span>
+    );
   };
 
   return (

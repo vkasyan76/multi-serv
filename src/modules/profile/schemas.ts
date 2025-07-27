@@ -23,6 +23,14 @@ export const profileSchema = z.object({
   language: z.nativeEnum(Language),
 });
 
+export const PROFILE_FIELD_LABELS: Record<string, string> = {
+  username: "Username",
+  email: "Email address",
+  location: "Location",
+  country: "Country",
+  language: "Language",
+};
+
 export const vendorSchema = z.object({
   name: z.string().min(2, "Business name is required"),
   firstName: z.string().min(2, "First name is required"),
@@ -56,12 +64,6 @@ export const VENDOR_FIELD_LABELS = {
   website: "Website",
   image: "Profile Image",
 };
-
-// Checkbox choices
-// export const SERVICE_OPTIONS = [
-//   { label: "On-site", value: "on-site" },
-//   { label: "On-line", value: "on-line" },
-// ] as const;
 
 export const SERVICE_OPTIONS = [
   { label: "On-site", value: "on-site" },
