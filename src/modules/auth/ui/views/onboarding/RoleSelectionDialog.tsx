@@ -13,7 +13,7 @@ const ROLE_OPTIONS = [
     // desc: "I want to order freelance services.",
   },
   {
-    value: "service-provider",
+    value: "provider",
     label: "I offer services",
     // desc: "I want to offer services.",
   },
@@ -38,6 +38,7 @@ export function RoleSelectionDialog({
 
   const handleNext = async () => {
     await onSelectAction(selected);
+    localStorage.setItem("infinisimo_roles", JSON.stringify(selected)); // Save selected roles to localStorage for ProfileTabs
     router.push("/profile"); // (adjust path if needed)
   };
 

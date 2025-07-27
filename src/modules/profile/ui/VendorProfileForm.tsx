@@ -121,7 +121,7 @@ export function VendorProfileForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit, onError)}
-        className="flex flex-col gap-8 p-4 lg:p-16 overflow-y-auto max-h-[80vh]"
+        className="flex flex-col gap-8 p-4 lg:p-10 overflow-y-auto max-h-[80vh]"
         autoComplete="off"
       >
         <div className="flex items-center gap-4 mb-8">
@@ -295,7 +295,7 @@ export function VendorProfileForm() {
           <div className="md:col-span-4 flex flex-col gap-2">
             {/* Profile Image */}
             <div className="flex flex-col items-center gap-2">
-              <div className="w-full h-60 aspect-square  flex items-center justify-center overflow-hidden  bg-white relative">
+              <div className="w-full h-60 aspect-square  flex items-center justify-center overflow-hidden rounded-lg bg-white relative">
                 <Image
                   src={
                     previewUrl ||
@@ -342,7 +342,7 @@ export function VendorProfileForm() {
                 render={({ field }) => (
                   <FormItem className="h-full flex flex-col">
                     <FormLabel>Description</FormLabel>
-                    <FormControl className="flex-1 flex flex-col">
+                    <FormControl className="flex-1 flex flex-col rounded-lg">
                       <textarea
                         {...field}
                         maxLength={600}

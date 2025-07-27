@@ -101,7 +101,7 @@ export function GeneralProfileForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-8 p-4 lg:p-16"
+        className="flex flex-col gap-8 p-4 lg:p-10"
         autoComplete="off"
       >
         <div className="flex items-center gap-4 mb-8">
@@ -209,7 +209,7 @@ export function GeneralProfileForm() {
                 <FormLabel>Language</FormLabel>
                 <FormControl>
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       {SUPPORTED_LANGUAGES.find((l) => l.code === field.value)
                         ?.label || "Select language"}
                     </SelectTrigger>

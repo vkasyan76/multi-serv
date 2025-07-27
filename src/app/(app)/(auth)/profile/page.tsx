@@ -5,7 +5,7 @@ const ProfilePage = () => {
   // return <ProfileForm />;
   return (
     <div className="flex justify-center items-start min-h-screen bg-[#F4F4F0]">
-      <ProfileTabs showProviderTab={true} />
+      <ProfileTabs />
     </div>
   );
 };
