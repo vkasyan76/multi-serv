@@ -24,12 +24,16 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
+import { getLocaleAndCurrency } from "../location-utils";
+import CurrencyInput from "react-currency-input-field";
 
 // Create a Zod schema for the tenant/vendor
 
 export function VendorProfileForm() {
   const trpc = useTRPC();
   const { data: categories } = useQuery(trpc.categories.getMany.queryOptions());
+
+  const [intlConfig] = useState(getLocaleAndCurrency()); // cache the locale/currency (do not run on every render)
 
   // console.log("categories:", categories);
 
@@ -44,6 +48,7 @@ export function VendorProfileForm() {
       services: [],
       website: "",
       image: "",
+      hourlyRate: undefined,
     },
   });
 
@@ -119,7 +124,7 @@ export function VendorProfileForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit, onError)}
-        className="flex flex-col gap-8 p-4 lg:p-10 overflow-y-auto max-h-[80vh]"
+        className="flex flex-col gap-2 p-4 lg:p-10 overflow-y-auto max-h-[80vh]"
         autoComplete="off"
       >
         <div className="flex items-center gap-4 mb-8">
@@ -203,19 +208,35 @@ export function VendorProfileForm() {
                 </FormItem>
               )}
             />
-            {/* Website */}
+            {/* Hourly rate */}
             <FormField
-              name="website"
+              name="hourlyRate"
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Website (optional)</FormLabel>
+                  <FormLabel>Hourly Rate ({intlConfig.currency})</FormLabel>
                   <FormControl>
-                    <Input {...field} autoComplete="off" />
+                    <CurrencyInput
+                      id="hourly-rate"
+                      name={field.name}
+                      className="w-full border rounded px-2 py-2"
+                      intlConfig={intlConfig}
+                      decimalsLimit={2}
+                      decimalScale={2}
+                      allowDecimals
+                      min={1}
+                      placeholder={`Enter hourly rate in ${intlConfig.currency}`}
+                      value={field.value ?? ""}
+                      onValueChange={(value) => {
+                        const asNumber = value ? parseFloat(value) : undefined;
+                        field.onChange(asNumber);
+                      }}
+                    />
                   </FormControl>
                 </FormItem>
               )}
             />
+
             {/* Type of Service */}
             <FormField
               name="services"
@@ -324,6 +345,20 @@ export function VendorProfileForm() {
               render={({ field }) => (
                 <FormItem className="hidden">
                   {/* Hide the manual URL input; keep it for possible backend compatibility */}
+                  <FormControl>
+                    <Input {...field} autoComplete="off" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Website */}
+            <FormField
+              name="website"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Website (optional)</FormLabel>
                   <FormControl>
                     <Input {...field} autoComplete="off" />
                   </FormControl>

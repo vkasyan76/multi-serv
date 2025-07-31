@@ -37,3 +37,16 @@ export function getInitialLanguage(): Language {
   }
   return Language.en;
 }
+
+// Currency formatting
+
+export function getLocaleAndCurrency() {
+  if (typeof window !== "undefined") {
+    // Try to get user's browser settings
+    const locale = navigator.language || "en-US";
+    // For demo, always EUR, but you could map locale to currency if needed
+    const currency = "EUR";
+    return { locale, currency };
+  }
+  return { locale: "en-US", currency: "EUR" };
+}
