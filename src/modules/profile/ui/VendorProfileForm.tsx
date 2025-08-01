@@ -25,7 +25,8 @@ import { useState } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
 import { getLocaleAndCurrency } from "../location-utils";
-import CurrencyInput from "react-currency-input-field";
+
+import { NumericFormat, NumberFormatValues } from "react-number-format";
 
 // Create a Zod schema for the tenant/vendor
 
@@ -48,7 +49,7 @@ export function VendorProfileForm() {
       services: [],
       website: "",
       image: "",
-      hourlyRate: undefined,
+      hourlyRate: 1,
     },
   });
 
@@ -216,20 +217,20 @@ export function VendorProfileForm() {
                 <FormItem>
                   <FormLabel>Hourly Rate ({intlConfig.currency})</FormLabel>
                   <FormControl>
-                    <CurrencyInput
-                      id="hourly-rate"
-                      name={field.name}
+                    <NumericFormat
+                      {...field}
                       className="w-full border rounded px-2 py-2"
-                      intlConfig={intlConfig}
-                      decimalsLimit={2}
+                      thousandSeparator
                       decimalScale={2}
-                      allowDecimals
-                      min={1}
+                      fixedDecimalScale
+                      allowNegative={false}
+                      allowLeadingZeros={false}
+                      prefix={intlConfig.currency === "EUR" ? "€ " : ""}
                       placeholder={`Enter hourly rate in ${intlConfig.currency}`}
-                      value={field.value ?? ""}
-                      onValueChange={(value) => {
-                        const asNumber = value ? parseFloat(value) : undefined;
-                        field.onChange(asNumber);
+                      value={field.value}
+                      onValueChange={(values: NumberFormatValues) => {
+                        // Pass the numeric value to the form, not the formatted string
+                        field.onChange(values.floatValue || "");
                       }}
                     />
                   </FormControl>

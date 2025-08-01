@@ -53,13 +53,17 @@ export const vendorSchema = z.object({
       { message: "Website must be a valid URL." }
     ),
   image: z.string().optional(),
+  // hourlyRate: z
+  //   .number({ invalid_type_error: "Hourly rate must be a number" })
+  //   .min(1, "Hourly rate must be at least 1 EUR")
+  //   .max(10000, "Hourly rate seems too high")
+  //   .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
+  //     message: "Hourly rate must have at most two decimal places",
+  //   }),
   hourlyRate: z
     .number({ invalid_type_error: "Hourly rate must be a number" })
     .min(1, "Hourly rate must be at least 1 EUR")
-    .max(10000, "Hourly rate seems too high")
-    .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
-      message: "Hourly rate must have at most two decimal places",
-    }),
+    .max(10000, "Hourly rate seems too high"),
 });
 
 export const VENDOR_FIELD_LABELS = {
