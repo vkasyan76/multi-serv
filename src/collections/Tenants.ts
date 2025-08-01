@@ -9,6 +9,7 @@ export const Tenants: CollectionConfig = {
   },
   admin: {
     useAsTitle: "slug",
+    defaultColumns: ["name", "slug", "firstName", "lastName", "hourlyRate"],
   },
   fields: [
     {
@@ -62,6 +63,80 @@ export const Tenants: CollectionConfig = {
         // readOnly: true,
         description:
           "You cannot create products until you submit your stripe details.",
+      },
+    },
+    // Vendor profile fields
+    {
+      name: "firstName",
+      type: "text",
+      label: "First Name",
+      admin: {
+        description: "Vendor's first name",
+      },
+    },
+    {
+      name: "lastName",
+      type: "text",
+      label: "Last Name",
+      admin: {
+        description: "Vendor's last name",
+      },
+    },
+    {
+      name: "bio",
+      type: "textarea",
+      label: "Bio",
+      admin: {
+        description: "Vendor's bio/description",
+      },
+    },
+    {
+      name: "services",
+      type: "select",
+      hasMany: true,
+      options: [
+        { label: "On-site", value: "on-site" },
+        { label: "On-line", value: "on-line" },
+      ],
+      label: "Services",
+      admin: {
+        description: "Types of services offered",
+      },
+    },
+    {
+      name: "categories",
+      type: "relationship",
+      relationTo: "categories",
+      hasMany: true,
+      label: "Categories",
+      admin: {
+        description: "Service categories",
+      },
+    },
+    {
+      name: "subcategories",
+      type: "relationship",
+      relationTo: "categories",
+      hasMany: true,
+      label: "Subcategories",
+      admin: {
+        description: "Service subcategories",
+      },
+    },
+    {
+      name: "website",
+      type: "text",
+      label: "Website",
+      admin: {
+        description: "Vendor's website URL",
+      },
+    },
+    {
+      name: "hourlyRate",
+      type: "number",
+      label: "Hourly Rate (EUR)",
+      admin: {
+        description: "Vendor's hourly rate in EUR",
       },
     },
   ],

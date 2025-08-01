@@ -8,6 +8,7 @@ import { generateAuthCookie } from "../utils";
 import { stripe } from "@/lib/stripe";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
+import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
@@ -230,14 +231,14 @@ export const authRouter = createTRPCRouter({
           },
         });
 
-        await updateClerkUserMetadata(userId, updatedUser.id);
+        await updateClerkUserMetadata(userId, updatedUser.id, updatedUser.username);
 
         console.log("ADDED TENANT TO EXISTING USER:", updatedUser);
         return updatedUser;
       }
 
       // Optional: Keep Clerk in sync if needed
-      await updateClerkUserMetadata(userId, existingUser.id);
+      await updateClerkUserMetadata(userId, existingUser.id, existingUser.username);
 
       return existingUser;
     }
@@ -266,10 +267,134 @@ export const authRouter = createTRPCRouter({
       },
     });
 
-    await updateClerkUserMetadata(userId, user.id);
+    await updateClerkUserMetadata(userId, user.id, user.username);
 
     console.log("CREATED USER OBJECT WITH TENANT:", user);
 
     return user;
   }),
+
+  updateVendorProfile: clerkProcedure
+    .input(vendorSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      
+      // Find the user
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        throw new Error("User not found");
+      }
+
+      const currentUser = user.docs[0];
+      
+      // Find the user's tenant
+      if (!currentUser.tenants || currentUser.tenants.length === 0) {
+        throw new Error("No tenant found for user");
+      }
+
+      const tenantId = currentUser.tenants[0].tenant;
+      
+      console.log("Raw tenant object:", tenantId);
+      console.log("Tenant type:", typeof tenantId);
+      
+      // Ensure we have the correct tenant ID
+      const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
+      
+             console.log("Tenant ID:", actualTenantId);
+       console.log("Input data:", input);
+       console.log("Categories:", input.categories);
+       console.log("Subcategories:", input.subcategories);
+       
+       // Update the tenant with vendor profile data
+       const updatedTenant = await ctx.db.update({
+         collection: "tenants",
+         id: actualTenantId as string,
+         data: {
+           name: input.name,
+           firstName: input.firstName,
+           lastName: input.lastName,
+           bio: input.bio,
+           services: input.services,
+           categories: input.categories, // Array of category IDs
+           subcategories: input.subcategories, // Array of subcategory IDs
+           website: input.website,
+           image: input.image,
+           hourlyRate: input.hourlyRate, // This will be a number after schema transformation
+         },
+       });
+
+       console.log("UPDATED TENANT WITH VENDOR PROFILE:", updatedTenant);
+       return updatedTenant;
+     }),
+
+  getUserProfile: clerkProcedure.query(async ({ ctx }) => {
+    const userId = ctx.userId;
+    
+    // Find the user
+    const user = await ctx.db.find({
+      collection: "users",
+      where: { clerkUserId: { equals: userId } },
+      limit: 1,
+    });
+
+    if (user.totalDocs === 0) {
+      throw new Error("User not found");
+    }
+
+    const currentUser = user.docs[0];
+    
+    return {
+      username: currentUser.username,
+      email: currentUser.email,
+      location: currentUser.location || "",
+      country: currentUser.country || "",
+      language: currentUser.language || "en",
+      coordinates: currentUser.coordinates,
+      onboardingCompleted: currentUser.onboardingCompleted || false,
+    };
+  }),
+
+  updateUserProfile: clerkProcedure
+    .input(profileSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      
+      // Find the user
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        throw new Error("User not found");
+      }
+
+      const currentUser = user.docs[0];
+      
+      // Update the user with profile data
+      await ctx.db.update({
+        collection: "users",
+        id: currentUser.id as string,
+        data: {
+          username: input.username,
+          location: input.location,
+          country: input.country,
+          language: input.language,
+          coordinates: input.coordinates,
+          onboardingCompleted: true, // Set onboarding status to completed
+        },
+      });
+
+      // Update Clerk user metadata with the new username
+      await updateClerkUserMetadata(userId, currentUser.id, input.username);
+
+      console.log("UPDATED USER PROFILE:", currentUser);
+      return currentUser;
+    }),
 });

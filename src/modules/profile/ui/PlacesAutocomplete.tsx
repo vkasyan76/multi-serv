@@ -10,18 +10,21 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { autocomplete } from "@/lib/google";
-import { Language, PlaceData } from "@googlemaps/google-maps-services-js";
+import { PlaceData } from "@googlemaps/google-maps-services-js";
 import { useEffect, useState } from "react";
 
 export const PlacesAutocomplete = () => {
   const [predictions, setPredictions] = useState<PlaceData[]>([]);
   const [input, setInput] = useState("");
 
-  function detectLanguage(): Language {
-    if (typeof navigator === "undefined") return Language.en;
-    const langCode = navigator.language.slice(0, 2); // e.g. "it", "fr"
-    const mapped = (Language as Record<string, Language>)[langCode];
-    return mapped ?? Language.en; // fallback if not in enum
+  function detectLanguage(): "en" | "es" | "fr" | "de" | "it" | "pt" | "ru" | "zh" | "ja" | "ko" {
+    if (typeof navigator === "undefined") return "en";
+    const langCode = navigator.language.slice(0, 2).toLowerCase();
+    const supportedLanguages = ["en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja", "ko"];
+    if (supportedLanguages.includes(langCode)) {
+      return langCode as "en" | "es" | "fr" | "de" | "it" | "pt" | "ru" | "zh" | "ja" | "ko";
+    }
+    return "en";
   }
 
   // const userLang =

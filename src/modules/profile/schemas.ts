@@ -1,5 +1,4 @@
 import z from "zod";
-import { Language } from "@googlemaps/google-maps-services-js";
 
 const usernameValidation = z
   .string()
@@ -20,7 +19,11 @@ export const profileSchema = z.object({
   email: z.string().email("Invalid email address"),
   location: z.string().min(3, "Please select a location"),
   country: z.string().min(2, "Country required"),
-  language: z.nativeEnum(Language),
+  language: z.enum(["en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja", "ko"]),
+  coordinates: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }).optional(),
 });
 
 export const PROFILE_FIELD_LABELS: Record<string, string> = {

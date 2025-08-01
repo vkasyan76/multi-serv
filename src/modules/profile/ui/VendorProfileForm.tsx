@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import type { FieldErrors } from "react-hook-form";
 
 import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
@@ -55,13 +55,17 @@ export function VendorProfileForm() {
 
   // Watch selected categories
   const selectedCategories = form.watch("categories") || [];
+  
+  // Watch hourlyRate to debug
+  const hourlyRateValue = form.watch("hourlyRate");
+  console.log("Watched hourlyRate:", hourlyRateValue, "type:", typeof hourlyRateValue);
 
   // Get subcategories for the selected categories
   const availableSubcategories =
     categories
-      ?.filter((cat) => selectedCategories.includes(cat.slug))
+      ?.filter((cat) => selectedCategories.includes(cat.id))
       .flatMap((cat) =>
-        (cat.subcategories || []).map((sub) => ({ ...sub, parent: cat.slug }))
+        (cat.subcategories || []).map((sub) => ({ ...sub, parent: cat.id }))
       ) || [];
 
   // File upload:
@@ -83,17 +87,27 @@ export function VendorProfileForm() {
     }
   };
 
+  const updateVendorProfile = useMutation(
+    trpc.auth.updateVendorProfile.mutationOptions({
+      onSuccess: () => {
+        toast.success("Vendor profile saved successfully!");
+      },
+      onError: (error) => {
+        console.error("Error updating profile:", error);
+        toast.error(error.message || "Failed to update profile. Please try again.");
+      },
+    })
+  );
+
   const onSubmit = (values: z.infer<typeof vendorSchema>) => {
-    // Add upload/image API logic here
-    // Create slug from name (simple example)
-    const slug = values.name
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-    const submission = { ...values, slug };
-    alert(JSON.stringify(submission, null, 2));
-    toast.success("Vendor profile saved successfully!");
+    // hourlyRate is now a proper number from NumericFormat
+    console.log("Form values:", values);
+    console.log("hourlyRate type:", typeof values.hourlyRate);
+    console.log("hourlyRate value:", values.hourlyRate);
+    console.log("hourlyRate isNaN:", isNaN(values.hourlyRate));
+    
+    updateVendorProfile.mutate(values);
+    
     // File upload logic can be added here:
     if (selectedFile) {
       console.log("File to upload:", selectedFile.name, selectedFile);
@@ -101,6 +115,8 @@ export function VendorProfileForm() {
   };
 
   const onError = (errors: FieldErrors<z.infer<typeof vendorSchema>>) => {
+    console.log("Form validation errors:", errors);
+    
     const messages = Object.entries(errors)
       .map(([field, err]) => {
         const label =
@@ -217,8 +233,7 @@ export function VendorProfileForm() {
                 <FormItem>
                   <FormLabel>Hourly Rate ({intlConfig.currency})</FormLabel>
                   <FormControl>
-                    <NumericFormat
-                      {...field}
+                                        <NumericFormat
                       className="w-full border rounded px-2 py-2"
                       thousandSeparator
                       decimalScale={2}
@@ -228,10 +243,24 @@ export function VendorProfileForm() {
                       prefix={intlConfig.currency === "EUR" ? "€ " : ""}
                       placeholder={`Enter hourly rate in ${intlConfig.currency}`}
                       value={field.value}
+                      valueIsNumericString={false}
+                      onBlur={field.onBlur}
+                      name={field.name}
                       onValueChange={(values: NumberFormatValues) => {
-                        // Pass the numeric value to the form, not the formatted string
-                        field.onChange(values.floatValue || "");
-                      }}
+                         // Pass the numeric value to the form
+                         console.log("NumericFormat values:", values);
+                         console.log("floatValue:", values.floatValue);
+                         
+                         // Handle empty value case
+                         if (values.floatValue === undefined || values.floatValue === null) {
+                           form.setValue("hourlyRate", 1);
+                         } else {
+                           // Ensure we're passing a number, not a string
+                           const numericValue = Number(values.floatValue);
+                           console.log("Setting field value to:", numericValue, "type:", typeof numericValue);
+                           form.setValue("hourlyRate", numericValue);
+                         }
+                       }}
                     />
                   </FormControl>
                 </FormItem>
@@ -295,7 +324,7 @@ export function VendorProfileForm() {
                       disabled={availableSubcategories.length === 0}
                       options={availableSubcategories.map((sub) => ({
                         label: sub.name,
-                        value: sub.slug,
+                        value: sub.id,
                       }))}
                       value={field.value || []}
                       onValueChange={field.onChange}
