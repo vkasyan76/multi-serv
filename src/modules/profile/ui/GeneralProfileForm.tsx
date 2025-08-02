@@ -78,6 +78,21 @@ export function GeneralProfileForm() {
         country: userProfile.country || "",
         language: (userProfile.language as any) || getInitialLanguage(), // eslint-disable-line @typescript-eslint/no-explicit-any
       });
+      
+      // Set location input to display existing location
+      if (userProfile.location) {
+        setLocationInput(userProfile.location);
+      }
+      
+      // Set selected location if country exists
+      if (userProfile.country) {
+        setSelectedLocation({
+          address: userProfile.location || "",
+          country: userProfile.country,
+          lat: 0, // We don't store coordinates in the profile
+          lng: 0,
+        });
+      }
     }
   }, [userProfile, form]);
 
@@ -91,6 +106,13 @@ export function GeneralProfileForm() {
     lng: number;
     country: string;
   } | null>(null);
+
+  // Determine if profile has been completed before
+  const isProfileCompleted = userProfile && (
+    userProfile.location || 
+    userProfile.country || 
+    (userProfile.language && userProfile.language !== "en")
+  );
 
   useEffect(() => {
     if (!locationInput) {
@@ -264,7 +286,7 @@ export function GeneralProfileForm() {
                 <FormControl>
                   <Input
                     {...field}
-                    value={selectedLocation?.country || ""}
+                    value={selectedLocation?.country || userProfile?.country || ""}
                     readOnly
                     disabled
                     tabIndex={-1}
@@ -280,11 +302,11 @@ export function GeneralProfileForm() {
               <FormItem>
                 <FormLabel>Language</FormLabel>
                 <FormControl>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
-                      {SUPPORTED_LANGUAGES.find((l) => l.code === field.value)
-                        ?.label || "Select language"}
-                    </SelectTrigger>
+                                     <Select value={field.value} onValueChange={field.onChange}>
+                     <SelectTrigger className="w-full">
+                       {SUPPORTED_LANGUAGES.find((l) => l.code === field.value)
+                         ?.label || SUPPORTED_LANGUAGES.find((l) => l.code === getInitialLanguage())?.label || "English"}
+                     </SelectTrigger>
                     <SelectContent>
                       {SUPPORTED_LANGUAGES.map(({ code, label }) => (
                         <SelectItem key={code} value={code}>
@@ -304,7 +326,7 @@ export function GeneralProfileForm() {
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
           disabled={form.formState.isSubmitting}
         >
-          Save Profile
+          {isProfileCompleted ? "Update Profile" : "Save Profile"}
         </Button>
       </form>
     </Form>

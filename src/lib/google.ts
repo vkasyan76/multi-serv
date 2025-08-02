@@ -3,7 +3,7 @@
 import { Client, Language } from "@googlemaps/google-maps-services-js";
 
 const client = new Client();
-export const autocomplete = async (input: string, language: "en" | "es" | "fr" | "de" | "it" | "pt" | "ru" | "zh" | "ja" | "ko" = "en") => {
+export const autocomplete = async (input: string, language: "en" | "es" | "fr" | "de" | "it" | "pt" = "en") => {
   if (!input || input.trim().length === 0) return [];
 
   if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {

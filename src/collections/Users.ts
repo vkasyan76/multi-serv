@@ -118,10 +118,6 @@ export const Users: CollectionConfig = {
         { label: "German", value: "de" },
         { label: "Italian", value: "it" },
         { label: "Portuguese", value: "pt" },
-        { label: "Russian", value: "ru" },
-        { label: "Chinese", value: "zh" },
-        { label: "Japanese", value: "ja" },
-        { label: "Korean", value: "ko" },
       ],
       label: "Language",
       admin: {

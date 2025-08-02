@@ -24,21 +24,17 @@ export const SUPPORTED_LANGUAGES = [
   { code: "it", label: "Italian" },
   { code: "es", label: "Spanish" },
   { code: "pt", label: "Portuguese" },
-  { code: "ru", label: "Russian" },
-  { code: "zh", label: "Chinese" },
-  { code: "ja", label: "Japanese" },
-  { code: "ko", label: "Korean" },
 ];
 
 //  * Maps browser/system language to your supported language codes.
 //  * Defaults to English if not supported.
 //  */
-export function getInitialLanguage(): "en" | "es" | "fr" | "de" | "it" | "pt" | "ru" | "zh" | "ja" | "ko" {
+export function getInitialLanguage(): "en" | "es" | "fr" | "de" | "it" | "pt" {
   if (typeof navigator === "undefined") return "en";
   const langCode = navigator.language.slice(0, 2).toLowerCase();
-  const supportedLanguages = ["en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja", "ko"];
+  const supportedLanguages = ["en", "es", "fr", "de", "it", "pt"];
   if (supportedLanguages.includes(langCode)) {
-    return langCode as "en" | "es" | "fr" | "de" | "it" | "pt" | "ru" | "zh" | "ja" | "ko";
+    return langCode as "en" | "es" | "fr" | "de" | "it" | "pt";
   }
   return "en";
 }

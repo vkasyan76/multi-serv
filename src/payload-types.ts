@@ -148,7 +148,7 @@ export interface User {
   /**
    * User's preferred language
    */
-  language?: ('en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'ru' | 'zh' | 'ja' | 'ko') | null;
+  language?: ('en' | 'es' | 'fr' | 'de' | 'it' | 'pt') | null;
   /**
    * Location coordinates
    */

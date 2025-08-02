@@ -21,10 +21,11 @@ import type { FieldErrors } from "react-hook-form";
 
 import { useTRPC } from "@/trpc/client";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
 import { getLocaleAndCurrency } from "../location-utils";
+import LoadingPage from "@/components/shared/loading";
 
 import { NumericFormat, NumberFormatValues } from "react-number-format";
 
@@ -33,6 +34,11 @@ import { NumericFormat, NumberFormatValues } from "react-number-format";
 export function VendorProfileForm() {
   const trpc = useTRPC();
   const { data: categories } = useQuery(trpc.categories.getMany.queryOptions());
+  
+  // Fetch vendor profile data from database
+  const { data: vendorProfile, isLoading } = useQuery(
+    trpc.auth.getVendorProfile.queryOptions()
+  );
 
   const [intlConfig] = useState(getLocaleAndCurrency()); // cache the locale/currency (do not run on every render)
 
@@ -53,8 +59,55 @@ export function VendorProfileForm() {
     },
   });
 
+  // Update form values when vendor profile data is available
+  useEffect(() => {
+    console.log("VendorProfile data:", vendorProfile);
+    if (vendorProfile) {
+      console.log("Resetting form with vendor data:", {
+        name: vendorProfile.name,
+        firstName: vendorProfile.firstName,
+        lastName: vendorProfile.lastName,
+        bio: vendorProfile.bio,
+        services: vendorProfile.services,
+        categories: vendorProfile.categories,
+        subcategories: vendorProfile.subcategories,
+        website: vendorProfile.website,
+        image: vendorProfile.image,
+        hourlyRate: vendorProfile.hourlyRate,
+      });
+      
+      form.reset({
+        name: vendorProfile.name || "",
+        firstName: vendorProfile.firstName || "",
+        lastName: vendorProfile.lastName || "",
+        bio: vendorProfile.bio || "",
+        services: vendorProfile.services || [],
+        categories: vendorProfile.categories || [], // Now directly slugs
+        subcategories: vendorProfile.subcategories || [], // Now directly slugs
+        website: vendorProfile.website || "",
+        image: typeof vendorProfile.image === 'string' ? vendorProfile.image : vendorProfile.image?.url || "",
+        hourlyRate: vendorProfile.hourlyRate || 1,
+      });
+    }
+  }, [vendorProfile, form]);
+
+  // Determine if vendor profile has been completed before
+  const isVendorProfileCompleted = vendorProfile && (
+    vendorProfile.name ||
+    vendorProfile.firstName ||
+    vendorProfile.lastName ||
+    vendorProfile.bio ||
+    vendorProfile.services?.length > 0 ||
+    vendorProfile.categories?.length > 0 ||
+    vendorProfile.website ||
+    vendorProfile.image ||
+    vendorProfile.hourlyRate > 1
+  );
+
   // Watch selected categories
   const selectedCategories = form.watch("categories") || [];
+  
+
   
   // Watch hourlyRate to debug
   const hourlyRateValue = form.watch("hourlyRate");
@@ -133,6 +186,11 @@ export function VendorProfileForm() {
       </span>
     );
   };
+
+  // Show loading state while vendor profile data is loading
+  if (isLoading) {
+    return <LoadingPage />;
+  }
 
   return (
     <Form {...form}>
@@ -425,7 +483,7 @@ export function VendorProfileForm() {
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
           disabled={form.formState.isSubmitting}
         >
-          Save Provider Profile
+          {isVendorProfileCompleted ? "Update Provider Profile" : "Save Provider Profile"}
         </Button>
       </form>
     </Form>

@@ -373,6 +373,114 @@ export const authRouter = createTRPCRouter({
     };
   }),
 
+  getVendorProfile: clerkProcedure.query(async ({ ctx }) => {
+    try {
+      const userId = ctx.userId;
+      console.log("Getting vendor profile for userId:", userId);
+      
+      // Find the user
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        console.log("User not found");
+        throw new Error("User not found");
+      }
+
+      const currentUser = user.docs[0];
+      console.log("Found user:", currentUser.username);
+      
+      // Find the tenant through the user's tenant relationship
+      if (!currentUser.tenants || currentUser.tenants.length === 0) {
+        console.log("No tenant associated with user");
+        return null; // No tenant associated with user
+      }
+
+      const tenantId = currentUser.tenants[0].tenant;
+      const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
+      console.log("Tenant ID:", actualTenantId);
+      
+      // Get the tenant by ID
+      const tenant = await ctx.db.findByID({
+        collection: "tenants",
+        id: actualTenantId,
+      });
+
+      if (!tenant) {
+        console.log("No tenant found");
+        return null; // No vendor profile exists yet
+      }
+
+      console.log("Found tenant:", tenant);
+
+      // Convert category ObjectIds to slugs
+      let categorySlugs: string[] = [];
+      if (tenant.categories && tenant.categories.length > 0) {
+        console.log("Converting categories:", tenant.categories);
+        
+        // Extract just the IDs from the category objects
+        const categoryIds = tenant.categories.map(cat => 
+          typeof cat === 'object' && cat.id ? cat.id : cat
+        );
+        console.log("Extracted category IDs:", categoryIds);
+        
+        const categoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            id: { in: categoryIds }
+          },
+          limit: 100
+        });
+        categorySlugs = categoryDocs.docs.map(doc => doc.slug);
+        console.log("Category slugs:", categorySlugs);
+      }
+
+      // Convert subcategory ObjectIds to slugs
+      let subcategorySlugs: string[] = [];
+      if (tenant.subcategories && tenant.subcategories.length > 0) {
+        console.log("Converting subcategories:", tenant.subcategories);
+        
+        // Extract just the IDs from the subcategory objects
+        const subcategoryIds = tenant.subcategories.map(sub => 
+          typeof sub === 'object' && sub.id ? sub.id : sub
+        );
+        console.log("Extracted subcategory IDs:", subcategoryIds);
+        
+        const subcategoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            id: { in: subcategoryIds }
+          },
+          limit: 100
+        });
+        subcategorySlugs = subcategoryDocs.docs.map(doc => doc.slug);
+        console.log("Subcategory slugs:", subcategorySlugs);
+      }
+      
+      const result = {
+        name: tenant.name || "",
+        firstName: tenant.firstName || "",
+        lastName: tenant.lastName || "",
+        bio: tenant.bio || "",
+        services: tenant.services || [],
+        categories: categorySlugs, // Return slugs instead of ObjectIds
+        subcategories: subcategorySlugs, // Return slugs instead of ObjectIds
+        website: tenant.website || "",
+        image: tenant.image || "",
+        hourlyRate: tenant.hourlyRate || 1,
+      };
+      
+      console.log("Returning vendor profile data:", result);
+      return result;
+    } catch (error) {
+      console.error("Error in getVendorProfile:", error);
+      throw error;
+    }
+  }),
+
   updateUserProfile: clerkProcedure
     .input(profileSchema)
     .mutation(async ({ ctx, input }) => {

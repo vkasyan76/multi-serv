@@ -19,7 +19,7 @@ export const profileSchema = z.object({
   email: z.string().email("Invalid email address"),
   location: z.string().min(3, "Please select a location"),
   country: z.string().min(2, "Country required"),
-  language: z.enum(["en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja", "ko"]),
+  language: z.enum(["en", "es", "fr", "de", "it", "pt"]),
   coordinates: z.object({
     lat: z.number(),
     lng: z.number(),
