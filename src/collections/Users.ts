@@ -91,5 +91,77 @@ export const Users: CollectionConfig = {
         position: "sidebar",
       },
     },
+    // General profile fields
+    {
+      name: "location",
+      type: "text",
+      label: "Location",
+      admin: {
+        description: "User's location/address",
+      },
+    },
+    {
+      name: "country",
+      type: "text",
+      label: "Country",
+      admin: {
+        description: "User's country",
+      },
+    },
+    {
+      name: "language",
+      type: "select",
+      options: [
+        { label: "English", value: "en" },
+        { label: "Spanish", value: "es" },
+        { label: "French", value: "fr" },
+        { label: "German", value: "de" },
+        { label: "Italian", value: "it" },
+        { label: "Portuguese", value: "pt" },
+        { label: "Russian", value: "ru" },
+        { label: "Chinese", value: "zh" },
+        { label: "Japanese", value: "ja" },
+        { label: "Korean", value: "ko" },
+      ],
+      label: "Language",
+      admin: {
+        description: "User's preferred language",
+      },
+    },
+    {
+      name: "coordinates",
+      type: "group",
+      fields: [
+        {
+          name: "lat",
+          type: "number",
+          label: "Latitude",
+          admin: {
+            description: "Location latitude",
+          },
+        },
+        {
+          name: "lng",
+          type: "number",
+          label: "Longitude",
+          admin: {
+            description: "Location longitude",
+          },
+        },
+      ],
+      label: "Coordinates",
+      admin: {
+        description: "Location coordinates",
+      },
+    },
+    {
+      name: "onboardingCompleted",
+      type: "checkbox",
+      defaultValue: false,
+      label: "Onboarding Completed",
+      admin: {
+        description: "Whether the user has completed onboarding",
+      },
+    },
   ],
 };

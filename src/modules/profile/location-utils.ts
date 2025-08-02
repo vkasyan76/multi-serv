@@ -18,24 +18,29 @@ export function detectLanguage(): Language {
 }
 
 export const SUPPORTED_LANGUAGES = [
-  { code: Language.en, label: "English" },
-  { code: Language.de, label: "German" },
-  { code: Language.fr, label: "French" },
-  { code: Language.it, label: "Italian" },
-  { code: Language.es, label: "Spanish" },
+  { code: "en", label: "English" },
+  { code: "de", label: "German" },
+  { code: "fr", label: "French" },
+  { code: "it", label: "Italian" },
+  { code: "es", label: "Spanish" },
+  { code: "pt", label: "Portuguese" },
+  { code: "ru", label: "Russian" },
+  { code: "zh", label: "Chinese" },
+  { code: "ja", label: "Japanese" },
+  { code: "ko", label: "Korean" },
 ];
 
 //  * Maps browser/system language to your supported language codes.
 //  * Defaults to English if not supported.
 //  */
-export function getInitialLanguage(): Language {
-  if (typeof navigator === "undefined") return Language.en;
+export function getInitialLanguage(): "en" | "es" | "fr" | "de" | "it" | "pt" | "ru" | "zh" | "ja" | "ko" {
+  if (typeof navigator === "undefined") return "en";
   const langCode = navigator.language.slice(0, 2).toLowerCase();
-  const supported = SUPPORTED_LANGUAGES.map((l) => l.code);
-  if (supported.includes(langCode as Language)) {
-    return langCode as Language;
+  const supportedLanguages = ["en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja", "ko"];
+  if (supportedLanguages.includes(langCode)) {
+    return langCode as "en" | "es" | "fr" | "de" | "it" | "pt" | "ru" | "zh" | "ja" | "ko";
   }
-  return Language.en;
+  return "en";
 }
 
 // Currency formatting

@@ -32,8 +32,30 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { FieldErrors } from "react-hook-form";
 import { PROFILE_FIELD_LABELS } from "@/modules/profile/schemas";
+import { useTRPC } from "@/trpc/client";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import LoadingPage from "@/components/shared/loading";
 
 export function GeneralProfileForm() {
+  const trpc = useTRPC();
+  
+  // Fetch user profile data from database
+  const { data: userProfile, isLoading } = useQuery(
+    trpc.auth.getUserProfile.queryOptions()
+  );
+  
+  const updateUserProfile = useMutation(
+    trpc.auth.updateUserProfile.mutationOptions({
+      onSuccess: () => {
+        toast.success("Profile updated successfully!");
+      },
+      onError: (error) => {
+        console.error("Error updating profile:", error);
+        toast.error(error.message || "Failed to update profile. Please try again.");
+      },
+    })
+  );
+
   const form = useForm<z.infer<typeof profileSchema>>({
     mode: "onBlur",
     resolver: zodResolver(profileSchema),
@@ -45,6 +67,19 @@ export function GeneralProfileForm() {
       language: getInitialLanguage(),
     },
   });
+
+  // Update form values when user profile data is available
+  useEffect(() => {
+    if (userProfile) {
+      form.reset({
+        username: userProfile.username || "",
+        email: userProfile.email || "",
+        location: userProfile.location || "",
+        country: userProfile.country || "",
+        language: (userProfile.language as any) || getInitialLanguage(), // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+    }
+  }, [userProfile, form]);
 
   // ...All the autocomplete/useEffect logic as in your previous ProfileForm
   const selectedLanguage = form.watch("language");
@@ -91,11 +126,13 @@ export function GeneralProfileForm() {
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
     const submission = {
       ...values,
-      lat: selectedLocation?.lat,
-      lng: selectedLocation?.lng,
+      coordinates: selectedLocation ? {
+        lat: selectedLocation.lat,
+        lng: selectedLocation.lng,
+      } : undefined,
     };
-    toast.success("Profile updated successfully.");
-    alert(JSON.stringify(submission, null, 2));
+    
+    updateUserProfile.mutate(submission);
   };
 
   const onError = (errors: FieldErrors<z.infer<typeof profileSchema>>) => {
@@ -118,6 +155,11 @@ export function GeneralProfileForm() {
     );
   };
 
+  // Show loading state while user profile data is loading
+  if (isLoading) {
+    return <LoadingPage />;
+  }
+
   return (
     <Form {...form}>
       <form
@@ -138,18 +180,23 @@ export function GeneralProfileForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <FormField
-            name="username"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input {...field} autoComplete="off" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+                     <FormField
+             name="username"
+             control={form.control}
+             render={({ field }) => (
+               <FormItem>
+                 <FormLabel>Username</FormLabel>
+                 <FormControl>
+                   <Input 
+                     {...field} 
+                     autoComplete="off" 
+                     placeholder="Enter your username"
+                     value={field.value}
+                   />
+                 </FormControl>
+               </FormItem>
+             )}
+           />
           <FormField
             name="location"
             control={form.control}
@@ -188,18 +235,26 @@ export function GeneralProfileForm() {
               </FormItem>
             )}
           />
-          <FormField
-            name="email"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email address</FormLabel>
-                <FormControl>
-                  <Input {...field} type="email" autoComplete="off" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+                     <FormField
+             name="email"
+             control={form.control}
+             render={({ field }) => (
+               <FormItem>
+                 <FormLabel>Email address</FormLabel>
+                 <FormControl>
+                   <Input 
+                     {...field} 
+                     type="email" 
+                     autoComplete="off" 
+                     readOnly 
+                     disabled
+                     className="bg-gray-100 cursor-not-allowed"
+                     value={userProfile?.email || ""}
+                   />
+                 </FormControl>
+               </FormItem>
+             )}
+           />
           <FormField
             name="country"
             control={form.control}
