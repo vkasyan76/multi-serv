@@ -34,6 +34,7 @@ import { FieldErrors } from "react-hook-form";
 import { PROFILE_FIELD_LABELS } from "@/modules/profile/schemas";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import LoadingPage from "@/components/shared/loading";
 
 export function GeneralProfileForm() {
   const trpc = useTRPC();
@@ -156,24 +157,7 @@ export function GeneralProfileForm() {
 
   // Show loading state while user profile data is loading
   if (isLoading) {
-    return (
-      <div className="flex flex-col gap-8 p-4 lg:p-10">
-        <div className="flex items-center gap-4 mb-8">
-          <Image
-            src="/images/infinisimo_logo_illustrator.png"
-            alt="Infinisimo Logo"
-            width={48}
-            height={48}
-            className="rounded-full bg-white"
-            priority
-          />
-          <h1 className="text-3xl font-bold">Profile settings</h1>
-        </div>
-        <div className="flex items-center justify-center py-8">
-          <div className="text-lg">Loading profile data...</div>
-        </div>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   return (

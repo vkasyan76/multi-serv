@@ -305,32 +305,46 @@ export const authRouter = createTRPCRouter({
       // Ensure we have the correct tenant ID
       const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
       
-             console.log("Tenant ID:", actualTenantId);
-       console.log("Input data:", input);
-       console.log("Categories:", input.categories);
-       console.log("Subcategories:", input.subcategories);
-       
-       // Update the tenant with vendor profile data
-       const updatedTenant = await ctx.db.update({
-         collection: "tenants",
-         id: actualTenantId as string,
-         data: {
-           name: input.name,
-           firstName: input.firstName,
-           lastName: input.lastName,
-           bio: input.bio,
-           services: input.services,
-           categories: input.categories, // Array of category IDs
-           subcategories: input.subcategories, // Array of subcategory IDs
-           website: input.website,
-           image: input.image,
-           hourlyRate: input.hourlyRate, // This will be a number after schema transformation
-         },
-       });
+      console.log("Tenant ID:", actualTenantId);
+      console.log("Input data:", input);
+      console.log("Categories:", input.categories);
+      console.log("Subcategories:", input.subcategories);
+      
+      // Convert category slugs to ObjectIds
+      let categoryIds: string[] = [];
+      if (input.categories && input.categories.length > 0) {
+        const categoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            slug: { in: input.categories }
+          },
+          limit: 100
+        });
+        categoryIds = categoryDocs.docs.map(doc => doc.id);
+        console.log("Converted category slugs to IDs:", categoryIds);
+      }
+      
+      // Update the tenant with vendor profile data
+      const updatedTenant = await ctx.db.update({
+        collection: "tenants",
+        id: actualTenantId as string,
+        data: {
+          name: input.name,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          bio: input.bio,
+          services: input.services,
+          categories: categoryIds, // Array of category ObjectIds
+          subcategories: input.subcategories, // Array of subcategory ObjectIds (already correct)
+          website: input.website,
+          image: input.image,
+          hourlyRate: input.hourlyRate, // This will be a number after schema transformation
+        },
+      });
 
-       console.log("UPDATED TENANT WITH VENDOR PROFILE:", updatedTenant);
-       return updatedTenant;
-     }),
+      console.log("UPDATED TENANT WITH VENDOR PROFILE:", updatedTenant);
+      return updatedTenant;
+    }),
 
   getUserProfile: clerkProcedure.query(async ({ ctx }) => {
     const userId = ctx.userId;

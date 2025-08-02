@@ -63,10 +63,12 @@ export function VendorProfileForm() {
   // Get subcategories for the selected categories
   const availableSubcategories =
     categories
-      ?.filter((cat) => selectedCategories.includes(cat.id))
+      ?.filter((cat) => selectedCategories.includes(cat.slug))
       .flatMap((cat) =>
-        (cat.subcategories || []).map((sub) => ({ ...sub, parent: cat.id }))
+        (cat.subcategories || []).map((sub) => ({ ...sub, parent: cat.slug }))
       ) || [];
+
+
 
   // File upload:
   // obtaining image placeholder:
@@ -100,11 +102,6 @@ export function VendorProfileForm() {
   );
 
   const onSubmit = (values: z.infer<typeof vendorSchema>) => {
-    // hourlyRate is now a proper number from NumericFormat
-    console.log("Form values:", values);
-    console.log("hourlyRate type:", typeof values.hourlyRate);
-    console.log("hourlyRate value:", values.hourlyRate);
-    console.log("hourlyRate isNaN:", isNaN(values.hourlyRate));
     
     updateVendorProfile.mutate(values);
     
@@ -324,7 +321,7 @@ export function VendorProfileForm() {
                       disabled={availableSubcategories.length === 0}
                       options={availableSubcategories.map((sub) => ({
                         label: sub.name,
-                        value: sub.id,
+                        value: sub.id, // Use only id since we confirmed it exists
                       }))}
                       value={field.value || []}
                       onValueChange={field.onChange}
