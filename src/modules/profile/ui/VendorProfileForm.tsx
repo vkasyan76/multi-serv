@@ -87,7 +87,8 @@ export function VendorProfileForm() {
   }, [vendorProfile, form]);
 
   // Watch selected categories
-  const selectedCategories = useMemo(() => form.watch("categories") || [], [form.watch("categories")]);
+  const watchedCategories = form.watch("categories");
+  const selectedCategories = useMemo(() => watchedCategories || [], [watchedCategories]);
 
   // Helper functions to generate placeholder text for MultiSelect components
   const getServicesPlaceholder = () => {
@@ -247,11 +248,8 @@ export function VendorProfileForm() {
   );
 
   const onSubmit = (values: z.infer<typeof vendorSchema>) => {
-    console.log("Form values being submitted:", values);
-    console.log("Phone value:", values.phone);
-    
     // Check if user already has a vendor profile
-    if (vendorProfile && (vendorProfile.name || vendorProfile.firstName || vendorProfile.lastName || vendorProfile.bio || vendorProfile.services?.length > 0 || vendorProfile.categories?.length > 0 || vendorProfile.website || vendorProfile.image || vendorProfile.phone || vendorProfile.hourlyRate > 1)) {
+    if (vendorProfile) {
       // Update existing vendor profile
       updateVendorProfile.mutate(values);
     } else {
