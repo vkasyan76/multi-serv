@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import type { FieldErrors } from "react-hook-form";
 
 import { useTRPC } from "@/trpc/client";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
@@ -37,6 +37,7 @@ import { getCountryCodeFromName } from "../location-utils";
 
 export function VendorProfileForm() {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const { data: categories } = useQuery(trpc.categories.getMany.queryOptions());
   
   // Fetch vendor profile data from database
@@ -225,6 +226,8 @@ export function VendorProfileForm() {
     trpc.auth.createVendorProfile.mutationOptions({
       onSuccess: () => {
         toast.success("Vendor profile created successfully!");
+        // Invalidate the getVendorProfile query to update the cache
+        queryClient.invalidateQueries({ queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey });
         // Refresh the vendor profile data
         window.location.reload();
       },
@@ -239,6 +242,8 @@ export function VendorProfileForm() {
     trpc.auth.updateVendorProfile.mutationOptions({
       onSuccess: () => {
         toast.success("Vendor profile updated successfully!");
+        // Invalidate the getVendorProfile query to update the cache
+        queryClient.invalidateQueries({ queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey });
       },
       onError: (error) => {
         console.error("Error updating profile:", error);
@@ -370,10 +375,15 @@ export function VendorProfileForm() {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Business Name (one word)</FormLabel>
+                  <FormLabel>Business Name (one word for your page URL)</FormLabel>
                   <FormControl>
-                    <Input {...field} autoComplete="off" />
+                    <Input 
+                      {...field} 
+                      autoComplete="off" 
+                      placeholder="Enter business name"
+                    />
                   </FormControl>
+
                 </FormItem>
               )}
             />
@@ -385,7 +395,7 @@ export function VendorProfileForm() {
                 <FormItem>
                   <FormLabel>Hourly Rate ({intlConfig.currency})</FormLabel>
                   <FormControl>
-                                        <NumericFormat
+                    <NumericFormat
                       className="w-full border rounded px-2 py-2"
                       thousandSeparator
                       decimalScale={2}

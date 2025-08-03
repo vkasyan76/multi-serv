@@ -33,11 +33,16 @@ import { toast } from "sonner";
 import { FieldErrors } from "react-hook-form";
 import { PROFILE_FIELD_LABELS } from "@/modules/profile/schemas";
 import { useTRPC } from "@/trpc/client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
 
-export function GeneralProfileForm() {
+interface GeneralProfileFormProps {
+  onSuccess?: () => void;
+}
+
+export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   
   // Fetch user profile data from database
   const { data: userProfile, isLoading } = useQuery(
@@ -48,6 +53,9 @@ export function GeneralProfileForm() {
     trpc.auth.updateUserProfile.mutationOptions({
       onSuccess: () => {
         toast.success("Profile updated successfully!");
+        // Invalidate the getUserProfile query to update the cache
+        queryClient.invalidateQueries({ queryKey: trpc.auth.getUserProfile.queryOptions().queryKey });
+        onSuccess?.(); // Call the onSuccess callback if provided
       },
       onError: (error) => {
         console.error("Error updating profile:", error);

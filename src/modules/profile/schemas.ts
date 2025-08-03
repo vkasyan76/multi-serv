@@ -35,7 +35,12 @@ export const PROFILE_FIELD_LABELS: Record<string, string> = {
 };
 
 export const vendorSchema = z.object({
-  name: z.string().min(2, "Business name is required"),
+  name: z
+    .string()
+    .min(2, "Business name is required")
+    .max(50, "Business name must be less than 50 characters")
+    .regex(/^[a-zA-Z0-9]+$/, "Business name must be one word with only letters and numbers")
+    .transform((val) => val.toLowerCase()), // Normalize to lowercase for uniqueness
   firstName: z.string().min(2, "First name is required"),
   lastName: z.string().min(2, "Last name is required"),
   bio: z
@@ -76,7 +81,7 @@ export const vendorSchema = z.object({
 });
 
 export const VENDOR_FIELD_LABELS = {
-  name: "Business Name",
+  name: "Business Name (one word, letters & numbers only)",
   firstName: "First Name",
   lastName: "Last Name",
   bio: "Description",

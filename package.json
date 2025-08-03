@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "generate:types": "payload generate:types",
+    "generate:importmap": "payload generate:importmap",
     "db:fresh": "payload migrate:fresh",
     "db:seed": "node --loader ts-node/esm ./src/seed.ts"
   },
