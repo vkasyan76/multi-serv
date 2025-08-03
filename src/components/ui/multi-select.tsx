@@ -117,6 +117,12 @@ interface MultiSelectProps
    * Optional, can be used to add custom styles.
    */
   className?: string;
+
+  /**
+   * Additional class names to apply custom styles to the placeholder text.
+   * Optional, can be used to customize placeholder text styling.
+   */
+  placeholderClassName?: string;
 }
 
 export const MultiSelect = React.forwardRef<
@@ -135,6 +141,7 @@ export const MultiSelect = React.forwardRef<
       modalPopover = false,
       //   asChild = false,
       className,
+      placeholderClassName,
       ...props
     },
     ref
@@ -272,7 +279,7 @@ export const MultiSelect = React.forwardRef<
               </div>
             ) : (
               <div className="flex items-center justify-between w-full mx-auto">
-                <span className="text-sm text-muted-foreground mx-3">
+                <span className={cn("text-sm text-muted-foreground mx-3", placeholderClassName)}>
                   {placeholder}
                 </span>
                 <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />

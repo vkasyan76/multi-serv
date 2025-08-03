@@ -1,5 +1,4 @@
 import z from "zod";
-import { Language } from "@googlemaps/google-maps-services-js";
 
 const usernameValidation = z
   .string()
@@ -20,7 +19,11 @@ export const profileSchema = z.object({
   email: z.string().email("Invalid email address"),
   location: z.string().min(3, "Please select a location"),
   country: z.string().min(2, "Country required"),
-  language: z.nativeEnum(Language),
+  language: z.enum(["en", "es", "fr", "de", "it", "pt"]),
+  coordinates: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }).optional(),
 });
 
 export const PROFILE_FIELD_LABELS: Record<string, string> = {
@@ -53,6 +56,12 @@ export const vendorSchema = z.object({
       { message: "Website must be a valid URL." }
     ),
   image: z.string().optional(),
+  phone: z
+    .string()
+    .optional()
+    .refine((val) => val === undefined || val === "" || /^\+?[1-9]\d{3,14}$/.test(val), {
+      message: "Must be a valid international phone number in E.164 format",
+    }),
   // hourlyRate: z
   //   .number({ invalid_type_error: "Hourly rate must be a number" })
   //   .min(1, "Hourly rate must be at least 1 EUR")
@@ -74,6 +83,7 @@ export const VENDOR_FIELD_LABELS = {
   services: "Type of Service",
   website: "Website",
   image: "Profile Image",
+  phone: "Phone Number",
   hourlyRate: "Hourly Rate (EUR)",
 };
 

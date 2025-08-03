@@ -137,6 +137,35 @@ export interface User {
         id?: string | null;
       }[]
     | null;
+  /**
+   * User's location/address
+   */
+  location?: string | null;
+  /**
+   * User's country
+   */
+  country?: string | null;
+  /**
+   * User's preferred language
+   */
+  language?: ('en' | 'es' | 'fr' | 'de' | 'it' | 'pt') | null;
+  /**
+   * Location coordinates
+   */
+  coordinates?: {
+    /**
+     * Location latitude
+     */
+    lat?: number | null;
+    /**
+     * Location longitude
+     */
+    lng?: number | null;
+  };
+  /**
+   * Whether the user has completed onboarding
+   */
+  onboardingCompleted?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -163,6 +192,39 @@ export interface Tenant {
    * You cannot create products until you submit your stripe details.
    */
   stripeDetailsSubmitted?: boolean | null;
+  /**
+   * Vendor's first name
+   */
+  firstName?: string | null;
+  /**
+   * Vendor's last name
+   */
+  lastName?: string | null;
+  /**
+   * Vendor's bio/description
+   */
+  bio?: string | null;
+  /**
+   * Types of services offered
+   */
+  services?: ('on-site' | 'on-line')[] | null;
+  /**
+   * Service categories
+   */
+  categories?: (string | Category)[] | null;
+  /**
+   * Service subcategories
+   */
+  subcategories?: (string | Category)[] | null;
+  /**
+   * Vendor's website URL
+   */
+  website?: string | null;
+  phone?: string | null;
+  /**
+   * Vendor's hourly rate in EUR
+   */
+  hourlyRate?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -284,6 +346,16 @@ export interface UsersSelect<T extends boolean = true> {
         tenant?: T;
         id?: T;
       };
+  location?: T;
+  country?: T;
+  language?: T;
+  coordinates?:
+    | T
+    | {
+        lat?: T;
+        lng?: T;
+      };
+  onboardingCompleted?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -329,6 +401,15 @@ export interface TenantsSelect<T extends boolean = true> {
   image?: T;
   stripeAccountId?: T;
   stripeDetailsSubmitted?: T;
+  firstName?: T;
+  lastName?: T;
+  bio?: T;
+  services?: T;
+  categories?: T;
+  subcategories?: T;
+  website?: T;
+  phone?: T;
+  hourlyRate?: T;
   updatedAt?: T;
   createdAt?: T;
 }

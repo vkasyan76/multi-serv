@@ -8,6 +8,7 @@ import { generateAuthCookie } from "../utils";
 import { stripe } from "@/lib/stripe";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
+import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
@@ -17,9 +18,7 @@ export const authRouter = createTRPCRouter({
       headers,
     });
 
-    // console.log("session headers", headers);
 
-    // console.log("session", session);
 
     return session;
   }),
@@ -36,26 +35,7 @@ export const authRouter = createTRPCRouter({
 
   // register procedure:
   register: baseProcedure
-    .input(
-      registerSchema
-      // z.object({
-      //   email: z.string().email(),
-      //   password: z.string().min(6),
-      //   username: z
-      //     .string()
-      //     .min(3, "Username must be at least 3 characters long")
-      //     .max(63, "Username must be at most 63 characters long")
-      //     .regex(
-      //       /^[a-z0-9][a-z0-9-]*[a-z0-9]$/,
-      //       "Username can only contain lowercase letters, numbers and hypens. It must start and end with a letter or a number."
-      //     )
-      //     .refine(
-      //       (val) => !val.includes("--"),
-      //       "Username cannot contain consecutive hyphens."
-      //     )
-      //     .transform((val) => val.toLowerCase()),
-      // })
-    )
+    .input(registerSchema)
     .mutation(async ({ ctx, input }) => {
       // find if the name was already used:
       const existingData = await ctx.db.find({
@@ -77,42 +57,17 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // create stripe account:
-      const account = await stripe.accounts.create({});
-
-      if (!account.id) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Failed to create Stripe account",
-        });
-      }
-
-      // create tenant:
-      const tenant = await ctx.db.create({
-        collection: "tenants",
-        data: {
-          name: input.username,
-          slug: input.username,
-          // stripeAccountId: "test",
-          stripeAccountId: account.id, // store the stripe account id
-        },
-      });
-
+      // Create user only - NO tenant or Stripe account initially
       await ctx.db.create({
         collection: "users",
         data: {
           email: input.email,
           username: input.username,
-          // password: input.password,
-          tenants: [
-            {
-              tenant: tenant.id, // this is an array becaue plugin allows user to have multiple tenants / not reflected in this app
-            },
-          ],
+          // No tenants array initially - will be added when user becomes vendor
         },
       });
 
-      // after user is created, login the user and set the cookie after the register (copy loginn and cookie procedure form below):
+      // Login the user and set the cookie
       const data = await ctx.db.login({
         collection: "users",
         data: {
@@ -126,18 +81,6 @@ export const authRouter = createTRPCRouter({
           message: "Invalid email or password",
         });
       }
-      // const cookies = await getCookies();
-      // cookies.set({
-      //   name: AUTH_COOKIE,
-      //   value: data.token,
-      //   httpOnly: true,
-      //   path: "/",
-      //   // TODO: ensure cross-domain coookie sharing
-      //   // sameSite: "none",
-      //   // domain: ""
-      //   // "funroad.com" // initial cookie
-      //   // antonio.funroad.com // cookie does not exist here
-      // });
       await generateAuthCookie({
         prefix: ctx.db.config.cookiePrefix,
         value: data.token,
@@ -210,51 +153,14 @@ export const authRouter = createTRPCRouter({
     if (existing.docs.length > 0) {
       const existingUser = existing.docs[0];
 
-      if (!existingUser.tenants || existingUser.tenants.length === 0) {
-        const account = await stripe.accounts.create();
-
-        const tenant = await ctx.db.create({
-          collection: "tenants",
-          data: {
-            name: username,
-            slug: username,
-            stripeAccountId: account.id,
-          },
-        });
-
-        const updatedUser = await ctx.db.update({
-          collection: "users",
-          id: existingUser.id,
-          data: {
-            tenants: [{ tenant: tenant.id }],
-          },
-        });
-
-        await updateClerkUserMetadata(userId, updatedUser.id);
-
-        console.log("ADDED TENANT TO EXISTING USER:", updatedUser);
-        return updatedUser;
-      }
-
+      // Don't auto-create tenant - let user decide when to become vendor
       // Optional: Keep Clerk in sync if needed
-      await updateClerkUserMetadata(userId, existingUser.id);
+      await updateClerkUserMetadata(userId, existingUser.id, existingUser.username);
 
       return existingUser;
     }
 
-    // New user flow
-    const account = await stripe.accounts.create();
-
-    const tenant = await ctx.db.create({
-      collection: "tenants",
-      data: {
-        name: username,
-        slug: username,
-        stripeAccountId: account.id,
-      },
-    });
-    console.log("CREATED TENANT OBJECT:", tenant);
-
+    // New user flow - create user only, no tenant
     const user = await ctx.db.create({
       collection: "users",
       data: {
@@ -262,14 +168,352 @@ export const authRouter = createTRPCRouter({
         username,
         clerkUserId: userId,
         roles: ["user"],
-        tenants: [{ tenant: tenant.id }],
+        // No tenants initially - will be added when user becomes vendor
       },
     });
 
-    await updateClerkUserMetadata(userId, user.id);
-
-    console.log("CREATED USER OBJECT WITH TENANT:", user);
+    await updateClerkUserMetadata(userId, user.id, user.username);
 
     return user;
   }),
+
+  createVendorProfile: clerkProcedure
+    .input(vendorSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      
+      // Find the user
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found"
+        });
+      }
+
+      const currentUser = user.docs[0];
+      
+      // Check if user already has a tenant (vendor profile)
+      if (currentUser.tenants && currentUser.tenants.length > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST", 
+          message: "User already has a vendor profile"
+        });
+      }
+
+      // Convert category slugs to ObjectIds
+      let categoryIds: string[] = [];
+      if (input.categories && input.categories.length > 0) {
+        const categoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            slug: { in: input.categories }
+          },
+          limit: 100
+        });
+        categoryIds = categoryDocs.docs.map(doc => doc.id);
+      }
+      
+      // Convert subcategory slugs to ObjectIds
+      let subcategoryIds: string[] = [];
+      if (input.subcategories && input.subcategories.length > 0) {
+        const subcategoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            slug: { in: input.subcategories }
+          },
+          limit: 100
+        });
+        subcategoryIds = subcategoryDocs.docs.map(doc => doc.id);
+      }
+      
+      let account: { id?: string } | null = null;
+      let tenant: { id: string } | null = null;
+      
+      try {
+        // Create Stripe account for the vendor
+        account = await stripe.accounts.create();
+        
+        if (!account.id) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create Stripe account"
+          });
+        }
+        
+        // Create tenant with vendor profile data
+        tenant = await ctx.db.create({
+          collection: "tenants",
+          data: {
+            name: input.name || currentUser.username,
+            slug: currentUser.username,
+            stripeAccountId: account.id,
+            firstName: input.firstName,
+            lastName: input.lastName,
+            bio: input.bio,
+            services: input.services,
+            categories: categoryIds,
+            subcategories: subcategoryIds,
+            website: input.website,
+            image: input.image,
+            phone: input.phone,
+            hourlyRate: input.hourlyRate,
+          },
+        });
+
+        // Link tenant to user
+        await ctx.db.update({
+          collection: "users",
+          id: currentUser.id,
+          data: {
+            tenants: [{ tenant: tenant.id }],
+          },
+        });
+
+        return tenant;
+      } catch (error) {
+        // Cleanup Stripe account if it was created but database operations failed
+        if (account?.id) {
+          await stripe.accounts.del(account.id).catch(console.error);
+        }
+        throw error;
+      }
+    }),
+
+  updateVendorProfile: clerkProcedure
+    .input(vendorSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      
+      // Find the user
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        throw new Error("User not found");
+      }
+
+      const currentUser = user.docs[0];
+      
+      // Find the user's tenant
+      if (!currentUser.tenants || currentUser.tenants.length === 0) {
+        throw new Error("No tenant found for user");
+      }
+
+      const tenantId = currentUser.tenants[0].tenant;
+      
+      // Ensure we have the correct tenant ID
+      const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
+      
+      // Convert category slugs to ObjectIds
+      let categoryIds: string[] = [];
+      if (input.categories && input.categories.length > 0) {
+        const categoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            slug: { in: input.categories }
+          },
+          limit: 100
+        });
+        categoryIds = categoryDocs.docs.map(doc => doc.id);
+      }
+      
+      // Convert subcategory slugs to ObjectIds
+      let subcategoryIds: string[] = [];
+      if (input.subcategories && input.subcategories.length > 0) {
+        const subcategoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            slug: { in: input.subcategories }
+          },
+          limit: 100
+        });
+        subcategoryIds = subcategoryDocs.docs.map(doc => doc.id);
+      }
+      
+      // Update the tenant with vendor profile data
+      const updatedTenant = await ctx.db.update({
+        collection: "tenants",
+        id: actualTenantId as string,
+        data: {
+          name: input.name,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          bio: input.bio,
+          services: input.services,
+          categories: categoryIds, // Array of category ObjectIds
+          subcategories: subcategoryIds, // Array of subcategory ObjectIds
+          website: input.website,
+          image: input.image,
+          phone: input.phone,
+          hourlyRate: input.hourlyRate, // This will be a number after schema transformation
+        },
+      });
+
+      return updatedTenant;
+    }),
+
+  getUserProfile: clerkProcedure.query(async ({ ctx }) => {
+    const userId = ctx.userId;
+    
+    // Find the user
+    const user = await ctx.db.find({
+      collection: "users",
+      where: { clerkUserId: { equals: userId } },
+      limit: 1,
+    });
+
+    if (user.totalDocs === 0) {
+      throw new Error("User not found");
+    }
+
+    const currentUser = user.docs[0];
+    
+    return {
+      username: currentUser.username,
+      email: currentUser.email,
+      location: currentUser.location || "",
+      country: currentUser.country || "",
+      language: currentUser.language || "en",
+      coordinates: currentUser.coordinates,
+      onboardingCompleted: currentUser.onboardingCompleted || false,
+    };
+  }),
+
+  getVendorProfile: clerkProcedure.query(async ({ ctx }) => {
+    try {
+      const userId = ctx.userId;
+      // Find the user
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        throw new Error("User not found");
+      }
+
+      const currentUser = user.docs[0];
+      
+      // Find the tenant through the user's tenant relationship
+      if (!currentUser.tenants || currentUser.tenants.length === 0) {
+        return null; // No tenant associated with user
+      }
+
+      const tenantId = currentUser.tenants[0].tenant;
+      const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
+      
+      // Get the tenant by ID
+      const tenant = await ctx.db.findByID({
+        collection: "tenants",
+        id: actualTenantId,
+      });
+
+      if (!tenant) {
+        return null; // No vendor profile exists yet
+      }
+
+      // Convert category ObjectIds to slugs
+      let categorySlugs: string[] = [];
+      if (tenant.categories && tenant.categories.length > 0) {
+        // Extract just the IDs from the category objects
+        const categoryIds = tenant.categories.map(cat => 
+          typeof cat === 'object' && cat.id ? cat.id : cat
+        );
+        
+        const categoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            id: { in: categoryIds }
+          },
+          limit: 100
+        });
+        categorySlugs = categoryDocs.docs.map(doc => doc.slug);
+      }
+
+      // Convert subcategory ObjectIds to slugs
+      let subcategorySlugs: string[] = [];
+      if (tenant.subcategories && tenant.subcategories.length > 0) {
+        // Extract just the IDs from the subcategory objects
+        const subcategoryIds = tenant.subcategories.map(sub => 
+          typeof sub === 'object' && sub.id ? sub.id : sub
+        );
+        
+        const subcategoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            id: { in: subcategoryIds }
+          },
+          limit: 100
+        });
+        subcategorySlugs = subcategoryDocs.docs.map(doc => doc.slug);
+      }
+      
+      const result = {
+        name: tenant.name || "",
+        firstName: tenant.firstName || "",
+        lastName: tenant.lastName || "",
+        bio: tenant.bio || "",
+        services: tenant.services || [],
+        categories: categorySlugs, // Return slugs instead of ObjectIds
+        subcategories: subcategorySlugs, // Return slugs instead of ObjectIds
+        website: tenant.website || "",
+        image: tenant.image || "",
+        phone: tenant.phone || "",
+        hourlyRate: tenant.hourlyRate || 1,
+      };
+      
+      return result;
+    } catch (error) {
+      console.error("Error in getVendorProfile:", error);
+      throw error;
+    }
+  }),
+
+  updateUserProfile: clerkProcedure
+    .input(profileSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      
+      // Find the user
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        throw new Error("User not found");
+      }
+
+      const currentUser = user.docs[0];
+      
+      // Update the user with profile data
+      await ctx.db.update({
+        collection: "users",
+        id: currentUser.id as string,
+        data: {
+          username: input.username,
+          location: input.location,
+          country: input.country,
+          language: input.language,
+          coordinates: input.coordinates,
+          onboardingCompleted: true, // Set onboarding status to completed
+        },
+      });
+
+      // Update Clerk user metadata with the new username
+      await updateClerkUserMetadata(userId, currentUser.id, input.username);
+
+      return currentUser;
+    }),
 });
