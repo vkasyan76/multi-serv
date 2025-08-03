@@ -190,21 +190,20 @@ export const authRouter = createTRPCRouter({
       });
 
       if (user.totalDocs === 0) {
-        throw new Error("User not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found"
+        });
       }
 
       const currentUser = user.docs[0];
       
       // Check if user already has a tenant (vendor profile)
       if (currentUser.tenants && currentUser.tenants.length > 0) {
-        throw new Error("User already has a vendor profile");
-      }
-
-      // Create Stripe account for the vendor
-      const account = await stripe.accounts.create();
-      
-      if (!account.id) {
-        throw new Error("Failed to create Stripe account");
+        throw new TRPCError({
+          code: "BAD_REQUEST", 
+          message: "User already has a vendor profile"
+        });
       }
 
       // Convert category slugs to ObjectIds
@@ -233,36 +232,57 @@ export const authRouter = createTRPCRouter({
         subcategoryIds = subcategoryDocs.docs.map(doc => doc.id);
       }
       
-      // Create tenant with vendor profile data
-      const tenant = await ctx.db.create({
-        collection: "tenants",
-        data: {
-          name: input.name || currentUser.username,
-          slug: currentUser.username,
-          stripeAccountId: account.id,
-          firstName: input.firstName,
-          lastName: input.lastName,
-          bio: input.bio,
-          services: input.services,
-          categories: categoryIds,
-          subcategories: subcategoryIds,
-          website: input.website,
-          image: input.image,
-          phone: input.phone,
-          hourlyRate: input.hourlyRate,
-        },
-      });
+      let account: { id?: string } | null = null;
+      let tenant: { id: string } | null = null;
+      
+      try {
+        // Create Stripe account for the vendor
+        account = await stripe.accounts.create();
+        
+        if (!account.id) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create Stripe account"
+          });
+        }
+        
+        // Create tenant with vendor profile data
+        tenant = await ctx.db.create({
+          collection: "tenants",
+          data: {
+            name: input.name || currentUser.username,
+            slug: currentUser.username,
+            stripeAccountId: account.id,
+            firstName: input.firstName,
+            lastName: input.lastName,
+            bio: input.bio,
+            services: input.services,
+            categories: categoryIds,
+            subcategories: subcategoryIds,
+            website: input.website,
+            image: input.image,
+            phone: input.phone,
+            hourlyRate: input.hourlyRate,
+          },
+        });
 
-      // Link tenant to user
-      await ctx.db.update({
-        collection: "users",
-        id: currentUser.id,
-        data: {
-          tenants: [{ tenant: tenant.id }],
-        },
-      });
+        // Link tenant to user
+        await ctx.db.update({
+          collection: "users",
+          id: currentUser.id,
+          data: {
+            tenants: [{ tenant: tenant.id }],
+          },
+        });
 
-      return tenant;
+        return tenant;
+      } catch (error) {
+        // Cleanup Stripe account if it was created but database operations failed
+        if (account?.id) {
+          await stripe.accounts.del(account.id).catch(console.error);
+        }
+        throw error;
+      }
     }),
 
   updateVendorProfile: clerkProcedure
