@@ -18,9 +18,7 @@ export const authRouter = createTRPCRouter({
       headers,
     });
 
-    // console.log("session headers", headers);
 
-    // console.log("session", session);
 
     return session;
   }),
@@ -233,7 +231,6 @@ export const authRouter = createTRPCRouter({
 
         await updateClerkUserMetadata(userId, updatedUser.id, updatedUser.username);
 
-        console.log("ADDED TENANT TO EXISTING USER:", updatedUser);
         return updatedUser;
       }
 
@@ -254,7 +251,7 @@ export const authRouter = createTRPCRouter({
         stripeAccountId: account.id,
       },
     });
-    console.log("CREATED TENANT OBJECT:", tenant);
+
 
     const user = await ctx.db.create({
       collection: "users",
@@ -269,7 +266,7 @@ export const authRouter = createTRPCRouter({
 
     await updateClerkUserMetadata(userId, user.id, user.username);
 
-    console.log("CREATED USER OBJECT WITH TENANT:", user);
+
 
     return user;
   }),
@@ -299,16 +296,8 @@ export const authRouter = createTRPCRouter({
 
       const tenantId = currentUser.tenants[0].tenant;
       
-      console.log("Raw tenant object:", tenantId);
-      console.log("Tenant type:", typeof tenantId);
-      
       // Ensure we have the correct tenant ID
       const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
-      
-      console.log("Tenant ID:", actualTenantId);
-      console.log("Input data:", input);
-      console.log("Categories:", input.categories);
-      console.log("Subcategories:", input.subcategories);
       
       // Convert category slugs to ObjectIds
       let categoryIds: string[] = [];
@@ -321,7 +310,19 @@ export const authRouter = createTRPCRouter({
           limit: 100
         });
         categoryIds = categoryDocs.docs.map(doc => doc.id);
-        console.log("Converted category slugs to IDs:", categoryIds);
+      }
+      
+      // Convert subcategory slugs to ObjectIds
+      let subcategoryIds: string[] = [];
+      if (input.subcategories && input.subcategories.length > 0) {
+        const subcategoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            slug: { in: input.subcategories }
+          },
+          limit: 100
+        });
+        subcategoryIds = subcategoryDocs.docs.map(doc => doc.id);
       }
       
       // Update the tenant with vendor profile data
@@ -335,14 +336,14 @@ export const authRouter = createTRPCRouter({
           bio: input.bio,
           services: input.services,
           categories: categoryIds, // Array of category ObjectIds
-          subcategories: input.subcategories, // Array of subcategory ObjectIds (already correct)
+          subcategories: subcategoryIds, // Array of subcategory ObjectIds
           website: input.website,
           image: input.image,
+          phone: input.phone,
           hourlyRate: input.hourlyRate, // This will be a number after schema transformation
         },
       });
 
-      console.log("UPDATED TENANT WITH VENDOR PROFILE:", updatedTenant);
       return updatedTenant;
     }),
 
@@ -376,8 +377,6 @@ export const authRouter = createTRPCRouter({
   getVendorProfile: clerkProcedure.query(async ({ ctx }) => {
     try {
       const userId = ctx.userId;
-      console.log("Getting vendor profile for userId:", userId);
-      
       // Find the user
       const user = await ctx.db.find({
         collection: "users",
@@ -386,22 +385,18 @@ export const authRouter = createTRPCRouter({
       });
 
       if (user.totalDocs === 0) {
-        console.log("User not found");
         throw new Error("User not found");
       }
 
       const currentUser = user.docs[0];
-      console.log("Found user:", currentUser.username);
       
       // Find the tenant through the user's tenant relationship
       if (!currentUser.tenants || currentUser.tenants.length === 0) {
-        console.log("No tenant associated with user");
         return null; // No tenant associated with user
       }
 
       const tenantId = currentUser.tenants[0].tenant;
       const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
-      console.log("Tenant ID:", actualTenantId);
       
       // Get the tenant by ID
       const tenant = await ctx.db.findByID({
@@ -410,22 +405,16 @@ export const authRouter = createTRPCRouter({
       });
 
       if (!tenant) {
-        console.log("No tenant found");
         return null; // No vendor profile exists yet
       }
-
-      console.log("Found tenant:", tenant);
 
       // Convert category ObjectIds to slugs
       let categorySlugs: string[] = [];
       if (tenant.categories && tenant.categories.length > 0) {
-        console.log("Converting categories:", tenant.categories);
-        
         // Extract just the IDs from the category objects
         const categoryIds = tenant.categories.map(cat => 
           typeof cat === 'object' && cat.id ? cat.id : cat
         );
-        console.log("Extracted category IDs:", categoryIds);
         
         const categoryDocs = await ctx.db.find({
           collection: "categories",
@@ -435,19 +424,15 @@ export const authRouter = createTRPCRouter({
           limit: 100
         });
         categorySlugs = categoryDocs.docs.map(doc => doc.slug);
-        console.log("Category slugs:", categorySlugs);
       }
 
       // Convert subcategory ObjectIds to slugs
       let subcategorySlugs: string[] = [];
       if (tenant.subcategories && tenant.subcategories.length > 0) {
-        console.log("Converting subcategories:", tenant.subcategories);
-        
         // Extract just the IDs from the subcategory objects
         const subcategoryIds = tenant.subcategories.map(sub => 
           typeof sub === 'object' && sub.id ? sub.id : sub
         );
-        console.log("Extracted subcategory IDs:", subcategoryIds);
         
         const subcategoryDocs = await ctx.db.find({
           collection: "categories",
@@ -457,7 +442,6 @@ export const authRouter = createTRPCRouter({
           limit: 100
         });
         subcategorySlugs = subcategoryDocs.docs.map(doc => doc.slug);
-        console.log("Subcategory slugs:", subcategorySlugs);
       }
       
       const result = {
@@ -470,10 +454,10 @@ export const authRouter = createTRPCRouter({
         subcategories: subcategorySlugs, // Return slugs instead of ObjectIds
         website: tenant.website || "",
         image: tenant.image || "",
+        phone: tenant.phone || "",
         hourlyRate: tenant.hourlyRate || 1,
       };
       
-      console.log("Returning vendor profile data:", result);
       return result;
     } catch (error) {
       console.error("Error in getVendorProfile:", error);
@@ -516,7 +500,6 @@ export const authRouter = createTRPCRouter({
       // Update Clerk user metadata with the new username
       await updateClerkUserMetadata(userId, currentUser.id, input.username);
 
-      console.log("UPDATED USER PROFILE:", currentUser);
       return currentUser;
     }),
 });

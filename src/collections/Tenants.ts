@@ -1,5 +1,6 @@
 import { isSuperAdmin } from "../lib/access.ts";
 import type { CollectionConfig } from "payload";
+import { TelephoneField } from '@nouance/payload-better-fields-plugin/Telephone';
 
 export const Tenants: CollectionConfig = {
   slug: "tenants",
@@ -131,6 +132,17 @@ export const Tenants: CollectionConfig = {
         description: "Vendor's website URL",
       },
     },
+    ...TelephoneField(
+      {
+        name: 'phone',
+        label: 'Phone Number',
+        required: false
+      },
+      {
+        defaultCountry: 'DE',
+        international: true,
+      }
+    ),
     {
       name: "hourlyRate",
       type: "number",

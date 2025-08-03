@@ -10,6 +10,100 @@ export function extractCountry(address: string): string {
   );
   return nonEmptyParts[nonEmptyParts.length - 1] || "";
 }
+
+// Map country names to ISO country codes for phone number formatting
+export function getCountryCodeFromName(countryName: string): string {
+  const countryMap: Record<string, string> = {
+    // EU Member States
+    "Germany": "DE",
+    "Deutschland": "DE",
+    "France": "FR",
+    "Italy": "IT",
+    "Italia": "IT",
+    "Spain": "ES",
+    "España": "ES",
+    "Netherlands": "NL",
+    "Nederland": "NL",
+    "Belgium": "BE",
+    "België": "BE",
+    "Austria": "AT",
+    "Österreich": "AT",
+    "Poland": "PL",
+    "Polska": "PL",
+    "Czech Republic": "CZ",
+    "Czechia": "CZ",
+    "Slovakia": "SK",
+    "Slovensko": "SK",
+    "Hungary": "HU",
+    "Magyarország": "HU",
+    "Romania": "RO",
+    "România": "RO",
+    "Bulgaria": "BG",
+    "България": "BG",
+    "Croatia": "HR",
+    "Hrvatska": "HR",
+    "Slovenia": "SI",
+    "Slovenija": "SI",
+    "Greece": "GR",
+    "Ελλάδα": "GR",
+    "Portugal": "PT",
+    "Denmark": "DK",
+    "Danmark": "DK",
+    "Sweden": "SE",
+    "Sverige": "SE",
+    "Finland": "FI",
+    "Suomi": "FI",
+    "Luxembourg": "LU",
+    "Lëtzebuerg": "LU",
+    "Malta": "MT",
+    "Cyprus": "CY",
+    "Κύπρος": "CY",
+    "Estonia": "EE",
+    "Eesti": "EE",
+    "Latvia": "LV",
+    "Latvija": "LV",
+    "Lithuania": "LT",
+    "Lietuva": "LT",
+    "Ireland": "IE",
+    "Éire": "IE",
+    
+    // Non-EU European countries
+    "United Kingdom": "GB",
+    "UK": "GB",
+    "Great Britain": "GB",
+    "England": "GB",
+    "Scotland": "GB",
+    "Wales": "GB",
+    "Northern Ireland": "GB",
+    "Switzerland": "CH",
+    "Schweiz": "CH",
+    "Suisse": "CH",
+    "Ukraine": "UA",
+    "Україна": "UA",
+  };
+
+  // Normalize country name for matching
+  const normalizedCountry = countryName.trim().toLowerCase();
+  
+  // Try exact match first
+  for (const [country, code] of Object.entries(countryMap)) {
+    if (country.toLowerCase() === normalizedCountry) {
+      return code;
+    }
+  }
+  
+  // Try partial match for common variations
+  for (const [country, code] of Object.entries(countryMap)) {
+    if (country.toLowerCase().includes(normalizedCountry) || 
+        normalizedCountry.includes(country.toLowerCase())) {
+      return code;
+    }
+  }
+  
+  // Default to Germany if no match found
+  return "DE";
+}
+
 export function detectLanguage(): Language {
   if (typeof navigator === "undefined") return Language.en;
   const langCode = navigator.language.slice(0, 2);

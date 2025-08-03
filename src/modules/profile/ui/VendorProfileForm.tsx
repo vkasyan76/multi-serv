@@ -28,6 +28,9 @@ import { getLocaleAndCurrency } from "../location-utils";
 import LoadingPage from "@/components/shared/loading";
 
 import { NumericFormat, NumberFormatValues } from "react-number-format";
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import { getCountryCodeFromName } from "../location-utils";
 
 // Create a Zod schema for the tenant/vendor
 
@@ -40,9 +43,12 @@ export function VendorProfileForm() {
     trpc.auth.getVendorProfile.queryOptions()
   );
 
-  const [intlConfig] = useState(getLocaleAndCurrency()); // cache the locale/currency (do not run on every render)
+  // Fetch user profile to get country for phone number default
+  const { data: userProfile } = useQuery(
+    trpc.auth.getUserProfile.queryOptions()
+  );
 
-  // console.log("categories:", categories);
+  const [intlConfig] = useState(getLocaleAndCurrency()); // cache the locale/currency (do not run on every render)
 
   const form = useForm<z.infer<typeof vendorSchema>>({
     mode: "onBlur",
@@ -55,27 +61,14 @@ export function VendorProfileForm() {
       services: [],
       website: "",
       image: "",
+      phone: undefined,
       hourlyRate: 1,
     },
   });
 
   // Update form values when vendor profile data is available
   useEffect(() => {
-    console.log("VendorProfile data:", vendorProfile);
     if (vendorProfile) {
-      console.log("Resetting form with vendor data:", {
-        name: vendorProfile.name,
-        firstName: vendorProfile.firstName,
-        lastName: vendorProfile.lastName,
-        bio: vendorProfile.bio,
-        services: vendorProfile.services,
-        categories: vendorProfile.categories,
-        subcategories: vendorProfile.subcategories,
-        website: vendorProfile.website,
-        image: vendorProfile.image,
-        hourlyRate: vendorProfile.hourlyRate,
-      });
-      
       form.reset({
         name: vendorProfile.name || "",
         firstName: vendorProfile.firstName || "",
@@ -86,32 +79,92 @@ export function VendorProfileForm() {
         subcategories: vendorProfile.subcategories || [], // Now directly slugs
         website: vendorProfile.website || "",
         image: typeof vendorProfile.image === 'string' ? vendorProfile.image : vendorProfile.image?.url || "",
+        phone: vendorProfile.phone || undefined,
         hourlyRate: vendorProfile.hourlyRate || 1,
       });
     }
   }, [vendorProfile, form]);
 
-  // Determine if vendor profile has been completed before
-  const isVendorProfileCompleted = vendorProfile && (
-    vendorProfile.name ||
-    vendorProfile.firstName ||
-    vendorProfile.lastName ||
-    vendorProfile.bio ||
-    vendorProfile.services?.length > 0 ||
-    vendorProfile.categories?.length > 0 ||
-    vendorProfile.website ||
-    vendorProfile.image ||
-    vendorProfile.hourlyRate > 1
-  );
-
   // Watch selected categories
   const selectedCategories = form.watch("categories") || [];
-  
 
-  
-  // Watch hourlyRate to debug
-  const hourlyRateValue = form.watch("hourlyRate");
-  console.log("Watched hourlyRate:", hourlyRateValue, "type:", typeof hourlyRateValue);
+  // Helper functions to generate placeholder text for MultiSelect components
+  const getServicesPlaceholder = () => {
+    // Get current form values for services
+    const currentServices = form.getValues("services") || [];
+    
+    // If we have current services
+    if (currentServices.length > 0) {
+      return currentServices.join(", ");
+    }
+    
+    // If no services are selected
+    return "Select service types";
+  };
+
+  const getCategoriesPlaceholder = () => {
+    // Get current form values for categories
+    const currentCategories = form.getValues("categories") || [];
+    
+    // If we have current categories and they're valid
+    if (currentCategories.length > 0) {
+      // Find category names from the categories data
+      const categoryNames = currentCategories.map(slug => {
+        const category = categories?.find(cat => cat.slug === slug);
+        return category?.name || slug;
+      });
+      return categoryNames.join(", ");
+    }
+    
+    // If no categories are selected
+    return "Select categories";
+  };
+
+  const getSubcategoriesPlaceholder = () => {
+    // Get current form values for subcategories
+    const currentSubcategories = form.getValues("subcategories") || [];
+    
+    // If we have current subcategories and they're valid for available subcategories
+    if (currentSubcategories.length > 0 && availableSubcategories.length > 0) {
+      const validSubcategories = currentSubcategories.filter(subSlug => 
+        availableSubcategories.some(sub => sub.slug === subSlug)
+      );
+      
+      if (validSubcategories.length > 0) {
+        // Find subcategory names from the available subcategories
+        const subcategoryNames = validSubcategories.map(slug => {
+          const subcategory = availableSubcategories.find(sub => sub.slug === slug);
+          return subcategory?.name || slug;
+        });
+        return subcategoryNames.join(", ");
+      }
+    }
+    
+    // If no categories are selected, show "Select categories first"
+    if (selectedCategories.length === 0) {
+      return "Select categories first";
+    }
+    
+    // If categories are selected but no subcategories are chosen
+    return "Select subcategories";
+  };
+
+  // Helper function to determine if we should use black font for better visibility
+  const shouldUseBlackFont = (fieldType: 'services' | 'categories' | 'subcategories') => {
+    switch (fieldType) {
+      case 'services':
+        const currentServices = form.getValues("services") || [];
+        return currentServices.length > 0;
+      case 'categories':
+        const currentCategories = form.getValues("categories") || [];
+        return currentCategories.length > 0;
+      case 'subcategories':
+        const currentSubcategories = form.getValues("subcategories") || [];
+        return currentSubcategories.length > 0;
+      default:
+        return false;
+    }
+  };
 
   // Get subcategories for the selected categories
   const availableSubcategories =
@@ -120,6 +173,27 @@ export function VendorProfileForm() {
       .flatMap((cat) =>
         (cat.subcategories || []).map((sub) => ({ ...sub, parent: cat.slug }))
       ) || [];
+
+  // Clear subcategories when categories change
+  useEffect(() => {
+    // Only run this effect if we have categories data and the form has been initialized
+    if (!categories || categories.length === 0) return;
+    
+    const currentSubcategories = form.getValues("subcategories") || [];
+    const availableSubcategorySlugs = availableSubcategories.map(sub => sub.slug);
+    
+    // Only clear subcategories if we have selected categories but the subcategories are invalid
+    if (selectedCategories.length > 0) {
+      // Remove subcategories that are no longer valid for the selected categories
+      const validSubcategories = currentSubcategories.filter(subSlug => 
+        availableSubcategorySlugs.includes(subSlug)
+      );
+      
+      if (validSubcategories.length !== currentSubcategories.length) {
+        form.setValue("subcategories", validSubcategories);
+      }
+    }
+  }, [selectedCategories, form, availableSubcategories, categories]);
 
 
 
@@ -155,18 +229,17 @@ export function VendorProfileForm() {
   );
 
   const onSubmit = (values: z.infer<typeof vendorSchema>) => {
-    
+    console.log("Form values being submitted:", values);
+    console.log("Phone value:", values.phone);
     updateVendorProfile.mutate(values);
     
     // File upload logic can be added here:
     if (selectedFile) {
-      console.log("File to upload:", selectedFile.name, selectedFile);
+      // File upload logic will be implemented here
     }
   };
 
   const onError = (errors: FieldErrors<z.infer<typeof vendorSchema>>) => {
-    console.log("Form validation errors:", errors);
-    
     const messages = Object.entries(errors)
       .map(([field, err]) => {
         const label =
@@ -303,8 +376,6 @@ export function VendorProfileForm() {
                       name={field.name}
                       onValueChange={(values: NumberFormatValues) => {
                          // Pass the numeric value to the form
-                         console.log("NumericFormat values:", values);
-                         console.log("floatValue:", values.floatValue);
                          
                          // Handle empty value case
                          if (values.floatValue === undefined || values.floatValue === null) {
@@ -312,7 +383,6 @@ export function VendorProfileForm() {
                          } else {
                            // Ensure we're passing a number, not a string
                            const numericValue = Number(values.floatValue);
-                           console.log("Setting field value to:", numericValue, "type:", typeof numericValue);
                            form.setValue("hourlyRate", numericValue);
                          }
                        }}
@@ -335,7 +405,8 @@ export function VendorProfileForm() {
                       defaultValue={field.value || []}
                       value={field.value || []}
                       onValueChange={field.onChange}
-                      placeholder="Select service types"
+                      placeholder={getServicesPlaceholder()}
+                      placeholderClassName={shouldUseBlackFont('services') ? "text-foreground font-medium" : ""}
                       maxCount={2}
                     />
                   </FormControl>
@@ -361,7 +432,8 @@ export function VendorProfileForm() {
                       }
                       defaultValue={field.value || []}
                       onValueChange={field.onChange}
-                      placeholder="Select categories"
+                      placeholder={getCategoriesPlaceholder()}
+                      placeholderClassName={shouldUseBlackFont('categories') ? "text-foreground font-medium" : ""}
                     />
                   </FormControl>
                 </FormItem>
@@ -379,15 +451,12 @@ export function VendorProfileForm() {
                       disabled={availableSubcategories.length === 0}
                       options={availableSubcategories.map((sub) => ({
                         label: sub.name,
-                        value: sub.id, // Use only id since we confirmed it exists
+                        value: sub.slug, // Use slug to match the pattern used for categories
                       }))}
                       value={field.value || []}
                       onValueChange={field.onChange}
-                      placeholder={
-                        availableSubcategories.length === 0
-                          ? "Select categories first"
-                          : "Select subcategories"
-                      }
+                      placeholder={getSubcategoriesPlaceholder()}
+                      placeholderClassName={shouldUseBlackFont('subcategories') ? "text-foreground font-medium" : ""}
                     />
                   </FormControl>
                 </FormItem>
@@ -437,15 +506,48 @@ export function VendorProfileForm() {
               )}
             />
 
+            {/* Phone Number */}
+            <FormField
+              name="phone"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number (optional)</FormLabel>
+                  <FormControl>
+                    <PhoneInput
+                      international
+                      countries={[
+                        "DE", "FR", "IT", "ES", "NL", "BE", "AT", "PL", "CZ", "SK", 
+                        "HU", "RO", "BG", "HR", "SI", "GR", "PT", "DK", "SE", "FI", 
+                        "LU", "MT", "CY", "EE", "LV", "LT", "IE", "GB", "CH", "UA"
+                      ]}
+                      defaultCountry={userProfile?.country ? getCountryCodeFromName(userProfile.country) as any : "DE"}
+                      value={field.value || undefined}
+                      onChange={(value) => {
+                        // Ensure empty string is converted to undefined for proper clearing
+                        field.onChange(value || "");
+                      }}
+                      placeholder="+49 123 4567"
+                      className="w-full border rounded px-2 py-2"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Website */}
             <FormField
               name="website"
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Website (optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} autoComplete="off" />
+                    <Input 
+                      {...field} 
+                      autoComplete="off" 
+                      placeholder="Website (optional)"
+                    />
                   </FormControl>
                 </FormItem>
               )}
@@ -483,7 +585,7 @@ export function VendorProfileForm() {
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
           disabled={form.formState.isSubmitting}
         >
-          {isVendorProfileCompleted ? "Update Provider Profile" : "Save Provider Profile"}
+          {vendorProfile && (vendorProfile.name || vendorProfile.firstName || vendorProfile.lastName || vendorProfile.bio || vendorProfile.services?.length > 0 || vendorProfile.categories?.length > 0 || vendorProfile.website || vendorProfile.image || vendorProfile.phone || vendorProfile.hourlyRate > 1) ? "Update Provider Profile" : "Save Provider Profile"}
         </Button>
       </form>
     </Form>

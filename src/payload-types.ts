@@ -220,6 +220,7 @@ export interface Tenant {
    * Vendor's website URL
    */
   website?: string | null;
+  phone?: string | null;
   /**
    * Vendor's hourly rate in EUR
    */
@@ -407,6 +408,7 @@ export interface TenantsSelect<T extends boolean = true> {
   categories?: T;
   subcategories?: T;
   website?: T;
+  phone?: T;
   hourlyRate?: T;
   updatedAt?: T;
   createdAt?: T;
