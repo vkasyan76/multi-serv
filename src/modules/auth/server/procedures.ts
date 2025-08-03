@@ -250,54 +250,67 @@ export const authRouter = createTRPCRouter({
       let account: { id?: string } | null = null;
       let tenant: { id: string } | null = null;
       
-      try {
-        // Create Stripe account for the vendor
-        account = await stripe.accounts.create();
-        
-        if (!account.id) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to create Stripe account"
-          });
-        }
-        
-        // Create tenant with vendor profile data
-        tenant = await ctx.db.create({
-          collection: "tenants",
-          data: {
-            name: input.name || currentUser.username,
-            slug: input.name || currentUser.username, // Use business name as slug for routing
-            stripeAccountId: account.id,
-            firstName: input.firstName,
-            lastName: input.lastName,
-            bio: input.bio,
-            services: input.services,
-            categories: categoryIds,
-            subcategories: subcategoryIds,
-            website: input.website,
-            image: input.image,
-            phone: input.phone,
-            hourlyRate: input.hourlyRate,
-          },
-        });
+             try {
+         // Create Stripe account for the vendor
+         account = await stripe.accounts.create();
+         
+         if (!account.id) {
+           throw new TRPCError({
+             code: "INTERNAL_SERVER_ERROR",
+             message: "Failed to create Stripe account"
+           });
+         }
+         
+         // Create tenant with vendor profile data
+         tenant = await ctx.db.create({
+           collection: "tenants",
+           data: {
+             name: input.name || currentUser.username,
+             slug: input.name || currentUser.username, // Use business name as slug for routing
+             stripeAccountId: account.id,
+             firstName: input.firstName,
+             lastName: input.lastName,
+             bio: input.bio,
+             services: input.services,
+             categories: categoryIds,
+             subcategories: subcategoryIds,
+             website: input.website,
+             image: input.image,
+             phone: input.phone,
+             hourlyRate: input.hourlyRate,
+           },
+         });
 
-        // Link tenant to user
-        await ctx.db.update({
-          collection: "users",
-          id: currentUser.id,
-          data: {
-            tenants: [{ tenant: tenant.id }],
-          },
-        });
+         // Link tenant to user
+         await ctx.db.update({
+           collection: "users",
+           id: currentUser.id,
+           data: {
+             tenants: [{ tenant: tenant.id }],
+           },
+         });
 
-        return tenant;
-      } catch (error) {
-        // Cleanup Stripe account if it was created but database operations failed
-        if (account?.id) {
-          await stripe.accounts.del(account.id).catch(console.error);
+         return tenant;
+               } catch (error) {
+          // Check if error is due to duplicate business name constraint
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (errorMessage.includes('duplicate') || errorMessage.includes('unique') || errorMessage.includes('already exists')) {
+            // Cleanup Stripe account if it was created
+            if (account?.id) {
+              await stripe.accounts.del(account.id).catch(console.error);
+            }
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Business name is already taken. Please choose a different name."
+            });
+          }
+          
+          // Cleanup Stripe account if it was created but database operations failed
+          if (account?.id) {
+            await stripe.accounts.del(account.id).catch(console.error);
+          }
+          throw error;
         }
-        throw error;
-      }
     }),
 
   updateVendorProfile: clerkProcedure
@@ -373,27 +386,39 @@ export const authRouter = createTRPCRouter({
         subcategoryIds = subcategoryDocs.docs.map(doc => doc.id);
       }
       
-      // Update the tenant with vendor profile data
-      const updatedTenant = await ctx.db.update({
-        collection: "tenants",
-        id: actualTenantId as string,
-        data: {
-          name: input.name,
-          slug: input.name, // Update slug to match new business name
-          firstName: input.firstName,
-          lastName: input.lastName,
-          bio: input.bio,
-          services: input.services,
-          categories: categoryIds, // Array of category ObjectIds
-          subcategories: subcategoryIds, // Array of subcategory ObjectIds
-          website: input.website,
-          image: input.image,
-          phone: input.phone,
-          hourlyRate: input.hourlyRate, // This will be a number after schema transformation
-        },
-      });
+             try {
+         // Update the tenant with vendor profile data
+         const updatedTenant = await ctx.db.update({
+           collection: "tenants",
+           id: actualTenantId as string,
+           data: {
+             name: input.name,
+             slug: input.name, // Update slug to match new business name
+             firstName: input.firstName,
+             lastName: input.lastName,
+             bio: input.bio,
+             services: input.services,
+             categories: categoryIds, // Array of category ObjectIds
+             subcategories: subcategoryIds, // Array of subcategory ObjectIds
+             website: input.website,
+             image: input.image,
+             phone: input.phone,
+             hourlyRate: input.hourlyRate, // This will be a number after schema transformation
+           },
+         });
 
-      return updatedTenant;
+         return updatedTenant;
+       } catch (error) {
+         // Check if error is due to duplicate business name constraint
+         const errorMessage = error instanceof Error ? error.message : String(error);
+         if (errorMessage.includes('duplicate') || errorMessage.includes('unique') || errorMessage.includes('already exists')) {
+           throw new TRPCError({
+             code: "BAD_REQUEST",
+             message: "Business name is already taken. Please choose a different name."
+           });
+         }
+         throw error;
+       }
     }),
 
   // Check business name availability
