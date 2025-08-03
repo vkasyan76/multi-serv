@@ -21,7 +21,7 @@ import type { FieldErrors } from "react-hook-form";
 
 import { useTRPC } from "@/trpc/client";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
 import { getLocaleAndCurrency } from "../location-utils";
@@ -29,6 +29,7 @@ import LoadingPage from "@/components/shared/loading";
 
 import { NumericFormat, NumberFormatValues } from "react-number-format";
 import PhoneInput from 'react-phone-number-input';
+import type { Country } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { getCountryCodeFromName } from "../location-utils";
 
@@ -86,7 +87,7 @@ export function VendorProfileForm() {
   }, [vendorProfile, form]);
 
   // Watch selected categories
-  const selectedCategories = form.watch("categories") || [];
+  const selectedCategories = useMemo(() => form.watch("categories") || [], [form.watch("categories")]);
 
   // Helper functions to generate placeholder text for MultiSelect components
   const getServicesPlaceholder = () => {
@@ -152,27 +153,30 @@ export function VendorProfileForm() {
   // Helper function to determine if we should use black font for better visibility
   const shouldUseBlackFont = (fieldType: 'services' | 'categories' | 'subcategories') => {
     switch (fieldType) {
-      case 'services':
+      case 'services': {
         const currentServices = form.getValues("services") || [];
         return currentServices.length > 0;
-      case 'categories':
+      }
+      case 'categories': {
         const currentCategories = form.getValues("categories") || [];
         return currentCategories.length > 0;
-      case 'subcategories':
+      }
+      case 'subcategories': {
         const currentSubcategories = form.getValues("subcategories") || [];
         return currentSubcategories.length > 0;
+      }
       default:
         return false;
     }
   };
 
   // Get subcategories for the selected categories
-  const availableSubcategories =
+  const availableSubcategories = useMemo(() =>
     categories
       ?.filter((cat) => selectedCategories.includes(cat.slug))
       .flatMap((cat) =>
         (cat.subcategories || []).map((sub) => ({ ...sub, parent: cat.slug }))
-      ) || [];
+      ) || [], [categories, selectedCategories]);
 
   // Clear subcategories when categories change
   useEffect(() => {
@@ -216,10 +220,24 @@ export function VendorProfileForm() {
     }
   };
 
+  const createVendorProfile = useMutation(
+    trpc.auth.createVendorProfile.mutationOptions({
+      onSuccess: () => {
+        toast.success("Vendor profile created successfully!");
+        // Refresh the vendor profile data
+        window.location.reload();
+      },
+      onError: (error) => {
+        console.error("Error creating vendor profile:", error);
+        toast.error(error.message || "Failed to create vendor profile. Please try again.");
+      },
+    })
+  );
+
   const updateVendorProfile = useMutation(
     trpc.auth.updateVendorProfile.mutationOptions({
       onSuccess: () => {
-        toast.success("Vendor profile saved successfully!");
+        toast.success("Vendor profile updated successfully!");
       },
       onError: (error) => {
         console.error("Error updating profile:", error);
@@ -231,7 +249,15 @@ export function VendorProfileForm() {
   const onSubmit = (values: z.infer<typeof vendorSchema>) => {
     console.log("Form values being submitted:", values);
     console.log("Phone value:", values.phone);
-    updateVendorProfile.mutate(values);
+    
+    // Check if user already has a vendor profile
+    if (vendorProfile && (vendorProfile.name || vendorProfile.firstName || vendorProfile.lastName || vendorProfile.bio || vendorProfile.services?.length > 0 || vendorProfile.categories?.length > 0 || vendorProfile.website || vendorProfile.image || vendorProfile.phone || vendorProfile.hourlyRate > 1)) {
+      // Update existing vendor profile
+      updateVendorProfile.mutate(values);
+    } else {
+      // Create new vendor profile
+      createVendorProfile.mutate(values);
+    }
     
     // File upload logic can be added here:
     if (selectedFile) {
@@ -521,7 +547,7 @@ export function VendorProfileForm() {
                         "HU", "RO", "BG", "HR", "SI", "GR", "PT", "DK", "SE", "FI", 
                         "LU", "MT", "CY", "EE", "LV", "LT", "IE", "GB", "CH", "UA"
                       ]}
-                      defaultCountry={userProfile?.country ? getCountryCodeFromName(userProfile.country) as any : "DE"}
+                      defaultCountry={userProfile?.country ? getCountryCodeFromName(userProfile.country) as Country : "DE"}
                       value={field.value || undefined}
                       onChange={(value) => {
                         // Ensure empty string is converted to undefined for proper clearing
@@ -585,7 +611,7 @@ export function VendorProfileForm() {
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
           disabled={form.formState.isSubmitting}
         >
-          {vendorProfile && (vendorProfile.name || vendorProfile.firstName || vendorProfile.lastName || vendorProfile.bio || vendorProfile.services?.length > 0 || vendorProfile.categories?.length > 0 || vendorProfile.website || vendorProfile.image || vendorProfile.phone || vendorProfile.hourlyRate > 1) ? "Update Provider Profile" : "Save Provider Profile"}
+          {vendorProfile && (vendorProfile.name || vendorProfile.firstName || vendorProfile.lastName || vendorProfile.bio || vendorProfile.services?.length > 0 || vendorProfile.categories?.length > 0 || vendorProfile.website || vendorProfile.image || vendorProfile.phone || vendorProfile.hourlyRate > 1) ? "Update Provider Profile" : "Create Provider Profile"}
         </Button>
       </form>
     </Form>

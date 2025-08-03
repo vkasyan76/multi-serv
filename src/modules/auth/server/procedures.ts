@@ -35,26 +35,7 @@ export const authRouter = createTRPCRouter({
 
   // register procedure:
   register: baseProcedure
-    .input(
-      registerSchema
-      // z.object({
-      //   email: z.string().email(),
-      //   password: z.string().min(6),
-      //   username: z
-      //     .string()
-      //     .min(3, "Username must be at least 3 characters long")
-      //     .max(63, "Username must be at most 63 characters long")
-      //     .regex(
-      //       /^[a-z0-9][a-z0-9-]*[a-z0-9]$/,
-      //       "Username can only contain lowercase letters, numbers and hypens. It must start and end with a letter or a number."
-      //     )
-      //     .refine(
-      //       (val) => !val.includes("--"),
-      //       "Username cannot contain consecutive hyphens."
-      //     )
-      //     .transform((val) => val.toLowerCase()),
-      // })
-    )
+    .input(registerSchema)
     .mutation(async ({ ctx, input }) => {
       // find if the name was already used:
       const existingData = await ctx.db.find({
@@ -76,42 +57,17 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // create stripe account:
-      const account = await stripe.accounts.create({});
-
-      if (!account.id) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Failed to create Stripe account",
-        });
-      }
-
-      // create tenant:
-      const tenant = await ctx.db.create({
-        collection: "tenants",
-        data: {
-          name: input.username,
-          slug: input.username,
-          // stripeAccountId: "test",
-          stripeAccountId: account.id, // store the stripe account id
-        },
-      });
-
+      // Create user only - NO tenant or Stripe account initially
       await ctx.db.create({
         collection: "users",
         data: {
           email: input.email,
           username: input.username,
-          // password: input.password,
-          tenants: [
-            {
-              tenant: tenant.id, // this is an array becaue plugin allows user to have multiple tenants / not reflected in this app
-            },
-          ],
+          // No tenants array initially - will be added when user becomes vendor
         },
       });
 
-      // after user is created, login the user and set the cookie after the register (copy loginn and cookie procedure form below):
+      // Login the user and set the cookie
       const data = await ctx.db.login({
         collection: "users",
         data: {
@@ -125,18 +81,6 @@ export const authRouter = createTRPCRouter({
           message: "Invalid email or password",
         });
       }
-      // const cookies = await getCookies();
-      // cookies.set({
-      //   name: AUTH_COOKIE,
-      //   value: data.token,
-      //   httpOnly: true,
-      //   path: "/",
-      //   // TODO: ensure cross-domain coookie sharing
-      //   // sameSite: "none",
-      //   // domain: ""
-      //   // "funroad.com" // initial cookie
-      //   // antonio.funroad.com // cookie does not exist here
-      // });
       await generateAuthCookie({
         prefix: ctx.db.config.cookiePrefix,
         value: data.token,
@@ -209,50 +153,14 @@ export const authRouter = createTRPCRouter({
     if (existing.docs.length > 0) {
       const existingUser = existing.docs[0];
 
-      if (!existingUser.tenants || existingUser.tenants.length === 0) {
-        const account = await stripe.accounts.create();
-
-        const tenant = await ctx.db.create({
-          collection: "tenants",
-          data: {
-            name: username,
-            slug: username,
-            stripeAccountId: account.id,
-          },
-        });
-
-        const updatedUser = await ctx.db.update({
-          collection: "users",
-          id: existingUser.id,
-          data: {
-            tenants: [{ tenant: tenant.id }],
-          },
-        });
-
-        await updateClerkUserMetadata(userId, updatedUser.id, updatedUser.username);
-
-        return updatedUser;
-      }
-
+      // Don't auto-create tenant - let user decide when to become vendor
       // Optional: Keep Clerk in sync if needed
       await updateClerkUserMetadata(userId, existingUser.id, existingUser.username);
 
       return existingUser;
     }
 
-    // New user flow
-    const account = await stripe.accounts.create();
-
-    const tenant = await ctx.db.create({
-      collection: "tenants",
-      data: {
-        name: username,
-        slug: username,
-        stripeAccountId: account.id,
-      },
-    });
-
-
+    // New user flow - create user only, no tenant
     const user = await ctx.db.create({
       collection: "users",
       data: {
@@ -260,16 +168,102 @@ export const authRouter = createTRPCRouter({
         username,
         clerkUserId: userId,
         roles: ["user"],
-        tenants: [{ tenant: tenant.id }],
+        // No tenants initially - will be added when user becomes vendor
       },
     });
 
     await updateClerkUserMetadata(userId, user.id, user.username);
 
-
-
     return user;
   }),
+
+  createVendorProfile: clerkProcedure
+    .input(vendorSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      
+      // Find the user
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        throw new Error("User not found");
+      }
+
+      const currentUser = user.docs[0];
+      
+      // Check if user already has a tenant (vendor profile)
+      if (currentUser.tenants && currentUser.tenants.length > 0) {
+        throw new Error("User already has a vendor profile");
+      }
+
+      // Create Stripe account for the vendor
+      const account = await stripe.accounts.create();
+      
+      if (!account.id) {
+        throw new Error("Failed to create Stripe account");
+      }
+
+      // Convert category slugs to ObjectIds
+      let categoryIds: string[] = [];
+      if (input.categories && input.categories.length > 0) {
+        const categoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            slug: { in: input.categories }
+          },
+          limit: 100
+        });
+        categoryIds = categoryDocs.docs.map(doc => doc.id);
+      }
+      
+      // Convert subcategory slugs to ObjectIds
+      let subcategoryIds: string[] = [];
+      if (input.subcategories && input.subcategories.length > 0) {
+        const subcategoryDocs = await ctx.db.find({
+          collection: "categories",
+          where: {
+            slug: { in: input.subcategories }
+          },
+          limit: 100
+        });
+        subcategoryIds = subcategoryDocs.docs.map(doc => doc.id);
+      }
+      
+      // Create tenant with vendor profile data
+      const tenant = await ctx.db.create({
+        collection: "tenants",
+        data: {
+          name: input.name || currentUser.username,
+          slug: currentUser.username,
+          stripeAccountId: account.id,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          bio: input.bio,
+          services: input.services,
+          categories: categoryIds,
+          subcategories: subcategoryIds,
+          website: input.website,
+          image: input.image,
+          phone: input.phone,
+          hourlyRate: input.hourlyRate,
+        },
+      });
+
+      // Link tenant to user
+      await ctx.db.update({
+        collection: "users",
+        id: currentUser.id,
+        data: {
+          tenants: [{ tenant: tenant.id }],
+        },
+      });
+
+      return tenant;
+    }),
 
   updateVendorProfile: clerkProcedure
     .input(vendorSchema)
