@@ -62,7 +62,6 @@ export function VendorProfileForm() {
       bio: "",
       services: [],
       website: "",
-      image: "",
       phone: undefined,
       hourlyRate: 1,
     },
@@ -80,7 +79,6 @@ export function VendorProfileForm() {
         categories: vendorProfile.categories || [], // Now directly slugs
         subcategories: vendorProfile.subcategories || [], // Now directly slugs
         website: vendorProfile.website || "",
-        image: typeof vendorProfile.image === 'string' ? vendorProfile.image : vendorProfile.image?.url || "",
         phone: vendorProfile.phone || undefined,
         hourlyRate: vendorProfile.hourlyRate || 1,
       });
@@ -252,19 +250,45 @@ export function VendorProfileForm() {
     })
   );
 
-  const onSubmit = (values: z.infer<typeof vendorSchema>) => {
-    // Check if user already has a vendor profile
-    if (vendorProfile) {
-      // Update existing vendor profile
-      updateVendorProfile.mutate(values);
-    } else {
-      // Create new vendor profile
-      createVendorProfile.mutate(values);
-    }
-    
-    // File upload logic can be added here:
-    if (selectedFile) {
-      // File upload logic will be implemented here
+  const onSubmit = async (values: z.infer<typeof vendorSchema>) => {
+    try {
+      let imageData = values.image;
+
+      // Upload file if selected
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        imageData = uploadResult.file.id; // Pass just the file ID as a string
+      }
+
+      // Update values with the uploaded file data
+      const updatedValues = {
+        ...values,
+        image: imageData,
+      };
+
+      // Check if user already has a vendor profile
+      if (vendorProfile) {
+        // Update existing vendor profile
+        updateVendorProfile.mutate(updatedValues);
+      } else {
+        // Create new vendor profile
+        createVendorProfile.mutate(updatedValues);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image. Please try again.');
     }
   };
 
@@ -281,7 +305,6 @@ export function VendorProfileForm() {
       })
       .filter(Boolean)
       .join("\n");
-    // toast.error(messages || "Please fix the errors in the form.");
     toast.error(
       <span style={{ whiteSpace: "pre-line" }}>
         {messages || "Please fix the errors in the form."}
@@ -506,19 +529,20 @@ export function VendorProfileForm() {
                 <Image
                   src={
                     previewUrl ||
+                    (typeof vendorProfile?.image === 'string' 
+                      ? vendorProfile.image 
+                      : vendorProfile?.image?.url) ||
                     imageUrl ||
                     "https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=256&h=256&facepad=2"
                   }
                   alt="Profile preview"
-                  // width={160}
-                  // height={160}
                   fill
                   className="object-cover w-full h-full"
                   priority
                 />
               </div>
               <label className="cursor-pointer px-4 py-2 bg-gray-100 rounded-lg border text-sm font-medium hover:bg-gray-200 transition-colors">
-                {selectedFile ? selectedFile.name : "Select Image"}
+                {selectedFile ? selectedFile.name : "Select Image for upload (max 5MB)"}
                 <input
                   type="file"
                   accept="image/*"
@@ -527,18 +551,7 @@ export function VendorProfileForm() {
                 />
               </label>
             </div>
-            <FormField
-              name="image"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem className="hidden">
-                  {/* Hide the manual URL input; keep it for possible backend compatibility */}
-                  <FormControl>
-                    <Input {...field} autoComplete="off" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+
 
             {/* Phone Number */}
             <FormField
