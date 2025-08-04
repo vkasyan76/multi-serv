@@ -23,7 +23,6 @@ export function ProfileTabs() {
   const [showDialog, setShowDialog] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   
   // Check if user has already completed onboarding
   const { data: userProfile } = useQuery(trpc.auth.getUserProfile.queryOptions());
@@ -84,7 +83,6 @@ export function ProfileTabs() {
         }, 5000);
       }
       setShowSuccessMessage(true);
-      setIsOnboardingComplete(true);
     }
   };
 
