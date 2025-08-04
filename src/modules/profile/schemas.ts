@@ -50,7 +50,6 @@ export const vendorSchema = z.object({
   services: z
     .array(z.enum(["on-site", "on-line"]))
     .min(1, "Select at least one service type"),
-  // category: z.string().min(1, "Please select a category"),
   categories: z.array(z.string()).min(1, "Select at least one category"),
   subcategories: z.array(z.string()).optional(),
   website: z
@@ -60,20 +59,13 @@ export const vendorSchema = z.object({
       (val) => !val || /^https?:\/\//.test(val) || /^www\./.test(val), // or use a more advanced URL check
       { message: "Website must be a valid URL." }
     ),
-  image: z.string().optional(),
+  image: z.string().optional(), // File ID from Media collection upload
   phone: z
     .string()
     .optional()
     .refine((val) => val === undefined || val === "" || /^\+?[1-9]\d{3,14}$/.test(val), {
       message: "Must be a valid international phone number in E.164 format",
     }),
-  // hourlyRate: z
-  //   .number({ invalid_type_error: "Hourly rate must be a number" })
-  //   .min(1, "Hourly rate must be at least 1 EUR")
-  //   .max(10000, "Hourly rate seems too high")
-  //   .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
-  //     message: "Hourly rate must have at most two decimal places",
-  //   }),
   hourlyRate: z
     .number({ invalid_type_error: "Hourly rate must be a number" })
     .min(1, "Hourly rate must be at least 1 EUR")
@@ -87,7 +79,6 @@ export const VENDOR_FIELD_LABELS = {
   bio: "Description",
   services: "Type of Service",
   website: "Website",
-  image: "Profile Image",
   phone: "Phone Number",
   hourlyRate: "Hourly Rate (EUR)",
 };

@@ -401,7 +401,7 @@ export const authRouter = createTRPCRouter({
              categories: categoryIds, // Array of category ObjectIds
              subcategories: subcategoryIds, // Array of subcategory ObjectIds
              website: input.website,
-             image: input.image,
+             image: input.image || undefined, // Pass the file ID for the relationship
              phone: input.phone,
              hourlyRate: input.hourlyRate, // This will be a number after schema transformation
            },
@@ -521,10 +521,11 @@ export const authRouter = createTRPCRouter({
       const tenantId = currentUser.tenants[0].tenant;
       const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
       
-      // Get the tenant by ID
+      // Get the tenant by ID with populated image field
       const tenant = await ctx.db.findByID({
         collection: "tenants",
         id: actualTenantId,
+        depth: 1, // This will populate the image relationship
       });
 
       if (!tenant) {
@@ -576,7 +577,7 @@ export const authRouter = createTRPCRouter({
         categories: categorySlugs, // Return slugs instead of ObjectIds
         subcategories: subcategorySlugs, // Return slugs instead of ObjectIds
         website: tenant.website || "",
-        image: tenant.image || "",
+        image: tenant.image, // This will now be the populated image object or null
         phone: tenant.phone || "",
         hourlyRate: tenant.hourlyRate || 1,
       };
