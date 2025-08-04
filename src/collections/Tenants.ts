@@ -17,6 +17,7 @@ export const Tenants: CollectionConfig = {
       name: "name",
       required: true,
       type: "text",
+      unique: true,
       label: "Store Name",
       admin: {
         description: "This is the name of the store.",
