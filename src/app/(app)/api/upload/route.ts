@@ -56,6 +56,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate file size (5MB limit)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'File size exceeds 5MB limit' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file type
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed' },
+        { status: 400 }
+      );
+    }
+
     // Convert File to Buffer for Payload
     const buffer = Buffer.from(await file.arrayBuffer());
     

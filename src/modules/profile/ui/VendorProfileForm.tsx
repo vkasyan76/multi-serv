@@ -542,7 +542,7 @@ export function VendorProfileForm() {
                 />
               </div>
               <label className="cursor-pointer px-4 py-2 bg-gray-100 rounded-lg border text-sm font-medium hover:bg-gray-200 transition-colors">
-                {selectedFile ? selectedFile.name : "Select Image"}
+                {selectedFile ? selectedFile.name : "Select Image for upload (max 5MB)"}
                 <input
                   type="file"
                   accept="image/*"
