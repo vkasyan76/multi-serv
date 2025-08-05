@@ -17,7 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   SUPPORTED_LANGUAGES,
-  getInitialLanguage,
   extractCountry,
 } from "../location-utils";
 import {
@@ -74,7 +73,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       email: "",
       location: "",
       country: "",
-      language: getInitialLanguage(),
+      language: "en",
     },
   });
 
@@ -86,7 +85,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         email: userProfile.email || "",
         location: userProfile.location || "",
         country: userProfile.country || "",
-        language: (userProfile.language as any) || getInitialLanguage(), // eslint-disable-line @typescript-eslint/no-explicit-any
+        language: userProfile.language || "en", // Remove the type assertion and ensure it's always a valid language code
       });
       
       // Set location input to display existing location
@@ -198,6 +197,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         onSubmit={form.handleSubmit(onSubmit, onError)}
         className="flex flex-col gap-8 p-4 lg:p-10"
         autoComplete="off"
+        key={userProfile?.language || "en"} // Force re-render when language changes
       >
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -317,26 +317,35 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
           <FormField
             name="language"
             control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Language</FormLabel>
-                <FormControl>
-                                     <Select value={field.value} onValueChange={field.onChange}>
-                     <SelectTrigger className="w-full">
-                       {SUPPORTED_LANGUAGES.find((l) => l.code === field.value)
-                         ?.label || SUPPORTED_LANGUAGES.find((l) => l.code === getInitialLanguage())?.label || "English"}
-                     </SelectTrigger>
-                    <SelectContent>
-                      {SUPPORTED_LANGUAGES.map(({ code, label }) => (
-                        <SelectItem key={code} value={code}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormItem>
-            )}
+            render={({ field }) => {
+              // Ensure we have a valid language value and sync it with the field
+              const currentLanguage = field.value || userProfile?.language || "en";
+              
+              // Sync the field value if it's not set
+              if (!field.value && userProfile?.language) {
+                field.onChange(userProfile.language);
+              }
+              
+              return (
+                <FormItem>
+                  <FormLabel>Language</FormLabel>
+                  <FormControl>
+                    <Select value={currentLanguage} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        {SUPPORTED_LANGUAGES.find((l) => l.code === currentLanguage)?.label || "English"}
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_LANGUAGES.map(({ code, label }) => (
+                          <SelectItem key={code} value={code}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              );
+            }}
           />
         </div>
         <Button

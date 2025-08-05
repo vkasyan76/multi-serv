@@ -77,9 +77,9 @@ export function VendorProfileForm() {
         firstName: vendorProfile.firstName || "",
         lastName: vendorProfile.lastName || "",
         bio: vendorProfile.bio || "",
-        services: vendorProfile.services || [],
-        categories: vendorProfile.categories || [], // Now directly slugs
-        subcategories: vendorProfile.subcategories || [], // Now directly slugs
+        services: Array.isArray(vendorProfile.services) ? vendorProfile.services : [],
+        categories: Array.isArray(vendorProfile.categories) ? vendorProfile.categories : [],
+        subcategories: Array.isArray(vendorProfile.subcategories) ? vendorProfile.subcategories : [],
         website: vendorProfile.website || "",
         phone: vendorProfile.phone || undefined,
         hourlyRate: vendorProfile.hourlyRate || 1,
@@ -94,11 +94,12 @@ export function VendorProfileForm() {
   // Helper functions to generate placeholder text for MultiSelect components
   const getServicesPlaceholder = () => {
     // Get current form values for services
-    const currentServices = form.getValues("services") || [];
+    const currentServices = form.getValues("services");
+    const servicesArray = Array.isArray(currentServices) ? currentServices : [];
     
     // If we have current services
-    if (currentServices.length > 0) {
-      return currentServices.join(", ");
+    if (servicesArray.length > 0) {
+      return servicesArray.join(", ");
     }
     
     // If no services are selected
@@ -107,12 +108,13 @@ export function VendorProfileForm() {
 
   const getCategoriesPlaceholder = () => {
     // Get current form values for categories
-    const currentCategories = form.getValues("categories") || [];
+    const currentCategories = form.getValues("categories");
+    const categoriesArray = Array.isArray(currentCategories) ? currentCategories : [];
     
     // If we have current categories and they're valid
-    if (currentCategories.length > 0) {
+    if (categoriesArray.length > 0) {
       // Find category names from the categories data
-      const categoryNames = currentCategories.map(slug => {
+      const categoryNames = categoriesArray.map(slug => {
         const category = categories?.find(cat => cat.slug === slug);
         return category?.name || slug;
       });
@@ -125,11 +127,12 @@ export function VendorProfileForm() {
 
   const getSubcategoriesPlaceholder = () => {
     // Get current form values for subcategories
-    const currentSubcategories = form.getValues("subcategories") || [];
+    const currentSubcategories = form.getValues("subcategories");
+    const subcategoriesArray = Array.isArray(currentSubcategories) ? currentSubcategories : [];
     
     // If we have current subcategories and they're valid for available subcategories
-    if (currentSubcategories.length > 0 && availableSubcategories.length > 0) {
-      const validSubcategories = currentSubcategories.filter(subSlug => 
+    if (subcategoriesArray.length > 0 && availableSubcategories.length > 0) {
+      const validSubcategories = subcategoriesArray.filter(subSlug => 
         availableSubcategories.some(sub => sub.slug === subSlug)
       );
       
@@ -156,16 +159,19 @@ export function VendorProfileForm() {
   const shouldUseBlackFont = (fieldType: 'services' | 'categories' | 'subcategories') => {
     switch (fieldType) {
       case 'services': {
-        const currentServices = form.getValues("services") || [];
-        return currentServices.length > 0;
+        const currentServices = form.getValues("services");
+        const servicesArray = Array.isArray(currentServices) ? currentServices : [];
+        return servicesArray.length > 0;
       }
       case 'categories': {
-        const currentCategories = form.getValues("categories") || [];
-        return currentCategories.length > 0;
+        const currentCategories = form.getValues("categories");
+        const categoriesArray = Array.isArray(currentCategories) ? currentCategories : [];
+        return categoriesArray.length > 0;
       }
       case 'subcategories': {
-        const currentSubcategories = form.getValues("subcategories") || [];
-        return currentSubcategories.length > 0;
+        const currentSubcategories = form.getValues("subcategories");
+        const subcategoriesArray = Array.isArray(currentSubcategories) ? currentSubcategories : [];
+        return subcategoriesArray.length > 0;
       }
       default:
         return false;
