@@ -32,6 +32,8 @@ import PhoneInput from 'react-phone-number-input';
 import type { Country } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { getCountryCodeFromName } from "../location-utils";
+import { Home } from "lucide-react";
+import Link from "next/link";
 
 // Create a Zod schema for the tenant/vendor
 
@@ -324,17 +326,26 @@ export function VendorProfileForm() {
         className="flex flex-col gap-2 p-4 lg:p-10 overflow-y-auto max-h-[80vh]"
         autoComplete="off"
       >
-        <div className="flex items-center gap-4 mb-8">
-          <Image
-            src="/images/infinisimo_logo_illustrator.png"
-            alt="Infinisimo Logo"
-            width={48}
-            height={48}
-            className="rounded-full bg-white"
-            priority
-          />
-          <h1 className="text-3xl font-bold">Service Provider Settings</h1>
-        </div>
+                 <div className="flex items-center justify-between mb-8">
+           <div className="flex items-center gap-4">
+             <Image
+               src="/images/infinisimo_logo_illustrator.png"
+               alt="Infinisimo Logo"
+               width={48}
+               height={48}
+               className="rounded-full bg-white"
+               priority
+             />
+             <h1 className="text-3xl font-bold">Service Provider Settings</h1>
+           </div>
+                       <Link
+              href="/"
+              className="flex items-center gap-3 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <Home className="w-6 h-6" />
+              <span className="text-base font-medium">Home</span>
+            </Link>
+         </div>
 
         {/* 2 column grid; for wider right column adjsut container - md:grid-cols-5, left: md:col-span-2, right:md:col-span-3  */}
         <div className="grid grid-cols-1 md:grid-cols-7 gap-8">

@@ -1,8 +1,5 @@
 "use client";
 
-// import { useParams } from "next/navigation";
-// import { Category } from "@/payload-types";
-// import { CustomCategory } from "../types";
 import { CategoriesGetManyOutput } from "@/modules/categories/types";
 import { CategoryDropdown } from "./categories-dropdown";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ListFilterIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CategoriesSidebar } from "./categories-sidebar";
+import { useParams } from "next/navigation";
 
 interface Props {
   // data: Category[];
@@ -18,7 +16,7 @@ interface Props {
 }
 export const Categories = ({ data }: Props) => {
   // client way of accessing params:
-  // const params = useParams();
+  const params = useParams();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -29,7 +27,9 @@ export const Categories = ({ data }: Props) => {
   // used to display all categories which were hidden:
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const activeCategory = "all"; // mocked active category
+  // const activeCategory = "all"; // mocked active category
+  const categoryParam = params.category as string | undefined;
+  const activeCategory = categoryParam || "all";
 
   // visual hint for the view all button:
   const activeCategoryIndex = data.findIndex(
