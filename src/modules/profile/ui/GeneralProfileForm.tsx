@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { profileSchema } from "@/modules/profile/schemas";
 import * as z from "zod";
@@ -81,13 +81,21 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   // Update form values when user profile data is available
   useEffect(() => {
     if (userProfile) {
+      // Reset form with user profile data
       form.reset({
         username: userProfile.username || "",
         email: userProfile.email || "",
         location: userProfile.location || "",
         country: userProfile.country || "",
-        language: (userProfile.language as any) || getInitialLanguage(), // eslint-disable-line @typescript-eslint/no-explicit-any
+        language: userProfile.language || getInitialLanguage(),
       });
+      
+      // Ensure language field is properly set after a short delay
+      if (userProfile.language) {
+        setTimeout(() => {
+          form.setValue("language", userProfile.language, { shouldValidate: true });
+        }, 0);
+      }
       
       // Set location input to display existing location
       if (userProfile.location) {
@@ -107,7 +115,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   }, [userProfile, form]);
 
   // ...All the autocomplete/useEffect logic as in your previous ProfileForm
-  const selectedLanguage = form.watch("language");
+  const selectedLanguage = useWatch({
+    control: form.control,
+    name: "language",
+    defaultValue: getInitialLanguage(),
+  });
   const [locationInput, setLocationInput] = useState("");
   const [predictions, setPredictions] = useState<PlaceData[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -188,7 +200,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   };
 
   // Show loading state while user profile data is loading
-  if (isLoading) {
+  if (isLoading || !userProfile) {
     return <LoadingPage />;
   }
 
@@ -198,6 +210,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         onSubmit={form.handleSubmit(onSubmit, onError)}
         className="flex flex-col gap-8 p-4 lg:p-10"
         autoComplete="off"
+        // Remove the key prop that was causing form re-renders
       >
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -317,26 +330,30 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
           <FormField
             name="language"
             control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Language</FormLabel>
-                <FormControl>
-                                     <Select value={field.value} onValueChange={field.onChange}>
-                     <SelectTrigger className="w-full">
-                       {SUPPORTED_LANGUAGES.find((l) => l.code === field.value)
-                         ?.label || SUPPORTED_LANGUAGES.find((l) => l.code === getInitialLanguage())?.label || "English"}
-                     </SelectTrigger>
-                    <SelectContent>
-                      {SUPPORTED_LANGUAGES.map(({ code, label }) => (
-                        <SelectItem key={code} value={code}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormItem>
-            )}
+            render={({ field }) => {
+              // Use the watched value to ensure proper synchronization
+              const currentValue = selectedLanguage || field.value || userProfile?.language || getInitialLanguage();
+              
+              return (
+                <FormItem>
+                  <FormLabel>Language</FormLabel>
+                  <FormControl>
+                    <Select value={currentValue} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        {SUPPORTED_LANGUAGES.find((l) => l.code === currentValue)?.label || "English"}
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_LANGUAGES.map(({ code, label }) => (
+                          <SelectItem key={code} value={code}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              );
+            }}
           />
         </div>
         <Button

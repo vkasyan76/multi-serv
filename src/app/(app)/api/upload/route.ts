@@ -45,6 +45,13 @@ export async function POST(request: NextRequest) {
     // Use the first tenant (assuming single tenant per user)
     const tenant = user.tenants[0];
     
+    if (!tenant) {
+      return NextResponse.json(
+        { error: 'No tenant found for user' },
+        { status: 400 }
+      );
+    }
+    
     // Get the form data from the request
     const formData = await request.formData();
     const file = formData.get('file') as File;

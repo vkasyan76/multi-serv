@@ -125,6 +125,7 @@ export const authRouter = createTRPCRouter({
     if (users.totalDocs === 0) return null;
 
     const user = users.docs[0];
+    if (!user) return null;
     return {
       user: {
         id: user.id,
@@ -153,7 +154,7 @@ export const authRouter = createTRPCRouter({
 
     if (existing.docs.length > 0) {
       const existingUser = existing.docs[0];
-
+      if (!existingUser) return null;
       // Don't auto-create tenant - let user decide when to become vendor
       // Optional: Keep Clerk in sync if needed
       await updateClerkUserMetadata(userId, existingUser.id, existingUser.username);
@@ -166,7 +167,7 @@ export const authRouter = createTRPCRouter({
       collection: "users",
       data: {
         email,
-        username,
+        username: username || "",
         clerkUserId: userId,
         roles: ["user"],
         // No tenants initially - will be added when user becomes vendor
@@ -200,7 +201,7 @@ export const authRouter = createTRPCRouter({
       const currentUser = user.docs[0];
       
       // Check if user already has a tenant (vendor profile)
-      if (currentUser.tenants && currentUser.tenants.length > 0) {
+      if (currentUser && currentUser.tenants && currentUser.tenants.length > 0) {
         throw new TRPCError({
           code: "BAD_REQUEST", 
           message: "User already has a vendor profile"
@@ -265,8 +266,8 @@ export const authRouter = createTRPCRouter({
          tenant = await ctx.db.create({
            collection: "tenants",
            data: {
-             name: input.name || currentUser.username,
-             slug: input.name || currentUser.username, // Use business name as slug for routing
+             name: input.name || currentUser?.username || "",
+             slug: input.name || currentUser?.username || "", // Use business name as slug for routing
              stripeAccountId: account.id,
              firstName: input.firstName,
              lastName: input.lastName,
@@ -282,13 +283,16 @@ export const authRouter = createTRPCRouter({
          });
 
          // Link tenant to user
-         await ctx.db.update({
-           collection: "users",
-           id: currentUser.id,
-           data: {
-             tenants: [{ tenant: tenant.id }],
-           },
-         });
+         if (!currentUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+        await ctx.db.update({
+          collection: "users",
+          id: currentUser.id,
+          data: {
+            tenants: [{ tenant: tenant.id }],
+          },
+        });
 
          return tenant;
                } catch (error) {
@@ -332,11 +336,12 @@ export const authRouter = createTRPCRouter({
       const currentUser = user.docs[0];
       
       // Find the user's tenant
-      if (!currentUser.tenants || currentUser.tenants.length === 0) {
+      if (!currentUser || !currentUser.tenants || currentUser.tenants.length === 0) {
         throw new Error("No tenant found for user");
       }
 
-      const tenantId = currentUser.tenants[0].tenant;
+      const tenantObj = currentUser.tenants[0];
+      const tenantId = tenantObj ? tenantObj.tenant : undefined;
       
       // Ensure we have the correct tenant ID
       const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
@@ -445,9 +450,12 @@ export const authRouter = createTRPCRouter({
       let currentTenantId: string | null = null;
       
       // Get current user's tenant ID if they have one
-      if (currentUser.tenants && currentUser.tenants.length > 0) {
-        const tenantId = currentUser.tenants[0].tenant;
-        currentTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
+      if (currentUser && currentUser.tenants && currentUser.tenants.length > 0) {
+        const tenantObj = currentUser.tenants[0];
+        if (tenantObj) {
+          const tenantId = tenantObj.tenant;
+          currentTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
+        }
       }
 
       // Check if business name is already taken
@@ -486,6 +494,10 @@ export const authRouter = createTRPCRouter({
 
     const currentUser = user.docs[0];
     
+    if (!currentUser) {
+      throw new Error("User not found");
+    }
+    
     return {
       username: currentUser.username,
       email: currentUser.email,
@@ -513,12 +525,21 @@ export const authRouter = createTRPCRouter({
 
       const currentUser = user.docs[0];
       
+      if (!currentUser) {
+        throw new Error("User not found");
+      }
+      
       // Find the tenant through the user's tenant relationship
       if (!currentUser.tenants || currentUser.tenants.length === 0) {
         return null; // No tenant associated with user
       }
 
-      const tenantId = currentUser.tenants[0].tenant;
+      const tenantObj = currentUser.tenants[0];
+      if (!tenantObj) {
+        return null; // No tenant associated with user
+      }
+      
+      const tenantId = tenantObj.tenant;
       const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
       
       // Get the tenant by ID with populated image field
@@ -606,6 +627,10 @@ export const authRouter = createTRPCRouter({
       }
 
       const currentUser = user.docs[0];
+      
+      if (!currentUser) {
+        throw new Error("User not found");
+      }
       
       // Update the user with profile data
       await ctx.db.update({

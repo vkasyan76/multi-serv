@@ -46,11 +46,17 @@ export async function getUser({
     payloadUser = findUserQuery.docs[0];
   }
 
+  if (!payloadUser) {
+    return null;
+  }
+
   return {
     collection: "users",
     ...payloadUser,
-    email: payloadUser.email ?? undefined, // Corrected here
-  };
+    email: payloadUser.email ?? "",
+    username: payloadUser.username ?? "",
+    clerkUserId: payloadUser.clerkUserId ?? "",
+  } as PayloadUser;
 }
 
 async function authenticate({

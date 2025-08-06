@@ -55,39 +55,44 @@ export async function POST(req: Request) {
     // Update email/username if changed
     const email = data.email_addresses?.[0]?.email_address || "";
     const username = data.username || email.split("@")[0];
-    await payload.update({
-      collection: "users",
-      id: findUser.docs[0].id,
-      data: { email, username },
-    });
+    const userDoc = findUser.docs[0];
+    if (userDoc) {
+      await payload.update({
+        collection: "users",
+        id: userDoc.id,
+        data: { email, username },
+      });
+    }
   }
 
   if (type === "user.deleted" && findUser.docs.length > 0) {
     const userDoc = findUser.docs[0];
-    const tenantsArray = userDoc.tenants || [];
+    if (userDoc) {
+      const tenantsArray = userDoc.tenants || [];
 
-    // Delete each tenant referenced by this user
-    // t.tenant is likely an ObjectId or string: If you use MongoDB, ObjectId fields need .toString()
-    // Delete the user itself:// HARD DELETE
+      // Delete each tenant referenced by this user
+      // t.tenant is likely an ObjectId or string: If you use MongoDB, ObjectId fields need .toString()
+      // Delete the user itself:// HARD DELETE
 
-    try {
-      // Delete each tenant referenced by this user: extract the real ID as a string
-      for (const t of tenantsArray) {
-        const tenantId =
-          typeof t === "string"
-            ? t
-            : typeof t.tenant === "string"
-              ? t.tenant
-              : t.tenant?.id?.toString?.();
-        if (tenantId) {
-          await payload.delete({ collection: "tenants", id: tenantId });
+      try {
+        // Delete each tenant referenced by this user: extract the real ID as a string
+        for (const t of tenantsArray) {
+          const tenantId =
+            typeof t === "string"
+              ? t
+              : typeof t.tenant === "string"
+                ? t.tenant
+                : t.tenant?.id?.toString?.();
+          if (tenantId) {
+            await payload.delete({ collection: "tenants", id: tenantId });
+          }
         }
+        // Delete the user itself: HARD DELETE
+        await payload.delete({ collection: "users", id: userDoc.id });
+      } catch (error) {
+        console.error("Failed to delete user and associated tenants:", error);
+        return new Response("Failed to process deletion", { status: 500 });
       }
-      // Delete the user itself: HARD DELETE
-      await payload.delete({ collection: "users", id: userDoc.id });
-    } catch (error) {
-      console.error("Failed to delete user and associated tenants:", error);
-      return new Response("Failed to process deletion", { status: 500 });
     }
   }
 
