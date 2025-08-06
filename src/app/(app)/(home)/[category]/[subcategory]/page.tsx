@@ -18,7 +18,10 @@ const Page = async ({ params }: Props) => {
 
   const queryClient = getQueryClient();
   void queryClient.prefetchQuery(
-    trpc.tenants.getMany.queryOptions({ category: subcategory })
+    trpc.tenants.getMany.queryOptions({ 
+      category: category,      // Parent category
+      subcategory: subcategory // Subcategory
+    })
   );
 
   return (

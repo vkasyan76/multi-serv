@@ -18,15 +18,11 @@ export const tenantsRouter = createTRPCRouter({
       // prepare a "where" object (by default empty):
       const where: Where = {};
 
-      if (input.minPrice) {
+      // Fix: Properly combine minPrice and maxPrice conditions
+      if (input.minPrice || input.maxPrice) {
         where.hourlyRate = {
-          greater_than_equal: input.minPrice,
-        };
-      }
-
-      if (input.maxPrice) {
-        where.hourlyRate = {
-          less_than_equal: input.maxPrice,
+          ...(input.minPrice && { greater_than_equal: input.minPrice }),
+          ...(input.maxPrice && { less_than_equal: input.maxPrice }),
         };
       }
 
