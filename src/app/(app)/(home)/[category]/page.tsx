@@ -1,4 +1,12 @@
-import { TenantsList } from "@/modules/tenants/ui/components/tenants-list";
+import {
+  TenantList,
+  TenantListSkeleton,
+} from "@/modules/tenants/ui/components/tenant-list";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
+import { getQueryClient, trpc } from "@/trpc/server";
+import { Suspense } from "react";
+import { TenantFilters } from "@/modules/tenants/ui/components/tenant-filters";
 
 interface Props {
   // Next.js asynchronously provides params
@@ -8,11 +16,27 @@ interface Props {
 const Page = async ({ params }: Props) => {
   const { category } = await params;
 
+  const queryClient = getQueryClient();
+  void queryClient.prefetchQuery(
+    trpc.tenants.getMany.queryOptions({ category })
+  );
+
   return (
-    <div>
-      <h1>Category: {category}</h1>
-      <TenantsList category={category} />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="px-4 lg:px-12 py-8 flex flex-col gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-8 gap-y-6 gap-x-12">
+          <div className="lg:col-span-2 xl:col-span-2">
+            {/* <div className="border p-2">Tenant Filters</div> */}
+            <TenantFilters />
+          </div>
+          <div className="lg:col-span-4 xl:col-span-6">
+            <Suspense fallback={<TenantListSkeleton />}>
+              <TenantList category={category} />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    </HydrationBoundary>
   );
 };
 

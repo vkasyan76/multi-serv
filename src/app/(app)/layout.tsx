@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "sonner";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ClerkUserSync } from "@/modules/auth/ui/views/clerk-user-sync";
 
@@ -32,11 +33,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ClerkProvider>
-          <TRPCReactProvider>
-            <ClerkUserSync />
-            {children}
-            <Toaster />
-          </TRPCReactProvider>
+          <NuqsAdapter>
+            <TRPCReactProvider>
+              <ClerkUserSync />
+              {children}
+              <Toaster />
+            </TRPCReactProvider>
+          </NuqsAdapter>
         </ClerkProvider>
       </body>
     </html>
