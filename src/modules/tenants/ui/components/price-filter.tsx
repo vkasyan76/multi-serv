@@ -1,4 +1,4 @@
-import { ChangeEvent, KeyboardEvent, useState, useRef, useEffect } from "react";
+import { ChangeEvent, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getLocaleAndCurrency } from "@/modules/profile/location-utils";
