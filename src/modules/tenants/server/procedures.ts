@@ -10,11 +10,21 @@ export const tenantsRouter = createTRPCRouter({
       z.object({
         category: z.string().nullable().optional(),
         subcategory: z.string().nullable().optional(),
+        minPrice: z.string().nullable().optional(),
+        maxPrice: z.string().nullable().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       // prepare a "where" object (by default empty):
       const where: Where = {};
+
+      // Fix: Properly combine minPrice and maxPrice conditions
+      if (input.minPrice || input.maxPrice) {
+        where.hourlyRate = {
+          ...(input.minPrice && { greater_than_equal: input.minPrice }),
+          ...(input.maxPrice && { less_than_equal: input.maxPrice }),
+        };
+      }
 
       if (input.category) {
         // Fetch category data to validate the category exists and get its subcategories
@@ -82,4 +92,4 @@ export const tenantsRouter = createTRPCRouter({
 
       return data as TenantsGetManyOutput;
     }),
-}); 
+});
