@@ -1,8 +1,9 @@
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { Category } from "@payload-types";
-import type { Where } from "payload";
+import type { Sort, Where } from "payload";
 import { z } from "zod";
 import type { TenantsGetManyOutput } from "../types";
+import { sortValues } from "../hooks/search-params";
 
 export const tenantsRouter = createTRPCRouter({
   getMany: baseProcedure
@@ -12,11 +13,29 @@ export const tenantsRouter = createTRPCRouter({
         subcategory: z.string().nullable().optional(),
         minPrice: z.string().nullable().optional(),
         maxPrice: z.string().nullable().optional(),
+        tags: z.array(z.string()).nullable().optional(),
+        sort: z.enum(sortValues).nullable().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       // prepare a "where" object (by default empty):
       const where: Where = {};
+
+      let sort: Sort = "-createdAt"; // default sort by createdAt DESC
+
+      // TODO: revisit the sorting filters
+
+      if (input.sort === "curated") {
+        sort = "-createdAt"; // for test purpose sort by name
+      }
+
+      if (input.sort === "hot_and_new") {
+        sort = "+createdAt"; // for test purpose sort ASSC
+      }
+
+      if (input.sort === "trending") {
+        sort = "+createdAt"; // default sort by createdAt DESC
+      }
 
       // Fix: Properly combine minPrice and maxPrice conditions
       if (input.minPrice || input.maxPrice) {
@@ -81,11 +100,23 @@ export const tenantsRouter = createTRPCRouter({
         }
       }
 
+      if (input.tags && input.tags.length > 0) {
+        where["tags.name"] = {
+          in: input.tags,
+        };
+      }
+
+      console.log("Input tags:", input.tags);
+      console.log("Where clause:", JSON.stringify(where, null, 2));
+
       const data = await ctx.db.find({
         collection: "tenants",
         depth: 1, // populate "categories", "subcategories" and "image"
         where,
+        sort,
       });
+
+      console.log("Query results:", data.docs.length);
 
       // Artificial delay for development/testing:
       // await new Promise((resolve) => setTimeout(resolve, 5000));

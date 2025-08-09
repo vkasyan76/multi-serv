@@ -5,6 +5,7 @@ import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { PriceFilter } from "./price-filter";
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
+import { TagsFilter } from "./tags-filter";
 
 interface TenantFilterProps {
   title: string;
@@ -36,29 +37,53 @@ export const TenantFilters = () => {
   const onChange = (key: keyof typeof filters, value: unknown) => {
     setFilters({ ...filters, [key]: value });
   };
-  
+
+  // Checks if string values are not empty ("") and if non-string values are not null.
+  // This logic ensures that the "Clear" button is only displayed when at least one filter is active.
+  // It treats zero as boolean true or false
+  const hasAnyFilters = Object.entries(filters).some(([key, value]) => {
+      // Skip the sort field since it always has a default value: Exclude sort from the filter check
+  if (key === 'sort') return false;
+    if (typeof value === "string") {
+      return value !== "";
+    }
+    if (Array.isArray(value)) {
+      return value.length > 0; // Checks if tags or any array filter is not empty
+    }
+    return value != null;
+  });
+
   const handleClear = () => {
     setFilters({
       minPrice: null,
       maxPrice: null,
+      tags: [],
     });
   };
-  
+
   return (
     <div className="border rounded-md bg-white">
       <div className="p-4 border-b flex items-center justify-between">
         <p className="font-medium">Filters</p>
-        <button className="underline" onClick={handleClear} type="button">
-          Clear
-        </button>
+        {hasAnyFilters && (
+          <button className="underline" onClick={handleClear} type="button">
+            Clear
+          </button>
+        )}
       </div>
-      <TenantFilter title="Hourly Rate" className="border-b-0">
-        {/* <p>Price filter</p> */}
+      <TenantFilter title="Hourly Rate">
         <PriceFilter
           minPrice={filters.minPrice}
           maxPrice={filters.maxPrice}
           onMinPriceChange={(value) => onChange("minPrice", value)}
           onMaxPriceChange={(value) => onChange("maxPrice", value)}
+        />
+      </TenantFilter>
+
+      <TenantFilter title="Tags" className="border-b-0">
+        <TagsFilter
+          value={filters.tags}
+          onChange={(value) => onChange("tags", value)}
         />
       </TenantFilter>
     </div>
