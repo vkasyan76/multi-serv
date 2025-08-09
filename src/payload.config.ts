@@ -16,6 +16,7 @@ import { Categories } from "./collections/Categories.ts";
 import { Config } from "@payload-types";
 import { isSuperAdmin } from "./lib/access.ts";
 import { Tenants } from "./collections/Tenants.ts";
+import { Tags } from "./collections/Tags.ts";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -27,7 +28,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Categories, Tenants],
+  collections: [Users, Media, Categories, Tenants, Tags],
   // cookiePrefix: "funroad",  // optional: if we want to change the cookie prefix
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
