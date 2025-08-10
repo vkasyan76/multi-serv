@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export const TenantSort = () => {
   const [filters, setFilters] = useTenantFilters();
+  const sort = filters.sort ?? "curated"; // falling back to "curated" when filters.sort is undefined or null.
 
   return (
     <div className="flex items-center gap-2">
@@ -13,11 +14,11 @@ export const TenantSort = () => {
         size="sm"
         className={cn(
           "rounded-full bg-white hover:bg-white",
-          filters.sort !== "curated" &&
+          sort !== "curated" &&
             "bg-transparent border-transparent hover:border-border hover:bg-transparent"
         )}
         variant="secondary"
-        onClick={() => setFilters({ ...filters, sort: "curated" })}
+        onClick={() => setFilters((prev) => ({ ...prev, sort: "curated" }))}
       >
         Curated
       </Button>
@@ -25,11 +26,11 @@ export const TenantSort = () => {
         size="sm"
         className={cn(
           "rounded-full bg-white hover:bg-white",
-          filters.sort !== "trending" &&
+          sort !== "trending" &&
             "bg-transparent border-transparent hover:border-border hover:bg-transparent"
         )}
         variant="secondary"
-        onClick={() => setFilters({ ...filters, sort: "trending" })}
+        onClick={() => setFilters((prev) => ({ ...prev, sort: "trending" }))}
       >
         Trending
       </Button>
@@ -37,11 +38,11 @@ export const TenantSort = () => {
         size="sm"
         className={cn(
           "rounded-full bg-white hover:bg-white",
-          filters.sort !== "hot_and_new" &&
+          sort !== "hot_and_new" &&
             "bg-transparent border-transparent hover:border-border hover:bg-transparent"
         )}
         variant="secondary"
-        onClick={() => setFilters({ ...filters, sort: "hot_and_new" })}
+        onClick={() => setFilters((prev) => ({ ...prev, sort: "hot_and_new" }))}
       >
         Hot & New
       </Button>
