@@ -158,5 +158,15 @@ export const Tenants: CollectionConfig = {
         description: "Vendor's hourly rate in EUR",
       },
     },
+    {
+      name: "user",
+      type: "relationship",
+      relationTo: "users",
+      required: true,
+      label: "Associated User",
+      admin: {
+        description: "The user account associated with this tenant",
+      },
+    },
   ],
 };

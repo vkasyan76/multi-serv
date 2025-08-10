@@ -17,11 +17,30 @@ export type TenantWithRelations = Tenant & {
     url: string;
     filename: string;
   };
+  user?: {
+    id: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  };
+  distance?: number | null; // Distance from current user to this tenant
+};
+
+export type UserCoordinates = {
+  lat: number;
+  lng: number;
 };
 
 export type TenantsGetManyInput = {
   category?: string | null;
   subcategory?: string | null;
+  minPrice?: string | null;
+  maxPrice?: string | null;
+  tags?: string[] | null;
+  sort?: string | null;
+  userLat?: number | null;
+  userLng?: number | null;
 };
 
 export type TenantsGetManyOutput = {
@@ -35,4 +54,4 @@ export type TenantsGetManyOutput = {
   hasNextPage: boolean;
   prevPage: number | null;
   nextPage: number | null;
-}; 
+};

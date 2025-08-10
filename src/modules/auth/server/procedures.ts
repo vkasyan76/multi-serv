@@ -19,8 +19,6 @@ export const authRouter = createTRPCRouter({
       headers,
     });
 
-
-
     return session;
   }),
 
@@ -157,7 +155,11 @@ export const authRouter = createTRPCRouter({
       if (!existingUser) return null;
       // Don't auto-create tenant - let user decide when to become vendor
       // Optional: Keep Clerk in sync if needed
-      await updateClerkUserMetadata(userId, existingUser.id, existingUser.username);
+      await updateClerkUserMetadata(
+        userId,
+        existingUser.id,
+        existingUser.username
+      );
 
       return existingUser;
     }
@@ -183,7 +185,7 @@ export const authRouter = createTRPCRouter({
     .input(vendorSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.userId;
-      
+
       // Find the user
       const user = await ctx.db.find({
         collection: "users",
@@ -194,17 +196,21 @@ export const authRouter = createTRPCRouter({
       if (user.totalDocs === 0) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "User not found"
+          message: "User not found",
         });
       }
 
       const currentUser = user.docs[0];
-      
+
       // Check if user already has a tenant (vendor profile)
-      if (currentUser && currentUser.tenants && currentUser.tenants.length > 0) {
+      if (
+        currentUser &&
+        currentUser.tenants &&
+        currentUser.tenants.length > 0
+      ) {
         throw new TRPCError({
-          code: "BAD_REQUEST", 
-          message: "User already has a vendor profile"
+          code: "BAD_REQUEST",
+          message: "User already has a vendor profile",
         });
       }
 
@@ -218,7 +224,8 @@ export const authRouter = createTRPCRouter({
       if (existingTenant.totalDocs > 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Business name is already taken. Please choose a different name."
+          message:
+            "Business name is already taken. Please choose a different name.",
         });
       }
 
@@ -228,62 +235,63 @@ export const authRouter = createTRPCRouter({
         const categoryDocs = await ctx.db.find({
           collection: "categories",
           where: {
-            slug: { in: input.categories }
+            slug: { in: input.categories },
           },
-          limit: 100
+          limit: 100,
         });
-        categoryIds = categoryDocs.docs.map(doc => doc.id);
+        categoryIds = categoryDocs.docs.map((doc) => doc.id);
       }
-      
+
       // Convert subcategory slugs to ObjectIds
       let subcategoryIds: string[] = [];
       if (input.subcategories && input.subcategories.length > 0) {
         const subcategoryDocs = await ctx.db.find({
           collection: "categories",
           where: {
-            slug: { in: input.subcategories }
+            slug: { in: input.subcategories },
           },
-          limit: 100
+          limit: 100,
         });
-        subcategoryIds = subcategoryDocs.docs.map(doc => doc.id);
+        subcategoryIds = subcategoryDocs.docs.map((doc) => doc.id);
       }
-      
+
       let account: { id?: string } | null = null;
       let tenant: { id: string } | null = null;
-      
-             try {
-         // Create Stripe account for the vendor
-         account = await stripe.accounts.create();
-         
-         if (!account.id) {
-           throw new TRPCError({
-             code: "INTERNAL_SERVER_ERROR",
-             message: "Failed to create Stripe account"
-           });
-         }
-         
-         // Create tenant with vendor profile data
-         tenant = await ctx.db.create({
-           collection: "tenants",
-           data: {
-             name: input.name || currentUser?.username || "",
-             slug: input.name || currentUser?.username || "", // Use business name as slug for routing
-             stripeAccountId: account.id,
-             firstName: input.firstName,
-             lastName: input.lastName,
-             bio: input.bio,
-             services: input.services,
-             categories: categoryIds,
-             subcategories: subcategoryIds,
-             website: input.website,
-             image: input.image,
-             phone: input.phone,
-             hourlyRate: input.hourlyRate,
-           },
-         });
 
-         // Link tenant to user
-         if (!currentUser) {
+      try {
+        // Create Stripe account for the vendor
+        account = await stripe.accounts.create();
+
+        if (!account.id) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create Stripe account",
+          });
+        }
+
+        // Create tenant with vendor profile data
+        tenant = await ctx.db.create({
+          collection: "tenants",
+          data: {
+            name: input.name || currentUser?.username || "",
+            slug: input.name || currentUser?.username || "", // Use business name as slug for routing
+            stripeAccountId: account.id,
+            firstName: input.firstName,
+            lastName: input.lastName,
+            bio: input.bio,
+            services: input.services,
+            categories: categoryIds,
+            subcategories: subcategoryIds,
+            website: input.website,
+            image: input.image,
+            phone: input.phone,
+            hourlyRate: input.hourlyRate,
+            user: currentUser!.id,
+          },
+        });
+
+        // Link tenant to user
+        if (!currentUser) {
           throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
         }
         await ctx.db.update({
@@ -294,34 +302,40 @@ export const authRouter = createTRPCRouter({
           },
         });
 
-         return tenant;
-               } catch (error) {
-          // Check if error is due to duplicate business name constraint
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          if (errorMessage.includes('duplicate') || errorMessage.includes('unique') || errorMessage.includes('already exists')) {
-            // Cleanup Stripe account if it was created
-            if (account?.id) {
-              await stripe.accounts.del(account.id).catch(console.error);
-            }
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "Business name is already taken. Please choose a different name."
-            });
-          }
-          
-          // Cleanup Stripe account if it was created but database operations failed
+        return tenant;
+      } catch (error) {
+        // Check if error is due to duplicate business name constraint
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        if (
+          errorMessage.includes("duplicate") ||
+          errorMessage.includes("unique") ||
+          errorMessage.includes("already exists")
+        ) {
+          // Cleanup Stripe account if it was created
           if (account?.id) {
             await stripe.accounts.del(account.id).catch(console.error);
           }
-          throw error;
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Business name is already taken. Please choose a different name.",
+          });
         }
+
+        // Cleanup Stripe account if it was created but database operations failed
+        if (account?.id) {
+          await stripe.accounts.del(account.id).catch(console.error);
+        }
+        throw error;
+      }
     }),
 
   updateVendorProfile: clerkProcedure
     .input(vendorSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.userId;
-      
+
       // Find the user
       const user = await ctx.db.find({
         collection: "users",
@@ -334,26 +348,31 @@ export const authRouter = createTRPCRouter({
       }
 
       const currentUser = user.docs[0];
-      
+
       // Find the user's tenant
-      if (!currentUser || !currentUser.tenants || currentUser.tenants.length === 0) {
+      if (
+        !currentUser ||
+        !currentUser.tenants ||
+        currentUser.tenants.length === 0
+      ) {
         throw new Error("No tenant found for user");
       }
 
       const tenantObj = currentUser.tenants[0];
       const tenantId = tenantObj ? tenantObj.tenant : undefined;
-      
+
       // Ensure we have the correct tenant ID
-      const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
-      
+      const actualTenantId =
+        typeof tenantId === "object" ? tenantId.id : tenantId;
+
       // Check if business name is already taken by another vendor (excluding current user's tenant)
       const existingTenant = await ctx.db.find({
         collection: "tenants",
-        where: { 
+        where: {
           and: [
             { name: { equals: input.name } },
-            { id: { not_equals: actualTenantId } }
-          ]
+            { id: { not_equals: actualTenantId } },
+          ],
         },
         limit: 1,
       });
@@ -361,7 +380,8 @@ export const authRouter = createTRPCRouter({
       if (existingTenant.totalDocs > 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Business name is already taken. Please choose a different name."
+          message:
+            "Business name is already taken. Please choose a different name.",
         });
       }
 
@@ -371,59 +391,65 @@ export const authRouter = createTRPCRouter({
         const categoryDocs = await ctx.db.find({
           collection: "categories",
           where: {
-            slug: { in: input.categories }
+            slug: { in: input.categories },
           },
-          limit: 100
+          limit: 100,
         });
-        categoryIds = categoryDocs.docs.map(doc => doc.id);
+        categoryIds = categoryDocs.docs.map((doc) => doc.id);
       }
-      
+
       // Convert subcategory slugs to ObjectIds
       let subcategoryIds: string[] = [];
       if (input.subcategories && input.subcategories.length > 0) {
         const subcategoryDocs = await ctx.db.find({
           collection: "categories",
           where: {
-            slug: { in: input.subcategories }
+            slug: { in: input.subcategories },
           },
-          limit: 100
+          limit: 100,
         });
-        subcategoryIds = subcategoryDocs.docs.map(doc => doc.id);
+        subcategoryIds = subcategoryDocs.docs.map((doc) => doc.id);
       }
-      
-             try {
-         // Update the tenant with vendor profile data
-         const updatedTenant = await ctx.db.update({
-           collection: "tenants",
-           id: actualTenantId as string,
-           data: {
-             name: input.name,
-             slug: input.name, // Update slug to match new business name
-             firstName: input.firstName,
-             lastName: input.lastName,
-             bio: input.bio,
-             services: input.services,
-             categories: categoryIds, // Array of category ObjectIds
-             subcategories: subcategoryIds, // Array of subcategory ObjectIds
-             website: input.website,
-             image: input.image || undefined, // Pass the file ID for the relationship
-             phone: input.phone,
-             hourlyRate: input.hourlyRate, // This will be a number after schema transformation
-           },
-         });
 
-         return updatedTenant;
-       } catch (error) {
-         // Check if error is due to duplicate business name constraint
-         const errorMessage = error instanceof Error ? error.message : String(error);
-         if (errorMessage.includes('duplicate') || errorMessage.includes('unique') || errorMessage.includes('already exists')) {
-           throw new TRPCError({
-             code: "BAD_REQUEST",
-             message: "Business name is already taken. Please choose a different name."
-           });
-         }
-         throw error;
-       }
+      try {
+        // Update the tenant with vendor profile data
+        const updatedTenant = await ctx.db.update({
+          collection: "tenants",
+          id: actualTenantId as string,
+          data: {
+            name: input.name,
+            slug: input.name, // Update slug to match new business name
+            firstName: input.firstName,
+            lastName: input.lastName,
+            bio: input.bio,
+            services: input.services,
+            categories: categoryIds, // Array of category ObjectIds
+            subcategories: subcategoryIds, // Array of subcategory ObjectIds
+            website: input.website,
+            image: input.image || undefined, // Pass the file ID for the relationship
+            phone: input.phone,
+            hourlyRate: input.hourlyRate, // This will be a number after schema transformation
+          },
+        });
+
+        return updatedTenant;
+      } catch (error) {
+        // Check if error is due to duplicate business name constraint
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        if (
+          errorMessage.includes("duplicate") ||
+          errorMessage.includes("unique") ||
+          errorMessage.includes("already exists")
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Business name is already taken. Please choose a different name.",
+          });
+        }
+        throw error;
+      }
     }),
 
   // Check business name availability
@@ -431,7 +457,7 @@ export const authRouter = createTRPCRouter({
     .input(z.object({ name: z.string() }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.userId;
-      
+
       // Find the user
       const user = await ctx.db.find({
         collection: "users",
@@ -442,45 +468,53 @@ export const authRouter = createTRPCRouter({
       if (user.totalDocs === 0) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "User not found"
+          message: "User not found",
         });
       }
 
       const currentUser = user.docs[0];
       let currentTenantId: string | null = null;
-      
+
       // Get current user's tenant ID if they have one
-      if (currentUser && currentUser.tenants && currentUser.tenants.length > 0) {
+      if (
+        currentUser &&
+        currentUser.tenants &&
+        currentUser.tenants.length > 0
+      ) {
         const tenantObj = currentUser.tenants[0];
         if (tenantObj) {
           const tenantId = tenantObj.tenant;
-          currentTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
+          currentTenantId =
+            typeof tenantId === "object" ? tenantId.id : tenantId;
         }
       }
 
       // Check if business name is already taken
       const existingTenant = await ctx.db.find({
         collection: "tenants",
-        where: { 
+        where: {
           and: [
             { name: { equals: input.name.toLowerCase() } },
-            ...(currentTenantId ? [{ id: { not_equals: currentTenantId } }] : [])
-          ]
+            ...(currentTenantId
+              ? [{ id: { not_equals: currentTenantId } }]
+              : []),
+          ],
         },
         limit: 1,
       });
 
       return {
         available: existingTenant.totalDocs === 0,
-        message: existingTenant.totalDocs > 0 
-          ? "Business name is already taken" 
-          : "Business name is available"
+        message:
+          existingTenant.totalDocs > 0
+            ? "Business name is already taken"
+            : "Business name is available",
       };
     }),
 
   getUserProfile: clerkProcedure.query(async ({ ctx }) => {
     const userId = ctx.userId;
-    
+
     // Find the user
     const user = await ctx.db.find({
       collection: "users",
@@ -493,11 +527,11 @@ export const authRouter = createTRPCRouter({
     }
 
     const currentUser = user.docs[0];
-    
+
     if (!currentUser) {
       throw new Error("User not found");
     }
-    
+
     return {
       username: currentUser.username,
       email: currentUser.email,
@@ -524,11 +558,11 @@ export const authRouter = createTRPCRouter({
       }
 
       const currentUser = user.docs[0];
-      
+
       if (!currentUser) {
         throw new Error("User not found");
       }
-      
+
       // Find the tenant through the user's tenant relationship
       if (!currentUser.tenants || currentUser.tenants.length === 0) {
         return null; // No tenant associated with user
@@ -538,10 +572,11 @@ export const authRouter = createTRPCRouter({
       if (!tenantObj) {
         return null; // No tenant associated with user
       }
-      
+
       const tenantId = tenantObj.tenant;
-      const actualTenantId = typeof tenantId === 'object' ? tenantId.id : tenantId;
-      
+      const actualTenantId =
+        typeof tenantId === "object" ? tenantId.id : tenantId;
+
       // Get the tenant by ID with populated image field
       const tenant = await ctx.db.findByID({
         collection: "tenants",
@@ -557,38 +592,38 @@ export const authRouter = createTRPCRouter({
       let categorySlugs: string[] = [];
       if (tenant.categories && tenant.categories.length > 0) {
         // Extract just the IDs from the category objects
-        const categoryIds = tenant.categories.map(cat => 
-          typeof cat === 'object' && cat.id ? cat.id : cat
+        const categoryIds = tenant.categories.map((cat) =>
+          typeof cat === "object" && cat.id ? cat.id : cat
         );
-        
+
         const categoryDocs = await ctx.db.find({
           collection: "categories",
           where: {
-            id: { in: categoryIds }
+            id: { in: categoryIds },
           },
-          limit: 100
+          limit: 100,
         });
-        categorySlugs = categoryDocs.docs.map(doc => doc.slug);
+        categorySlugs = categoryDocs.docs.map((doc) => doc.slug);
       }
 
       // Convert subcategory ObjectIds to slugs
       let subcategorySlugs: string[] = [];
       if (tenant.subcategories && tenant.subcategories.length > 0) {
         // Extract just the IDs from the subcategory objects
-        const subcategoryIds = tenant.subcategories.map(sub => 
-          typeof sub === 'object' && sub.id ? sub.id : sub
+        const subcategoryIds = tenant.subcategories.map((sub) =>
+          typeof sub === "object" && sub.id ? sub.id : sub
         );
-        
+
         const subcategoryDocs = await ctx.db.find({
           collection: "categories",
           where: {
-            id: { in: subcategoryIds }
+            id: { in: subcategoryIds },
           },
-          limit: 100
+          limit: 100,
         });
-        subcategorySlugs = subcategoryDocs.docs.map(doc => doc.slug);
+        subcategorySlugs = subcategoryDocs.docs.map((doc) => doc.slug);
       }
-      
+
       const result = {
         name: tenant.name || "",
         firstName: tenant.firstName || "",
@@ -602,7 +637,7 @@ export const authRouter = createTRPCRouter({
         phone: tenant.phone || "",
         hourlyRate: tenant.hourlyRate || 1,
       };
-      
+
       return result;
     } catch (error) {
       console.error("Error in getVendorProfile:", error);
@@ -614,7 +649,7 @@ export const authRouter = createTRPCRouter({
     .input(profileSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.userId;
-      
+
       // Find the user
       const user = await ctx.db.find({
         collection: "users",
@@ -627,11 +662,11 @@ export const authRouter = createTRPCRouter({
       }
 
       const currentUser = user.docs[0];
-      
+
       if (!currentUser) {
         throw new Error("User not found");
       }
-      
+
       // Update the user with profile data
       await ctx.db.update({
         collection: "users",

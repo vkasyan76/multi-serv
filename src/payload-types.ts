@@ -228,6 +228,10 @@ export interface Tenant {
    * Vendor's hourly rate in EUR
    */
   hourlyRate?: number | null;
+  /**
+   * The user account associated with this tenant
+   */
+  user: string | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -429,6 +433,7 @@ export interface TenantsSelect<T extends boolean = true> {
   website?: T;
   phone?: T;
   hourlyRate?: T;
+  user?: T;
   updatedAt?: T;
   createdAt?: T;
 }

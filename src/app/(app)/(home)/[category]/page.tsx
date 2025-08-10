@@ -26,6 +26,8 @@ const Page = async ({ params, searchParams }: Props) => {
   // console.log(JSON.stringify(filters, null, 2), "THIS IS FROM RCS");
 
   const queryClient = getQueryClient();
+  void queryClient.prefetchQuery(trpc.auth.getUserProfile.queryOptions());
+
   void queryClient.prefetchQuery(
     trpc.tenants.getMany.queryOptions({ category, ...filters })
   );

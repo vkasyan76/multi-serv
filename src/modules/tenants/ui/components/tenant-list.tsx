@@ -13,11 +13,17 @@ export const TenantList = ({ category, subcategory }: Props) => {
   const trpc = useTRPC();
   const [filters] = useTenantFilters();
 
+  const { data: userProfile } = useSuspenseQuery(
+    trpc.auth.getUserProfile.queryOptions()
+  );
+
   const { data } = useSuspenseQuery(
     trpc.tenants.getMany.queryOptions({
       category: category || null,
       subcategory: subcategory || null,
-      ...filters, 
+      ...filters,
+      userLat: userProfile?.coordinates?.lat || null,
+      userLng: userProfile?.coordinates?.lng || null,
     })
   );
 
