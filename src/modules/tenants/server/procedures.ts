@@ -3,23 +3,25 @@ import { Category } from "@payload-types";
 import type { Sort, Where } from "payload";
 import { z } from "zod";
 import type { TenantsGetManyOutput } from "../types";
-import { sortValues } from "../hooks/search-params";
+import { SORT_VALUES } from "@/constants";
 import { calculateDistance } from "../distance-utils";
 import type { TenantWithRelations } from "../types";
 
 export const tenantsRouter = createTRPCRouter({
   getMany: baseProcedure
     .input(
-      z.object({
-        category: z.string().nullable().optional(),
-        subcategory: z.string().nullable().optional(),
-        minPrice: z.string().nullable().optional(),
-        maxPrice: z.string().nullable().optional(),
-        tags: z.array(z.string()).nullable().optional(),
-        sort: z.enum(sortValues).nullable().optional(),
-        userLat: z.number().nullable().optional(), // dynamic distance calculation
-        userLng: z.number().nullable().optional(),
-      })
+             z.object({
+         category: z.string().nullable().optional(),
+         subcategory: z.string().nullable().optional(),
+         minPrice: z.string().nullable().optional(),
+         maxPrice: z.string().nullable().optional(),
+         services: z.array(z.string()).nullable().optional(),
+         sort: z.enum(SORT_VALUES).nullable().optional(),
+         userLat: z.number().nullable().optional(), // dynamic distance calculation
+         userLng: z.number().nullable().optional(),
+         page: z.number().min(1).default(1), // Pagination page number
+         limit: z.number().min(1).max(100).default(20), // Page size
+       })
     )
     .query(async ({ ctx, input }) => {
       // prepare a "where" object (by default empty):
@@ -27,31 +29,34 @@ export const tenantsRouter = createTRPCRouter({
 
       let sort: Sort = "-createdAt"; // default sort by createdAt DESC
 
-      // Add "nearest" sorting option for distance-based sorting
-      if (input.sort === "nearest") {
-        // We'll handle distance sorting after calculating distances
-        sort = "-createdAt"; // fallback sort while we calculate distances
-      }
-
-      // TODO: revisit the sorting filters
-
-      if (input.sort === "curated") {
-        sort = "-createdAt"; // for test purpose sort by name
-      }
-
-      if (input.sort === "hot_and_new") {
-        sort = "+createdAt"; // for test purpose sort ASSC
-      }
-
-      if (input.sort === "trending") {
-        sort = "+createdAt"; // default sort by createdAt DESC
+      // Map new sort values to Payload sort syntax
+      switch (input.sort) {
+        case "price_low_to_high":
+          sort = "+hourlyRate"; // Sort by hourly rate ascending
+          break;
+        case "price_high_to_low":
+          sort = "-hourlyRate"; // Sort by hourly rate descending
+          break;
+        case "tenure_newest":
+          sort = "-createdAt"; // Newest tenants first
+          break;
+        case "tenure_oldest":
+          sort = "+createdAt"; // Oldest tenants first
+          break;
+        case "distance":
+        default:
+          // Default to distance sorting (nearest first)
+          // Keep default sort for now, will be handled after distance calculation
+          sort = "-createdAt";
+          break;
       }
 
       // Fix: Properly combine minPrice and maxPrice conditions
-      if (input.minPrice || input.maxPrice) {
+      // Only apply price filters if they have actual values (not empty strings)
+      if ((input.minPrice && input.minPrice.trim() !== "") || (input.maxPrice && input.maxPrice.trim() !== "")) {
         where.hourlyRate = {
-          ...(input.minPrice && { greater_than_equal: input.minPrice }),
-          ...(input.maxPrice && { less_than_equal: input.maxPrice }),
+          ...(input.minPrice && input.minPrice.trim() !== "" ? { greater_than_equal: Number(input.minPrice) } : {}),
+          ...(input.maxPrice && input.maxPrice.trim() !== "" ? { less_than_equal: Number(input.maxPrice) } : {}),
         };
       }
 
@@ -110,13 +115,13 @@ export const tenantsRouter = createTRPCRouter({
         }
       }
 
-      if (input.tags && input.tags.length > 0) {
-        where["tags.name"] = {
-          in: input.tags,
+      if (input.services && input.services.length > 0) {
+        where.services = {
+          in: input.services,
         };
       }
 
-      console.log("Input tags:", input.tags);
+      console.log("Input services:", input.services);
       console.log("Where clause:", JSON.stringify(where, null, 2));
 
       const data = await ctx.db.find({
@@ -124,10 +129,34 @@ export const tenantsRouter = createTRPCRouter({
         depth: 3, // populate "categories", "subcategories" and "image" / / Depth 2- populate "user" (for coordinates)
         where,
         sort,
+        limit: input.limit,
+        page: input.page,
+        pagination: true, // Enable pagination
+      });
+
+      console.log("Payload query results:", {
+        totalDocs: data.totalDocs,
+        docsLength: data.docs.length,
+        sortApplied: sort,
+        sortType: typeof sort,
+        allTenants: data.docs.map(t => ({ 
+          name: t.name, 
+          hourlyRate: t.hourlyRate, 
+          hourlyRateType: typeof t.hourlyRate 
+        })),
       });
 
       // Calculate distances dynamically for the current user
       let tenantsWithDistance = data.docs;
+
+      // Manual sorting fallback to ensure correct order
+      if (input.sort === "price_low_to_high") {
+        tenantsWithDistance.sort((a, b) => (a.hourlyRate || 0) - (b.hourlyRate || 0));
+        console.log("Manual sort applied: price_low_to_high");
+      } else if (input.sort === "price_high_to_low") {
+        tenantsWithDistance.sort((a, b) => (b.hourlyRate || 0) - (a.hourlyRate || 0));
+        console.log("Manual sort applied: price_high_to_low");
+      }
 
       if (input.userLat && input.userLng) {
         tenantsWithDistance = data.docs.map((tenant) => {
@@ -157,8 +186,9 @@ export const tenantsRouter = createTRPCRouter({
           };
         });
 
-        // Sort by distance if "nearest" sort is requested
-        if (input.sort === "nearest") {
+        // Only sort by distance if explicitly requested as "distance" sort
+        // Price and tenure sorting should NOT be overridden by distance calculation
+        if (input.sort === "distance") {
           tenantsWithDistance.sort((a, b) => {
             const distanceA = (a as TenantWithRelations).distance;
             const distanceB = (b as TenantWithRelations).distance;
@@ -172,6 +202,16 @@ export const tenantsRouter = createTRPCRouter({
           });
         }
       }
+
+      // Debug: Show final order after all processing
+      console.log("Final tenant order:", {
+        sort: input.sort,
+        finalOrder: tenantsWithDistance.map(t => ({ 
+          name: t.name, 
+          hourlyRate: t.hourlyRate, 
+          distance: (t as TenantWithRelations).distance 
+        }))
+      });
 
       // console.log("Query results:", data.docs.length);
 
@@ -187,7 +227,7 @@ export const tenantsRouter = createTRPCRouter({
               ? `${input.userLat}, ${input.userLng}`
               : "none",
           category: input.category,
-          tags: input.tags?.length || 0,
+          services: input.services?.length || 0,
           priceRange:
             input.minPrice || input.maxPrice
               ? `${input.minPrice || "0"} - ${input.maxPrice || "∞"}`
@@ -198,7 +238,8 @@ export const tenantsRouter = createTRPCRouter({
           withDistance: tenantsWithDistance.filter(
             (t) => (t as TenantWithRelations).distance !== null
           ).length,
-          sortApplied: input.sort === "nearest" ? "distance-based" : input.sort,
+          sortApplied:
+            input.sort === "distance" || !input.sort ? "distance-based (default)" : input.sort,
         },
         sample:
           input.userLat && input.userLng

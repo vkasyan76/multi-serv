@@ -11,6 +11,7 @@ import { Suspense } from "react";
 import { TenantFilters } from "@/modules/tenants/ui/components/tenant-filters";
 import { loadTenantFilters } from "@/modules/tenants/hooks/search-params";
 import { TenantSort } from "@/modules/tenants/ui/components/tenants-sort";
+import { SortingDisplay } from "@/modules/tenants/ui/components/sorting-display";
 
 interface Props {
   // Next.js asynchronously provides params
@@ -37,7 +38,7 @@ const Page = async ({ params, searchParams }: Props) => {
       <div className="px-4 lg:px-12 py-8 flex flex-col gap-4">
         {/* Sort  */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-y-2 lg:gap-y-0 justify-between">
-          <p className="text-2xl font-medium">Curated for you</p>
+          <SortingDisplay />
           <TenantSort />
         </div>
 

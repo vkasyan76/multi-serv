@@ -5,7 +5,7 @@ import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { PriceFilter } from "./price-filter";
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
-import { TagsFilter } from "./tags-filter";
+import { ServicesFilter } from "./services-filter";
 
 interface TenantFilterProps {
   title: string;
@@ -42,13 +42,13 @@ export const TenantFilters = () => {
   // This logic ensures that the "Clear" button is only displayed when at least one filter is active.
   // It treats zero as boolean true or false
   const hasAnyFilters = Object.entries(filters).some(([key, value]) => {
-      // Skip the sort field since it always has a default value: Exclude sort from the filter check
-  if (key === 'sort') return false;
+    // Skip the sort field since it always has a default value: Exclude sort from the filter check
+    if (key === "sort") return false;
     if (typeof value === "string") {
       return value !== "";
     }
     if (Array.isArray(value)) {
-      return value.length > 0; // Checks if tags or any array filter is not empty
+      return value.length > 0; // Checks if services or any array filter is not empty
     }
     return value != null;
   });
@@ -57,7 +57,7 @@ export const TenantFilters = () => {
     setFilters({
       minPrice: null,
       maxPrice: null,
-      tags: [],
+      services: [],
     });
   };
 
@@ -80,10 +80,10 @@ export const TenantFilters = () => {
         />
       </TenantFilter>
 
-      <TenantFilter title="Tags" className="border-b-0">
-        <TagsFilter
-          value={filters.tags}
-          onChange={(value) => onChange("tags", value)}
+      <TenantFilter title="Service Delivery" className="border-b-0">
+        <ServicesFilter
+          value={filters.services}
+          onChange={(value) => onChange("services", value)}
         />
       </TenantFilter>
     </div>

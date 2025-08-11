@@ -4,15 +4,23 @@ import {
   useQueryStates,
   parseAsStringLiteral,
 } from "nuqs";
+import { SORT_VALUES } from "@/constants";
 // import { createLoader, parseAsString } from "nuqs/server";
 
-const sortValues = ["curated", "trending", "hot_and_new"] as const;
+// export const sortValues = ["curated", "trending", "hot_and_new"] as const;
+// export const sortValues = [
+//   "price_low_to_high",
+//   "price_high_to_low",
+//   "distance",
+//   "tenure_newest",
+//   "tenure_oldest",
+// ] as const;
 
 export const params = {
-  sort: parseAsStringLiteral(sortValues).withDefault("curated"),
+  sort: parseAsStringLiteral(SORT_VALUES).withDefault("distance"),
   minPrice: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
   maxPrice: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
-  tags: parseAsArrayOf(parseAsString)
+  services: parseAsArrayOf(parseAsString)
     .withOptions({ clearOnDefault: true })
     .withDefault([]),
 };
