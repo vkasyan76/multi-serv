@@ -28,29 +28,24 @@ export const tenantsRouter = createTRPCRouter({
       // prepare a "where" object (by default empty):
       const where: Where = {};
 
-      let sort: Sort = "-createdAt"; // default sort by createdAt DESC
-
       // Map new sort values to Payload sort syntax
-      switch (input.sort) {
-        case "price_low_to_high":
-          sort = "+hourlyRate"; // Sort by hourly rate ascending
-          break;
-        case "price_high_to_low":
-          sort = "-hourlyRate"; // Sort by hourly rate descending
-          break;
-        case "tenure_newest":
-          sort = "-createdAt"; // Newest tenants first
-          break;
-        case "tenure_oldest":
-          sort = "+createdAt"; // Oldest tenants first
-          break;
-        case "distance":
-        default:
-          // Default to distance sorting (nearest first)
-          // Keep default sort for now, will be handled after distance calculation
-          sort = "-createdAt";
-          break;
-      }
+      const mapSortToPayloadFormat = (sort?: string | null): Sort => {
+        switch (sort) {
+          case "price_low_to_high":
+            return "+hourlyRate"; // Sort by hourly rate ascending
+          case "price_high_to_low":
+            return "-hourlyRate"; // Sort by hourly rate descending
+          case "tenure_newest":
+            return "-createdAt"; // Newest tenants first
+          case "tenure_oldest":
+            return "+createdAt"; // Oldest tenants first
+          case "distance":
+          default:
+            return "-createdAt"; // Default to distance sorting (nearest first)
+        }
+      };
+
+      const sort: Sort = mapSortToPayloadFormat(input.sort);
 
       // Fix: Only apply maxPrice filter if it has actual value (not empty string)
       if ((input.maxPrice && input.maxPrice.trim() !== "")) {

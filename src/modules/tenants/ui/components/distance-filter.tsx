@@ -48,8 +48,6 @@ export function DistanceFilter({
     return null;
   };
 
-
-
   return (
     <div className="space-y-4">
       {/* Toggle Switch */}

@@ -39,6 +39,23 @@ export const TenantFilters = () => {
     setFilters({ ...filters, [key]: value });
   };
 
+  // Helper functions for distance filter state management
+  const handleDistanceChange = (value: number | null) => {
+    setFilters(prev => ({
+      ...prev,
+      distanceFilterEnabled: value != null && value > 0,
+      maxDistance: value,
+    }));
+  };
+
+  const handleDistanceToggle = (enabled: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      distanceFilterEnabled: enabled,
+      maxDistance: enabled ? (prev.maxDistance ?? 50) : null,
+    }));
+  };
+
   // Checks if string values are not empty ("") and if non-string values are not null.
   // This logic ensures that the "Clear" button is only displayed when at least one filter is active.
   // It treats zero as boolean true or false
@@ -89,23 +106,8 @@ export const TenantFilters = () => {
         <DistanceFilter
           maxDistance={filters.maxDistance}
           isEnabled={filters.distanceFilterEnabled}
-          onMaxDistanceChange={(value) => {
-            // If user drags the slider, we consider the filter enabled
-            setFilters(prev => ({
-              ...prev,
-              distanceFilterEnabled: value != null && value > 0,   // true when positive number, false when null/0
-              maxDistance: value,
-            }));
-          }}
-          onToggleChange={(enabled) => {
-            setFilters(prev => ({
-              ...prev,
-              distanceFilterEnabled: enabled,
-              maxDistance: enabled
-                ? (prev.maxDistance ?? 50)        // sensible default when enabling
-                : null,                              // clear value when disabling
-            }));
-          }}
+          onMaxDistanceChange={handleDistanceChange}
+          onToggleChange={handleDistanceToggle}
           hasOnlineServices={filters.services?.includes("on-line") || false}
         />
       </TenantFilter>
