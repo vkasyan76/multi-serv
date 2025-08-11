@@ -35,12 +35,15 @@ export type UserCoordinates = {
 export type TenantsGetManyInput = {
   category?: string | null;
   subcategory?: string | null;
-  minPrice?: string | null;
   maxPrice?: string | null;
-  tags?: string[] | null;
+  services?: string[] | null;
   sort?: string | null;
   userLat?: number | null;
   userLng?: number | null;
+  maxDistance?: number | null;
+  distanceFilterEnabled?: boolean;
+  page?: number;
+  limit?: number;
 };
 
 export type TenantsGetManyOutput = {

@@ -10,18 +10,19 @@ import type { TenantWithRelations } from "../types";
 export const tenantsRouter = createTRPCRouter({
   getMany: baseProcedure
     .input(
-             z.object({
-         category: z.string().nullable().optional(),
-         subcategory: z.string().nullable().optional(),
-         minPrice: z.string().nullable().optional(),
-         maxPrice: z.string().nullable().optional(),
-         services: z.array(z.string()).nullable().optional(),
-         sort: z.enum(SORT_VALUES).nullable().optional(),
-         userLat: z.number().nullable().optional(), // dynamic distance calculation
-         userLng: z.number().nullable().optional(),
-         page: z.number().min(1).default(1), // Pagination page number
-         limit: z.number().min(1).max(100).default(20), // Page size
-       })
+      z.object({
+        category: z.string().nullable().optional(),
+        subcategory: z.string().nullable().optional(),
+        maxPrice: z.string().nullable().optional(),
+        services: z.array(z.string()).nullable().optional(),
+        sort: z.enum(SORT_VALUES).nullable().optional(),
+        userLat: z.number().nullable().optional(), // dynamic distance calculation
+        userLng: z.number().nullable().optional(),
+        maxDistance: z.number().min(0).max(300).nullable().optional(), // NEW
+        distanceFilterEnabled: z.boolean().default(false), // NEW
+        page: z.number().min(1).default(1), // Pagination page number
+        limit: z.number().min(1).max(100).default(20), // Page size
+      })
     )
     .query(async ({ ctx, input }) => {
       // prepare a "where" object (by default empty):
@@ -51,12 +52,10 @@ export const tenantsRouter = createTRPCRouter({
           break;
       }
 
-      // Fix: Properly combine minPrice and maxPrice conditions
-      // Only apply price filters if they have actual values (not empty strings)
-      if ((input.minPrice && input.minPrice.trim() !== "") || (input.maxPrice && input.maxPrice.trim() !== "")) {
+      // Fix: Only apply maxPrice filter if it has actual value (not empty string)
+      if ((input.maxPrice && input.maxPrice.trim() !== "")) {
         where.hourlyRate = {
-          ...(input.minPrice && input.minPrice.trim() !== "" ? { greater_than_equal: Number(input.minPrice) } : {}),
-          ...(input.maxPrice && input.maxPrice.trim() !== "" ? { less_than_equal: Number(input.maxPrice) } : {}),
+          less_than_equal: Number(input.maxPrice),
         };
       }
 
@@ -139,6 +138,7 @@ export const tenantsRouter = createTRPCRouter({
         docsLength: data.docs.length,
         sortApplied: sort,
         sortType: typeof sort,
+        sortMethod: input.sort === "distance" ? "database + distance" : "database only",
         allTenants: data.docs.map(t => ({ 
           name: t.name, 
           hourlyRate: t.hourlyRate, 
@@ -147,16 +147,13 @@ export const tenantsRouter = createTRPCRouter({
       });
 
       // Calculate distances dynamically for the current user
+      // Note: Price and tenure sorting are handled by the database query above
+      // Only distance sorting requires additional processing after fetching
       let tenantsWithDistance = data.docs;
 
-      // Manual sorting fallback to ensure correct order
-      if (input.sort === "price_low_to_high") {
-        tenantsWithDistance.sort((a, b) => (a.hourlyRate || 0) - (b.hourlyRate || 0));
-        console.log("Manual sort applied: price_low_to_high");
-      } else if (input.sort === "price_high_to_low") {
-        tenantsWithDistance.sort((a, b) => (b.hourlyRate || 0) - (a.hourlyRate || 0));
-        console.log("Manual sort applied: price_high_to_low");
-      }
+      // Remove manual sorting fallback - this is inefficient and incorrect
+      // Price and tenure sorting should be handled by the database query above
+      // The database will return results in the correct order based on the 'sort' parameter
 
       if (input.userLat && input.userLng) {
         tenantsWithDistance = data.docs.map((tenant) => {
@@ -189,18 +186,34 @@ export const tenantsRouter = createTRPCRouter({
         // Only sort by distance if explicitly requested as "distance" sort
         // Price and tenure sorting should NOT be overridden by distance calculation
         if (input.sort === "distance") {
-          tenantsWithDistance.sort((a, b) => {
-            const distanceA = (a as TenantWithRelations).distance;
-            const distanceB = (b as TenantWithRelations).distance;
+          // Filter out tenants without coordinates first to avoid unnecessary sorting
+          const tenantsWithCoordinates = tenantsWithDistance.filter(
+            (t) => (t as TenantWithRelations).distance !== null
+          );
+          const tenantsWithoutCoordinates = tenantsWithDistance.filter(
+            (t) => (t as TenantWithRelations).distance === null
+          );
 
-            // Handle cases where distance might be null
-            if (!distanceA && !distanceB) return 0;
-            if (!distanceA) return 1; // tenants without distance go to the end
-            if (!distanceB) return -1;
-
+          // Sort only tenants with coordinates by distance
+          tenantsWithCoordinates.sort((a, b) => {
+            const distanceA = (a as TenantWithRelations).distance!;
+            const distanceB = (b as TenantWithRelations).distance!;
             return distanceA - distanceB; // Sort by distance ascending (nearest first)
           });
+
+                  // Combine sorted tenants with coordinates + tenants without coordinates
+        tenantsWithDistance = [...tenantsWithCoordinates, ...tenantsWithoutCoordinates];
         }
+      }
+
+      // NEW: Apply distance filter if enabled and maxDistance is set
+      if (input.distanceFilterEnabled && input.maxDistance && input.maxDistance > 0) {
+        const beforeCount = tenantsWithDistance.length;
+        tenantsWithDistance = tenantsWithDistance.filter(
+          (t) => (t as TenantWithRelations).distance === null || 
+                  (t as TenantWithRelations).distance! <= input.maxDistance!
+        );
+        console.log(`Distance filter applied: ${beforeCount} → ${tenantsWithDistance.length} tenants (max: ${input.maxDistance}km)`);
       }
 
       // Debug: Show final order after all processing
@@ -229,8 +242,8 @@ export const tenantsRouter = createTRPCRouter({
           category: input.category,
           services: input.services?.length || 0,
           priceRange:
-            input.minPrice || input.maxPrice
-              ? `${input.minPrice || "0"} - ${input.maxPrice || "∞"}`
+            input.maxPrice
+              ? `${input.maxPrice}`
               : "none",
         },
         results: {

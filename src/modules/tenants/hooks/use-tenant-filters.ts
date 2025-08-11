@@ -1,6 +1,8 @@
 import {
   parseAsString,
   parseAsArrayOf,
+  parseAsInteger,
+  parseAsBoolean,
   useQueryStates,
   parseAsStringLiteral,
 } from "nuqs";
@@ -18,11 +20,12 @@ import { SORT_VALUES } from "@/constants";
 
 export const params = {
   sort: parseAsStringLiteral(SORT_VALUES).withDefault("distance"),
-  minPrice: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
   maxPrice: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
   services: parseAsArrayOf(parseAsString)
     .withOptions({ clearOnDefault: true })
     .withDefault([]),
+  maxDistance: parseAsInteger.withOptions({ clearOnDefault: true }).withDefault(0),
+  distanceFilterEnabled: parseAsBoolean.withDefault(false).withOptions({ clearOnDefault: false }),
 };
 
 // passing to the client tenant-filters.tsx:

@@ -21,11 +21,16 @@ export const ServicesFilter = ({ value, onChange }: ServicesFilterProps) => {
       {SERVICES_OPTIONS.map((opt) => (
         <div
           key={opt.value}
-          className="flex items-center justify-between cursor-pointer"
-          onClick={() => onClick(opt.value)}
+          className="flex items-center justify-between"
         >
-          <p className="font-medium">{opt.label}</p>
+          <label 
+            htmlFor={`service-${opt.value}`} 
+            className="font-medium cursor-pointer flex-1"
+          >
+            {opt.label}
+          </label>
           <Checkbox
+            id={`service-${opt.value}`}
             checked={value?.includes(opt.value)}
             onCheckedChange={() => onClick(opt.value)}
           />

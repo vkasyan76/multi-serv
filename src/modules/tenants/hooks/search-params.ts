@@ -2,6 +2,8 @@ import {
   createLoader,
   parseAsString,
   parseAsArrayOf,
+  parseAsInteger,
+  parseAsBoolean,
   parseAsStringLiteral,
 } from "nuqs/server";
 import { SORT_VALUES } from "@/constants";
@@ -10,11 +12,12 @@ import { SORT_VALUES } from "@/constants";
 
 const params = {
   sort: parseAsStringLiteral(SORT_VALUES).withDefault("distance"),
-  minPrice: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
   maxPrice: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
   services: parseAsArrayOf(parseAsString)
     .withOptions({ clearOnDefault: true })
     .withDefault([]),
+  maxDistance: parseAsInteger.withOptions({ clearOnDefault: true }).withDefault(0),
+  distanceFilterEnabled: parseAsBoolean.withDefault(false).withOptions({ clearOnDefault: false }),
 };
 
 export const loadTenantFilters = createLoader(params);

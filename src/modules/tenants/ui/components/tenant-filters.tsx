@@ -6,6 +6,7 @@ import { useState } from "react";
 import { PriceFilter } from "./price-filter";
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
 import { ServicesFilter } from "./services-filter";
+import { DistanceFilter } from "./distance-filter";
 
 interface TenantFilterProps {
   title: string;
@@ -44,6 +45,11 @@ export const TenantFilters = () => {
   const hasAnyFilters = Object.entries(filters).some(([key, value]) => {
     // Skip the sort field since it always has a default value: Exclude sort from the filter check
     if (key === "sort") return false;
+    if (key === "maxDistance") {
+      // Only count maxDistance as a filter if distanceFilterEnabled is true
+      return filters.distanceFilterEnabled && value !== null && value !== undefined;
+    }
+    if (key === "distanceFilterEnabled") return false;
     if (typeof value === "string") {
       return value !== "";
     }
@@ -55,9 +61,10 @@ export const TenantFilters = () => {
 
   const handleClear = () => {
     setFilters({
-      minPrice: null,
       maxPrice: null,
       services: [],
+      maxDistance: null,
+      distanceFilterEnabled: false,
     });
   };
 
@@ -71,12 +78,35 @@ export const TenantFilters = () => {
           </button>
         )}
       </div>
-      <TenantFilter title="Hourly Rate">
+      <TenantFilter title="Max Hourly Rate">
         <PriceFilter
-          minPrice={filters.minPrice}
           maxPrice={filters.maxPrice}
-          onMinPriceChange={(value) => onChange("minPrice", value)}
           onMaxPriceChange={(value) => onChange("maxPrice", value)}
+        />
+      </TenantFilter>
+
+      <TenantFilter title="Location & Distance">
+        <DistanceFilter
+          maxDistance={filters.maxDistance}
+          isEnabled={filters.distanceFilterEnabled}
+          onMaxDistanceChange={(value) => {
+            // If user drags the slider, we consider the filter enabled
+            setFilters(prev => ({
+              ...prev,
+              distanceFilterEnabled: value != null && value > 0,   // true when positive number, false when null/0
+              maxDistance: value,
+            }));
+          }}
+          onToggleChange={(enabled) => {
+            setFilters(prev => ({
+              ...prev,
+              distanceFilterEnabled: enabled,
+              maxDistance: enabled
+                ? (prev.maxDistance ?? 50)        // sensible default when enabling
+                : null,                              // clear value when disabling
+            }));
+          }}
+          hasOnlineServices={filters.services?.includes("on-line") || false}
         />
       </TenantFilter>
 
