@@ -1,12 +1,9 @@
 import { ChangeEvent, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { getLocaleAndCurrency } from "@/modules/profile/location-utils";
 
 interface Props {
-  minPrice?: string | null;
   maxPrice?: string | null;
-  onMinPriceChange: (value: string) => void;
   onMaxPriceChange: (value: string) => void;
 }
 
@@ -15,7 +12,7 @@ export const formatAsCurrency = (
   locale?: string,
   currency?: string
 ) => {
-  if (!value || value.trim() === '') return "";
+  if (!value || value.trim() === "") return "";
 
   const { locale: userLocale, currency: userCurrency } = getLocaleAndCurrency();
   const targetLocale = locale || userLocale;
@@ -45,7 +42,7 @@ export const formatAsCurrency = (
   const formattedValue =
     parts[0] + (parts.length > 1 ? "." + parts[1]?.slice(0, 2) : "");
 
-  if (!formattedValue || formattedValue === '.') return "";
+  if (!formattedValue || formattedValue === ".") return "";
 
   const numberValue = parseFloat(formattedValue);
   if (isNaN(numberValue)) return "";
@@ -59,30 +56,26 @@ export const formatAsCurrency = (
   }).format(numberValue);
 };
 
-export const PriceFilter = ({
-  minPrice,
-  maxPrice,
-  onMinPriceChange,
-  onMaxPriceChange,
-}: Props) => {
+export const PriceFilter = ({ maxPrice, onMaxPriceChange }: Props) => {
   const { locale, currency } = getLocaleAndCurrency();
-  const [isMinFocused, setIsMinFocused] = useState(false);
   const [isMaxFocused, setIsMaxFocused] = useState(false);
-  const minInputRef = useRef<HTMLInputElement>(null);
   const maxInputRef = useRef<HTMLInputElement>(null);
 
   // Generate dynamic currency symbol for placeholder
   const currencySymbol = new Intl.NumberFormat(locale, {
-    style: 'currency',
+    style: "currency",
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(0).replace('0', '').trim();
+  })
+    .format(0)
+    .replace("0", "")
+    .trim();
 
   const normalizePriceInput = (input: string): string => {
     // If input is empty or just whitespace, return empty string
-    if (!input || input.trim() === '') {
-      return '';
+    if (!input || input.trim() === "") {
+      return "";
     }
 
     // Determine the decimal separator for the current locale
@@ -102,41 +95,17 @@ export const PriceFilter = ({
     return numericValue;
   };
 
-  const handleMinPriceChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    
-    // If the input is empty, clear the value
-    if (!inputValue || inputValue.trim() === '') {
-      onMinPriceChange('');
-      return;
-    }
-    
-    const cleanedValue = normalizePriceInput(inputValue);
-    onMinPriceChange(cleanedValue);
-  };
-
   const handleMaxPriceChange = (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
-    
+
     // If the input is empty, clear the value
-    if (!inputValue || inputValue.trim() === '') {
-      onMaxPriceChange('');
+    if (!inputValue || inputValue.trim() === "") {
+      onMaxPriceChange("");
       return;
     }
-    
+
     const cleanedValue = normalizePriceInput(inputValue);
     onMaxPriceChange(cleanedValue);
-  };
-
-  const handleMinBlur = () => {
-    setIsMinFocused(false);
-    // Format on blur if there's a value
-    if (minPrice && minInputRef.current) {
-      const formatted = formatAsCurrency(minPrice);
-      if (formatted) {
-        minInputRef.current.value = formatted;
-      }
-    }
   };
 
   const handleMaxBlur = () => {
@@ -147,14 +116,6 @@ export const PriceFilter = ({
       if (formatted) {
         maxInputRef.current.value = formatted;
       }
-    }
-  };
-
-  const handleMinFocus = () => {
-    setIsMinFocused(true);
-    // Show raw value when focused
-    if (minPrice && minInputRef.current) {
-      minInputRef.current.value = minPrice;
     }
   };
 
@@ -169,25 +130,17 @@ export const PriceFilter = ({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-2">
-        <Label className="font-medium text-base">Minimum</Label>
-        <Input
-          ref={minInputRef}
-          type="text"
-          placeholder={`${currencySymbol}0`}
-          value={isMinFocused ? minPrice || "" : (minPrice ? formatAsCurrency(minPrice) : "")}
-          onChange={handleMinPriceChange}
-          onFocus={handleMinFocus}
-          onBlur={handleMinBlur}
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label className="font-medium text-base">Maximum</Label>
         <Input
           ref={maxInputRef}
           type="text"
-          placeholder="∞" // Infinity sign
-          value={isMaxFocused ? maxPrice || "" : (maxPrice ? formatAsCurrency(maxPrice) : "")}
+          placeholder={`${currencySymbol}0`}
+          value={
+            isMaxFocused
+              ? maxPrice || ""
+              : maxPrice
+                ? formatAsCurrency(maxPrice)
+                : ""
+          }
           onChange={handleMaxPriceChange}
           onFocus={handleMaxFocus}
           onBlur={handleMaxBlur}

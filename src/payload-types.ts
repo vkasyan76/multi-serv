@@ -71,6 +71,7 @@ export interface Config {
     media: Media;
     categories: Category;
     tenants: Tenant;
+    tags: Tag;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -85,6 +86,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -216,6 +218,7 @@ export interface Tenant {
    * Service subcategories
    */
   subcategories?: (string | Category)[] | null;
+  tags?: (string | Tag)[] | null;
   /**
    * Vendor's website URL
    */
@@ -225,6 +228,10 @@ export interface Tenant {
    * Vendor's hourly rate in EUR
    */
   hourlyRate?: number | null;
+  /**
+   * The user account associated with this tenant
+   */
+  user: string | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -268,6 +275,17 @@ export interface Category {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: string;
+  name: string;
+  tenants?: (string | Tenant)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -288,6 +306,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'tenants';
         value: string | Tenant;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: string | Tag;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -407,9 +429,21 @@ export interface TenantsSelect<T extends boolean = true> {
   services?: T;
   categories?: T;
   subcategories?: T;
+  tags?: T;
   website?: T;
   phone?: T;
   hourlyRate?: T;
+  user?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  name?: T;
+  tenants?: T;
   updatedAt?: T;
   createdAt?: T;
 }

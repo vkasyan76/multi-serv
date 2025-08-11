@@ -1,6 +1,6 @@
 import { isSuperAdmin } from "../lib/access.ts";
 import type { CollectionConfig } from "payload";
-import { TelephoneField } from '@nouance/payload-better-fields-plugin/Telephone';
+import { TelephoneField } from "@nouance/payload-better-fields-plugin/Telephone";
 
 export const Tenants: CollectionConfig = {
   slug: "tenants",
@@ -126,6 +126,12 @@ export const Tenants: CollectionConfig = {
       },
     },
     {
+      name: "tags",
+      type: "relationship",
+      relationTo: "tags",
+      hasMany: true,
+    },
+    {
       name: "website",
       type: "text",
       label: "Website",
@@ -135,12 +141,12 @@ export const Tenants: CollectionConfig = {
     },
     ...TelephoneField(
       {
-        name: 'phone',
-        label: 'Phone Number',
-        required: false
+        name: "phone",
+        label: "Phone Number",
+        required: false,
       },
       {
-        defaultCountry: 'DE',
+        defaultCountry: "DE",
         international: true,
       }
     ),
@@ -150,6 +156,16 @@ export const Tenants: CollectionConfig = {
       label: "Hourly Rate (EUR)",
       admin: {
         description: "Vendor's hourly rate in EUR",
+      },
+    },
+    {
+      name: "user",
+      type: "relationship",
+      relationTo: "users",
+      required: true,
+      label: "Associated User",
+      admin: {
+        description: "The user account associated with this tenant",
       },
     },
   ],
