@@ -20,7 +20,7 @@ export const tenantsRouter = createTRPCRouter({
         userLng: z.number().nullable().optional(),
         maxDistance: z.number().min(0).max(300).nullable().optional(), // NEW
         distanceFilterEnabled: z.boolean().default(false), // NEW
-        page: z.number().min(1).default(1), // Pagination page number
+        cursor: z.number().optional(), // Optional cursor for infinite queries
         limit: z.number().min(1).max(100).default(20), // Page size
       })
     )
@@ -124,7 +124,7 @@ export const tenantsRouter = createTRPCRouter({
         where,
         sort,
         limit: input.limit,
-        page: input.page,
+        page: input.cursor || 1, // Use cursor if provided, otherwise start from page 1
         pagination: true, // Enable pagination
       });
 

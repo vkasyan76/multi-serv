@@ -42,7 +42,7 @@ export type TenantsGetManyInput = {
   userLng?: number | null;
   maxDistance?: number | null;
   distanceFilterEnabled?: boolean;
-  page?: number;
+  cursor?: number;
   limit?: number;
 };
 
