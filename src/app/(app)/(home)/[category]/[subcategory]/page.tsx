@@ -16,20 +16,27 @@ const Page = async ({ params }: Props) => {
   // Prefetch user profile
   void queryClient.prefetchQuery(trpc.auth.getUserProfile.queryOptions());
   
-  // Prefetch tenants with all the parameters the client will use
-  void queryClient.prefetchQuery(
-    trpc.tenants.getMany.queryOptions({ 
-      category: category,      // Parent category
-      subcategory: subcategory, // Specific subcategory
-      sort: "distance",        // Default sort
-      maxPrice: "",
-      services: [],
-      maxDistance: 0,
-      distanceFilterEnabled: false,
-      userLat: null, // Will be filled by client
-      userLng: null, // Will be filled by client
-      limit: 8, // DEFAULT_LIMIT
-    })
+  // Prefetch tenants with infinite query options
+  void queryClient.prefetchInfiniteQuery(
+    trpc.tenants.getMany.infiniteQueryOptions(
+      { 
+        category: category,      // Parent category
+        subcategory: subcategory, // Specific subcategory
+        sort: "distance",        // Default sort
+        maxPrice: "",
+        services: [],
+        maxDistance: 0,
+        distanceFilterEnabled: false,
+        userLat: null, // Will be filled by client
+        userLng: null, // Will be filled by client
+        limit: 8, // DEFAULT_LIMIT
+      },
+      {
+        getNextPageParam: (lastPage) => {
+          return lastPage.hasNextPage ? lastPage.nextPage : undefined;
+        },
+      }
+    )
   );
 
   return (

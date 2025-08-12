@@ -1,12 +1,14 @@
 "use client";
 
 import { useTRPC } from "@/trpc/client";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
 import { TenantCard } from "./tenant-card";
 import { ListSkeleton } from "./skeletons/list-skeleton";
 import { DEFAULT_LIMIT } from "@/constants";
 import type { TenantWithRelations } from "../../types";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface Props {
   category?: string;
@@ -22,25 +24,33 @@ export const TenantList = ({ category, subcategory }: Props) => {
     trpc.auth.getUserProfile.queryOptions()
   );
 
-  // Use regular query - React Query handles caching automatically
-  const { data, isLoading } = useSuspenseQuery(
-    trpc.tenants.getMany.queryOptions({
-      category: category || null,
-      subcategory: subcategory || null,
-      ...filters,
-      userLat: userProfile?.coordinates?.lat ?? null,
-      userLng: userProfile?.coordinates?.lng ?? null,
-      limit: DEFAULT_LIMIT,
-    })
+  // Use infinite query for tenants with Load More functionality
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useSuspenseInfiniteQuery(
+    trpc.tenants.getMany.infiniteQueryOptions(
+      {
+        category: category || null,
+        subcategory: subcategory || null,
+        ...filters,
+        userLat: userProfile?.coordinates?.lat ?? null,
+        userLng: userProfile?.coordinates?.lng ?? null,
+        limit: DEFAULT_LIMIT,
+      },
+      {
+        getNextPageParam: (lastPage) => {
+          return lastPage.hasNextPage ? lastPage.nextPage : undefined;
+        },
+      }
+    )
   );
 
-  // Show skeleton while loading
-  if (isLoading) {
-    return <ListSkeleton count={6} />;
-  }
+  // Flatten all pages into a single array
+  const allTenants = data.pages.flatMap(page => page.docs);
+  
+  // Get total count from the first page (all pages have the same totalDocs)
+  const totalTenants = data.pages[0]?.totalDocs || 0;
 
   // Show empty state if no tenants
-  if (!data?.docs || data.docs.length === 0) {
+  if (allTenants.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 text-lg">
@@ -57,7 +67,7 @@ export const TenantList = ({ category, subcategory }: Props) => {
     <div className="space-y-6">
       {/* Tenant Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-        {data.docs.map((tenant: TenantWithRelations) => (
+        {allTenants.map((tenant: TenantWithRelations) => (
           <TenantCard
             key={tenant.id}
             tenant={tenant}
@@ -67,9 +77,36 @@ export const TenantList = ({ category, subcategory }: Props) => {
         ))}
       </div>
 
+      {/* Load More Button */}
+      {hasNextPage && (
+        <div className="flex justify-center pt-6">
+          <Button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            variant="outline"
+            size="lg"
+            className="min-w-[140px]"
+          >
+            {isFetchingNextPage ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading...</span>
+              </div>
+            ) : (
+              "Load More"
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Loading Skeletons for New Items */}
+      {isFetchingNextPage && (
+        <ListSkeleton count={DEFAULT_LIMIT} />
+      )}
+
       {/* Results Summary */}
       <div className="text-center text-sm text-gray-500">
-        Showing {data.docs.length} of {data.totalDocs} tenants
+        Showing {allTenants.length} providers out of {totalTenants}
       </div>
     </div>
   );

@@ -196,8 +196,8 @@ export const tenantsRouter = createTRPCRouter({
             return distanceA - distanceB; // Sort by distance ascending (nearest first)
           });
 
-                  // Combine sorted tenants with coordinates + tenants without coordinates
-        tenantsWithDistance = [...tenantsWithCoordinates, ...tenantsWithoutCoordinates];
+          // Combine sorted tenants with coordinates + tenants without coordinates
+          tenantsWithDistance = [...tenantsWithCoordinates, ...tenantsWithoutCoordinates];
         }
       }
 
@@ -219,6 +219,14 @@ export const tenantsRouter = createTRPCRouter({
           hourlyRate: t.hourlyRate, 
           distance: (t as TenantWithRelations).distance 
         }))
+      });
+      
+      // Debug: Verify pagination is respected
+      console.log("Pagination check:", {
+        requestedLimit: input.limit,
+        actualDocsReturned: tenantsWithDistance.length,
+        payloadTotalDocs: data.totalDocs,
+        hasNextPage: data.hasNextPage
       });
 
       // console.log("Query results:", data.docs.length);
@@ -261,7 +269,17 @@ export const tenantsRouter = createTRPCRouter({
 
       return {
         ...data,
-        docs: tenantsWithDistance,
+        docs: tenantsWithDistance, // Keep the distance-calculated tenants but respect pagination
+        // Ensure proper pagination metadata for infinite queries
+        hasNextPage: data.hasNextPage,
+        nextPage: data.hasNextPage ? data.nextPage : undefined,
+        hasPrevPage: data.hasPrevPage,
+        prevPage: data.hasPrevPage ? data.prevPage : undefined,
+        totalDocs: data.totalDocs,
+        totalPages: data.totalPages,
+        page: data.page,
+        limit: data.limit,
+        pagingCounter: data.pagingCounter,
       } as TenantsGetManyOutput;
     }),
 });
