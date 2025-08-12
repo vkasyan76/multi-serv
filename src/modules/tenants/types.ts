@@ -23,6 +23,7 @@ export type TenantWithRelations = Tenant & {
       lat: number;
       lng: number;
     };
+    clerkImageUrl?: string | null; // Clerk profile image URL for fallback
   };
   distance?: number | null; // Distance from current user to this tenant
 };

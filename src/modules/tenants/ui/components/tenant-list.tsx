@@ -63,10 +63,10 @@ export const TenantList = ({ category, subcategory }: Props) => {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Tenant Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+     return (
+     <div className="space-y-4">
+             {/* Tenant Cards Container */}
+      <div className="flex flex-wrap gap-4 justify-start pt-2">
         {allTenants.map((tenant: TenantWithRelations) => (
           <TenantCard
             key={tenant.id}

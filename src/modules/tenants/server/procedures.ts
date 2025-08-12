@@ -7,6 +7,16 @@ import { SORT_VALUES } from "@/constants";
 import { calculateDistance } from "../distance-utils";
 import type { TenantWithRelations } from "../types";
 
+// Helper interface for tenant user data
+interface TenantUserData {
+  id: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  clerkImageUrl?: string | null;
+}
+
 export const tenantsRouter = createTRPCRouter({
   getMany: baseProcedure
     .input(
@@ -172,10 +182,19 @@ export const tenantsRouter = createTRPCRouter({
             );
           }
 
+          // Safely extract user data with proper typing
+          const userData: TenantUserData | undefined = tenantUser && typeof tenantUser === 'object' ? {
+            id: tenantUser.id || '',
+            coordinates: tenantUser.coordinates || undefined,
+            // Add Clerk image URL for fallback - safely access properties
+            clerkImageUrl: (tenantUser as TenantUserData)?.clerkImageUrl || null,
+          } : undefined;
+
           return {
             ...tenant,
             distance, // This distance is specific to the current user
-          };
+            user: userData,
+          } as TenantWithRelations;
         });
 
         // Only sort by distance if explicitly requested as "distance" sort
