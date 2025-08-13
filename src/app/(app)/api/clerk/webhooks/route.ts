@@ -4,6 +4,10 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { getPayload } from "payload";
 import config from "@/payload.config";
 
+// Ensure Node runtime (Svix verification needs it)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   console.log('Webhook - POST request received');
   
@@ -22,7 +26,7 @@ export async function POST(req: Request) {
   }
 
   // Get the body
-  const payload = await req.text();
+  const webhookPayload = await req.text();
 
   // Create a new Svix instance with your secret.
   const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || "");
@@ -31,7 +35,7 @@ export async function POST(req: Request) {
 
   // Verify the payload with the headers
   try {
-    evt = wh.verify(payload, {
+    evt = wh.verify(webhookPayload, {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
@@ -53,8 +57,8 @@ export async function POST(req: Request) {
     const { id, email_addresses, username } = evt.data;
     
     // Check if user already exists (idempotent)
-    const payload = await getPayload({ config });
-    const findUser = await payload.find({
+    const payloadInstance = await getPayload({ config });
+    const findUser = await payloadInstance.find({
       collection: "users",
       where: { clerkUserId: { equals: id } },
       limit: 1,
@@ -66,7 +70,7 @@ export async function POST(req: Request) {
       const usernameValue = username || email.split("@")[0] || "";
       
       // Create user WITHOUT coordinates - let request-time geolocation handle that
-      const newUser = await payload.create({
+      const newUser = await payloadInstance.create({
         collection: "users",
         data: { 
           email, 
@@ -86,8 +90,8 @@ export async function POST(req: Request) {
   if (eventType === "user.updated") {
     const { id, email_addresses, username } = evt.data;
     
-    const payload = await getPayload({ config });
-    const findUser = await payload.find({
+    const payloadInstance = await getPayload({ config });
+    const findUser = await payloadInstance.find({
       collection: "users",
       where: { clerkUserId: { equals: id } },
       limit: 1,
@@ -100,7 +104,7 @@ export async function POST(req: Request) {
         const usernameValue = username || email.split("@")[0] || "";
         
         // Update existing user (idempotent)
-        await payload.update({
+        await payloadInstance.update({
           collection: "users",
           id: existingUser.id,
           data: { 
@@ -116,8 +120,8 @@ export async function POST(req: Request) {
   if (eventType === "user.deleted") {
     const { id } = evt.data;
     
-    const payload = await getPayload({ config });
-    const findUser = await payload.find({
+    const payloadInstance = await getPayload({ config });
+    const findUser = await payloadInstance.find({
       collection: "users",
       where: { clerkUserId: { equals: id } },
       limit: 1,
@@ -126,7 +130,7 @@ export async function POST(req: Request) {
     if (findUser.docs.length > 0) {
       const existingUser = findUser.docs[0];
       if (existingUser) {
-        await payload.delete({
+        await payloadInstance.delete({
           collection: "users",
           id: existingUser.id,
         });
