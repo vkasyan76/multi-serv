@@ -4,49 +4,7 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import type { UserCoordinates } from "@/modules/tenants/types";
-
-// IP Geolocation helper function using ipapi.co service
-// This provides accurate, production-ready IP geolocation with EU country detection
-// Free tier available: https://ipapi.co/
-async function getLocationFromIP(ip: string): Promise<UserCoordinates | undefined> {
-  try {
-    console.log('Webhook IP Geolocation - Fetching location for IP:', ip);
-    
-    // Use ipapi.co for accurate IP geolocation (free tier available)
-    const response = await fetch(`https://ipapi.co/${ip}/json/`);
-    const data = await response.json();
-    
-    if (data.error) {
-      console.error('IP geolocation error:', data.reason);
-      return undefined;
-    }
-    
-    // Check if it's an EU country
-    const euCountries = ['DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'PL', 'CZ', 'SK', 'HU', 'RO', 'BG', 'HR', 'SI', 'GR', 'PT', 'DK', 'SE', 'FI', 'LU', 'MT', 'CY', 'EE', 'LV', 'LT', 'IE'];
-    
-    if (data.country_code && euCountries.includes(data.country_code)) {
-      const result = {
-        lat: data.latitude,
-        lng: data.longitude,
-        city: data.city,
-        country: data.country_name,
-        region: data.region,
-        ipDetected: true,
-        manuallySet: false
-      };
-      
-      console.log('Webhook IP Geolocation - Successfully extracted EU location:', result);
-      return result;
-    }
-    
-    console.log('Webhook IP Geolocation - IP not from EU country:', data.country_code);
-    return undefined;
-    
-  } catch (error) {
-    console.log('Webhook IP geolocation failed:', error);
-    return undefined;
-  }
-}
+import { getLocationFromIP, extractIPFromHeaders } from "@/modules/profile/location-utils";
 
 export async function POST(req: Request) {
   console.log('Webhook - POST request received');
@@ -115,20 +73,8 @@ export async function POST(req: Request) {
     try {
       // Extract IP from request headers (handles proxy scenarios)
       const headerPayload = await headers();
+      const userIP = extractIPFromHeaders(headerPayload);
       
-      // Try multiple IP headers in order of preference
-      const possibleIPs = [
-        headerPayload.get('x-forwarded-for')?.split(',')[0]?.trim(),
-        headerPayload.get('x-real-ip'),
-        headerPayload.get('x-client-ip'),
-        headerPayload.get('cf-connecting-ip'), // Cloudflare
-        headerPayload.get('x-forwarded'),
-        headerPayload.get('forwarded')?.split(',')[0]?.split('=')[1]?.trim(),
-      ].filter(Boolean);
-      
-      const userIP = possibleIPs[0] || '127.0.0.1';
-      
-      console.log('Webhook - All possible IPs:', possibleIPs);
       console.log('Webhook - Selected IP:', userIP);
       
       // Get location from IP (allow localhost for testing, but use a fallback IP)

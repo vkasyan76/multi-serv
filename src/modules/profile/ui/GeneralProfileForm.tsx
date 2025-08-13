@@ -19,6 +19,8 @@ import {
   SUPPORTED_LANGUAGES,
   getInitialLanguage,
   extractCountry,
+  extractCityFromAddress,
+  extractRegionFromAddress,
 } from "../location-utils";
 import {
   Select,
@@ -173,9 +175,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       coordinates: selectedLocation ? {
         lat: selectedLocation.lat,
         lng: selectedLocation.lng,
-        city: selectedLocation.address.split(',')[0]?.trim(), // Extract city from address
+        city: extractCityFromAddress(selectedLocation.address),
         country: selectedLocation.country,
-        region: selectedLocation.address.split(',')[1]?.trim(), // Extract region from address
+        region: extractRegionFromAddress(selectedLocation.address),
         ipDetected: false, // User is manually setting location
         manuallySet: true, // Mark as manually set
       } : undefined,

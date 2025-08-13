@@ -11,6 +11,7 @@ import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
 import { z } from "zod";
 import type { UserCoordinates } from "@/modules/tenants/types";
+import { hasValidCoordinates, mergeCoordinates } from "@/modules/profile/location-utils";
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
@@ -674,15 +675,11 @@ export const authRouter = createTRPCRouter({
         throw new Error("User not found");
       }
 
-      // Update the user with profile data
-      // If user provides coordinates, mark them as manually set
+      // If user provides coordinates, mark them as manually set and preserve existing metadata
       let updatedCoordinates = input.coordinates;
-      if (input.coordinates && input.coordinates.lat && input.coordinates.lng) {
-        updatedCoordinates = {
-          ...input.coordinates,
-          ipDetected: false, // User is overriding IP-detected coordinates
-          manuallySet: true, // Mark as manually set by user
-        };
+      if (hasValidCoordinates(input.coordinates) && input.coordinates) {
+        const existingCoords = currentUser.coordinates as Partial<UserCoordinates> | undefined;
+        updatedCoordinates = mergeCoordinates(existingCoords || {}, input.coordinates, true);
       }
 
       await ctx.db.update({
