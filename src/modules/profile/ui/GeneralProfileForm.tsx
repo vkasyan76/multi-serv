@@ -39,6 +39,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
 import { Home } from "lucide-react";
 import Link from "next/link";
+import type { UserCoordinates } from "@/modules/tenants/types";
 
 interface GeneralProfileFormProps {
   onSuccess?: () => void;
@@ -47,23 +48,27 @@ interface GeneralProfileFormProps {
 export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  
+
   // Fetch user profile data from database
   const { data: userProfile, isLoading } = useQuery(
     trpc.auth.getUserProfile.queryOptions()
   );
-  
+
   const updateUserProfile = useMutation(
     trpc.auth.updateUserProfile.mutationOptions({
       onSuccess: () => {
         toast.success("Profile updated successfully!");
         // Invalidate the getUserProfile query to update the cache
-        queryClient.invalidateQueries({ queryKey: trpc.auth.getUserProfile.queryOptions().queryKey });
+        queryClient.invalidateQueries({
+          queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
+        });
         onSuccess?.(); // Call the onSuccess callback if provided
       },
       onError: (error) => {
         console.error("Error updating profile:", error);
-        toast.error(error.message || "Failed to update profile. Please try again.");
+        toast.error(
+          error.message || "Failed to update profile. Please try again."
+        );
       },
     })
   );
@@ -79,42 +84,6 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       language: getInitialLanguage(),
     },
   });
-
-  // Update form values when user profile data is available
-  useEffect(() => {
-    if (userProfile) {
-      // Reset form with user profile data
-      form.reset({
-        username: userProfile.username || "",
-        email: userProfile.email || "",
-        location: userProfile.location || "",
-        country: userProfile.country || "",
-        language: userProfile.language || getInitialLanguage(),
-      });
-      
-      // Ensure language field is properly set after a short delay
-      if (userProfile.language) {
-        setTimeout(() => {
-          form.setValue("language", userProfile.language, { shouldValidate: true });
-        }, 0);
-      }
-      
-      // Set location input to display existing location
-      if (userProfile.location) {
-        setLocationInput(userProfile.location);
-      }
-      
-      // Set selected location if country exists
-      if (userProfile.country) {
-        setSelectedLocation({
-          address: userProfile.location || "",
-          country: userProfile.country,
-          lat: 0, // We don't store coordinates in the profile
-          lng: 0,
-        });
-      }
-    }
-  }, [userProfile, form]);
 
   // ...All the autocomplete/useEffect logic as in your previous ProfileForm
   const selectedLanguage = useWatch({
@@ -132,11 +101,85 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   } | null>(null);
 
   // Determine if profile has been completed before
-  const isProfileCompleted = userProfile && (
-    userProfile.location || 
-    userProfile.country || 
-    (userProfile.language && userProfile.language !== "en")
-  );
+  const isProfileCompleted =
+    userProfile &&
+    (userProfile.location ||
+      userProfile.country ||
+      (userProfile.language && userProfile.language !== "en"));
+
+  // Helper function to build location string from coordinates
+  const buildDetectedLocationString = (coordinates: UserCoordinates) => {
+    if (!coordinates) return null;
+
+    const parts = [];
+    if (coordinates.city) parts.push(coordinates.city);
+    if (coordinates.region && coordinates.region !== coordinates.city)
+      parts.push(coordinates.region);
+    if (coordinates.country) parts.push(coordinates.country);
+
+    return parts.length > 0 ? parts.join(", ") : null;
+  };
+
+  // Update form values when user profile data is available
+  useEffect(() => {
+    if (userProfile) {
+      // Reset form with user profile data
+      form.reset({
+        username: userProfile.username || "",
+        email: userProfile.email || "",
+        location: userProfile.location || "",
+        country: userProfile.country || "",
+        language: userProfile.language || getInitialLanguage(),
+      });
+
+      // Ensure language field is properly set after a short delay
+      if (userProfile.language) {
+        setTimeout(() => {
+          form.setValue("language", userProfile.language, {
+            shouldValidate: true,
+          });
+        }, 0);
+      }
+
+      // Set location input to display existing location
+      if (userProfile.location) {
+        setLocationInput(userProfile.location);
+      }
+
+      // Set selected location if country exists
+      if (userProfile.country) {
+        setSelectedLocation({
+          address: userProfile.location || "",
+          country: userProfile.country,
+          lat: 0, // We don't store coordinates in the profile
+          lng: 0,
+        });
+      }
+
+      // Auto-populate location field with IP geolocation if user hasn't completed onboarding
+      // and doesn't have coordinates set
+      if (
+        !isProfileCompleted &&
+        userProfile.coordinates?.ipDetected &&
+        !userProfile.coordinates?.manuallySet
+      ) {
+        const detectedLocation = buildDetectedLocationString(
+          userProfile.coordinates
+        );
+        if (detectedLocation) {
+          setLocationInput(detectedLocation);
+          form.setValue("location", detectedLocation, { shouldValidate: true });
+
+          // Also set the country if available
+          if (userProfile.coordinates.country) {
+            form.setValue("country", userProfile.coordinates.country, {
+              shouldValidate: true,
+            });
+          }
+        }
+      }
+    }
+  }, [userProfile, form, isProfileCompleted]);
 
   useEffect(() => {
     if (!locationInput) {
@@ -172,17 +215,19 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
     const submission = {
       ...values,
-      coordinates: selectedLocation ? {
-        lat: selectedLocation.lat,
-        lng: selectedLocation.lng,
-        city: extractCityFromAddress(selectedLocation.address),
-        country: selectedLocation.country,
-        region: extractRegionFromAddress(selectedLocation.address),
-        ipDetected: false, // User is manually setting location
-        manuallySet: true, // Mark as manually set
-      } : undefined,
+      coordinates: selectedLocation
+        ? {
+            lat: selectedLocation.lat,
+            lng: selectedLocation.lng,
+            city: extractCityFromAddress(selectedLocation.address),
+            country: selectedLocation.country,
+            region: extractRegionFromAddress(selectedLocation.address),
+            ipDetected: false, // User is manually setting location
+            manuallySet: true, // Mark as manually set
+          }
+        : undefined,
     };
-    
+
     updateUserProfile.mutate(submission);
   };
 
@@ -231,33 +276,33 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
             />
             <h1 className="text-3xl font-bold">Profile settings</h1>
           </div>
-                     <Link
-             href="/"
-             className="flex items-center gap-3 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-           >
-             <Home className="w-6 h-6" />
-             <span className="text-base font-medium">Home</span>
-           </Link>
+          <Link
+            href="/"
+            className="flex items-center gap-3 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            <Home className="w-6 h-6" />
+            <span className="text-base font-medium">Home</span>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <FormField
-             name="username"
-             control={form.control}
-             render={({ field }) => (
-               <FormItem>
-                 <FormLabel>Username</FormLabel>
-                 <FormControl>
-                   <Input 
-                     {...field} 
-                     autoComplete="off" 
-                     placeholder="Enter your username"
-                     value={field.value}
-                   />
-                 </FormControl>
-               </FormItem>
-             )}
-           />
+          <FormField
+            name="username"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Username</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    autoComplete="off"
+                    placeholder="Enter your username"
+                    value={field.value}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
           <FormField
             name="location"
             control={form.control}
@@ -293,29 +338,37 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                       )}
                   </div>
                 </FormControl>
+                {/* Show subtle indicator when location is auto-populated from IP */}
+                {userProfile?.coordinates?.ipDetected &&
+                  !userProfile?.coordinates?.manuallySet &&
+                  locationInput && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      📍 Auto-detected from your IP address
+                    </p>
+                  )}
               </FormItem>
             )}
           />
-                     <FormField
-             name="email"
-             control={form.control}
-             render={({ field }) => (
-               <FormItem>
-                 <FormLabel>Email address</FormLabel>
-                 <FormControl>
-                   <Input 
-                     {...field} 
-                     type="email" 
-                     autoComplete="off" 
-                     readOnly 
-                     disabled
-                     className="bg-gray-100 cursor-not-allowed"
-                     value={userProfile?.email || ""}
-                   />
-                 </FormControl>
-               </FormItem>
-             )}
-           />
+          <FormField
+            name="email"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email address</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="email"
+                    autoComplete="off"
+                    readOnly
+                    disabled
+                    className="bg-gray-100 cursor-not-allowed"
+                    value={userProfile?.email || ""}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
           <FormField
             name="country"
             control={form.control}
@@ -325,7 +378,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                 <FormControl>
                   <Input
                     {...field}
-                    value={selectedLocation?.country || userProfile?.country || ""}
+                    value={
+                      selectedLocation?.country || userProfile?.country || ""
+                    }
                     readOnly
                     disabled
                     tabIndex={-1}
@@ -339,15 +394,21 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
             control={form.control}
             render={({ field }) => {
               // Use the watched value to ensure proper synchronization
-              const currentValue = selectedLanguage || field.value || userProfile?.language || getInitialLanguage();
-              
+              const currentValue =
+                selectedLanguage ||
+                field.value ||
+                userProfile?.language ||
+                getInitialLanguage();
+
               return (
                 <FormItem>
                   <FormLabel>Language</FormLabel>
                   <FormControl>
                     <Select value={currentValue} onValueChange={field.onChange}>
                       <SelectTrigger className="w-full">
-                        {SUPPORTED_LANGUAGES.find((l) => l.code === currentValue)?.label || "English"}
+                        {SUPPORTED_LANGUAGES.find(
+                          (l) => l.code === currentValue
+                        )?.label || "English"}
                       </SelectTrigger>
                       <SelectContent>
                         {SUPPORTED_LANGUAGES.map(({ code, label }) => (
@@ -363,29 +424,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
             }}
           />
         </div>
-        
-        {/* IP-Detected Location Information */}
-        {userProfile?.coordinates?.ipDetected && (
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm font-medium text-blue-800">
-                Location Detected from IP Address
-              </span>
-            </div>
-            <p className="text-sm text-blue-700 mb-2">
-              We detected your approximate location based on your IP address. 
-              You can update this to your exact location below.
-            </p>
-            {userProfile.coordinates?.city && userProfile.coordinates?.country && (
-              <div className="text-sm text-blue-600">
-                <strong>Detected:</strong> {userProfile.coordinates.city}, {userProfile.coordinates.country}
-                {userProfile.coordinates?.region && `, ${userProfile.coordinates.region}`}
-              </div>
-            )}
-          </div>
-        )}
-        
+
         <Button
           type="submit"
           size="lg"

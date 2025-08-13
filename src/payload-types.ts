@@ -188,6 +188,10 @@ export interface User {
    * Whether the user has completed onboarding
    */
   onboardingCompleted?: boolean | null;
+  /**
+   * When the user's geolocation was last updated
+   */
+  geoUpdatedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -403,6 +407,7 @@ export interface UsersSelect<T extends boolean = true> {
         manuallySet?: T;
       };
   onboardingCompleted?: T;
+  geoUpdatedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

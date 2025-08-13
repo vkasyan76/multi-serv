@@ -6,7 +6,6 @@ import { AUTH_COOKIE } from "../constants";
 import { registerSchema, loginSchema } from "../schemas";
 import { generateAuthCookie } from "../utils";
 import { stripe } from "@/lib/stripe";
-import { clerkClient } from "@clerk/clerk-sdk-node";
 import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
 import { z } from "zod";
@@ -142,9 +141,6 @@ export const authRouter = createTRPCRouter({
 
   syncClerkUser: clerkProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.userId;
-    const clerkUser = await clerkClient.users.getUser(userId);
-    const email = clerkUser.primaryEmailAddress?.emailAddress || "";
-    const username = clerkUser.username || email.split("@")[0];
 
     const existing = await ctx.db.find({
       collection: "users",
@@ -155,15 +151,19 @@ export const authRouter = createTRPCRouter({
     if (existing.docs.length > 0) {
       const existingUser = existing.docs[0];
       if (!existingUser) return null;
+      
       // Don't auto-create tenant - let user decide when to become vendor
       // Optional: Keep Clerk in sync if needed
       await updateClerkUserMetadata(userId, existingUser.id as string, existingUser.username);
       return existingUser;
     }
 
-    // New user flow - let webhook handle user creation with IP geolocation
-    // This prevents race conditions between tRPC and webhook
-    console.log('tRPC - User not found, webhook should handle creation');
+    // New user flow - webhook should have created this user
+    // If we get here, it means webhook hasn't run yet (rare case)
+    console.log('tRPC - User not found, webhook may not have run yet');
+    
+    // Return null to indicate user needs to be created by webhook
+    // The frontend can handle this gracefully
     return null;
   }),
 
@@ -687,5 +687,103 @@ export const authRouter = createTRPCRouter({
       await updateClerkUserMetadata(userId, currentUser.id, input.username);
 
       return currentUser;
+    }),
+
+  updateUserCoordinates: clerkProcedure
+    .input(z.object({
+      coordinates: z.object({
+        lat: z.number(),
+        lng: z.number(),
+        city: z.string().optional(),
+        country: z.string().optional(),
+        region: z.string().optional(),
+      })
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        throw new Error("User not found");
+      }
+
+      const currentUser = user.docs[0];
+      if (!currentUser) {
+        throw new Error("User not found");
+      }
+
+      // Round coordinates to 3 decimal places for privacy and consistency
+      const round = (n: number, d = 3) => Math.round(n * 10 ** d) / 10 ** d;
+
+      // EU countries allow-list for storage policy
+      const allowCountries = new Set([
+        "DE", "FR", "IT", "ES", "NL", "BE", "AT", "PL", "CZ", "SK", "HU", "RO", 
+        "BG", "HR", "SI", "GR", "PT", "DK", "SE", "FI", "LU", "MT", "CY", "EE", 
+        "LV", "LT", "IE"
+      ]);
+
+      // Prepare incoming coordinates
+      const incoming = {
+        country: input.coordinates.country ?? null,
+        region: input.coordinates.region ?? null,
+        city: input.coordinates.city ?? null,
+        lat: input.coordinates.lat != null ? round(input.coordinates.lat, 3) : null,
+        lng: input.coordinates.lng != null ? round(input.coordinates.lng, 3) : null,
+      };
+
+      // Get existing coordinates to preserve metadata
+      const existing = currentUser.coordinates as Partial<UserCoordinates> | undefined;
+
+      // Merge incoming with existing data
+      const merged = {
+        country: incoming.country ?? existing?.country ?? null,
+        region: incoming.region ?? existing?.region ?? null,
+        city: incoming.city ?? existing?.city ?? null,
+        lat: incoming.lat ?? existing?.lat ?? null,
+        lng: incoming.lng ?? existing?.lng ?? null,
+        ipDetected: true,
+        manuallySet: false,
+      };
+
+      // Check if anything actually changed
+      const changed = 
+        merged.country !== existing?.country ||
+        merged.region !== existing?.region ||
+        merged.city !== existing?.city ||
+        merged.lat !== existing?.lat ||
+        merged.lng !== existing?.lng;
+
+      // Check if country is allowed for storage
+      const allowed = !merged.country || allowCountries.has(merged.country);
+
+      // Only write if something changed AND country is allowed
+      if (changed && allowed) {
+        await ctx.db.update({
+          collection: "users",
+          id: currentUser.id as string,
+          data: {
+            coordinates: merged,
+            geoUpdatedAt: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Log high-level outcome (avoid PII)
+      console.log(`Geo update for user ${userId.slice(0, 8)}...: stored=${changed && allowed}, country=${merged.country || 'unknown'}`);
+
+      return { 
+        success: true, 
+        stored: changed && allowed, 
+        coordinates: merged,
+        policy: {
+          allowed,
+          reason: allowed ? 'country_allowed' : 'country_not_in_eu_list'
+        }
+      };
     }),
 });

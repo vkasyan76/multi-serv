@@ -201,5 +201,14 @@ export const Users: CollectionConfig = {
         description: "Whether the user has completed onboarding",
       },
     },
+    {
+      name: "geoUpdatedAt",
+      type: "date",
+      label: "Geolocation Updated At",
+      admin: {
+        description: "When the user's geolocation was last updated",
+        position: "sidebar",
+      },
+    },
   ],
 };
