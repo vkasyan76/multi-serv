@@ -144,10 +144,52 @@ export const Users: CollectionConfig = {
             description: "Location longitude",
           },
         },
+        {
+          name: "city",
+          type: "text",
+          label: "City",
+          admin: {
+            description: "City name from IP geolocation",
+          },
+        },
+        {
+          name: "country",
+          type: "text",
+          label: "Country",
+          admin: {
+            description: "Country name from IP geolocation",
+          },
+        },
+        {
+          name: "region",
+          type: "text",
+          label: "Region",
+          admin: {
+            description: "Region/state name from IP geolocation",
+          },
+        },
+        {
+          name: "ipDetected",
+          type: "checkbox",
+          label: "IP Detected",
+          defaultValue: false,
+          admin: {
+            description: "Whether coordinates were detected from IP",
+          },
+        },
+        {
+          name: "manuallySet",
+          type: "checkbox",
+          label: "Manually Set",
+          defaultValue: false,
+          admin: {
+            description: "Whether coordinates were manually set by user",
+          },
+        },
       ],
       label: "Coordinates",
       admin: {
-        description: "Location coordinates",
+        description: "Location coordinates with metadata",
       },
     },
     {

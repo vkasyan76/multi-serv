@@ -29,6 +29,22 @@ Current tasks and improvements for Multi-Serv project.
   - Error: "A query that was dehydrated as pending ended up rejecting"
   - Related: Clerk middleware issues
 
+- [ ] EU-Wide Availability Planning
+  - [ ] GDPR Compliance for location data collection
+    - Add privacy policy for IP geolocation
+    - Implement data retention policies
+    - Add user consent for location tracking
+  - [ ] Multi-language Support
+    - German (de), French (fr), Spanish (es), Italian (it), Dutch (nl)
+    - Implement i18n with next-intl or react-i18next
+  - [ ] Multi-currency Support
+    - Euro (EUR) as primary, support for local currencies
+    - Dynamic currency conversion for pricing
+  - [ ] Regional Content & Services
+    - Country-specific tenant categories
+    - Regional service providers
+    - Local business regulations compliance
+
 ## Medium Priority
 
 - [ ] Modularize large procedures into smaller functions

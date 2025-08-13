@@ -152,7 +152,7 @@ export interface User {
    */
   language?: ('en' | 'es' | 'fr' | 'de' | 'it' | 'pt') | null;
   /**
-   * Location coordinates
+   * Location coordinates with metadata
    */
   coordinates?: {
     /**
@@ -163,6 +163,26 @@ export interface User {
      * Location longitude
      */
     lng?: number | null;
+    /**
+     * City name from IP geolocation
+     */
+    city?: string | null;
+    /**
+     * Country name from IP geolocation
+     */
+    country?: string | null;
+    /**
+     * Region/state name from IP geolocation
+     */
+    region?: string | null;
+    /**
+     * Whether coordinates were detected from IP
+     */
+    ipDetected?: boolean | null;
+    /**
+     * Whether coordinates were manually set by user
+     */
+    manuallySet?: boolean | null;
   };
   /**
    * Whether the user has completed onboarding
@@ -376,6 +396,11 @@ export interface UsersSelect<T extends boolean = true> {
     | {
         lat?: T;
         lng?: T;
+        city?: T;
+        country?: T;
+        region?: T;
+        ipDetected?: T;
+        manuallySet?: T;
       };
   onboardingCompleted?: T;
   updatedAt?: T;

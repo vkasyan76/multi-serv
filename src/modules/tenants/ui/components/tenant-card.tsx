@@ -151,7 +151,7 @@ export const TenantCard = ({
       <div className="border-t border-gray-100 pt-3">
         <div className="flex items-center justify-between text-sm text-gray-500">
           {/* Distance */}
-          {tenant.distance ? (
+          {tenant.distance !== null && tenant.distance !== undefined ? (
             <div className="flex items-center gap-1">
               <MapPin className="h-4 w-4 text-blue-600" />
               <span>{tenant.distance.toFixed(1)} km</span>

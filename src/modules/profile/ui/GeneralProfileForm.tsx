@@ -173,6 +173,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       coordinates: selectedLocation ? {
         lat: selectedLocation.lat,
         lng: selectedLocation.lng,
+        city: selectedLocation.address.split(',')[0]?.trim(), // Extract city from address
+        country: selectedLocation.country,
+        region: selectedLocation.address.split(',')[1]?.trim(), // Extract region from address
+        ipDetected: false, // User is manually setting location
+        manuallySet: true, // Mark as manually set
       } : undefined,
     };
     
@@ -356,6 +361,29 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
             }}
           />
         </div>
+        
+        {/* IP-Detected Location Information */}
+        {userProfile?.coordinates?.ipDetected && (
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm font-medium text-blue-800">
+                Location Detected from IP Address
+              </span>
+            </div>
+            <p className="text-sm text-blue-700 mb-2">
+              We detected your approximate location based on your IP address. 
+              You can update this to your exact location below.
+            </p>
+            {userProfile.coordinates?.city && userProfile.coordinates?.country && (
+              <div className="text-sm text-blue-600">
+                <strong>Detected:</strong> {userProfile.coordinates.city}, {userProfile.coordinates.country}
+                {userProfile.coordinates?.region && `, ${userProfile.coordinates.region}`}
+              </div>
+            )}
+          </div>
+        )}
+        
         <Button
           type="submit"
           size="lg"

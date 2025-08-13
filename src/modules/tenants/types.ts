@@ -31,6 +31,11 @@ export type TenantWithRelations = Tenant & {
 export type UserCoordinates = {
   lat: number;
   lng: number;
+  city?: string;
+  country?: string;
+  region?: string;
+  ipDetected?: boolean;
+  manuallySet?: boolean;
 };
 
 export type TenantsGetManyInput = {
