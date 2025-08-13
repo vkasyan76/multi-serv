@@ -4,9 +4,9 @@ export default clerkMiddleware();
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
+    // Exclude Next internals & the webhook; include everything else
+    "/((?!_next|.*\\..*|api/clerk/webhooks).*)",
+    // Explicitly include tRPC (routes that call auth())
+    "/api/trpc/:path*",
   ],
 };
