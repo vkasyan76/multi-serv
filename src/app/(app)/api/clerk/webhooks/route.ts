@@ -5,196 +5,47 @@ import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import type { UserCoordinates } from "@/modules/tenants/types";
 
-// Google Maps IP Geocoding helper function
+// IP Geolocation helper function using ipapi.co service
+// This provides accurate, production-ready IP geolocation with EU country detection
+// Free tier available: https://ipapi.co/
 async function getLocationFromIP(ip: string): Promise<UserCoordinates | undefined> {
   try {
-    console.log('Webhook Google Maps - Fetching location for IP:', ip);
+    console.log('Webhook IP Geolocation - Fetching location for IP:', ip);
     
-    // Use Google Maps Geocoding API for accurate location data
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      console.log('Webhook Google Maps - No API key found, skipping geolocation');
+    // Use ipapi.co for accurate IP geolocation (free tier available)
+    const response = await fetch(`https://ipapi.co/${ip}/json/`);
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error('IP geolocation error:', data.reason);
       return undefined;
     }
     
-    // For development/testing, use a German IP to test the geolocation
-    if (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') {
-      console.log('Webhook Google Maps - Using German IP for testing');
-      ip = '217.86.115.1'; // Example German IP
+    // Check if it's an EU country
+    const euCountries = ['DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'PL', 'CZ', 'SK', 'HU', 'RO', 'BG', 'HR', 'SI', 'GR', 'PT', 'DK', 'SE', 'FI', 'LU', 'MT', 'CY', 'EE', 'LV', 'LT', 'IE'];
+    
+    if (data.country_code && euCountries.includes(data.country_code)) {
+      const result = {
+        lat: data.latitude,
+        lng: data.longitude,
+        city: data.city,
+        country: data.country_name,
+        region: data.region,
+        ipDetected: true,
+        manuallySet: false
+      };
+      
+      console.log('Webhook IP Geolocation - Successfully extracted EU location:', result);
+      return result;
     }
     
-    // Use Google's Geocoding API to get location from IP
-    // Note: Google doesn't directly support IP geocoding, so we'll use a fallback approach
-    // For production, you might want to use a service like MaxMind or IP2Location
-    
-    // For now, let's use a simple approach: detect if it's an EU IP and provide approximate coordinates
-    const isEUIP = await detectEUIP(ip);
-    
-    if (isEUIP) {
-      // Provide approximate EU coordinates based on IP range
-      const euCoordinates = getApproximateEUCoordinates(ip);
-      if (euCoordinates) {
-        console.log('Webhook Google Maps - EU IP detected, using approximate coordinates:', euCoordinates);
-        return euCoordinates;
-      }
-    }
-    
-    console.log('Webhook Google Maps - Could not determine location from IP');
+    console.log('Webhook IP Geolocation - IP not from EU country:', data.country_code);
     return undefined;
     
   } catch (error) {
-    console.log('Webhook Google Maps geolocation failed:', error);
+    console.log('Webhook IP geolocation failed:', error);
     return undefined;
   }
-}
-
-// Detect if IP is likely from EU
-async function detectEUIP(ip: string): Promise<boolean> {
-  try {
-    // Simple EU IP range detection (this is a basic approach)
-    // In production, you'd want to use a proper IP geolocation database
-    const ipParts = ip.split('.').map(Number);
-    
-    // Common EU IP ranges (simplified)
-    const euRanges = [
-      // Germany
-      { start: [217, 86, 0, 0], end: [217, 86, 255, 255] },
-      { start: [178, 63, 0, 0], end: [178, 63, 255, 255] },
-      // France
-      { start: [2, 0, 0, 0], end: [2, 255, 255, 255] },
-      { start: [37, 0, 0, 0], end: [37, 255, 255, 255] },
-      // Netherlands
-      { start: [8, 8, 0, 0], end: [8, 8, 255, 255] },
-      { start: [145, 14, 0, 0], end: [145, 14, 255, 255] },
-      // Italy
-      { start: [79, 0, 0, 0], end: [79, 255, 255, 255] },
-      { start: [151, 0, 0, 0], end: [151, 255, 255, 255] },
-      // Spain
-      { start: [80, 0, 0, 0], end: [80, 255, 255, 255] },
-      { start: [88, 0, 0, 0], end: [88, 255, 255, 255] },
-    ];
-    
-    for (const range of euRanges) {
-      if (isIPInRange(ipParts, range.start, range.end)) {
-        return true;
-      }
-    }
-    
-    return false;
-  } catch (error) {
-    console.log('EU IP detection failed:', error);
-    return false;
-  }
-}
-
-// Check if IP is within a range
-function isIPInRange(ipParts: number[], start: number[], end: number[]): boolean {
-  if (ipParts.length < 4) return false;
-  
-  for (let i = 0; i < 4; i++) {
-    const ipPart = ipParts[i];
-    const startPart = start[i];
-    const endPart = end[i];
-    
-    if (ipPart === undefined || startPart === undefined || endPart === undefined) {
-      return false;
-    }
-    
-    if (ipPart < startPart || ipPart > endPart) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// Get approximate EU coordinates based on IP
-function getApproximateEUCoordinates(ip: string): UserCoordinates | undefined {
-  // Provide approximate coordinates for major EU cities
-  // This is a simplified approach - in production you'd use a proper IP geolocation database
-  
-  const ipParts = ip.split('.').map(Number);
-  if (ipParts.length < 2) return undefined;
-  
-  const firstOctet = ipParts[0];
-  const secondOctet = ipParts[1];
-  
-  if (firstOctet === undefined || secondOctet === undefined) return undefined;
-  
-  // Germany (Darmstadt area)
-  if (firstOctet === 217 && secondOctet === 86) {
-    return {
-      lat: 49.8728,
-      lng: 8.6512,
-      city: 'Darmstadt',
-      country: 'Germany',
-      region: 'Hesse',
-      ipDetected: true,
-      manuallySet: false
-    };
-  }
-  
-  // France (Paris area)
-  if (firstOctet === 2) {
-    return {
-      lat: 48.8566,
-      lng: 2.3522,
-      city: 'Paris',
-      country: 'France',
-      region: 'Île-de-France',
-      ipDetected: true,
-      manuallySet: false
-    };
-  }
-  
-  // Netherlands (Amsterdam area)
-  if (firstOctet === 8 && secondOctet === 8) {
-    return {
-      lat: 52.3676,
-      lng: 4.9041,
-      city: 'Amsterdam',
-      country: 'Netherlands',
-      region: 'North Holland',
-      ipDetected: true,
-      manuallySet: false
-    };
-  }
-  
-  // Italy (Rome area)
-  if (firstOctet === 79 || firstOctet === 151) {
-    return {
-      lat: 41.9028,
-      lng: 12.4964,
-      city: 'Rome',
-      country: 'Italy',
-      region: 'Lazio',
-      ipDetected: true,
-      manuallySet: false
-    };
-  }
-  
-  // Spain (Madrid area)
-  if (firstOctet === 80 || firstOctet === 88) {
-    return {
-      lat: 40.4168,
-      lng: -3.7038,
-      city: 'Madrid',
-      country: 'Spain',
-      region: 'Madrid',
-      ipDetected: true,
-      manuallySet: false
-    };
-  }
-  
-  // Default to Darmstadt, Germany (your location)
-  return {
-    lat: 49.8728,
-    lng: 8.6512,
-    city: 'Darmstadt',
-    country: 'Germany',
-    region: 'Hesse',
-    ipDetected: true,
-    manuallySet: false
-  };
 }
 
 export async function POST(req: Request) {
@@ -291,8 +142,8 @@ export async function POST(req: Request) {
         const euIPs = [
           '217.86.115.1', // Germany
           '2.2.2.2', // France
-          '8.8.8.8', // Netherlands
-          '1.1.1.1', // Cloudflare (EU)
+          '145.14.1.1', // Netherlands
+          '79.1.1.1', // Italy
         ];
         
         for (const testIP of euIPs) {
