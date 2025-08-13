@@ -538,15 +538,17 @@ export const authRouter = createTRPCRouter({
       location: currentUser.location || "",
       country: currentUser.country || "",
       language: currentUser.language || "en",
-      coordinates: currentUser.coordinates ? {
-        lat: currentUser.coordinates.lat,
-        lng: currentUser.coordinates.lng,
-        city: (currentUser.coordinates as UserCoordinates).city,
-        country: (currentUser.coordinates as UserCoordinates).country,
-        region: (currentUser.coordinates as UserCoordinates).region,
-        ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
-        manuallySet: (currentUser.coordinates as UserCoordinates).manuallySet,
-      } : undefined,
+      coordinates: hasValidCoordinates(currentUser.coordinates)
+        ? {
+            lat: currentUser.coordinates.lat,
+            lng: currentUser.coordinates.lng,
+            city: (currentUser.coordinates as UserCoordinates).city,
+            country: (currentUser.coordinates as UserCoordinates).country,
+            region: (currentUser.coordinates as UserCoordinates).region,
+            ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
+            manuallySet: (currentUser.coordinates as UserCoordinates).manuallySet,
+          }
+        : undefined,
       onboardingCompleted: currentUser.onboardingCompleted || false,
     };
   }),

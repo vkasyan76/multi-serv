@@ -6,40 +6,56 @@ import type { UserCoordinates } from "@/modules/tenants/types";
 // Free tier available: https://ipapi.co/
 export async function getLocationFromIP(ip: string): Promise<UserCoordinates | undefined> {
   try {
-    console.log('IP Geolocation - Fetching location for IP:', ip);
-    
-    // Use ipapi.co for accurate IP geolocation (free tier available)
-    const response = await fetch(`https://ipapi.co/${ip}/json/`);
-    const data = await response.json();
-    
-    if (data.error) {
-      console.error('IP geolocation error:', data.reason);
+    const isProd = process.env.NODE_ENV === "production";
+    if (!isProd) console.log("IP Geolocation - fetching location");
+
+    // Timeout-hardened fetch
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const response = await fetch(`https://ipapi.co/${ip}/json/`, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      if (!isProd) console.error("IP geolocation non-200:", response.status);
       return undefined;
     }
-    
+    const data = await response.json();
+
+    if (data?.error) {
+      if (!isProd) console.error("IP geolocation error:", data.reason ?? data);
+      return undefined;
+    }
+
     // Check if it's an EU country
     const euCountries = ['DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'PL', 'CZ', 'SK', 'HU', 'RO', 'BG', 'HR', 'SI', 'GR', 'PT', 'DK', 'SE', 'FI', 'LU', 'MT', 'CY', 'EE', 'LV', 'LT', 'IE'];
-    
+
     if (data.country_code && euCountries.includes(data.country_code)) {
+      const lat = Number(data.latitude);
+      const lng = Number(data.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        if (!isProd) console.error("IP geolocation missing/invalid lat/lng:", data);
+        return undefined;
+      }
       const result = {
-        lat: data.latitude,
-        lng: data.longitude,
+        lat,
+        lng,
         city: data.city,
         country: data.country_name,
         region: data.region,
         ipDetected: true,
         manuallySet: false
       };
-      
-      console.log('IP Geolocation - Successfully extracted EU location:', result);
+      if (!isProd) console.log("IP Geolocation - extracted EU location");
       return result;
     }
-    
-    console.log('IP Geolocation - IP not from EU country:', data.country_code);
+
+    if (!isProd) console.log("IP Geolocation - IP not from EU country:", data.country_code);
     return undefined;
-    
+
   } catch (error) {
-    console.log('IP geolocation failed:', error);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("IP geolocation failed:", error);
+    }
     return undefined;
   }
 }
@@ -122,14 +138,17 @@ export function mergeCoordinates(
   newCoords: Partial<UserCoordinates>,
   isManuallySet: boolean = false
 ): UserCoordinates {
+  const prev = existingCoords ?? {};
   return {
-    ...existingCoords, // preserve existing city/country/region/ipDetected where not provided
-    lat: newCoords.lat!,
-    lng: newCoords.lng!,
-    city: newCoords.city,
-    country: newCoords.country,
-    region: newCoords.region,
-    ipDetected: isManuallySet ? false : (existingCoords?.ipDetected ?? true),
+    // Preserve existing fields when not provided in newCoords
+    lat: (newCoords.lat ?? prev.lat)!,
+    lng: (newCoords.lng ?? prev.lng)!,
+    city: newCoords.city ?? prev.city,
+    country: newCoords.country ?? prev.country,
+    region: newCoords.region ?? prev.region,
+    ipDetected: isManuallySet
+      ? false
+      : (newCoords.ipDetected ?? prev.ipDetected ?? true),
     manuallySet: isManuallySet,
   };
 }
