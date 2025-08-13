@@ -161,24 +161,10 @@ export const authRouter = createTRPCRouter({
       return existingUser;
     }
 
-    // New user flow - create user only, no tenant
-    // Note: IP geolocation is now handled by the Clerk webhook
-    const user = await ctx.db.create({
-      collection: "users",
-      data: {
-        email,
-        username: username || "",
-        clerkUserId: userId,
-        roles: ["user"],
-        // No coordinates here - they should be set by the webhook
-        // No tenants initially - will be added when user becomes vendor
-      },
-    });
-
-    // Inject Payload User ID into Clerk metadata
-    await updateClerkUserMetadata(userId, user.id as string, user.username);
-
-    return user;
+    // New user flow - let webhook handle user creation with IP geolocation
+    // This prevents race conditions between tRPC and webhook
+    console.log('tRPC - User not found, webhook should handle creation');
+    return null;
   }),
 
   createVendorProfile: clerkProcedure

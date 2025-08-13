@@ -71,13 +71,20 @@ export async function POST(req: Request) {
     // Get user's IP address for geolocation
     let coordinates: UserCoordinates | undefined = undefined;
     try {
-      // Extract IP from request headers (handles proxy scenarios)
       const headerPayload = await headers();
+      console.log('Webhook - All headers received:', Object.fromEntries(headerPayload.entries()));
+      
       const userIP = extractIPFromHeaders(headerPayload);
-      
       console.log('Webhook - Selected IP:', userIP);
-      
-      // Get location from IP (allow localhost for testing, but use a fallback IP)
+      console.log('Webhook - IP extraction details:', {
+        'x-forwarded-for': headerPayload.get('x-forwarded-for'),
+        'x-real-ip': headerPayload.get('x-real-ip'),
+        'x-client-ip': headerPayload.get('x-client-ip'),
+        'cf-connecting-ip': headerPayload.get('cf-connecting-ip'),
+        'x-forwarded': headerPayload.get('x-forwarded'),
+        'forwarded': headerPayload.get('forwarded'),
+      });
+
       if (userIP && userIP !== '127.0.0.1' && userIP !== '::1' && userIP !== 'localhost') {
         coordinates = await getLocationFromIP(userIP);
         console.log('Webhook - IP geolocation result:', coordinates);
