@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ClerkUserSync } from "@/modules/auth/ui/views/clerk-user-sync";
+import GeoBootstrap from "@/components/geo-bootstrap";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
           <NuqsAdapter>
             <TRPCReactProvider>
               <ClerkUserSync />
+              <GeoBootstrap />
               {children}
               <Toaster />
             </TRPCReactProvider>

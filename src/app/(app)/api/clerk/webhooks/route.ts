@@ -8,6 +8,32 @@ import config from "@/payload.config";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Username normalization helpers (ChatGPT's approach)
+function normalizeUsername(input?: string | null, email?: string | null, fallbackId?: string) {
+  // pick a base: provided username → email local-part → clerk id → "user"
+  const base = (input ?? email?.split("@")[0] ?? fallbackId ?? "user").toLowerCase();
+
+  // allow only a–z 0–9 . _ -  and trim separators
+  const cleaned = base.replace(/[^a-z0-9._-]/g, "").replace(/^[._-]+|[._-]+$/g, "");
+  if (cleaned.length < 3) return null;         // respect your min length
+  return cleaned.slice(0, 32);                  // optional max length
+}
+
+async function ensureUniqueUsername(cms: Awaited<ReturnType<typeof getPayload>>, username: string) {
+  let u = username, i = 0;
+  while (true) {
+    const found = await cms.find({
+      collection: "users",
+      where: { username: { equals: u } },
+      limit: 1,
+    });
+    if (found.docs.length === 0) return u;
+    i += 1;
+    const suffix = String(i);
+    u = (username + suffix).slice(0, 32);
+  }
+}
+
 export async function POST(req: Request) {
   console.log('Webhook - POST request received');
   
@@ -66,15 +92,24 @@ export async function POST(req: Request) {
 
     if (findUser.docs.length === 0) {
       console.log('Webhook - Creating new user (no coordinates)');
-      const email = email_addresses?.[0]?.email_address || "";
-      const usernameValue = username || email.split("@")[0] || "";
+      const email = email_addresses?.[0]?.email_address ?? null;
+      
+      // build a safe username that always passes schema (ChatGPT's approach)
+      let desired = normalizeUsername(username, email, id);
+      if (!desired) desired = `user${id.slice(-4)}`;
+      const unique = await ensureUniqueUsername(payloadInstance, desired);
+      
+      console.log('Webhook - Username resolved:', { original: username, resolved: unique });
       
       // Create user WITHOUT coordinates - let request-time geolocation handle that
       const newUser = await payloadInstance.create({
         collection: "users",
         data: { 
           email, 
-          username: usernameValue, 
+          username: unique,           // APP-OWNED (never changes)
+          clerkUsername: username,    // mirror only (for reference)
+          usernameSource: "app",
+          usernameSyncedAt: new Date().toISOString(),
           clerkUserId: id, 
           roles: ["user"] 
         },
@@ -100,19 +135,28 @@ export async function POST(req: Request) {
     if (findUser.docs.length > 0) {
       const existingUser = findUser.docs[0];
       if (existingUser) {
-        const email = email_addresses?.[0]?.email_address || "";
-        const usernameValue = username || email.split("@")[0] || "";
+        const email = email_addresses?.[0]?.email_address ?? null;
         
-        // Update existing user (idempotent)
-        await payloadInstance.update({
-          collection: "users",
-          id: existingUser.id,
-          data: { 
-            email, 
-            username: usernameValue 
-          },
-        });
-        console.log('Webhook - Updated existing user:', existingUser.id);
+        // Only mirror safe fields; DO NOT change username
+        const data: { email: string | null; clerkUsername: string | null } = {
+          email,
+          clerkUsername: username ?? null,
+        };
+        
+        // write only when something actually changed
+        if (data.email !== existingUser.email || data.clerkUsername !== existingUser.clerkUsername) {
+          try {
+            await payloadInstance.update({
+              collection: "users",
+              id: existingUser.id,
+              data,
+            });
+            console.log('Webhook - Updated existing user:', existingUser.id);
+          } catch (e) {
+            // don't let a username validation error crash the webhook
+            console.warn("Webhook (user.updated) skipped minor update:", e);
+          }
+        }
       }
     }
   }

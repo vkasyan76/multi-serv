@@ -509,13 +509,17 @@ export const authRouter = createTRPCRouter({
     });
 
     if (user.totalDocs === 0) {
-      throw new Error("User not found");
+      // Return null instead of throwing - this stops the infinite spinner
+      console.log('getUserProfile: No user found for clerkUserId:', userId);
+      return null;
     }
 
     const currentUser = user.docs[0];
 
     if (!currentUser) {
-      throw new Error("User not found");
+      // Return null instead of throwing - this stops the infinite spinner
+      console.log('getUserProfile: User document is null for clerkUserId:', userId);
+      return null;
     }
 
     return {

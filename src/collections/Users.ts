@@ -57,6 +57,28 @@ export const Users: CollectionConfig = {
       required: true,
       unique: true,
       type: "text",
+      admin: { description: "App username (set once on create)." },
+    },
+    {
+      name: "clerkUsername",
+      type: "text",
+      required: false,
+      unique: false,
+      admin: { description: "Raw username from Clerk (for reference only)." },
+    },
+    {
+      name: "usernameSource",
+      type: "select",
+      required: false,
+      defaultValue: "app",
+      options: [{ label: "App", value: "app" }, { label: "Clerk", value: "clerk" }],
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "usernameSyncedAt",
+      type: "date",
+      required: false,
+      admin: { position: "sidebar", description: "When username was set." },
     },
     // Email field is required for Clerk integration
     {
