@@ -10,6 +10,8 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
 import { z } from "zod";
+import type { UserCoordinates } from "@/modules/tenants/types";
+import { hasValidCoordinates, mergeCoordinates } from "@/modules/profile/location-utils";
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
@@ -155,16 +157,12 @@ export const authRouter = createTRPCRouter({
       if (!existingUser) return null;
       // Don't auto-create tenant - let user decide when to become vendor
       // Optional: Keep Clerk in sync if needed
-      await updateClerkUserMetadata(
-        userId,
-        existingUser.id,
-        existingUser.username
-      );
-
+      await updateClerkUserMetadata(userId, existingUser.id as string, existingUser.username);
       return existingUser;
     }
 
     // New user flow - create user only, no tenant
+    // Note: IP geolocation is now handled by the Clerk webhook
     const user = await ctx.db.create({
       collection: "users",
       data: {
@@ -172,11 +170,13 @@ export const authRouter = createTRPCRouter({
         username: username || "",
         clerkUserId: userId,
         roles: ["user"],
+        // No coordinates here - they should be set by the webhook
         // No tenants initially - will be added when user becomes vendor
       },
     });
 
-    await updateClerkUserMetadata(userId, user.id, user.username);
+    // Inject Payload User ID into Clerk metadata
+    await updateClerkUserMetadata(userId, user.id as string, user.username);
 
     return user;
   }),
@@ -538,7 +538,17 @@ export const authRouter = createTRPCRouter({
       location: currentUser.location || "",
       country: currentUser.country || "",
       language: currentUser.language || "en",
-      coordinates: currentUser.coordinates,
+      coordinates: hasValidCoordinates(currentUser.coordinates)
+        ? {
+            lat: currentUser.coordinates.lat,
+            lng: currentUser.coordinates.lng,
+            city: (currentUser.coordinates as UserCoordinates).city,
+            country: (currentUser.coordinates as UserCoordinates).country,
+            region: (currentUser.coordinates as UserCoordinates).region,
+            ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
+            manuallySet: (currentUser.coordinates as UserCoordinates).manuallySet,
+          }
+        : undefined,
       onboardingCompleted: currentUser.onboardingCompleted || false,
     };
   }),
@@ -667,7 +677,13 @@ export const authRouter = createTRPCRouter({
         throw new Error("User not found");
       }
 
-      // Update the user with profile data
+      // If user provides coordinates, mark them as manually set and preserve existing metadata
+      let updatedCoordinates = input.coordinates;
+      if (hasValidCoordinates(input.coordinates) && input.coordinates) {
+        const existingCoords = currentUser.coordinates as Partial<UserCoordinates> | undefined;
+        updatedCoordinates = mergeCoordinates(existingCoords || {}, input.coordinates, true);
+      }
+
       await ctx.db.update({
         collection: "users",
         id: currentUser.id as string,
@@ -676,7 +692,7 @@ export const authRouter = createTRPCRouter({
           location: input.location,
           country: input.country,
           language: input.language,
-          coordinates: input.coordinates,
+          coordinates: updatedCoordinates,
           onboardingCompleted: true, // Set onboarding status to completed
         },
       });

@@ -7,6 +7,16 @@ import { SORT_VALUES } from "@/constants";
 import { calculateDistance } from "../distance-utils";
 import type { TenantWithRelations } from "../types";
 
+// Helper interface for tenant user data
+interface TenantUserData {
+  id: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  clerkImageUrl?: string | null;
+}
+
 export const tenantsRouter = createTRPCRouter({
   getMany: baseProcedure
     .input(
@@ -20,7 +30,7 @@ export const tenantsRouter = createTRPCRouter({
         userLng: z.number().nullable().optional(),
         maxDistance: z.number().min(0).max(300).nullable().optional(), // NEW
         distanceFilterEnabled: z.boolean().default(false), // NEW
-        page: z.number().min(1).default(1), // Pagination page number
+        cursor: z.number().optional(), // Optional cursor for infinite queries
         limit: z.number().min(1).max(100).default(20), // Page size
       })
     )
@@ -124,7 +134,7 @@ export const tenantsRouter = createTRPCRouter({
         where,
         sort,
         limit: input.limit,
-        page: input.page,
+        page: input.cursor || 1, // Use cursor if provided, otherwise start from page 1
         pagination: true, // Enable pagination
       });
 
@@ -172,10 +182,19 @@ export const tenantsRouter = createTRPCRouter({
             );
           }
 
+          // Safely extract user data with proper typing
+          const userData: TenantUserData | undefined = tenantUser && typeof tenantUser === 'object' ? {
+            id: tenantUser.id || '',
+            coordinates: tenantUser.coordinates || undefined,
+            // Add Clerk image URL for fallback - safely access properties
+            clerkImageUrl: (tenantUser as TenantUserData)?.clerkImageUrl || null,
+          } : undefined;
+
           return {
             ...tenant,
             distance, // This distance is specific to the current user
-          };
+            user: userData,
+          } as TenantWithRelations;
         });
 
         // Only sort by distance if explicitly requested as "distance" sort
@@ -196,8 +215,8 @@ export const tenantsRouter = createTRPCRouter({
             return distanceA - distanceB; // Sort by distance ascending (nearest first)
           });
 
-                  // Combine sorted tenants with coordinates + tenants without coordinates
-        tenantsWithDistance = [...tenantsWithCoordinates, ...tenantsWithoutCoordinates];
+          // Combine sorted tenants with coordinates + tenants without coordinates
+          tenantsWithDistance = [...tenantsWithCoordinates, ...tenantsWithoutCoordinates];
         }
       }
 
@@ -219,6 +238,14 @@ export const tenantsRouter = createTRPCRouter({
           hourlyRate: t.hourlyRate, 
           distance: (t as TenantWithRelations).distance 
         }))
+      });
+      
+      // Debug: Verify pagination is respected
+      console.log("Pagination check:", {
+        requestedLimit: input.limit,
+        actualDocsReturned: tenantsWithDistance.length,
+        payloadTotalDocs: data.totalDocs,
+        hasNextPage: data.hasNextPage
       });
 
       // console.log("Query results:", data.docs.length);
@@ -261,7 +288,17 @@ export const tenantsRouter = createTRPCRouter({
 
       return {
         ...data,
-        docs: tenantsWithDistance,
+        docs: tenantsWithDistance, // Keep the distance-calculated tenants but respect pagination
+        // Ensure proper pagination metadata for infinite queries
+        hasNextPage: data.hasNextPage,
+        nextPage: data.hasNextPage ? data.nextPage : undefined,
+        hasPrevPage: data.hasPrevPage,
+        prevPage: data.hasPrevPage ? data.prevPage : undefined,
+        totalDocs: data.totalDocs,
+        totalPages: data.totalPages,
+        page: data.page,
+        limit: data.limit,
+        pagingCounter: data.pagingCounter,
       } as TenantsGetManyOutput;
     }),
 });

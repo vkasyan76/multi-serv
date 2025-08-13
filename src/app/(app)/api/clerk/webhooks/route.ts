@@ -3,14 +3,20 @@ import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
+import type { UserCoordinates } from "@/modules/tenants/types";
+import { getLocationFromIP, extractIPFromHeaders } from "@/modules/profile/location-utils";
 
 export async function POST(req: Request) {
+  console.log('Webhook - POST request received');
+  
   const signingSecret = process.env.SIGNING_SECRET;
   if (!signingSecret) {
     // Controlled error, clean 500
     console.error("SIGNING_SECRET missing from env");
     return new Response("Server configuration error", { status: 500 });
   }
+
+  console.log('Webhook - Signing secret found, processing webhook');
 
   const webhook = new Webhook(signingSecret);
   const headerPayload = await headers();
@@ -40,12 +46,85 @@ export async function POST(req: Request) {
   const { type, data } = webhookEvent;
   const clerkUserId: string = data.id || "";
 
+  console.log('Webhook - Received event:', { type, clerkUserId });
+
   const payload = await getPayload({ config: configPromise });
   const findUser = await payload.find({
     collection: "users",
     where: { clerkUserId: { equals: clerkUserId } },
     limit: 1,
   });
+
+  console.log('Webhook - User search result:', { 
+    type, 
+    clerkUserId, 
+    existingUsers: findUser.docs.length 
+  });
+
+  // Handle new user creation with IP geolocation
+  if (type === "user.created" && findUser.docs.length === 0) {
+    console.log('Webhook - Creating new user with IP geolocation');
+    
+    const email = data.email_addresses?.[0]?.email_address || "";
+    const username = data.username || email.split("@")[0] || "";
+    
+    // Get user's IP address for geolocation
+    let coordinates: UserCoordinates | undefined = undefined;
+    try {
+      // Extract IP from request headers (handles proxy scenarios)
+      const headerPayload = await headers();
+      const userIP = extractIPFromHeaders(headerPayload);
+      
+      console.log('Webhook - Selected IP:', userIP);
+      
+      // Get location from IP (allow localhost for testing, but use a fallback IP)
+      if (userIP && userIP !== '127.0.0.1' && userIP !== '::1' && userIP !== 'localhost') {
+        coordinates = await getLocationFromIP(userIP);
+        console.log('Webhook - IP geolocation result:', coordinates);
+      } else {
+        // For development/testing, use EU IPs to test the geolocation
+        console.log('Webhook - Using EU IP for testing');
+        // Try different EU IPs for testing
+        const euIPs = [
+          '217.86.115.1', // Germany
+          '2.2.2.2', // France
+          '145.14.1.1', // Netherlands
+          '79.1.1.1', // Italy
+        ];
+        
+        for (const testIP of euIPs) {
+          coordinates = await getLocationFromIP(testIP);
+          if (coordinates && coordinates.country && coordinates.country.includes('Germany')) {
+            console.log('Webhook - German IP geolocation result:', coordinates);
+            break;
+          }
+        }
+        
+        if (!coordinates) {
+          console.log('Webhook - No EU IP geolocation result, using fallback');
+        }
+      }
+    } catch (error) {
+      console.log('Webhook - IP geolocation failed during user creation:', error);
+      // Continue without coordinates - user can set them later
+    }
+
+    // Create new user with IP-detected coordinates
+    const newUser = await payload.create({
+      collection: "users",
+      data: {
+        email,
+        username,
+        clerkUserId,
+        roles: ["user"],
+        coordinates: coordinates, // Include IP-detected coordinates
+        // No tenants initially - will be added when user becomes vendor
+      },
+    });
+
+    console.log('Webhook - Created new user with coordinates:', newUser.id);
+    return new Response("New user created with IP geolocation", { status: 200 });
+  }
 
   // Only update or flag/delete existing users
   if (
@@ -97,4 +176,10 @@ export async function POST(req: Request) {
   }
 
   return new Response("Webhook received", { status: 200 });
+}
+
+// Add a GET endpoint for testing webhook accessibility
+export async function GET() {
+  console.log('Webhook - GET request received (test endpoint)');
+  return new Response("Webhook endpoint is accessible", { status: 200 });
 }

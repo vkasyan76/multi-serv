@@ -1,12 +1,7 @@
-import {
-  TenantList,
-  TenantListSkeleton,
-} from "@/modules/tenants/ui/components/tenant-list";
+import { TenantListView } from "@/modules/tenants/ui/views/tenant-list-view";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 import { getQueryClient, trpc } from "@/trpc/server";
-import { Suspense } from "react";
-// import { TenantFilters } from "@/modules/tenants/ui/components/tenant-filters";
 
 interface Props {
   // Next.js asynchronously provides params
@@ -17,18 +12,36 @@ const Page = async ({ params }: Props) => {
   const { category, subcategory } = await params;
 
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(
-    trpc.tenants.getMany.queryOptions({ 
-      category: category,      // Parent category
-      subcategory: subcategory // Subcategory
-    })
+  
+  // Prefetch user profile
+  void queryClient.prefetchQuery(trpc.auth.getUserProfile.queryOptions());
+  
+  // Prefetch tenants with infinite query options
+  void queryClient.prefetchInfiniteQuery(
+    trpc.tenants.getMany.infiniteQueryOptions(
+      { 
+        category: category,      // Parent category
+        subcategory: subcategory, // Specific subcategory
+        sort: "distance",        // Default sort
+        maxPrice: "",
+        services: [],
+        maxDistance: 0,
+        distanceFilterEnabled: false,
+        userLat: null, // Will be filled by client
+        userLng: null, // Will be filled by client
+        limit: 8, // DEFAULT_LIMIT
+      },
+      {
+        getNextPageParam: (lastPage) => {
+          return lastPage.hasNextPage ? lastPage.nextPage : undefined;
+        },
+      }
+    )
   );
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<TenantListSkeleton />}>
-        <TenantList category={category} subcategory={subcategory} />
-      </Suspense>
+      <TenantListView category={category} subcategory={subcategory} />
     </HydrationBoundary>
   );
 };

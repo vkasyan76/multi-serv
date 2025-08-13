@@ -1,4 +1,4 @@
-export const DEFAULT_LIMIT = 8;
+export const DEFAULT_LIMIT = 2;
 
 export const SERVICES_OPTIONS = [
   { label: "On-site", value: "on-site" },

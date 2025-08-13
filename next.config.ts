@@ -5,9 +5,23 @@ const nextConfig: NextConfig = {
   /* config options here */
   images: {
     domains: [
-      "img.clerk.com", // <-- add this
-      "images.unsplash.com", // <-- for your fallback placeholder
-      // add any other domains you need
+      "img.clerk.com",
+      "images.unsplash.com",
+      "localhost",
+      "127.0.0.1",
+    ],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/api/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com',
+        pathname: '/**',
+      },
     ],
   },
 };

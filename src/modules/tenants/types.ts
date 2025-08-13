@@ -23,6 +23,7 @@ export type TenantWithRelations = Tenant & {
       lat: number;
       lng: number;
     };
+    clerkImageUrl?: string | null; // Clerk profile image URL for fallback
   };
   distance?: number | null; // Distance from current user to this tenant
 };
@@ -30,6 +31,11 @@ export type TenantWithRelations = Tenant & {
 export type UserCoordinates = {
   lat: number;
   lng: number;
+  city?: string;
+  country?: string;
+  region?: string;
+  ipDetected?: boolean;
+  manuallySet?: boolean;
 };
 
 export type TenantsGetManyInput = {
@@ -42,7 +48,7 @@ export type TenantsGetManyInput = {
   userLng?: number | null;
   maxDistance?: number | null;
   distanceFilterEnabled?: boolean;
-  page?: number;
+  cursor?: number;
   limit?: number;
 };
 

@@ -23,6 +23,11 @@ export const profileSchema = z.object({
   coordinates: z.object({
     lat: z.number(),
     lng: z.number(),
+    city: z.string().optional(),
+    country: z.string().optional(),
+    region: z.string().optional(),
+    ipDetected: z.boolean().optional(),
+    manuallySet: z.boolean().optional(),
   }).optional(),
 });
 

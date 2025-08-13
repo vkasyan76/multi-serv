@@ -1,17 +1,10 @@
 import type { SearchParams } from "nuqs/server";
 
-import {
-  TenantList,
-  TenantListSkeleton,
-} from "@/modules/tenants/ui/components/tenant-list";
+import { TenantListView } from "@/modules/tenants/ui/views/tenant-list-view";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 import { getQueryClient, trpc } from "@/trpc/server";
-import { Suspense } from "react";
-import { TenantFilters } from "@/modules/tenants/ui/components/tenant-filters";
 import { loadTenantFilters } from "@/modules/tenants/hooks/search-params";
-import { TenantSort } from "@/modules/tenants/ui/components/tenants-sort";
-import { SortingDisplay } from "@/modules/tenants/ui/components/sorting-display";
 
 interface Props {
   // Next.js asynchronously provides params
@@ -24,37 +17,33 @@ const Page = async ({ params, searchParams }: Props) => {
 
   const filters = await loadTenantFilters(searchParams);
 
-  // console.log(JSON.stringify(filters, null, 2), "THIS IS FROM RCS");
-
   const queryClient = getQueryClient();
+  
+  // Prefetch user profile
   void queryClient.prefetchQuery(trpc.auth.getUserProfile.queryOptions());
 
-  void queryClient.prefetchQuery(
-    trpc.tenants.getMany.queryOptions({ category, ...filters })
+  // Prefetch tenants with infinite query options
+  void queryClient.prefetchInfiniteQuery(
+    trpc.tenants.getMany.infiniteQueryOptions(
+      { 
+        category, 
+        subcategory: null,
+        ...filters,
+        userLat: null, // Will be filled by client
+        userLng: null, // Will be filled by client
+        limit: 8, // DEFAULT_LIMIT
+      },
+      {
+        getNextPageParam: (lastPage) => {
+          return lastPage.hasNextPage ? lastPage.nextPage : undefined;
+        },
+      }
+    )
   );
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="px-4 lg:px-12 py-8 flex flex-col gap-4">
-        {/* Sort  */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-y-2 lg:gap-y-0 justify-between">
-          <SortingDisplay />
-          <TenantSort />
-        </div>
-
-        {/* Filters & Tenant List */}
-        <div className="grid grid-cols-1 lg:grid-cols-6 xl:grid-cols-8 gap-y-6 gap-x-12">
-          <div className="lg:col-span-2 xl:col-span-2">
-            {/* <div className="border p-2">Tenant Filters</div> */}
-            <TenantFilters />
-          </div>
-          <div className="lg:col-span-4 xl:col-span-6">
-            <Suspense fallback={<TenantListSkeleton />}>
-              <TenantList category={category} />
-            </Suspense>
-          </div>
-        </div>
-      </div>
+      <TenantListView category={category} />
     </HydrationBoundary>
   );
 };
