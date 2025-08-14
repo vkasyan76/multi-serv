@@ -12,7 +12,7 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   if (req) {
     headers = Object.fromEntries(req.headers.entries());
   }
-  
+
   // keep whatever you already return in ctx (payload, headers, etc.)
   let clerkAuth: Awaited<ReturnType<typeof auth>> | null = null;
 
@@ -20,13 +20,15 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
     clerkAuth = await auth(); // will throw if Clerk middleware wasn't hit
   } catch {
     if (process.env.NODE_ENV !== "production") {
-      console.log("createTRPCContext: no Clerk middleware context; continuing as anonymous");
+      console.log(
+        "createTRPCContext: no Clerk middleware context; continuing as anonymous"
+      );
     }
     clerkAuth = null;
   }
 
   const userId = clerkAuth?.userId ?? null;
-  
+
   const payload = await getPayload({ config });
   return {
     auth: clerkAuth,
@@ -61,7 +63,10 @@ export const clerkProcedure = baseProcedure.use(async ({ ctx, next }) => {
       message: "Authentication required",
     });
   }
-  return next({ ctx: { ...ctx, userId: ctx.auth.userId } });
+  // ctx already contains userId from createTRPCContext
+  // return next();
+  // (If you prefer being explicit, you can still do:)
+  return next({ ctx: { ...ctx, userId: ctx.userId } });
 });
 
 // protected procedure - only if the user is logged in
