@@ -91,6 +91,9 @@ export async function POST(req: Request) {
   // Get the event type
   const eventType = evt.type;
 
+  // Log all webhook events with masked IDs - enhanced diagnostic logging
+  console.log('Webhook event:', evt.type, 'clerkId:', mask(evt.data?.id));
+
   if (eventType === "user.created") {
     const { id: clerkId, email_addresses, username: clerkUsername } = evt.data;
     
@@ -186,26 +189,41 @@ export async function POST(req: Request) {
   }
 
   if (eventType === "user.deleted") {
-    const { id: clerkId } = evt.data;
-    
-    console.log('Webhook - Received event:', { type: eventType, clerkUserId: mask(clerkId) });
-    
-    const payloadInstance = await getPayload({ config });
-    const findUser = await payloadInstance.find({
-      collection: "users",
-      where: { clerkUserId: { equals: clerkId } },
-      limit: 1,
-    });
-
-    if (findUser.docs.length > 0) {
-      const existingUser = findUser.docs[0];
-      if (existingUser) {
-        await payloadInstance.delete({
-          collection: "users",
-          id: existingUser.id,
-        });
-        console.log('Webhook - Deleted user:', existingUser.id);
+    try {
+      const clerkId = evt.data?.id;
+      if (!clerkId) {
+        console.error('user.deleted missing id');
+        return new Response('bad payload', { status: 400 });
       }
+
+      console.log('user.deleted processing:', { clerkUserId: mask(clerkId) });
+      
+      const payloadInstance = await getPayload({ config });
+      const found = await payloadInstance.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkId } },
+        limit: 1,
+        overrideAccess: true, // IMPORTANT in server/webhook context
+      });
+      console.log('Delete lookup count:', found.docs.length, 'for', mask(clerkId));
+
+      if (found.docs.length > 0) {
+        const existingUser = found.docs[0];
+        if (existingUser) {
+          await payloadInstance.delete({
+            collection: "users",
+            id: existingUser.id, // delete by Payload doc ID, not by where
+            overrideAccess: true,
+          });
+          console.log('Deleted user doc:', existingUser.id, 'for', mask(clerkId));
+        }
+      } else {
+        console.log('No matching user, nothing to delete for', mask(clerkId));
+      }
+      return new Response('ok');
+    } catch (e) {
+      console.error('user.deleted failed', e);
+      return new Response('delete failed', { status: 500 }); // non-2xx so Clerk retries
     }
   }
 

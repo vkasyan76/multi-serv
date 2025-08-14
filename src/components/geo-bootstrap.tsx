@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ export default function GeoBootstrap() {
   const { isSignedIn, user } = useUser();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const startedRef = useRef(false);
 
   const updateUserCoordinates = useMutation(
     trpc.auth.updateUserCoordinates.mutationOptions({
@@ -33,7 +34,8 @@ export default function GeoBootstrap() {
   );
 
   useEffect(() => {
-    if (!isSignedIn || !user?.id) return;
+    if (!isSignedIn || !user?.id || startedRef.current) return;
+    startedRef.current = true;
 
     const key = `geoSaved:${user.id}`;
     if (localStorage.getItem(key) === "1") return;
@@ -89,7 +91,7 @@ export default function GeoBootstrap() {
         inflight[user.id] = false;
       }
     })();
-  }, [isSignedIn, user?.id, updateUserCoordinates]); // Include updateUserCoordinates in dependencies
+  }, [isSignedIn, user?.id]); // Remove updateUserCoordinates from dependencies
 
   return null;
 }
