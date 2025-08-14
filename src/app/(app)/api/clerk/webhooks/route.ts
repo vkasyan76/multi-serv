@@ -80,7 +80,7 @@ export async function POST(req: Request) {
   console.log('Webhook - Received event:', { type: eventType, clerkUserId: id });
 
   if (eventType === "user.created") {
-    const { id, email_addresses, username } = evt.data;
+    const { id, email_addresses, username: clerkUsername } = evt.data;
     
     // Check if user already exists (idempotent)
     const payloadInstance = await getPayload({ config });
@@ -95,11 +95,11 @@ export async function POST(req: Request) {
       const email = email_addresses?.[0]?.email_address ?? null;
       
       // build a safe username that always passes schema (ChatGPT's approach)
-      let desired = normalizeUsername(username, email, id);
+      let desired = normalizeUsername(clerkUsername, email, id);
       if (!desired) desired = `user${id.slice(-4)}`;
       const unique = await ensureUniqueUsername(payloadInstance, desired);
       
-      console.log('Webhook - Username resolved:', { original: username, resolved: unique });
+      console.log('Webhook - Username resolved:', { original: clerkUsername, resolved: unique });
       
       // Create user WITHOUT coordinates - let request-time geolocation handle that
       const newUser = await payloadInstance.create({
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
         data: { 
           email, 
           username: unique,           // APP-OWNED (never changes)
-          clerkUsername: username,    // mirror only (for reference)
+          clerkUsername: clerkUsername,    // mirror only (for reference)
           usernameSource: "app",
           usernameSyncedAt: new Date().toISOString(),
           clerkUserId: id, 

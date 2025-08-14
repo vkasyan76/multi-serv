@@ -3,9 +3,9 @@ import { geolocation } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
 
-export function GET(req: Request) {
+export function GET(_req: Request) {
   try {
-    const geo = geolocation(req); // { country, region, city, latitude, longitude }
+    const geo = geolocation(_req); // { country, region, city, latitude, longitude }
     
     // Dev fallback for localhost testing (ChatGPT's suggestion)
     if (!geo?.country && process.env.NODE_ENV !== "production") {

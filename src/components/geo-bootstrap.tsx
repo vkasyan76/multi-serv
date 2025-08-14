@@ -5,6 +5,9 @@ import { useUser } from "@clerk/nextjs";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+// In-memory guard to prevent concurrent writes (Strict Mode / multi-tab protection)
+const inflight: Record<string, boolean> = {};
+
 export default function GeoBootstrap() {
   const { isSignedIn, user } = useUser();
   const trpc = useTRPC();
@@ -36,6 +39,10 @@ export default function GeoBootstrap() {
     if (localStorage.getItem(key) === "1") return;
 
     (async () => {
+      // Prevent concurrent writes for the same user
+      if (inflight[user.id]) return;
+      inflight[user.id] = true;
+
       try {
         console.log("GeoBootstrap: Detecting user location...");
 
@@ -51,7 +58,16 @@ export default function GeoBootstrap() {
           return;
         }
 
-        console.log("GeoBootstrap: Saving coordinates:", geo);
+        if (typeof geo.latitude !== "number" || typeof geo.longitude !== "number") {
+          if (process.env.NODE_ENV !== "production") {
+            console.log("GeoBootstrap: Missing latitude/longitude in /api/geo response; skipping save");
+          }
+          return;
+        }
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log("GeoBootstrap: Saving coordinates (redacted)");
+        }
 
         // ✅ Keep nested structure (matches server schema)
         await updateUserCoordinates.mutateAsync({
@@ -59,17 +75,18 @@ export default function GeoBootstrap() {
             country: geo.country ?? null,
             region: geo.region ?? null,
             city: geo.city ?? null,
-            lat: typeof geo.latitude === "number" ? geo.latitude : null,
-            lng: typeof geo.longitude === "number" ? geo.longitude : null,
+            lat: geo.latitude,
+            lng: geo.longitude,
           }
         });
 
         // ✅ Set the session flag only after SUCCESS
         localStorage.setItem(key, "1");
-        console.log("GeoBootstrap: Coordinates saved successfully");
 
       } catch (e) {
         console.warn("GeoBootstrap: unexpected failure:", e);
+      } finally {
+        inflight[user.id] = false;
       }
     })();
   }, [isSignedIn, user?.id, updateUserCoordinates]); // Include updateUserCoordinates in dependencies
