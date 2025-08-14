@@ -22,7 +22,7 @@ function normalizeUsername(input?: string | null, email?: string | null, fallbac
 // Safe suffix helper - ensures suffix isn't chopped by 32-char limit
 function withSuffix(base: string, suffix: string, max = 32) {
   const room = Math.max(0, max - suffix.length);
-  return `${base.slice(0, room)}${suffix}`;
+  return `${base.slice(0, room)}${suffix}`.slice(0, max);
 }
 
 async function ensureUniqueUsername(cms: Awaited<ReturnType<typeof getPayload>>, username: string) {
@@ -88,30 +88,31 @@ export async function POST(req: Request) {
     });
   }
 
-  // Get the ID and type
-  const { id } = evt.data;
+  // Get the event type
   const eventType = evt.type;
 
-  console.log('Webhook - Received event:', { type: eventType, clerkUserId: mask(id) });
-
   if (eventType === "user.created") {
-    const { id, email_addresses, username: clerkUsername } = evt.data;
+    const { id: clerkId, email_addresses, username: clerkUsername } = evt.data;
+    
+    console.log('Webhook - Received event:', { type: eventType, clerkUserId: mask(clerkId) });
     
     // Check if user already exists (idempotent)
     const payloadInstance = await getPayload({ config });
     const findUser = await payloadInstance.find({
       collection: "users",
-      where: { clerkUserId: { equals: id } },
+      where: { clerkUserId: { equals: clerkId } },
       limit: 1,
     });
 
     if (findUser.docs.length === 0) {
       console.log('Webhook - Creating new user (no coordinates)');
-      const email = email_addresses?.[0]?.email_address ?? null;
+      const primaryEmailId = evt.data.primary_email_address_id;
+      const email = email_addresses?.find(e => e.id === primaryEmailId)?.email_address ?? 
+                    email_addresses?.[0]?.email_address ?? null;
       
       // build a safe username that always passes schema (ChatGPT's approach)
-      let desired = normalizeUsername(clerkUsername, email, id);
-      if (!desired) desired = `user${id.slice(-4)}`;
+      let desired = normalizeUsername(clerkUsername, email, clerkId);
+      if (!desired) desired = `user${clerkId.slice(-4)}`;
       const unique = await ensureUniqueUsername(payloadInstance, desired);
       
       console.log('Webhook - Username resolved:', { original: clerkUsername, resolved: unique });
@@ -125,7 +126,7 @@ export async function POST(req: Request) {
           clerkUsername: clerkUsername,    // mirror only (for reference)
           usernameSource: "app",
           usernameSyncedAt: new Date().toISOString(),
-          clerkUserId: id, 
+          clerkUserId: clerkId, 
           roles: ["user"] 
         },
       });
@@ -138,19 +139,23 @@ export async function POST(req: Request) {
   }
 
   if (eventType === "user.updated") {
-    const { id, email_addresses, username } = evt.data;
+    const { id: clerkId, email_addresses, username } = evt.data;
+    
+    console.log('Webhook - Received event:', { type: eventType, clerkUserId: mask(clerkId) });
     
     const payloadInstance = await getPayload({ config });
     const findUser = await payloadInstance.find({
       collection: "users",
-      where: { clerkUserId: { equals: id } },
+      where: { clerkUserId: { equals: clerkId } },
       limit: 1,
     });
 
     if (findUser.docs.length > 0) {
       const existingUser = findUser.docs[0];
       if (existingUser) {
-        const email = email_addresses?.[0]?.email_address ?? null;
+        const primaryEmailId = evt.data.primary_email_address_id;
+        const email = email_addresses?.find(e => e.id === primaryEmailId)?.email_address ?? 
+                      email_addresses?.[0]?.email_address ?? null;
         
         // Only mirror safe fields; DO NOT change username
         // Build update data conditionally to avoid persisting null values
@@ -181,12 +186,14 @@ export async function POST(req: Request) {
   }
 
   if (eventType === "user.deleted") {
-    const { id } = evt.data;
+    const { id: clerkId } = evt.data;
+    
+    console.log('Webhook - Received event:', { type: eventType, clerkUserId: mask(clerkId) });
     
     const payloadInstance = await getPayload({ config });
     const findUser = await payloadInstance.find({
       collection: "users",
-      where: { clerkUserId: { equals: id } },
+      where: { clerkUserId: { equals: clerkId } },
       limit: 1,
     });
 
