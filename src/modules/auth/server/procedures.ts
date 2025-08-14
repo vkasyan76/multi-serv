@@ -12,6 +12,9 @@ import { z } from "zod";
 import type { UserCoordinates } from "@/modules/tenants/types";
 import { hasValidCoordinates, mergeCoordinates } from "@/modules/profile/location-utils";
 
+// Consistent ID masking helper for PII protection
+const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
+
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
     const headers = await getHeaders();
@@ -510,7 +513,7 @@ export const authRouter = createTRPCRouter({
 
     if (user.totalDocs === 0) {
       // Return null instead of throwing - this stops the infinite spinner
-      console.log('getUserProfile: No user found for clerkUserId:', userId);
+      console.log('getUserProfile: No user found for clerkUserId:', mask(userId));
       return null;
     }
 
@@ -518,7 +521,7 @@ export const authRouter = createTRPCRouter({
 
     if (!currentUser) {
       // Return null instead of throwing - this stops the infinite spinner
-      console.log('getUserProfile: User document is null for clerkUserId:', userId);
+      console.log('getUserProfile: User document is null for clerkUserId:', mask(userId));
       return null;
     }
 

@@ -19,20 +19,35 @@ function normalizeUsername(input?: string | null, email?: string | null, fallbac
   return cleaned.slice(0, 32);                  // optional max length
 }
 
+// Safe suffix helper - ensures suffix isn't chopped by 32-char limit
+function withSuffix(base: string, suffix: string, max = 32) {
+  const room = Math.max(0, max - suffix.length);
+  return `${base.slice(0, room)}${suffix}`;
+}
+
 async function ensureUniqueUsername(cms: Awaited<ReturnType<typeof getPayload>>, username: string) {
-  let u = username, i = 0;
-  while (true) {
+  let i = 0;
+  const maxAttempts = 100;
+  let candidate = username;
+
+  while (i < maxAttempts) {
     const found = await cms.find({
       collection: "users",
-      where: { username: { equals: u } },
+      where: { username: { equals: candidate } },
       limit: 1,
     });
-    if (found.docs.length === 0) return u;
+    if (found.docs.length === 0) return candidate;
     i += 1;
-    const suffix = String(i);
-    u = (username + suffix).slice(0, 32);
+    candidate = withSuffix(username, String(i)); // safe append within 32 chars
   }
+
+  // Fallback: timestamp + tiny random
+  const suffix = `${Date.now().toString(36)}${Math.floor(Math.random()*100).toString().padStart(2,"0")}`;
+  return withSuffix(username, suffix);
 }
+
+// Consistent ID masking helper for PII protection
+const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
 
 export async function POST(req: Request) {
   console.log('Webhook - POST request received');
@@ -77,7 +92,7 @@ export async function POST(req: Request) {
   const { id } = evt.data;
   const eventType = evt.type;
 
-  console.log('Webhook - Received event:', { type: eventType, clerkUserId: id });
+  console.log('Webhook - Received event:', { type: eventType, clerkUserId: mask(id) });
 
   if (eventType === "user.created") {
     const { id, email_addresses, username: clerkUsername } = evt.data;
@@ -138,18 +153,22 @@ export async function POST(req: Request) {
         const email = email_addresses?.[0]?.email_address ?? null;
         
         // Only mirror safe fields; DO NOT change username
-        const data: { email: string | null; clerkUsername: string | null } = {
-          email,
-          clerkUsername: username ?? null,
-        };
+        // Build update data conditionally to avoid persisting null values
+        const updateData: Record<string, unknown> = {};
+        if (email && email !== existingUser.email) {
+          updateData.email = email;
+        }
+        if (username !== undefined && username !== existingUser.clerkUsername) {
+          updateData.clerkUsername = username ?? null;
+        }
         
         // write only when something actually changed
-        if (data.email !== existingUser.email || data.clerkUsername !== existingUser.clerkUsername) {
+        if (Object.keys(updateData).length > 0) {
           try {
             await payloadInstance.update({
               collection: "users",
               id: existingUser.id,
-              data,
+              data: updateData,
             });
             console.log('Webhook - Updated existing user:', existingUser.id);
           } catch (e) {
