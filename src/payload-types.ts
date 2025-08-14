@@ -129,7 +129,19 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
+  /**
+   * App username (set once on create).
+   */
   username: string;
+  /**
+   * Raw username from Clerk (for reference only).
+   */
+  clerkUsername?: string | null;
+  usernameSource?: ('app' | 'clerk') | null;
+  /**
+   * When username was set.
+   */
+  usernameSyncedAt?: string | null;
   email?: string | null;
   clerkUserId?: string | null;
   roles?: ('super-admin' | 'user')[] | null;
@@ -383,6 +395,9 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   username?: T;
+  clerkUsername?: T;
+  usernameSource?: T;
+  usernameSyncedAt?: T;
   email?: T;
   clerkUserId?: T;
   roles?: T;

@@ -8,6 +8,47 @@ import config from "@/payload.config";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Username normalization helpers (ChatGPT's approach)
+function normalizeUsername(input?: string | null, email?: string | null, fallbackId?: string) {
+  // pick a base: provided username → email local-part → clerk id → "user"
+  const base = (input ?? email?.split("@")[0] ?? fallbackId ?? "user").toLowerCase();
+
+  // allow only a–z 0–9 . _ -  and trim separators
+  const cleaned = base.replace(/[^a-z0-9._-]/g, "").replace(/^[._-]+|[._-]+$/g, "");
+  if (cleaned.length < 3) return null;         // respect your min length
+  return cleaned.slice(0, 32);                  // optional max length
+}
+
+// Safe suffix helper - ensures suffix isn't chopped by 32-char limit
+function withSuffix(base: string, suffix: string, max = 32) {
+  const room = Math.max(0, max - suffix.length);
+  return `${base.slice(0, room)}${suffix}`.slice(0, max);
+}
+
+async function ensureUniqueUsername(cms: Awaited<ReturnType<typeof getPayload>>, username: string) {
+  let i = 0;
+  const maxAttempts = 100;
+  let candidate = username;
+
+  while (i < maxAttempts) {
+    const found = await cms.find({
+      collection: "users",
+      where: { username: { equals: candidate } },
+      limit: 1,
+    });
+    if (found.docs.length === 0) return candidate;
+    i += 1;
+    candidate = withSuffix(username, String(i)); // safe append within 32 chars
+  }
+
+  // Fallback: timestamp + tiny random
+  const suffix = `${Date.now().toString(36)}${Math.floor(Math.random()*100).toString().padStart(2,"0")}`;
+  return withSuffix(username, suffix);
+}
+
+// Consistent ID masking helper for PII protection
+const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
+
 export async function POST(req: Request) {
   console.log('Webhook - POST request received');
   
@@ -47,35 +88,45 @@ export async function POST(req: Request) {
     });
   }
 
-  // Get the ID and type
-  const { id } = evt.data;
+  // Get the event type
   const eventType = evt.type;
 
-  console.log('Webhook - Received event:', { type: eventType, clerkUserId: id });
-
   if (eventType === "user.created") {
-    const { id, email_addresses, username } = evt.data;
+    const { id: clerkId, email_addresses, username: clerkUsername } = evt.data;
+    
+    console.log('Webhook - Received event:', { type: eventType, clerkUserId: mask(clerkId) });
     
     // Check if user already exists (idempotent)
     const payloadInstance = await getPayload({ config });
     const findUser = await payloadInstance.find({
       collection: "users",
-      where: { clerkUserId: { equals: id } },
+      where: { clerkUserId: { equals: clerkId } },
       limit: 1,
     });
 
     if (findUser.docs.length === 0) {
       console.log('Webhook - Creating new user (no coordinates)');
-      const email = email_addresses?.[0]?.email_address || "";
-      const usernameValue = username || email.split("@")[0] || "";
+      const primaryEmailId = evt.data.primary_email_address_id;
+      const email = email_addresses?.find(e => e.id === primaryEmailId)?.email_address ?? 
+                    email_addresses?.[0]?.email_address ?? null;
+      
+      // build a safe username that always passes schema (ChatGPT's approach)
+      let desired = normalizeUsername(clerkUsername, email, clerkId);
+      if (!desired) desired = `user${clerkId.slice(-4)}`;
+      const unique = await ensureUniqueUsername(payloadInstance, desired);
+      
+      console.log('Webhook - Username resolved:', { original: clerkUsername, resolved: unique });
       
       // Create user WITHOUT coordinates - let request-time geolocation handle that
       const newUser = await payloadInstance.create({
         collection: "users",
         data: { 
           email, 
-          username: usernameValue, 
-          clerkUserId: id, 
+          username: unique,           // APP-OWNED (never changes)
+          clerkUsername: clerkUsername,    // mirror only (for reference)
+          usernameSource: "app",
+          usernameSyncedAt: new Date().toISOString(),
+          clerkUserId: clerkId, 
           roles: ["user"] 
         },
       });
@@ -88,42 +139,61 @@ export async function POST(req: Request) {
   }
 
   if (eventType === "user.updated") {
-    const { id, email_addresses, username } = evt.data;
+    const { id: clerkId, email_addresses, username } = evt.data;
+    
+    console.log('Webhook - Received event:', { type: eventType, clerkUserId: mask(clerkId) });
     
     const payloadInstance = await getPayload({ config });
     const findUser = await payloadInstance.find({
       collection: "users",
-      where: { clerkUserId: { equals: id } },
+      where: { clerkUserId: { equals: clerkId } },
       limit: 1,
     });
 
     if (findUser.docs.length > 0) {
       const existingUser = findUser.docs[0];
       if (existingUser) {
-        const email = email_addresses?.[0]?.email_address || "";
-        const usernameValue = username || email.split("@")[0] || "";
+        const primaryEmailId = evt.data.primary_email_address_id;
+        const email = email_addresses?.find(e => e.id === primaryEmailId)?.email_address ?? 
+                      email_addresses?.[0]?.email_address ?? null;
         
-        // Update existing user (idempotent)
-        await payloadInstance.update({
-          collection: "users",
-          id: existingUser.id,
-          data: { 
-            email, 
-            username: usernameValue 
-          },
-        });
-        console.log('Webhook - Updated existing user:', existingUser.id);
+        // Only mirror safe fields; DO NOT change username
+        // Build update data conditionally to avoid persisting null values
+        const updateData: Record<string, unknown> = {};
+        if (email && email !== existingUser.email) {
+          updateData.email = email;
+        }
+        if (username !== undefined && username !== existingUser.clerkUsername) {
+          updateData.clerkUsername = username ?? null;
+        }
+        
+        // write only when something actually changed
+        if (Object.keys(updateData).length > 0) {
+          try {
+            await payloadInstance.update({
+              collection: "users",
+              id: existingUser.id,
+              data: updateData,
+            });
+            console.log('Webhook - Updated existing user:', existingUser.id);
+          } catch (e) {
+            // don't let a username validation error crash the webhook
+            console.warn("Webhook (user.updated) skipped minor update:", e);
+          }
+        }
       }
     }
   }
 
   if (eventType === "user.deleted") {
-    const { id } = evt.data;
+    const { id: clerkId } = evt.data;
+    
+    console.log('Webhook - Received event:', { type: eventType, clerkUserId: mask(clerkId) });
     
     const payloadInstance = await getPayload({ config });
     const findUser = await payloadInstance.find({
       collection: "users",
-      where: { clerkUserId: { equals: id } },
+      where: { clerkUserId: { equals: clerkId } },
       limit: 1,
     });
 

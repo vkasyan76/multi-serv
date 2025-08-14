@@ -12,6 +12,9 @@ import { z } from "zod";
 import type { UserCoordinates } from "@/modules/tenants/types";
 import { hasValidCoordinates, mergeCoordinates } from "@/modules/profile/location-utils";
 
+// Consistent ID masking helper for PII protection
+const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
+
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
     const headers = await getHeaders();
@@ -509,13 +512,17 @@ export const authRouter = createTRPCRouter({
     });
 
     if (user.totalDocs === 0) {
-      throw new Error("User not found");
+      // Return null instead of throwing - this stops the infinite spinner
+      console.log('getUserProfile: No user found for clerkUserId:', mask(userId));
+      return null;
     }
 
     const currentUser = user.docs[0];
 
     if (!currentUser) {
-      throw new Error("User not found");
+      // Return null instead of throwing - this stops the infinite spinner
+      console.log('getUserProfile: User document is null for clerkUserId:', mask(userId));
+      return null;
     }
 
     return {
@@ -694,9 +701,9 @@ export const authRouter = createTRPCRouter({
       coordinates: z.object({
         lat: z.number(),
         lng: z.number(),
-        city: z.string().optional(),
-        country: z.string().optional(),
-        region: z.string().optional(),
+        city: z.string().nullable().optional(),
+        country: z.string().nullable().optional(),
+        region: z.string().nullable().optional(),
       })
     }))
     .mutation(async ({ ctx, input }) => {
@@ -709,23 +716,22 @@ export const authRouter = createTRPCRouter({
       });
 
       if (user.totalDocs === 0) {
-        throw new Error("User not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
       }
 
       const currentUser = user.docs[0];
       if (!currentUser) {
-        throw new Error("User not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
       }
 
       // Round coordinates to 3 decimal places for privacy and consistency
       const round = (n: number, d = 3) => Math.round(n * 10 ** d) / 10 ** d;
-
-      // EU countries allow-list for storage policy
-      const allowCountries = new Set([
-        "DE", "FR", "IT", "ES", "NL", "BE", "AT", "PL", "CZ", "SK", "HU", "RO", 
-        "BG", "HR", "SI", "GR", "PT", "DK", "SE", "FI", "LU", "MT", "CY", "EE", 
-        "LV", "LT", "IE"
-      ]);
 
       // Prepare incoming coordinates
       const incoming = {
@@ -758,11 +764,8 @@ export const authRouter = createTRPCRouter({
         merged.lat !== existing?.lat ||
         merged.lng !== existing?.lng;
 
-      // Check if country is allowed for storage
-      const allowed = !merged.country || allowCountries.has(merged.country);
-
-      // Only write if something changed AND country is allowed
-      if (changed && allowed) {
+      // Only write if something actually changed
+      if (changed) {
         await ctx.db.update({
           collection: "users",
           id: currentUser.id as string,
@@ -774,16 +777,12 @@ export const authRouter = createTRPCRouter({
       }
 
       // Log high-level outcome (avoid PII)
-      console.log(`Geo update for user ${userId.slice(0, 8)}...: stored=${changed && allowed}, country=${merged.country || 'unknown'}`);
+      console.log(`Geo update for user ${userId.slice(0, 8)}...: stored=${changed}, country=${merged.country || 'unknown'}`);
 
       return { 
         success: true, 
-        stored: changed && allowed, 
-        coordinates: merged,
-        policy: {
-          allowed,
-          reason: allowed ? 'country_allowed' : 'country_not_in_eu_list'
-        }
+        stored: changed, 
+        coordinates: merged
       };
     }),
 });
