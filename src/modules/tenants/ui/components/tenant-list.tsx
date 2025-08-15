@@ -1,7 +1,7 @@
 "use client";
 
 import { useTRPC } from "@/trpc/client";
-import { useSuspenseQuery, useSuspenseInfiniteQuery } from "@tanstack/react-query";
+import { useSuspenseInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
 import { TenantCard } from "./tenant-card";
 import { ListSkeleton } from "./skeletons/list-skeleton";
@@ -13,39 +13,42 @@ import { Loader2 } from "lucide-react";
 interface Props {
   category?: string;
   subcategory?: string;
+  isSignedIn: boolean;
 }
 
-export const TenantList = ({ category, subcategory }: Props) => {
+export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   const trpc = useTRPC();
   const [filters] = useTenantFilters();
 
-  // Use regular useSuspenseQuery for user profile
-  const { data: userProfile } = useSuspenseQuery(
-    trpc.auth.getUserProfile.queryOptions()
-  );
+  // Use conditional query for user profile - only fetch if authenticated
+  const { data: userProfile } = useQuery({
+    ...trpc.auth.getUserProfile.queryOptions(),
+    enabled: isSignedIn, // Only fetch if user is signed in
+  });
 
   // Use infinite query for tenants with Load More functionality
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useSuspenseInfiniteQuery(
-    trpc.tenants.getMany.infiniteQueryOptions(
-      {
-        category: category || null,
-        subcategory: subcategory || null,
-        ...filters,
-        userLat: userProfile?.coordinates?.lat ?? null,
-        userLng: userProfile?.coordinates?.lng ?? null,
-        limit: DEFAULT_LIMIT,
-      },
-      {
-        getNextPageParam: (lastPage) => {
-          return lastPage.hasNextPage ? lastPage.nextPage : undefined;
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useSuspenseInfiniteQuery(
+      trpc.tenants.getMany.infiniteQueryOptions(
+        {
+          category: category || null,
+          subcategory: subcategory || null,
+          ...filters,
+          userLat: userProfile?.coordinates?.lat ?? null,
+          userLng: userProfile?.coordinates?.lng ?? null,
+          limit: DEFAULT_LIMIT,
         },
-      }
-    )
-  );
+        {
+          getNextPageParam: (lastPage) => {
+            return lastPage.hasNextPage ? lastPage.nextPage : undefined;
+          },
+        }
+      )
+    );
 
   // Flatten all pages into a single array
-  const allTenants = data.pages.flatMap(page => page.docs);
-  
+  const allTenants = data.pages.flatMap((page) => page.docs);
+
   // Get total count from the first page (all pages have the same totalDocs)
   const totalTenants = data.pages[0]?.totalDocs || 0;
 
@@ -63,9 +66,9 @@ export const TenantList = ({ category, subcategory }: Props) => {
     );
   }
 
-     return (
-     <div className="space-y-4">
-             {/* Tenant Cards Container */}
+  return (
+    <div className="space-y-4">
+      {/* Tenant Cards Container */}
       <div className="flex flex-wrap gap-4 justify-start pt-2">
         {allTenants.map((tenant: TenantWithRelations) => (
           <TenantCard
@@ -73,6 +76,7 @@ export const TenantList = ({ category, subcategory }: Props) => {
             tenant={tenant}
             reviewRating={3} // Placeholder - will be replaced with backend data
             reviewCount={5} // Placeholder - will be replaced with backend data
+            isSignedIn={isSignedIn}
           />
         ))}
       </div>
@@ -100,9 +104,7 @@ export const TenantList = ({ category, subcategory }: Props) => {
       )}
 
       {/* Loading Skeletons for New Items */}
-      {isFetchingNextPage && (
-        <ListSkeleton count={DEFAULT_LIMIT} />
-      )}
+      {isFetchingNextPage && <ListSkeleton count={DEFAULT_LIMIT} />}
 
       {/* Results Summary */}
       <div className="text-center text-sm text-gray-500">

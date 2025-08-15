@@ -19,8 +19,8 @@ const Page = async ({ params, searchParams }: Props) => {
 
   const queryClient = getQueryClient();
   
-  // Prefetch user profile
-  void queryClient.prefetchQuery(trpc.auth.getUserProfile.queryOptions());
+  // Note: getUserProfile is fetched conditionally in TenantList component
+  // No need to prefetch here for anonymous users
 
   // Prefetch tenants with infinite query options
   void queryClient.prefetchInfiniteQuery(
