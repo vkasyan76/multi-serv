@@ -12,7 +12,6 @@ import { z } from "zod";
 import type { UserCoordinates } from "@/modules/tenants/types";
 import {
   hasValidCoordinates,
-  mergeCoordinates,
 } from "@/modules/profile/location-utils";
 
 // Consistent ID masking helper for PII protection
@@ -701,11 +700,15 @@ export const authRouter = createTRPCRouter({
         const existingCoords = currentUser.coordinates as
           | Partial<UserCoordinates>
           | undefined;
-        updatedCoordinates = mergeCoordinates(
-          existingCoords || {},
-          input.coordinates,
-          true
-        );
+        updatedCoordinates = {
+          lat: input.coordinates.lat,
+          lng: input.coordinates.lng,
+          city: input.coordinates.city ?? existingCoords?.city,
+          country: input.coordinates.country ?? existingCoords?.country,
+          region: input.coordinates.region ?? existingCoords?.region,
+          ipDetected: false, // Manual coordinates
+          manuallySet: true, // Lock against IP overwrite
+        };
       }
 
       await ctx.db.update({
@@ -717,7 +720,8 @@ export const authRouter = createTRPCRouter({
           country: input.country,
           language: input.language,
           coordinates: updatedCoordinates,
-          onboardingCompleted: true, // Set onboarding status to completed
+          onboardingCompleted: true, // Mark onboarding as complete
+          geoUpdatedAt: new Date().toISOString(),
         },
       });
 
@@ -798,7 +802,17 @@ export const authRouter = createTRPCRouter({
         | Partial<UserCoordinates>
         | undefined;
 
-      // Merge incoming with existing data
+      // Only block IP updates if coordinates were manually set by user
+      if (existing?.manuallySet === true) {
+        console.log(`Geo update skipped for user ${userId!.slice(0, 8)}...: manual coordinates exist`);
+        return {
+          success: true,
+          stored: false,
+          coordinates: existing,
+        };
+      }
+
+      // Merge incoming with existing data, preserving manual flag if it exists
       const merged = {
         country: incoming.country ?? existing?.country ?? null,
         region: incoming.region ?? existing?.region ?? null,
@@ -806,7 +820,7 @@ export const authRouter = createTRPCRouter({
         lat: incoming.lat ?? existing?.lat ?? null,
         lng: incoming.lng ?? existing?.lng ?? null,
         ipDetected: true,
-        manuallySet: false,
+        manuallySet: existing?.manuallySet ?? false, // Preserve existing manual flag
       };
 
       // Check if anything actually changed
