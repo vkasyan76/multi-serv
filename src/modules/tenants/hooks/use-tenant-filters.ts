@@ -20,7 +20,7 @@ import { SORT_VALUES } from "@/constants";
 
 export const params = {
   sort: parseAsStringLiteral(SORT_VALUES).withDefault("distance"),
-  maxPrice: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
+  maxPrice: parseAsString.withDefault(""),
   services: parseAsArrayOf(parseAsString)
     .withOptions({ clearOnDefault: true })
     .withDefault([]),

@@ -42,9 +42,9 @@ export const tenantsRouter = createTRPCRouter({
       const mapSortToPayloadFormat = (sort?: string | null): Sort => {
         switch (sort) {
           case "price_low_to_high":
-            return "+hourlyRate"; // Sort by hourly rate ascending
+            return "hourlyRate"; // Sort by hourly rate ascending (low to high)
           case "price_high_to_low":
-            return "-hourlyRate"; // Sort by hourly rate descending
+            return "-hourlyRate"; // Sort by hourly rate descending (high to low)
           case "tenure_newest":
             return "-createdAt"; // Newest tenants first
           case "tenure_oldest":
@@ -57,11 +57,14 @@ export const tenantsRouter = createTRPCRouter({
 
       const sort: Sort = mapSortToPayloadFormat(input.sort);
 
-      // Fix: Only apply maxPrice filter if it has actual value (not empty string)
-      if ((input.maxPrice && input.maxPrice.trim() !== "")) {
-        where.hourlyRate = {
-          less_than_equal: Number(input.maxPrice),
-        };
+      // Apply maxPrice filter if it has actual value (not empty string)
+      if (input.maxPrice && input.maxPrice.trim() !== "") {
+        const maxPriceValue = Number(input.maxPrice);
+        if (!isNaN(maxPriceValue) && maxPriceValue > 0) {
+          where.hourlyRate = {
+            less_than_equal: maxPriceValue,
+          };
+        }
       }
 
       if (input.category) {
@@ -125,8 +128,17 @@ export const tenantsRouter = createTRPCRouter({
         };
       }
 
-      console.log("Input services:", input.services);
-      console.log("Where clause:", JSON.stringify(where, null, 2));
+      // For price sorting, we need to filter out tenants with undefined hourly rates
+      // as they can't be properly sorted by price
+      if (input.sort === "price_low_to_high" || input.sort === "price_high_to_low") {
+        // Preserve existing price filters and add sorting requirements
+        const existingPriceFilter = where.hourlyRate || {};
+        where.hourlyRate = {
+          ...existingPriceFilter,
+          exists: true, // Ensure hourlyRate field exists
+          not_equals: null, // Also exclude null values
+        };
+      }
 
       const data = await ctx.db.find({
         collection: "tenants",
@@ -138,40 +150,42 @@ export const tenantsRouter = createTRPCRouter({
         pagination: true, // Enable pagination
       });
 
-      console.log("Payload query results:", {
-        totalDocs: data.totalDocs,
-        docsLength: data.docs.length,
-        sortApplied: sort,
-        sortType: typeof sort,
-        sortMethod: input.sort === "distance" ? "database + distance" : "database only",
-        allTenants: data.docs.map(t => ({ 
-          name: t.name, 
-          hourlyRate: t.hourlyRate, 
-          hourlyRateType: typeof t.hourlyRate 
-        })),
-      });
+
 
       // Calculate distances dynamically for the current user
       // Note: Price and tenure sorting are handled by the database query above
       // Only distance sorting requires additional processing after fetching
       let tenantsWithDistance = data.docs;
 
-      // Remove manual sorting fallback - this is inefficient and incorrect
-      // Price and tenure sorting should be handled by the database query above
-      // The database will return results in the correct order based on the 'sort' parameter
+      // FALLBACK: If anonymous user requests distance sorting, fall back to price ascending
+      if (input.sort === "distance" && (!input.userLat || !input.userLng)) {
+        console.log("Anonymous user requested distance sorting → falling back to price_low_to_high");
+        // Re-query with price sorting since we already fetched with distance sorting
+        const priceSortedData = await ctx.db.find({
+          collection: "tenants",
+          depth: 3,
+          where,
+          sort: "hourlyRate", // Sort by price ascending (low to high)
+          limit: input.limit,
+          page: input.cursor || 1,
+          pagination: true,
+        });
+        // Update our data reference - we need to reassign the variable
+        Object.assign(data, priceSortedData);
+        tenantsWithDistance = data.docs;
+      } else if (input.sort === "distance" && input.userLat && input.userLng) {
+        console.log("Signed-in user requested distance sorting → using distance calculation");
+      }
+
+      // Note: Price sorting is now handled by database query with proper filtering
 
       if (input.userLat && input.userLng) {
+        // Preserve the database sort order by mapping in the same order
         tenantsWithDistance = data.docs.map((tenant) => {
           let distance = null;
 
           // Get tenant location from user coordinates (since tenant is based on user)
           const tenantUser = (tenant as TenantWithRelations).user;
-
-          console.log("DEBUG TENANT USER:", {
-            tenantName: tenant.name,
-            tenantUser: tenantUser ? "EXISTS" : "NULL",
-            coordinates: tenantUser?.coordinates || "MISSING",
-          });
 
           if (tenantUser?.coordinates?.lat && tenantUser?.coordinates?.lng) {
             distance = calculateDistance(
@@ -230,61 +244,14 @@ export const tenantsRouter = createTRPCRouter({
         console.log(`Distance filter applied: ${beforeCount} → ${tenantsWithDistance.length} tenants (max: ${input.maxDistance}km)`);
       }
 
-      // Debug: Show final order after all processing
-      console.log("Final tenant order:", {
-        sort: input.sort,
-        finalOrder: tenantsWithDistance.map(t => ({ 
-          name: t.name, 
-          hourlyRate: t.hourlyRate, 
-          distance: (t as TenantWithRelations).distance 
-        }))
-      });
-      
-      // Debug: Verify pagination is respected
-      console.log("Pagination check:", {
-        requestedLimit: input.limit,
-        actualDocsReturned: tenantsWithDistance.length,
-        payloadTotalDocs: data.totalDocs,
-        hasNextPage: data.hasNextPage
-      });
+
 
       // console.log("Query results:", data.docs.length);
 
       // Artificial delay for development/testing:
       // await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      // Before returning - single comprehensive log
-      console.log("=== TENANT QUERY SUMMARY ===", {
-        input: {
-          sort: input.sort,
-          userCoords:
-            input.userLat && input.userLng
-              ? `${input.userLat}, ${input.userLng}`
-              : "none",
-          category: input.category,
-          services: input.services?.length || 0,
-          priceRange:
-            input.maxPrice
-              ? `${input.maxPrice}`
-              : "none",
-        },
-        results: {
-          totalTenants: tenantsWithDistance.length,
-          withDistance: tenantsWithDistance.filter(
-            (t) => (t as TenantWithRelations).distance !== null
-          ).length,
-          sortApplied:
-            input.sort === "distance" || !input.sort ? "distance-based (default)" : input.sort,
-        },
-        sample:
-          input.userLat && input.userLng
-            ? tenantsWithDistance.slice(0, 2).map((t) => ({
-                name: (t as TenantWithRelations).name,
-                distance: (t as TenantWithRelations).distance,
-                hourlyRate: (t as TenantWithRelations).hourlyRate,
-              }))
-            : "no coordinates provided",
-      });
+
 
       return {
         ...data,

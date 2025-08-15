@@ -2,11 +2,20 @@
 
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
 
-export const SortingDisplay = () => {
+interface SortingDisplayProps {
+  isSignedIn: boolean;
+}
+
+export const SortingDisplay = ({ isSignedIn }: SortingDisplayProps) => {
   const [filters] = useTenantFilters();
   const sort = filters.sort ?? "distance";
 
   const getSortingText = () => {
+    // If anonymous user has distance selected, show the fallback sorting
+    if (!isSignedIn && sort === "distance") {
+      return "Sorted by Price (low to high)";
+    }
+
     switch (sort) {
       case "price_low_to_high":
         return "Sorted by Price (low to high)";

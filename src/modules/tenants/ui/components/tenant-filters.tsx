@@ -8,6 +8,7 @@ import { useTenantFilters } from "../../hooks/use-tenant-filters";
 import { ServicesFilter } from "./services-filter";
 import { DistanceFilter } from "./distance-filter";
 
+
 interface TenantFilterProps {
   title: string;
   className?: string;
@@ -33,7 +34,11 @@ const TenantFilter = ({ title, className, children }: TenantFilterProps) => {
   );
 };
 
-export const TenantFilters = () => {
+interface TenantFiltersProps {
+  isSignedIn: boolean;
+}
+
+export const TenantFilters = ({ isSignedIn }: TenantFiltersProps) => {
   const [filters, setFilters] = useTenantFilters();
   const onChange = (key: keyof typeof filters, value: unknown) => {
     setFilters({ ...filters, [key]: value });
@@ -78,7 +83,7 @@ export const TenantFilters = () => {
 
   const handleClear = () => {
     setFilters({
-      maxPrice: null,
+      maxPrice: "",
       services: [],
       maxDistance: null,
       distanceFilterEnabled: false,
@@ -106,10 +111,12 @@ export const TenantFilters = () => {
         <DistanceFilter
           maxDistance={filters.maxDistance}
           isEnabled={filters.distanceFilterEnabled}
-          onMaxDistanceChange={handleDistanceChange}
-          onToggleChange={handleDistanceToggle}
+          onMaxDistanceChangeAction={handleDistanceChange}
+          onToggleChangeAction={handleDistanceToggle}
           hasOnlineServices={filters.services?.includes("on-line") || false}
+          isSignedIn={isSignedIn}
         />
+
       </TenantFilter>
 
       <TenantFilter title="Service Delivery" className="border-b-0">

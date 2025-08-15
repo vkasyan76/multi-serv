@@ -4,6 +4,7 @@ import { MapPin, Clock, Monitor, MapPinOff, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import type { TenantWithRelations } from "../../types";
+import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
 
 // Helper function to format market tenure - simple date format
 const formatMarketTenure = (createdAt: string): string => {
@@ -27,13 +28,16 @@ interface TenantCardProps {
   tenant: TenantWithRelations;
   reviewRating?: number;
   reviewCount?: number;
+  isSignedIn: boolean;
 }
 
 export const TenantCard = ({
   tenant,
   reviewRating = 3,
   reviewCount = 5,
+  isSignedIn,
 }: TenantCardProps) => {
+
   // Helper function to handle image errors
   const handleImageError = (
     event: React.SyntheticEvent<HTMLImageElement, Event>
@@ -151,16 +155,26 @@ export const TenantCard = ({
       <div className="border-t border-gray-100 pt-3">
         <div className="flex items-center justify-between text-sm text-gray-500">
           {/* Distance */}
-          {tenant.distance !== null && tenant.distance !== undefined ? (
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4 text-blue-600" />
-              <span>{tenant.distance.toFixed(1)} km</span>
-            </div>
+          {isSignedIn ? (
+            // Show distance for signed-in users
+            tenant.distance !== null && tenant.distance !== undefined ? (
+              <div className="flex items-center gap-1">
+                <MapPin className="h-4 w-4 text-blue-600" />
+                <span>{tenant.distance.toFixed(1)} km</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <MapPinOff className="h-4 w-4 text-gray-400" />
+                <span>Distance unavailable</span>
+              </div>
+            )
           ) : (
-            <div className="flex items-center gap-1">
-              <MapPinOff className="h-4 w-4 text-gray-400" />
-              <span>Distance unavailable</span>
-            </div>
+            // Show sign-in prompt for anonymous users
+                         <AuthTooltip isSignedIn={!!isSignedIn}>
+               <div className="flex items-center gap-1 cursor-help">
+                 <span className="text-gray-400">Sign in to see distance</span>
+               </div>
+             </AuthTooltip>
           )}
 
           {/* Market Tenure */}
