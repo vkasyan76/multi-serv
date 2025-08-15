@@ -299,6 +299,16 @@ export function getLocaleAndCurrency() {
   return { locale: "en-US", currency: "EUR" };
 }
 
+// Add this new helper function
+export function normalizeToSupported(code?: string): "en" | "es" | "fr" | "de" | "it" | "pt" {
+  const fallback = getInitialLanguage();
+  if (!code) return fallback;
+  
+  const short = code.split(',')[0]?.split('-')[0] ?? code;
+  const supportedCodes = ["en", "es", "fr", "de", "it", "pt"] as const;
+  return supportedCodes.includes(short as "en" | "es" | "fr" | "de" | "it" | "pt") ? short as "en" | "es" | "fr" | "de" | "it" | "pt" : fallback;
+}
+
 // New helper functions for consistent location display formatting
 export function countryNameFromCode(code?: string, locale = "en"): string {
   if (!code) return "";

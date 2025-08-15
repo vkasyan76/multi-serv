@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { countryNameFromCode, normalizeToSupported } from "@/modules/profile/location-utils";
 
 // In-memory guard to prevent concurrent writes (Strict Mode / multi-tab protection)
 const inflight: Record<string, boolean> = {};
@@ -37,8 +38,9 @@ export default function GeoBootstrap() {
     if (!isSignedIn || !user?.id || startedRef.current) return;
     startedRef.current = true;
 
-    const key = `geoSaved:${user.id}`;
-    if (localStorage.getItem(key) === "1") return;
+    // REMOVED: localStorage read gate - this was blocking updates for non-onboarded users
+    // const key = `geoSaved:${user.id}`;
+    // if (localStorage.getItem(key) === "1") return;
 
     (async () => {
       // Prevent concurrent writes for the same user
@@ -54,15 +56,38 @@ export default function GeoBootstrap() {
           return;
         }
 
-        const { geo } = await res.json();
+        // FIX 1: Parse JSON ONCE (fixes double res.json() bug)
+        const { geo, language, mock, source } = await res.json();
+        
+        // Skip saving production mock data, but allow dev mock for testing
+        if (mock === true && source === "dev-mock") {
+          if (process.env.NODE_ENV === "development") {
+            console.log("GeoBootstrap: Dev mock detected; saving for local testing");
+            // Continue with saving dev mock data for testing purposes
+          } else {
+            console.warn("GeoBootstrap: Dev mock in production; skipping save");
+            return;
+          }
+        } else if (mock === true && source !== "dev-mock") {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("GeoBootstrap: Production mock detected; skipping save");
+          }
+          return;
+        }
+        
         if (!geo?.country) {
           console.log("GeoBootstrap: No geolocation available (likely localhost)");
           return;
         }
 
-        if (typeof geo.latitude !== "number" || typeof geo.longitude !== "number") {
+        // FIX 2: Coerce lat/lng to numbers (Vercel may return strings)
+        const latNum = Number(geo?.latitude);
+        const lngNum = Number(geo?.longitude);
+
+        // FIX 3: Robust numeric check with better error logging
+        if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
           if (process.env.NODE_ENV !== "production") {
-            console.log("GeoBootstrap: Missing latitude/longitude in /api/geo response; skipping save");
+            console.log("GeoBootstrap: invalid lat/lng from /api/geo, skipping", geo);
           }
           return;
         }
@@ -71,19 +96,31 @@ export default function GeoBootstrap() {
           console.log("GeoBootstrap: Saving coordinates (redacted)");
         }
 
-        // ✅ Keep nested structure (matches server schema)
+        // FIX 4: Use normalized values in mutation
+        const normalizedLang = normalizeToSupported(language);
+        
+        // If your helper supports a locale arg, pass it. If not, just call with the code.
+        const displayCountry =
+          // countryNameFromCode(geo.country, normalizedLang) ?? 
+          countryNameFromCode(geo.country) ?? geo.country;
+
         await updateUserCoordinates.mutateAsync({
           coordinates: {
-            country: geo.country ?? null,
+            country: geo.country ?? null,      // Keep ISO code in coordinates (e.g., "DE")
             region: geo.region ?? null,
             city: geo.city ?? null,
-            lat: geo.latitude,
-            lng: geo.longitude,
-          }
+            lat: latNum,                       // Use normalized number
+            lng: lngNum,                       // Use normalized number
+          },
+          country: displayCountry,             // Human-readable (e.g., "Germany")
+          language: normalizedLang,            // Supported code (e.g., "de")
         });
 
-        // ✅ Set the session flag only after SUCCESS
-        localStorage.setItem(key, "1");
+        // REMOVED: localStorage write gate - this was preventing updates for non-onboarded users
+        // If you ever want a gate, only set/check it AFTER onboardingCompleted === true
+        // if (userProfile?.onboardingCompleted) {
+        //   localStorage.setItem(`geoSaved:${user.id}`, "1");
+        // }
 
       } catch (e) {
         console.warn("GeoBootstrap: unexpected failure:", e);

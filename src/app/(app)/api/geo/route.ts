@@ -3,32 +3,50 @@ import { geolocation } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
 
-export function GET(_req: Request) {
+export function GET(req: Request) {
   try {
-    const geo = geolocation(_req); // { country, region, city, latitude, longitude }
+    const geo = geolocation(req);
     
-    // Dev fallback for localhost testing (ChatGPT's suggestion)
-    if (!geo?.country && process.env.NODE_ENV !== "production") {
-      const dev = {
+    // NEW: Extract language from Accept-Language header (robust parsing)
+    const acceptLanguage = req.headers.get('accept-language') ?? 'en';
+    const language = acceptLanguage.split(',')[0]?.split('-')[0]?.toLowerCase() || 'en';
+    
+    if (!geo?.country) {
+      // 🔸 Mock coordinates near Darmstadt for local testing
+      const mock = {
         country: "DE",
-        region: "HE", 
-        city: "Darmstadt",
-        latitude: 49.8728,
-        longitude: 8.6512,
+        region: "HE",
+        city: "Bensheim",
+        latitude: 49.6833,
+        longitude: 8.6167,
       };
-      console.log("Geo route: Using dev fallback for localhost");
+      console.warn("[/api/geo] No geolocation; returning dev mock (Bensheim, Germany).");
+      // mark as mock so the client can skip saving
       return NextResponse.json(
-        { geo: dev, source: "dev-mock" },
+        { 
+          geo: mock, 
+          language, 
+          source: "dev-mock", 
+          mock: true 
+        },
         { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } }
       );
     }
     
     return NextResponse.json(
-      { geo, source: "vercel" },
+      { 
+        geo, 
+        language, // NEW: Include detected language
+        source: "vercel" 
+      },
       { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } }
     );
   } catch (err) {
     console.error("Geo route error:", err);
-    return NextResponse.json({ geo: null, error: "Failed to fetch location" }, { status: 500 });
+    return NextResponse.json({ 
+      geo: null, 
+      language: "en", // Include language in error response
+      error: "Failed to fetch location" 
+    }, { status: 500 });
   }
 }

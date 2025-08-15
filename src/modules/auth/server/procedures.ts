@@ -753,6 +753,9 @@ export const authRouter = createTRPCRouter({
           country: z.string().nullable().optional(),
           region: z.string().nullable().optional(),
         }),
+        // NEW: Optional top-level fields
+        country: z.string().optional(),  // top-level display name
+        language: z.string().optional(), // consider narrowing server-side
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -779,6 +782,25 @@ export const authRouter = createTRPCRouter({
         });
       }
 
+      // Get existing coordinates to preserve metadata
+      const existing = currentUser.coordinates as
+        | Partial<UserCoordinates>
+        | undefined;
+
+      // NEW: Refined belt-and-suspenders guard - ironclad protection
+      const hasManual = existing?.manuallySet === true;
+      const doneOnboarding = currentUser.onboardingCompleted === true;
+      // robust numeric check (null/undefined/NaN safe)
+      const haveCoords = Number.isFinite(existing?.lat) && Number.isFinite(existing?.lng);
+
+      // freeze geo writes only when it's truly safe to do so
+      if (hasManual || (doneOnboarding && haveCoords)) {
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`Geo update skipped for ${String(userId).slice(0,8)}… (manual or completed)`);
+        }
+        return { success: true, stored: false, coordinates: existing };
+      }
+
       // Round coordinates to 3 decimal places for privacy and consistency
       const round = (n: number, d = 3) => Math.round(n * 10 ** d) / 10 ** d;
 
@@ -796,21 +818,6 @@ export const authRouter = createTRPCRouter({
             ? round(input.coordinates.lng, 3)
             : null,
       };
-
-      // Get existing coordinates to preserve metadata
-      const existing = currentUser.coordinates as
-        | Partial<UserCoordinates>
-        | undefined;
-
-      // Only block IP updates if coordinates were manually set by user
-      if (existing?.manuallySet === true) {
-        console.log(`Geo update skipped for user ${userId!.slice(0, 8)}...: manual coordinates exist`);
-        return {
-          success: true,
-          stored: false,
-          coordinates: existing,
-        };
-      }
 
       // Merge incoming with existing data, preserving manual flag if it exists
       const merged = {
@@ -831,17 +838,24 @@ export const authRouter = createTRPCRouter({
         merged.lat !== existing?.lat ||
         merged.lng !== existing?.lng;
 
-      // Only write if something actually changed
-      if (changed) {
-        await ctx.db.update({
-          collection: "users",
-          id: currentUser.id as string,
-          data: {
-            coordinates: merged,
-            geoUpdatedAt: new Date().toISOString(),
-          },
-        });
+      // Prepare updates object
+      const updates: Record<string, unknown> = {
+        coordinates: merged,
+        geoUpdatedAt: new Date().toISOString(),
+      };
+
+      // NEW: Only update top-level fields if onboarding is not completed
+      if (!currentUser.onboardingCompleted) {
+        if (input.country) updates.country = input.country;
+        if (input.language) updates.language = input.language;
       }
+
+      // Apply all updates in a single operation
+      await ctx.db.update({
+        collection: "users",
+        id: currentUser.id as string,
+        data: updates,
+      });
 
       // Log high-level outcome (avoid PII)
       console.log(
