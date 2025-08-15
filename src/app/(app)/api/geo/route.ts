@@ -12,15 +12,15 @@ export function GET(req: Request) {
     const language = acceptLanguage.split(',')[0]?.split('-')[0]?.toLowerCase() || 'en';
     
     if (!geo?.country) {
-      // 🔸 obvious fake coords so you notice failures
+      // 🔸 Mock coordinates near Darmstadt for local testing
       const mock = {
-        country: "AU",
-        region: "NT",
-        city: "Alice Springs",
-        latitude: -23.6980,
-        longitude: 133.8807,
+        country: "DE",
+        region: "HE",
+        city: "Bensheim",
+        latitude: 49.6833,
+        longitude: 8.6167,
       };
-      console.warn("[/api/geo] No geolocation; returning dev mock (Australia).");
+      console.warn("[/api/geo] No geolocation; returning dev mock (Bensheim, Germany).");
       // mark as mock so the client can skip saving
       return NextResponse.json(
         { 

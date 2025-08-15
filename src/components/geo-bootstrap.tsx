@@ -59,10 +59,18 @@ export default function GeoBootstrap() {
         // FIX 1: Parse JSON ONCE (fixes double res.json() bug)
         const { geo, language, mock, source } = await res.json();
         
-        // Skip saving mock data (obvious fake locations like Australia)
-        if (mock === true || source === "dev-mock") {
+        // Skip saving production mock data, but allow dev mock for testing
+        if (mock === true && source === "dev-mock") {
+          if (process.env.NODE_ENV === "development") {
+            console.log("GeoBootstrap: Dev mock detected; saving for local testing");
+            // Continue with saving dev mock data for testing purposes
+          } else {
+            console.warn("GeoBootstrap: Dev mock in production; skipping save");
+            return;
+          }
+        } else if (mock === true && source !== "dev-mock") {
           if (process.env.NODE_ENV !== "production") {
-            console.warn("GeoBootstrap: mock geo detected; skipping save");
+            console.warn("GeoBootstrap: Production mock detected; skipping save");
           }
           return;
         }
