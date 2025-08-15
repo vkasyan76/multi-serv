@@ -10,7 +10,9 @@ import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
 import { z } from "zod";
 import type { UserCoordinates } from "@/modules/tenants/types";
-import { hasValidCoordinates, mergeCoordinates } from "@/modules/profile/location-utils";
+import {
+  hasValidCoordinates,
+} from "@/modules/profile/location-utils";
 
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
@@ -154,17 +156,32 @@ export const authRouter = createTRPCRouter({
     if (existing.docs.length > 0) {
       const existingUser = existing.docs[0];
       if (!existingUser) return null;
-      
+
       // Don't auto-create tenant - let user decide when to become vendor
       // Optional: Keep Clerk in sync if needed
-      await updateClerkUserMetadata(userId, existingUser.id as string, existingUser.username);
+      if (
+        typeof existingUser.username === "string" &&
+        existingUser.username.length > 0
+      ) {
+        await updateClerkUserMetadata(
+          userId!,
+          existingUser.id as string,
+          existingUser.username // now narrowed to `string`
+        );
+      } else {
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            "syncClerkUser: username is null/empty; skipping Clerk metadata update"
+          );
+        }
+      }
       return existingUser;
     }
 
     // New user flow - webhook should have created this user
     // If we get here, it means webhook hasn't run yet (rare case)
-    console.log('tRPC - User not found, webhook may not have run yet');
-    
+    console.log("tRPC - User not found, webhook may not have run yet");
+
     // Return null to indicate user needs to be created by webhook
     // The frontend can handle this gracefully
     return null;
@@ -513,7 +530,10 @@ export const authRouter = createTRPCRouter({
 
     if (user.totalDocs === 0) {
       // Return null instead of throwing - this stops the infinite spinner
-      console.log('getUserProfile: No user found for clerkUserId:', mask(userId));
+      console.log(
+        "getUserProfile: No user found for clerkUserId:",
+        mask(userId)
+      );
       return null;
     }
 
@@ -521,7 +541,10 @@ export const authRouter = createTRPCRouter({
 
     if (!currentUser) {
       // Return null instead of throwing - this stops the infinite spinner
-      console.log('getUserProfile: User document is null for clerkUserId:', mask(userId));
+      console.log(
+        "getUserProfile: User document is null for clerkUserId:",
+        mask(userId)
+      );
       return null;
     }
 
@@ -539,7 +562,8 @@ export const authRouter = createTRPCRouter({
             country: (currentUser.coordinates as UserCoordinates).country,
             region: (currentUser.coordinates as UserCoordinates).region,
             ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
-            manuallySet: (currentUser.coordinates as UserCoordinates).manuallySet,
+            manuallySet: (currentUser.coordinates as UserCoordinates)
+              .manuallySet,
           }
         : undefined,
       onboardingCompleted: currentUser.onboardingCompleted || false,
@@ -673,8 +697,18 @@ export const authRouter = createTRPCRouter({
       // If user provides coordinates, mark them as manually set and preserve existing metadata
       let updatedCoordinates = input.coordinates;
       if (hasValidCoordinates(input.coordinates) && input.coordinates) {
-        const existingCoords = currentUser.coordinates as Partial<UserCoordinates> | undefined;
-        updatedCoordinates = mergeCoordinates(existingCoords || {}, input.coordinates, true);
+        const existingCoords = currentUser.coordinates as
+          | Partial<UserCoordinates>
+          | undefined;
+        updatedCoordinates = {
+          lat: input.coordinates.lat,
+          lng: input.coordinates.lng,
+          city: input.coordinates.city ?? existingCoords?.city,
+          country: input.coordinates.country ?? existingCoords?.country,
+          region: input.coordinates.region ?? existingCoords?.region,
+          ipDetected: false, // Manual coordinates
+          manuallySet: true, // Lock against IP overwrite
+        };
       }
 
       await ctx.db.update({
@@ -686,26 +720,41 @@ export const authRouter = createTRPCRouter({
           country: input.country,
           language: input.language,
           coordinates: updatedCoordinates,
-          onboardingCompleted: true, // Set onboarding status to completed
+          onboardingCompleted: true, // Mark onboarding as complete
+          geoUpdatedAt: new Date().toISOString(),
         },
       });
 
       // Update Clerk user metadata with the new username
-      await updateClerkUserMetadata(userId, currentUser.id, input.username);
+      if (typeof currentUser.id === "string" && currentUser.id.length > 0) {
+        await updateClerkUserMetadata(
+          userId!,
+          currentUser.id,
+          input.username || undefined
+        );
+      } else {
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            "updateUserProfile: currentUser.id is null/empty; skipping Clerk metadata update"
+          );
+        }
+      }
 
       return currentUser;
     }),
 
   updateUserCoordinates: clerkProcedure
-    .input(z.object({
-      coordinates: z.object({
-        lat: z.number(),
-        lng: z.number(),
-        city: z.string().nullable().optional(),
-        country: z.string().nullable().optional(),
-        region: z.string().nullable().optional(),
+    .input(
+      z.object({
+        coordinates: z.object({
+          lat: z.number(),
+          lng: z.number(),
+          city: z.string().nullable().optional(),
+          country: z.string().nullable().optional(),
+          region: z.string().nullable().optional(),
+        }),
       })
-    }))
+    )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.userId;
 
@@ -738,14 +787,32 @@ export const authRouter = createTRPCRouter({
         country: input.coordinates.country ?? null,
         region: input.coordinates.region ?? null,
         city: input.coordinates.city ?? null,
-        lat: input.coordinates.lat != null ? round(input.coordinates.lat, 3) : null,
-        lng: input.coordinates.lng != null ? round(input.coordinates.lng, 3) : null,
+        lat:
+          input.coordinates.lat != null
+            ? round(input.coordinates.lat, 3)
+            : null,
+        lng:
+          input.coordinates.lng != null
+            ? round(input.coordinates.lng, 3)
+            : null,
       };
 
       // Get existing coordinates to preserve metadata
-      const existing = currentUser.coordinates as Partial<UserCoordinates> | undefined;
+      const existing = currentUser.coordinates as
+        | Partial<UserCoordinates>
+        | undefined;
 
-      // Merge incoming with existing data
+      // Only block IP updates if coordinates were manually set by user
+      if (existing?.manuallySet === true) {
+        console.log(`Geo update skipped for user ${userId!.slice(0, 8)}...: manual coordinates exist`);
+        return {
+          success: true,
+          stored: false,
+          coordinates: existing,
+        };
+      }
+
+      // Merge incoming with existing data, preserving manual flag if it exists
       const merged = {
         country: incoming.country ?? existing?.country ?? null,
         region: incoming.region ?? existing?.region ?? null,
@@ -753,11 +820,11 @@ export const authRouter = createTRPCRouter({
         lat: incoming.lat ?? existing?.lat ?? null,
         lng: incoming.lng ?? existing?.lng ?? null,
         ipDetected: true,
-        manuallySet: false,
+        manuallySet: existing?.manuallySet ?? false, // Preserve existing manual flag
       };
 
       // Check if anything actually changed
-      const changed = 
+      const changed =
         merged.country !== existing?.country ||
         merged.region !== existing?.region ||
         merged.city !== existing?.city ||
@@ -777,12 +844,14 @@ export const authRouter = createTRPCRouter({
       }
 
       // Log high-level outcome (avoid PII)
-      console.log(`Geo update for user ${userId.slice(0, 8)}...: stored=${changed}, country=${merged.country || 'unknown'}`);
+      console.log(
+        `Geo update for user ${userId!.slice(0, 8)}...: stored=${changed}, country=${merged.country || "unknown"}`
+      );
 
-      return { 
-        success: true, 
-        stored: changed, 
-        coordinates: merged
+      return {
+        success: true,
+        stored: changed,
+        coordinates: merged,
       };
     }),
 });

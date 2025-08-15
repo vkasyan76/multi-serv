@@ -298,3 +298,25 @@ export function getLocaleAndCurrency() {
   }
   return { locale: "en-US", currency: "EUR" };
 }
+
+// New helper functions for consistent location display formatting
+export function countryNameFromCode(code?: string, locale = "en"): string {
+  if (!code) return "";
+  try {
+    // Node & modern browsers support this; falls back to the code if not.
+    return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+export function formatLocationFromCoords(
+  coords?: { city?: string; region?: string; country?: string },
+  locale = "en",
+): string {
+  if (!coords) return "";
+  const country = countryNameFromCode(coords.country, locale);
+  if (coords.city) return `${coords.city}, ${country}`;
+  if (coords.region) return `${coords.region}, ${country}`;
+  return country;
+}

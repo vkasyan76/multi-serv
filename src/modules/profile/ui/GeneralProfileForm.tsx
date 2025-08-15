@@ -21,6 +21,8 @@ import {
   extractCountry,
   extractCityFromAddress,
   extractRegionFromAddress,
+  countryNameFromCode,
+  formatLocationFromCoords,
 } from "../location-utils";
 import {
   Select,
@@ -39,7 +41,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
 import { Home } from "lucide-react";
 import Link from "next/link";
-import type { UserCoordinates } from "@/modules/tenants/types";
 
 interface GeneralProfileFormProps {
   onSuccess?: () => void;
@@ -107,19 +108,6 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       userProfile.country ||
       (userProfile.language && userProfile.language !== "en"));
 
-  // Helper function to build location string from coordinates
-  const buildDetectedLocationString = (coordinates: UserCoordinates) => {
-    if (!coordinates) return null;
-
-    const parts = [];
-    if (coordinates.city) parts.push(coordinates.city);
-    if (coordinates.region && coordinates.region !== coordinates.city)
-      parts.push(coordinates.region);
-    if (coordinates.country) parts.push(coordinates.country);
-
-    return parts.length > 0 ? parts.join(", ") : null;
-  };
-
   // Update form values when user profile data is available
   useEffect(() => {
     if (userProfile) {
@@ -163,7 +151,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         userProfile.coordinates?.ipDetected &&
         !userProfile.coordinates?.manuallySet
       ) {
-        const detectedLocation = buildDetectedLocationString(
+        const detectedLocation = formatLocationFromCoords(
           userProfile.coordinates
         );
         if (detectedLocation) {
@@ -172,9 +160,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
           // Also set the country if available
           if (userProfile.coordinates.country) {
-            form.setValue("country", userProfile.coordinates.country, {
-              shouldValidate: true,
-            });
+            form.setValue(
+              "country",
+              countryNameFromCode(userProfile.coordinates.country),
+              { shouldValidate: true }
+            );
           }
         }
       }
@@ -339,13 +329,13 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                   </div>
                 </FormControl>
                 {/* Show subtle indicator when location is auto-populated from IP */}
-                {userProfile?.coordinates?.ipDetected &&
+                {/* {userProfile?.coordinates?.ipDetected &&
                   !userProfile?.coordinates?.manuallySet &&
                   locationInput && (
                     <p className="text-xs text-gray-500 mt-1">
                       📍 Auto-detected from your IP address
                     </p>
-                  )}
+                  )} */}
               </FormItem>
             )}
           />

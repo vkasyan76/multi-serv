@@ -210,6 +210,29 @@ export async function POST(req: Request) {
       if (found.docs.length > 0) {
         const existingUser = found.docs[0];
         if (existingUser) {
+          // Clean up associated tenants first
+          if (existingUser.tenants && existingUser.tenants.length > 0) {
+            console.log('Cleaning up', existingUser.tenants.length, 'tenant(s) for user:', existingUser.id);
+            
+            for (const tenantRef of existingUser.tenants) {
+              const tenantId = typeof tenantRef.tenant === 'object' ? tenantRef.tenant.id : tenantRef.tenant;
+              
+              try {
+                // Delete the tenant
+                await payloadInstance.delete({
+                  collection: "tenants",
+                  id: tenantId,
+                  overrideAccess: true,
+                });
+                console.log('Deleted tenant:', tenantId);
+              } catch (tenantError) {
+                console.error('Failed to delete tenant:', tenantId, tenantError);
+                // Continue with other tenants even if one fails
+              }
+            }
+          }
+
+          // Delete the user
           await payloadInstance.delete({
             collection: "users",
             id: existingUser.id, // delete by Payload doc ID, not by where
