@@ -38,8 +38,9 @@ export default function GeoBootstrap() {
     if (!isSignedIn || !user?.id || startedRef.current) return;
     startedRef.current = true;
 
-    const key = `geoSaved:${user.id}`;
-    if (localStorage.getItem(key) === "1") return;
+    // REMOVED: localStorage read gate - this was blocking updates for non-onboarded users
+    // const key = `geoSaved:${user.id}`;
+    // if (localStorage.getItem(key) === "1") return;
 
     (async () => {
       // Prevent concurrent writes for the same user
@@ -55,15 +56,21 @@ export default function GeoBootstrap() {
           return;
         }
 
+        // FIX 1: Parse JSON ONCE (fixes double res.json() bug)
         const { geo, language } = await res.json();
         if (!geo?.country) {
           console.log("GeoBootstrap: No geolocation available (likely localhost)");
           return;
         }
 
-        if (typeof geo.latitude !== "number" || typeof geo.longitude !== "number") {
+        // FIX 2: Coerce lat/lng to numbers (Vercel may return strings)
+        const latNum = Number(geo?.latitude);
+        const lngNum = Number(geo?.longitude);
+
+        // FIX 3: Robust numeric check with better error logging
+        if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
           if (process.env.NODE_ENV !== "production") {
-            console.log("GeoBootstrap: Missing latitude/longitude in /api/geo response; skipping save");
+            console.log("GeoBootstrap: invalid lat/lng from /api/geo, skipping", geo);
           }
           return;
         }
@@ -72,27 +79,30 @@ export default function GeoBootstrap() {
           console.log("GeoBootstrap: Saving coordinates (redacted)");
         }
 
-        // ✅ Keep nested structure (matches server schema)
+        // FIX 4: Use normalized values in mutation
+        const normalizedLang = normalizeToSupported(language);
+        
+        // If your helper supports a locale arg, pass it. If not, just call with the code.
+        const displayCountry =
+          // countryNameFromCode(geo.country, normalizedLang) ?? 
+          countryNameFromCode(geo.country) ?? geo.country;
+
         await updateUserCoordinates.mutateAsync({
           coordinates: {
             country: geo.country ?? null,      // Keep ISO code in coordinates (e.g., "DE")
             region: geo.region ?? null,
             city: geo.city ?? null,
-            lat: geo.latitude,
-            lng: geo.longitude,
+            lat: latNum,                       // Use normalized number
+            lng: lngNum,                       // Use normalized number
           },
-          // NEW: Top-level fields for country and language
-          country: countryNameFromCode(geo.country) ?? geo.country, // Human-readable (e.g., "Germany")
-          language: normalizeToSupported(language), // Normalized to supported language codes (e.g., "de")
+          country: displayCountry,             // Human-readable (e.g., "Germany")
+          language: normalizedLang,            // Supported code (e.g., "de")
         });
 
-        // CRITICAL: Remove or conditionalize localStorage to allow updates for non-onboarded users
-        // localStorage.setItem(key, "1"); // DELETE THIS LINE
-
-        // OPTION 1: Remove entirely (rely on startedRef + inflight) - RECOMMENDED
-        // OPTION 2: Only set when onboarding is completed
+        // REMOVED: localStorage write gate - this was preventing updates for non-onboarded users
+        // If you ever want a gate, only set/check it AFTER onboardingCompleted === true
         // if (userProfile?.onboardingCompleted) {
-        //   localStorage.setItem(key, "1");
+        //   localStorage.setItem(`geoSaved:${user.id}`, "1");
         // }
 
       } catch (e) {
