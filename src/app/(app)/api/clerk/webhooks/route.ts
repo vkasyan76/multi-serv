@@ -218,6 +218,28 @@ export async function POST(req: Request) {
               const tenantId = typeof tenantRef.tenant === 'object' ? tenantRef.tenant.id : tenantRef.tenant;
               
               try {
+                // First, get the tenant to check for associated media
+                const tenant = await payloadInstance.findByID({
+                  collection: "tenants",
+                  id: tenantId,
+                  overrideAccess: true,
+                });
+                
+                // Delete associated media file if it exists
+                if (tenant?.image && typeof tenant.image === 'string') {
+                  try {
+                    await payloadInstance.delete({
+                      collection: "media",
+                      id: tenant.image,
+                      overrideAccess: true,
+                    });
+                    console.log('Deleted tenant image:', tenant.image);
+                  } catch (mediaError) {
+                    console.error('Failed to delete tenant image:', tenant.image, mediaError);
+                    // Continue with tenant deletion even if media deletion fails
+                  }
+                }
+                
                 // Delete the tenant
                 await payloadInstance.delete({
                   collection: "tenants",
