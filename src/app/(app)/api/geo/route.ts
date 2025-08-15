@@ -11,21 +11,23 @@ export function GET(req: Request) {
     const acceptLanguage = req.headers.get('accept-language') ?? 'en';
     const language = acceptLanguage.split(',')[0]?.split('-')[0]?.toLowerCase() || 'en';
     
-    // Dev fallback for localhost testing (ChatGPT's suggestion)
-    if (!geo?.country && process.env.NODE_ENV !== "production") {
-      const dev = {
-        country: "DE",
-        region: "HE", 
-        city: "Darmstadt",
-        latitude: 49.8728,
-        longitude: 8.6512,
+    if (!geo?.country) {
+      // 🔸 obvious fake coords so you notice failures
+      const mock = {
+        country: "AU",
+        region: "NT",
+        city: "Alice Springs",
+        latitude: -23.6980,
+        longitude: 133.8807,
       };
-      console.log("Geo route: Using dev fallback for localhost");
+      console.warn("[/api/geo] No geolocation; returning dev mock (Australia).");
+      // mark as mock so the client can skip saving
       return NextResponse.json(
         { 
-          geo: dev, 
-          language: "de", // Add language to dev fallback
-          source: "dev-mock" 
+          geo: mock, 
+          language, 
+          source: "dev-mock", 
+          mock: true 
         },
         { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } }
       );

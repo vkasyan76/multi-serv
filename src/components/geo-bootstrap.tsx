@@ -57,7 +57,16 @@ export default function GeoBootstrap() {
         }
 
         // FIX 1: Parse JSON ONCE (fixes double res.json() bug)
-        const { geo, language } = await res.json();
+        const { geo, language, mock, source } = await res.json();
+        
+        // Skip saving mock data (obvious fake locations like Australia)
+        if (mock === true || source === "dev-mock") {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("GeoBootstrap: mock geo detected; skipping save");
+          }
+          return;
+        }
+        
         if (!geo?.country) {
           console.log("GeoBootstrap: No geolocation available (likely localhost)");
           return;
