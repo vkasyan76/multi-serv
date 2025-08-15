@@ -32,7 +32,7 @@ export const TenantListView = ({ category, subcategory }: TenantListViewProps) =
         </div>
         <div className="lg:col-span-4 xl:col-span-6">
           <Suspense fallback={<TenantListSkeleton />}>
-            <ErrorBoundary fallback={<TenantListError />}>
+            <ErrorBoundary FallbackComponent={TenantListError}>
               <TenantList category={category} subcategory={subcategory} isSignedIn={!!isSignedIn} />
             </ErrorBoundary>
           </Suspense>

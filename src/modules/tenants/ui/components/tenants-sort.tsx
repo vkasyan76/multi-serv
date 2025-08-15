@@ -49,7 +49,7 @@ export const TenantSort = ({ isSignedIn }: TenantSortProps) => {
             size="sm"
             className={cn(
               "rounded-full bg-white hover:bg-white",
-              sort !== "distance" &&
+              (!isSignedIn || sort !== "distance") &&
                 "bg-transparent border-transparent hover:border-border hover:bg-transparent",
               !isSignedIn && "opacity-50 cursor-not-allowed"
             )}

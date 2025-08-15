@@ -181,7 +181,7 @@ export const tenantsRouter = createTRPCRouter({
 
       if (input.userLat && input.userLng) {
         // Preserve the database sort order by mapping in the same order
-        tenantsWithDistance = data.docs.map((tenant, index) => {
+        tenantsWithDistance = data.docs.map((tenant) => {
           let distance = null;
 
           // Get tenant location from user coordinates (since tenant is based on user)

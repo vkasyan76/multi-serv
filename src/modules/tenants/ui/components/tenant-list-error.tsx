@@ -4,7 +4,7 @@ export const TenantListError = () => (
       Something went wrong
     </h3>
     <p className="text-gray-600 mb-4">
-      We couldn't load the providers. Please try refreshing the page.
+      We couldn&apos;t load the providers. Please try refreshing the page.
     </p>
     <button 
       onClick={() => window.location.reload()}

@@ -91,7 +91,8 @@ export default function GeoBootstrap() {
         inflight[user.id] = false;
       }
     })();
-  }, [isSignedIn, user?.id]); // Remove updateUserCoordinates from dependencies
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, user?.id]); // updateUserCoordinates is stable from tRPC mutation
 
   return null;
 }
