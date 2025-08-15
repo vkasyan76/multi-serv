@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { countryNameFromCode, normalizeToSupported } from "@/modules/profile/location-utils";
 
 // In-memory guard to prevent concurrent writes (Strict Mode / multi-tab protection)
 const inflight: Record<string, boolean> = {};
@@ -54,7 +55,7 @@ export default function GeoBootstrap() {
           return;
         }
 
-        const { geo } = await res.json();
+        const { geo, language } = await res.json();
         if (!geo?.country) {
           console.log("GeoBootstrap: No geolocation available (likely localhost)");
           return;
@@ -74,16 +75,25 @@ export default function GeoBootstrap() {
         // ✅ Keep nested structure (matches server schema)
         await updateUserCoordinates.mutateAsync({
           coordinates: {
-            country: geo.country ?? null,
+            country: geo.country ?? null,      // Keep ISO code in coordinates (e.g., "DE")
             region: geo.region ?? null,
             city: geo.city ?? null,
             lat: geo.latitude,
             lng: geo.longitude,
-          }
+          },
+          // NEW: Top-level fields for country and language
+          country: countryNameFromCode(geo.country) ?? geo.country, // Human-readable (e.g., "Germany")
+          language: normalizeToSupported(language), // Normalized to supported language codes (e.g., "de")
         });
 
-        // ✅ Set the session flag only after SUCCESS
-        localStorage.setItem(key, "1");
+        // CRITICAL: Remove or conditionalize localStorage to allow updates for non-onboarded users
+        // localStorage.setItem(key, "1"); // DELETE THIS LINE
+
+        // OPTION 1: Remove entirely (rely on startedRef + inflight) - RECOMMENDED
+        // OPTION 2: Only set when onboarding is completed
+        // if (userProfile?.onboardingCompleted) {
+        //   localStorage.setItem(key, "1");
+        // }
 
       } catch (e) {
         console.warn("GeoBootstrap: unexpected failure:", e);
