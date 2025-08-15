@@ -34,6 +34,7 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
           category: category || null,
           subcategory: subcategory || null,
           ...filters,
+          ...(isSignedIn ? {} : { distanceFilterEnabled: false, maxDistance: null }),
           userLat: userProfile?.coordinates?.lat ?? null,
           userLng: userProfile?.coordinates?.lng ?? null,
           limit: DEFAULT_LIMIT,

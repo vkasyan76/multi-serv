@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -8,7 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 
 interface AuthTooltipProps {
-  children: React.ReactNode;
+  children: ReactElement;
   isSignedIn: boolean;
   message?: string;
   side?: "top" | "right" | "bottom" | "left";
