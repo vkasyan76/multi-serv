@@ -26,13 +26,14 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
 import { getLocaleAndCurrency } from "../location-utils";
 import LoadingPage from "@/components/shared/loading";
+import { useRouter } from "next/navigation";
 
 import { NumericFormat, NumberFormatValues } from "react-number-format";
 import PhoneInput from 'react-phone-number-input';
 import type { Country } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { getCountryCodeFromName } from "../location-utils";
-import { Home } from "lucide-react";
+import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 // Create a Zod schema for the tenant/vendor
@@ -40,6 +41,7 @@ import Link from "next/link";
 export function VendorProfileForm() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { data: categories } = useQuery(trpc.categories.getMany.queryOptions());
   
   // Fetch vendor profile data from database
@@ -55,7 +57,7 @@ export function VendorProfileForm() {
   const [intlConfig] = useState(getLocaleAndCurrency()); // cache the locale/currency (do not run on every render)
 
   const form = useForm<z.infer<typeof vendorSchema>>({
-    mode: "onBlur",
+    mode: "onSubmit",
     resolver: zodResolver(vendorSchema),
     defaultValues: {
       name: "",
@@ -231,11 +233,8 @@ export function VendorProfileForm() {
   const createVendorProfile = useMutation(
     trpc.auth.createVendorProfile.mutationOptions({
       onSuccess: () => {
-        toast.success("Vendor profile created successfully!");
-        // Invalidate the getVendorProfile query to update the cache
-        queryClient.invalidateQueries({ queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey });
-        // Refresh the vendor profile data
-        window.location.reload();
+        // Note: Success handling is now done in onSubmit for better control
+        // This prevents double success messages
       },
       onError: (error) => {
         console.error("Error creating vendor profile:", error);
@@ -260,39 +259,92 @@ export function VendorProfileForm() {
 
   const onSubmit = async (values: z.infer<typeof vendorSchema>) => {
     try {
-      let imageData = values.image;
-
-      // Upload file if selected
-      if (selectedFile) {
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-
-        const uploadResponse = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload image');
-        }
-
-        const uploadResult = await uploadResponse.json();
-        imageData = uploadResult.file.id; // Pass just the file ID as a string
+      // Prevent double submits
+      if (createVendorProfile.isPending || updateVendorProfile.isPending) {
+        console.log('Submit already in progress, ignoring');
+        return;
       }
 
-      // Update values with the uploaded file data
-      const updatedValues = {
-        ...values,
-        image: imageData,
-      };
-
-      // Check if user already has a vendor profile
       if (vendorProfile) {
+        // EXISTING PROFILE: Upload image first, then update
+        let imageData = values.image;
+        
+        if (selectedFile) {
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error('Failed to upload image');
+          }
+
+          const uploadResult = await uploadResponse.json();
+          imageData = uploadResult.file.id;
+        }
+
         // Update existing vendor profile
+        const updatedValues = {
+          ...values,
+          image: imageData,
+        };
+        
         updateVendorProfile.mutate(updatedValues);
       } else {
-        // Create new vendor profile
-        createVendorProfile.mutate(updatedValues);
+        // NEW PROFILE: Create first, then upload image
+        try {
+          // Step 1: Create profile without image
+          console.log('Creating vendor profile without image...');
+          const createdProfile = await createVendorProfile.mutateAsync(values);
+          
+          if (!createdProfile || !createdProfile.id) {
+            throw new Error('Profile created but no ID returned');
+          }
+          
+          console.log('Profile created successfully, ID:', createdProfile.id);
+          
+          // Step 2: Upload image if selected
+          if (selectedFile) {
+            console.log('Uploading image for new profile...');
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('tenantId', createdProfile.id);
+            
+            const uploadResponse = await fetch('/api/upload', {
+              method: 'POST',
+              body: formData,
+            });
+            
+            if (!uploadResponse.ok) {
+              const errorData = await uploadResponse.json();
+              console.warn('Profile created but image upload failed:', errorData);
+              
+              // Don't fail the whole operation - show warning
+              toast.warning('Profile created successfully, but image upload failed. You can add the image later from the profile editor.');
+            } else {
+              console.log('Image uploaded successfully');
+              toast.success('Vendor profile created with image successfully!');
+            }
+          } else {
+            toast.success('Vendor profile created successfully!');
+          }
+          
+          // Step 3: Refresh the form to show the new profile
+          router.refresh();
+          
+        } catch (error) {
+          console.error('Error creating profile:', error);
+          
+          if (error instanceof Error && error.message.includes('already taken')) {
+            toast.error('Business name is already taken. Please choose a different name.');
+          } else {
+            toast.error('Failed to create vendor profile. Please try again.');
+          }
+        }
       }
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -409,24 +461,24 @@ export function VendorProfileForm() {
                 </FormItem>
               )}
             />
-            {/* Business Name */}
-            <FormField
-              name="name"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Business Name (one word for your page URL)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      autoComplete="off" 
-                      placeholder="Enter business name"
-                    />
-                  </FormControl>
+                         {/* Business Name */}
+             <FormField
+               name="name"
+               control={form.control}
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>Business Name (for your page URL)</FormLabel>
+                   <FormControl>
+                     <Input 
+                       {...field} 
+                       autoComplete="off" 
+                       placeholder="Enter business name (letters, numbers, hyphens, underscores)"
+                     />
+                   </FormControl>
 
-                </FormItem>
-              )}
-            />
+                 </FormItem>
+               )}
+             />
             {/* Hourly rate */}
             <FormField
               name="hourlyRate"
@@ -647,9 +699,16 @@ export function VendorProfileForm() {
           type="submit"
           size="lg"
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
-          disabled={form.formState.isSubmitting}
+          disabled={createVendorProfile.isPending || updateVendorProfile.isPending}
         >
-          {vendorProfile && (vendorProfile.name || vendorProfile.firstName || vendorProfile.lastName || vendorProfile.bio || vendorProfile.services?.length > 0 || vendorProfile.categories?.length > 0 || vendorProfile.website || vendorProfile.image || vendorProfile.phone || vendorProfile.hourlyRate > 1) ? "Update Provider Profile" : "Create Provider Profile"}
+          {createVendorProfile.isPending || updateVendorProfile.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {vendorProfile ? 'Updating...' : 'Creating...'}
+            </>
+          ) : (
+            vendorProfile && (vendorProfile.name || vendorProfile.firstName || vendorProfile.lastName || vendorProfile.bio || vendorProfile.services?.length > 0 || vendorProfile.categories?.length > 0 || vendorProfile.website || vendorProfile.image || vendorProfile.phone || vendorProfile.hourlyRate > 1) ? "Update Provider Profile" : "Create Provider Profile"
+          )}
         </Button>
       </form>
     </Form>
