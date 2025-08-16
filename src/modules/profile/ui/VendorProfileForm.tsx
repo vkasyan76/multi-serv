@@ -272,6 +272,11 @@ export function VendorProfileForm() {
         if (selectedFile) {
           const formData = new FormData();
           formData.append('file', selectedFile);
+          
+          // ✅ ADD THIS: Pass tenantId for existing profiles
+          if (vendorProfile?.id) {
+            formData.append('tenantId', vendorProfile.id);
+          }
 
           const uploadResponse = await fetch('/api/upload', {
             method: 'POST',
@@ -293,6 +298,7 @@ export function VendorProfileForm() {
         };
         
         updateVendorProfile.mutate(updatedValues);
+        router.refresh(); // ✅ ADD THIS: Refresh to show new image immediately
       } else {
         // NEW PROFILE: Create first, then upload image
         try {

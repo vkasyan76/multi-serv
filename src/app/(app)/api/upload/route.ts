@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!ALLOWED_TYPES.includes(file.type)) {
       console.log('Upload: Invalid file type:', file.type);
       return NextResponse.json(

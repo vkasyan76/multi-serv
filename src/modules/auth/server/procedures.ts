@@ -652,6 +652,7 @@ export const authRouter = createTRPCRouter({
       }
 
       const result = {
+        id: actualTenantId, // ✅ ADD THIS: Include tenant ID for image uploads
         name: tenant.name || "",
         firstName: tenant.firstName || "",
         lastName: tenant.lastName || "",
