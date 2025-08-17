@@ -216,6 +216,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
             manuallySet: true, // Mark as manually set
           }
         : undefined,
+      // The server will automatically set onboardingCompleted: true
     };
 
     updateUserProfile.mutate(submission);

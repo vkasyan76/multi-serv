@@ -233,6 +233,10 @@ export function VendorProfileForm() {
   const createVendorProfile = useMutation(
     trpc.auth.createVendorProfile.mutationOptions({
       onSuccess: () => {
+        // ✅ Add invalidation to update the cache immediately
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey 
+        });
         // Note: Success handling is now done in onSubmit for better control
         // This prevents double success messages
       },
@@ -253,6 +257,23 @@ export function VendorProfileForm() {
       onError: (error) => {
         console.error("Error updating profile:", error);
         toast.error(error.message || "Failed to update profile. Please try again.");
+      },
+    })
+  );
+
+  // Add mutation for updating user profile to mark onboarding as completed
+  const updateUserProfile = useMutation(
+    trpc.auth.updateUserProfile.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
+        });
+      },
+      onError: (error) => {
+        console.error("Error updating user profile:", error);
+        toast.error(
+          error.message || "Failed to update user profile. Please try again."
+        );
       },
     })
   );
@@ -298,7 +319,21 @@ export function VendorProfileForm() {
         };
         
         updateVendorProfile.mutate(updatedValues);
-        router.refresh(); // ✅ ADD THIS: Refresh to show new image immediately
+        
+        // Mark onboarding as completed after successful update
+        try {
+          updateUserProfile.mutate({
+            username: userProfile?.username || "",
+            email: userProfile?.email || "",
+            location: userProfile?.location || "",
+            country: userProfile?.country || "",
+            language: userProfile?.language || "en",
+          });
+        } catch (error) {
+          console.warn('Failed to mark onboarding as completed:', error);
+        }
+        
+        router.refresh(); // ✅ Refresh to show new image immediately
       } else {
         // NEW PROFILE: Create first, then upload image
         try {
@@ -339,8 +374,25 @@ export function VendorProfileForm() {
             toast.success('Vendor profile created successfully!');
           }
           
-          // Step 3: Refresh the form to show the new profile
+          // Step 3: Mark onboarding as completed
+          try {
+            updateUserProfile.mutate({
+              username: userProfile?.username || "",
+              email: userProfile?.email || "",
+              location: userProfile?.location || "",
+              country: userProfile?.country || "",
+              language: userProfile?.language || "en",
+            });
+          } catch (error) {
+            console.warn('Failed to mark onboarding as completed:', error);
+          }
+          
+          // Step 4: Refresh the form to show the new profile and ensure we stay on vendor tab
           router.refresh();
+          // Ensure we stay on the vendor tab after profile creation
+          setTimeout(() => {
+            router.push("/profile?tab=vendor");
+          }, 100);
           
         } catch (error) {
           console.error('Error creating profile:', error);
