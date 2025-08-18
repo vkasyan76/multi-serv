@@ -18,11 +18,7 @@ import { Button } from "@/components/ui/button";
 import {
   SUPPORTED_LANGUAGES,
   getInitialLanguage,
-  extractCountry,
-  extractCityFromAddress,
-  extractRegionFromAddress,
-  countryNameFromCode,
-  formatLocationFromCoords,
+  extractAddressComponents,
 } from "../location-utils";
 import {
   Select,
@@ -31,7 +27,10 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { autocomplete } from "@/lib/google";
-import { PlaceData } from "@googlemaps/google-maps-services-js";
+import type {
+  PlacePrediction,
+  SelectedLocation,
+} from "@/modules/tenants/types";
 import Image from "next/image";
 import { toast } from "sonner";
 import { FieldErrors } from "react-hook-form";
@@ -86,87 +85,58 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
     },
   });
 
-  // ...All the autocomplete/useEffect logic as in your previous ProfileForm
+  // Add state variables and watch
   const selectedLanguage = useWatch({
     control: form.control,
     name: "language",
     defaultValue: getInitialLanguage(),
   });
   const [locationInput, setLocationInput] = useState("");
-  const [predictions, setPredictions] = useState<PlaceData[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    address: string;
-    lat: number;
-    lng: number;
-    country: string;
-  } | null>(null);
+  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const [selectedLocation, setSelectedLocation] =
+    useState<SelectedLocation | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | undefined>();
+
+  // Add session token management
+  useEffect(() => {
+    // Generate new session token on component mount
+    setSessionToken(crypto.randomUUID());
+  }, []);
 
   // Determine if profile has been completed before
-  const isProfileCompleted =
-    userProfile &&
-    (userProfile.location ||
-      userProfile.country ||
-      (userProfile.language && userProfile.language !== "en"));
+  const isProfileCompleted = userProfile?.onboardingCompleted || false;
 
-  // Update form values when user profile data is available
+  // Populate form with user data when it loads
   useEffect(() => {
     if (userProfile) {
-      // Reset form with user profile data
-      form.reset({
-        username: userProfile.username || "",
-        email: userProfile.email || "",
-        location: userProfile.location || "",
-        country: userProfile.country || "",
-        language: userProfile.language || getInitialLanguage(),
-      });
+      form.setValue("username", userProfile.username || "");
+      form.setValue("email", userProfile.email || "");
+      form.setValue("language", userProfile.language || "en");
 
-      // Ensure language field is properly set after a short delay
-      if (userProfile.language) {
-        setTimeout(() => {
-          form.setValue("language", userProfile.language, {
-            shouldValidate: true,
-          });
-        }, 0);
-      }
+      // Only populate location and country if user has completed onboarding
+      // or if they have manually set a location
+      if (isProfileCompleted || userProfile.coordinates?.manuallySet) {
+        form.setValue("location", userProfile.location || "");
+        form.setValue("country", userProfile.country || "");
 
-      // Set location input to display existing location
-      if (userProfile.location) {
-        setLocationInput(userProfile.location);
-      }
-
-      // Set selected location if country exists
-      if (userProfile.country) {
-        setSelectedLocation({
-          address: userProfile.location || "",
-          country: userProfile.country,
-          lat: 0, // We don't store coordinates in the profile
-          lng: 0,
-        });
-      }
-
-      // Auto-populate location field with IP geolocation if user hasn't completed onboarding
-      // and doesn't have coordinates set
-      if (
-        !isProfileCompleted &&
-        userProfile.coordinates?.ipDetected &&
-        !userProfile.coordinates?.manuallySet
-      ) {
-        const detectedLocation = formatLocationFromCoords(
-          userProfile.coordinates
-        );
-        if (detectedLocation) {
-          setLocationInput(detectedLocation);
-          form.setValue("location", detectedLocation, { shouldValidate: true });
-
-          // Also set the country if available
-          if (userProfile.coordinates.country) {
-            form.setValue(
-              "country",
-              countryNameFromCode(userProfile.coordinates.country),
-              { shouldValidate: true }
-            );
-          }
+        if (userProfile.location) {
+          setLocationInput(userProfile.location);
         }
+
+        // Set selected location if country exists
+        if (userProfile.country) {
+          setSelectedLocation({
+            formattedAddress: userProfile.location || "",
+            countryName: userProfile.country,
+            countryISO: userProfile.coordinates?.country,
+          });
+        }
+      } else {
+        // For first-time users, show placeholder and don't auto-populate
+        form.setValue("location", "");
+        form.setValue("country", "");
+        setLocationInput("");
+        setSelectedLocation(null);
       }
     }
   }, [userProfile, form, isProfileCompleted]);
@@ -178,44 +148,75 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
     }
     const debounceTimer = setTimeout(() => {
       const fetchPredictions = async () => {
-        const results = await autocomplete(locationInput, selectedLanguage);
-        setPredictions(results as PlaceData[]);
+        const results = await autocomplete(
+          locationInput,
+          selectedLanguage,
+          sessionToken
+        );
+        setPredictions(results);
       };
       fetchPredictions();
     }, 300);
     return () => clearTimeout(debounceTimer);
-  }, [locationInput, selectedLanguage]);
+  }, [locationInput, selectedLanguage, sessionToken]);
 
-  const handleLocationSelect = (place: PlaceData) => {
-    const address = place.formatted_address;
-    const country = extractCountry(address);
+  const handleLocationSelect = async (prediction: PlacePrediction) => {
+    try {
+      // Fetch place details for structured data
+      const response = await fetch(
+        `/api/place-details?placeId=${prediction.place_id}&language=${selectedLanguage}&sessiontoken=${sessionToken}`,
+        { cache: "no-store" }
+      );
 
-    setSelectedLocation({
-      address,
-      lat: place.geometry.location.lat,
-      lng: place.geometry.location.lng,
-      country,
-    });
-    setLocationInput(address);
-    setPredictions([]);
-    form.setValue("location", address, { shouldValidate: true });
-    form.setValue("country", country, { shouldValidate: true });
+      if (!response.ok) {
+        throw new Error("Failed to fetch place details");
+      }
+
+      const placeDetails = await response.json();
+      const addressComponents = extractAddressComponents(
+        placeDetails.address_components
+      );
+
+      const location: SelectedLocation = {
+        formattedAddress: placeDetails.formatted_address,
+        lat: placeDetails.geometry?.location?.lat,
+        lng: placeDetails.geometry?.location?.lng,
+        ...addressComponents,
+      };
+
+      setSelectedLocation(location);
+      setLocationInput(placeDetails.formatted_address);
+      setPredictions([]);
+
+      form.setValue("location", placeDetails.formatted_address, {
+        shouldValidate: true,
+      });
+      form.setValue("country", addressComponents.countryName || "", {
+        shouldValidate: true,
+      });
+    } catch (error) {
+      console.error("Error fetching place details:", error);
+      toast.error("Failed to get location details. Please try again.");
+    }
   };
 
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
     const submission = {
       ...values,
-      coordinates: selectedLocation
-        ? {
-            lat: selectedLocation.lat,
-            lng: selectedLocation.lng,
-            city: extractCityFromAddress(selectedLocation.address),
-            country: selectedLocation.country,
-            region: extractRegionFromAddress(selectedLocation.address),
-            ipDetected: false, // User is manually setting location
-            manuallySet: true, // Mark as manually set
-          }
-        : undefined,
+      coordinates:
+        selectedLocation && selectedLocation.lat && selectedLocation.lng
+          ? {
+              lat: selectedLocation.lat,
+              lng: selectedLocation.lng,
+              city: selectedLocation.city,
+              country: selectedLocation.countryISO, // Store ISO code
+              region: selectedLocation.region,
+              postalCode: selectedLocation.postalCode,
+              street: selectedLocation.street,
+              ipDetected: false, // User is manually setting location
+              manuallySet: true, // Mark as manually set
+            }
+          : undefined,
       // The server will automatically set onboardingCompleted: true
     };
 
@@ -314,7 +315,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                       placeholder="Search for your address…"
                     />
                     {predictions.length > 0 &&
-                      locationInput !== selectedLocation?.address && (
+                      locationInput !== selectedLocation?.formattedAddress && (
                         <ul className="absolute left-0 right-0 z-10 bg-white border rounded shadow mt-1 max-h-48 overflow-y-auto">
                           {predictions.map((prediction) => (
                             <li
@@ -322,7 +323,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                               onClick={() => handleLocationSelect(prediction)}
                             >
-                              {prediction.formatted_address}
+                              {prediction.description}
                             </li>
                           ))}
                         </ul>
@@ -370,7 +371,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                   <Input
                     {...field}
                     value={
-                      selectedLocation?.country || userProfile?.country || ""
+                      selectedLocation?.countryName ||
+                      userProfile?.country ||
+                      ""
                     }
                     readOnly
                     disabled

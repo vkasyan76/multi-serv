@@ -191,6 +191,22 @@ export const Users: CollectionConfig = {
           },
         },
         {
+          name: "postalCode",
+          type: "text",
+          label: "Postal Code",
+          admin: {
+            description: "Postal/ZIP code",
+          },
+        },
+        {
+          name: "street",
+          type: "text",
+          label: "Street Address",
+          admin: {
+            description: "Street address",
+          },
+        },
+        {
           name: "ipDetected",
           type: "checkbox",
           label: "IP Detected",

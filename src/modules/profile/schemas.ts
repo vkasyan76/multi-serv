@@ -26,6 +26,8 @@ export const profileSchema = z.object({
     city: z.string().optional(),
     country: z.string().optional(),
     region: z.string().optional(),
+    postalCode: z.string().optional(),
+    street: z.string().optional(),
     ipDetected: z.boolean().optional(),
     manuallySet: z.boolean().optional(),
   }).optional(),

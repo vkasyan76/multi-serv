@@ -32,10 +32,32 @@ export type UserCoordinates = {
   lat: number;
   lng: number;
   city?: string;
-  country?: string;
+  country?: string; // ISO code (e.g., "DE")
   region?: string;
+  postalCode?: string;
+  street?: string;
   ipDetected?: boolean;
   manuallySet?: boolean;
+};
+
+// New unified type for location selection
+export type SelectedLocation = {
+  formattedAddress: string;
+  lat?: number;
+  lng?: number;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  street?: string;
+  countryISO?: string;    // Store as ISO
+  countryName?: string;   // Display only
+};
+
+// Type for autocomplete predictions (client-side only)
+export type PlacePrediction = {
+  place_id: string;
+  description: string;
+  formatted_address?: string;
 };
 
 export type TenantsGetManyInput = {

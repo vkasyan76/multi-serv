@@ -16,6 +16,7 @@ export function ProfileTabs() {
 
   const [tab, setTab] = useState<"general" | "vendor">("general");
   const [showProviderConfirmation, setShowProviderConfirmation] = useState(false);
+  const [wasProviderBefore, setWasProviderBefore] = useState<boolean | null>(null);
 
   // Fetch both user profile and vendor profile from database
   const { data: userProfile } = useQuery(
@@ -35,6 +36,17 @@ export function ProfileTabs() {
   const hasLocation = 
     typeof lat === "number" && Number.isFinite(lat) &&
     typeof lng === "number" && Number.isFinite(lng);
+
+  // Track provider state changes
+  useEffect(() => {
+    if (wasProviderBefore === null) {
+      // Initial load - set the current state
+      setWasProviderBefore(isProvider);
+    } else if (!wasProviderBefore && isProvider) {
+      // User just became a provider
+      setWasProviderBefore(true);
+    }
+  }, [isProvider, wasProviderBefore]);
 
   // Read tab from query params on mount safely without useSearchParams
   useEffect(() => {
@@ -59,12 +71,14 @@ export function ProfileTabs() {
     }
   }, [isProvider, showProviderConfirmation]);
 
-  // Handle profile completion - just switch tabs
+  // Handle profile completion - only redirect when user becomes a provider for the first time
   const handleProfileCompletion = (isProvider: boolean) => {
-    if (isProvider) {
+    // Only redirect to vendor tab if user just became a provider (wasn't one before)
+    if (isProvider && wasProviderBefore === false) {
       setTab("vendor");
       router.push("/profile?tab=vendor");
     }
+    // If user is already a provider, stay on current tab
     // Success message is handled by the individual forms
   };
 

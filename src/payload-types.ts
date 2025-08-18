@@ -188,6 +188,14 @@ export interface User {
      */
     region?: string | null;
     /**
+     * Postal/ZIP code
+     */
+    postalCode?: string | null;
+    /**
+     * Street address
+     */
+    street?: string | null;
+    /**
      * Whether coordinates were detected from IP
      */
     ipDetected?: boolean | null;
@@ -418,6 +426,8 @@ export interface UsersSelect<T extends boolean = true> {
         city?: T;
         country?: T;
         region?: T;
+        postalCode?: T;
+        street?: T;
         ipDetected?: T;
         manuallySet?: T;
       };

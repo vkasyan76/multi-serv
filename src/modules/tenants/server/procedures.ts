@@ -187,7 +187,8 @@ export const tenantsRouter = createTRPCRouter({
           // Get tenant location from user coordinates (since tenant is based on user)
           const tenantUser = (tenant as TenantWithRelations).user;
 
-          if (tenantUser?.coordinates?.lat && tenantUser?.coordinates?.lng) {
+          if (tenantUser?.coordinates?.lat && tenantUser?.coordinates?.lng && 
+              Number.isFinite(tenantUser.coordinates.lat) && Number.isFinite(tenantUser.coordinates.lng)) {
             distance = calculateDistance(
               input.userLat!,
               input.userLng!,

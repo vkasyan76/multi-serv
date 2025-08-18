@@ -1,5 +1,5 @@
 import { Language } from "@googlemaps/google-maps-services-js";
-import type { UserCoordinates } from "@/modules/tenants/types";
+import type { UserCoordinates, SelectedLocation } from "@/modules/tenants/types";
 
 // IP Geolocation helper function using ipapi.co service
 // This provides accurate, production-ready IP geolocation with EU country detection
@@ -125,11 +125,11 @@ export function extractIPFromHeaders(headers: Headers): string {
   return possibleIPs[0] || '127.0.0.1';
 }
 
-// Helper function to check if coordinates are valid
+// Helper function to check if coordinates are valid (zero-friendly)
 export function hasValidCoordinates(coordinates: unknown): coordinates is UserCoordinates {
-  return !!coordinates &&
-    typeof (coordinates as UserCoordinates).lat === "number" &&
-    typeof (coordinates as UserCoordinates).lng === "number";
+  if (!coordinates || typeof coordinates !== "object") return false;
+  const coords = coordinates as Record<string, unknown>;
+  return Number.isFinite(coords.lat) && Number.isFinite(coords.lng);
 }
 
 // Helper function to merge coordinates while preserving existing metadata
@@ -146,10 +146,40 @@ export function mergeCoordinates(
     city: newCoords.city ?? prev.city,
     country: newCoords.country ?? prev.country,
     region: newCoords.region ?? prev.region,
+    postalCode: newCoords.postalCode ?? prev.postalCode,
+    street: newCoords.street ?? prev.street,
     ipDetected: isManuallySet
       ? false
       : (newCoords.ipDetected ?? prev.ipDetected ?? true),
     manuallySet: isManuallySet,
+  };
+}
+
+// Extract structured address components from Google Place Details
+export function extractAddressComponents(components: Array<{ types: string[]; long_name?: string; short_name?: string }>): Partial<SelectedLocation> {
+  const get = (type: string) => components.find(comp => comp.types.includes(type));
+  
+  const city =
+    get("locality")?.long_name ||
+    get("postal_town")?.long_name ||
+    get("sublocality")?.long_name;
+
+  const region =
+    get("administrative_area_level_1")?.short_name ||
+    get("administrative_area_level_2")?.short_name;
+
+  const street = [
+    get("route")?.long_name,
+    get("street_number")?.long_name
+  ].filter(Boolean).join(" ") || undefined;
+
+  return {
+    city,
+    region,
+    postalCode: get("postal_code")?.long_name,
+    street,
+    countryISO: get("country")?.short_name,
+    countryName: get("country")?.long_name,
   };
 }
 

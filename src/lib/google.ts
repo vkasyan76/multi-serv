@@ -1,9 +1,15 @@
 "use server";
 
 import { Client, Language } from "@googlemaps/google-maps-services-js";
+import type { PlacePrediction } from "@/modules/tenants/types";
 
 const client = new Client();
-export const autocomplete = async (input: string, language: "en" | "es" | "fr" | "de" | "it" | "pt" = "en") => {
+
+export const autocomplete = async (
+  input: string, 
+  language: "en" | "es" | "fr" | "de" | "it" | "pt" = "en",
+  sessionToken?: string
+): Promise<PlacePrediction[]> => {
   if (!input || input.trim().length === 0) return [];
 
   if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
@@ -12,17 +18,27 @@ export const autocomplete = async (input: string, language: "en" | "es" | "fr" |
   }
 
   try {
-    const response = await client.textSearch({
+    const { data } = await client.placeAutocomplete({
       params: {
-        query: input,
-        key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+        input,
         language: language as Language,
+        sessiontoken: sessionToken || undefined, // Include session token for billing
+        key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
       },
     });
 
-    return response.data.results || [];
+    if (data.status !== "OK") {
+      console.warn("Autocomplete failed:", data.status);
+      return [];
+    }
+
+    return data.predictions.map(prediction => ({
+      place_id: prediction.place_id,
+      description: prediction.description,
+      formatted_address: prediction.structured_formatting?.main_text || prediction.description,
+    }));
   } catch (error) {
-    console.error(error);
+    console.error("Autocomplete error:", error);
     return [];
   }
 };

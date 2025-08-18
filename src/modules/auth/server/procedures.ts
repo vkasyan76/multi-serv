@@ -561,6 +561,8 @@ export const authRouter = createTRPCRouter({
             city: (currentUser.coordinates as UserCoordinates).city,
             country: (currentUser.coordinates as UserCoordinates).country,
             region: (currentUser.coordinates as UserCoordinates).region,
+            postalCode: (currentUser.coordinates as UserCoordinates).postalCode,
+            street: (currentUser.coordinates as UserCoordinates).street,
             ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
             manuallySet: (currentUser.coordinates as UserCoordinates)
               .manuallySet,
@@ -707,6 +709,8 @@ export const authRouter = createTRPCRouter({
           city: input.coordinates.city ?? existingCoords?.city,
           country: input.coordinates.country ?? existingCoords?.country,
           region: input.coordinates.region ?? existingCoords?.region,
+          postalCode: input.coordinates.postalCode ?? existingCoords?.postalCode,
+          street: input.coordinates.street ?? existingCoords?.street,
           ipDetected: false, // Manual coordinates
           manuallySet: true, // Lock against IP overwrite
         };
@@ -753,6 +757,8 @@ export const authRouter = createTRPCRouter({
           city: z.string().nullable().optional(),
           country: z.string().nullable().optional(),
           region: z.string().nullable().optional(),
+          postalCode: z.string().nullable().optional(),
+          street: z.string().nullable().optional(),
         }),
         // NEW: Optional top-level fields
         country: z.string().optional(),  // top-level display name
@@ -810,6 +816,8 @@ export const authRouter = createTRPCRouter({
         country: input.coordinates.country ?? null,
         region: input.coordinates.region ?? null,
         city: input.coordinates.city ?? null,
+        postalCode: input.coordinates.postalCode ?? null,
+        street: input.coordinates.street ?? null,
         lat:
           input.coordinates.lat != null
             ? round(input.coordinates.lat, 3)
@@ -825,6 +833,8 @@ export const authRouter = createTRPCRouter({
         country: incoming.country ?? existing?.country ?? null,
         region: incoming.region ?? existing?.region ?? null,
         city: incoming.city ?? existing?.city ?? null,
+        postalCode: incoming.postalCode ?? existing?.postalCode ?? null,
+        street: incoming.street ?? existing?.street ?? null,
         lat: incoming.lat ?? existing?.lat ?? null,
         lng: incoming.lng ?? existing?.lng ?? null,
         ipDetected: true,
@@ -836,6 +846,8 @@ export const authRouter = createTRPCRouter({
         merged.country !== existing?.country ||
         merged.region !== existing?.region ||
         merged.city !== existing?.city ||
+        merged.postalCode !== existing?.postalCode ||
+        merged.street !== existing?.street ||
         merged.lat !== existing?.lat ||
         merged.lng !== existing?.lng;
 
