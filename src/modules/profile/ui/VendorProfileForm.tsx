@@ -29,9 +29,9 @@ import LoadingPage from "@/components/shared/loading";
 import { useRouter } from "next/navigation";
 
 import { NumericFormat, NumberFormatValues } from "react-number-format";
-import PhoneInput from 'react-phone-number-input';
-import type { Country } from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
+import PhoneInput from "react-phone-number-input";
+import type { Country } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 import { getCountryCodeFromName } from "../location-utils";
 import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -43,7 +43,7 @@ export function VendorProfileForm() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { data: categories } = useQuery(trpc.categories.getMany.queryOptions());
-  
+
   // Fetch vendor profile data from database
   const { data: vendorProfile, isLoading } = useQuery(
     trpc.auth.getVendorProfile.queryOptions()
@@ -79,9 +79,15 @@ export function VendorProfileForm() {
         firstName: vendorProfile.firstName || "",
         lastName: vendorProfile.lastName || "",
         bio: vendorProfile.bio || "",
-        services: Array.isArray(vendorProfile.services) ? vendorProfile.services : [],
-        categories: Array.isArray(vendorProfile.categories) ? vendorProfile.categories : [],
-        subcategories: Array.isArray(vendorProfile.subcategories) ? vendorProfile.subcategories : [],
+        services: Array.isArray(vendorProfile.services)
+          ? vendorProfile.services
+          : [],
+        categories: Array.isArray(vendorProfile.categories)
+          ? vendorProfile.categories
+          : [],
+        subcategories: Array.isArray(vendorProfile.subcategories)
+          ? vendorProfile.subcategories
+          : [],
         website: vendorProfile.website || "",
         phone: vendorProfile.phone || undefined,
         hourlyRate: vendorProfile.hourlyRate || 1,
@@ -91,19 +97,22 @@ export function VendorProfileForm() {
 
   // Watch selected categories
   const watchedCategories = form.watch("categories");
-  const selectedCategories = useMemo(() => watchedCategories || [], [watchedCategories]);
+  const selectedCategories = useMemo(
+    () => watchedCategories || [],
+    [watchedCategories]
+  );
 
   // Helper functions to generate placeholder text for MultiSelect components
   const getServicesPlaceholder = () => {
     // Get current form values for services
     const currentServices = form.getValues("services");
     const servicesArray = Array.isArray(currentServices) ? currentServices : [];
-    
+
     // If we have current services
     if (servicesArray.length > 0) {
       return servicesArray.join(", ");
     }
-    
+
     // If no services are selected
     return "Select service types";
   };
@@ -111,18 +120,20 @@ export function VendorProfileForm() {
   const getCategoriesPlaceholder = () => {
     // Get current form values for categories
     const currentCategories = form.getValues("categories");
-    const categoriesArray = Array.isArray(currentCategories) ? currentCategories : [];
-    
+    const categoriesArray = Array.isArray(currentCategories)
+      ? currentCategories
+      : [];
+
     // If we have current categories and they're valid
     if (categoriesArray.length > 0) {
       // Find category names from the categories data
-      const categoryNames = categoriesArray.map(slug => {
-        const category = categories?.find(cat => cat.slug === slug);
+      const categoryNames = categoriesArray.map((slug) => {
+        const category = categories?.find((cat) => cat.slug === slug);
         return category?.name || slug;
       });
       return categoryNames.join(", ");
     }
-    
+
     // If no categories are selected
     return "Select categories";
   };
@@ -130,49 +141,61 @@ export function VendorProfileForm() {
   const getSubcategoriesPlaceholder = () => {
     // Get current form values for subcategories
     const currentSubcategories = form.getValues("subcategories");
-    const subcategoriesArray = Array.isArray(currentSubcategories) ? currentSubcategories : [];
-    
+    const subcategoriesArray = Array.isArray(currentSubcategories)
+      ? currentSubcategories
+      : [];
+
     // If we have current subcategories and they're valid for available subcategories
     if (subcategoriesArray.length > 0 && availableSubcategories.length > 0) {
-      const validSubcategories = subcategoriesArray.filter(subSlug => 
-        availableSubcategories.some(sub => sub.slug === subSlug)
+      const validSubcategories = subcategoriesArray.filter((subSlug) =>
+        availableSubcategories.some((sub) => sub.slug === subSlug)
       );
-      
+
       if (validSubcategories.length > 0) {
         // Find subcategory names from the available subcategories
-        const subcategoryNames = validSubcategories.map(slug => {
-          const subcategory = availableSubcategories.find(sub => sub.slug === slug);
+        const subcategoryNames = validSubcategories.map((slug) => {
+          const subcategory = availableSubcategories.find(
+            (sub) => sub.slug === slug
+          );
           return subcategory?.name || slug;
         });
         return subcategoryNames.join(", ");
       }
     }
-    
+
     // If no categories are selected, show "Select categories first"
     if (selectedCategories.length === 0) {
       return "Select categories first";
     }
-    
+
     // If categories are selected but no subcategories are chosen
     return "Select subcategories";
   };
 
   // Helper function to determine if we should use black font for better visibility
-  const shouldUseBlackFont = (fieldType: 'services' | 'categories' | 'subcategories') => {
+  const shouldUseBlackFont = (
+    fieldType: "services" | "categories" | "subcategories"
+  ) => {
     switch (fieldType) {
-      case 'services': {
+      case "services": {
         const currentServices = form.getValues("services");
-        const servicesArray = Array.isArray(currentServices) ? currentServices : [];
+        const servicesArray = Array.isArray(currentServices)
+          ? currentServices
+          : [];
         return servicesArray.length > 0;
       }
-      case 'categories': {
+      case "categories": {
         const currentCategories = form.getValues("categories");
-        const categoriesArray = Array.isArray(currentCategories) ? currentCategories : [];
+        const categoriesArray = Array.isArray(currentCategories)
+          ? currentCategories
+          : [];
         return categoriesArray.length > 0;
       }
-      case 'subcategories': {
+      case "subcategories": {
         const currentSubcategories = form.getValues("subcategories");
-        const subcategoriesArray = Array.isArray(currentSubcategories) ? currentSubcategories : [];
+        const subcategoriesArray = Array.isArray(currentSubcategories)
+          ? currentSubcategories
+          : [];
         return subcategoriesArray.length > 0;
       }
       default:
@@ -181,35 +204,38 @@ export function VendorProfileForm() {
   };
 
   // Get subcategories for the selected categories
-  const availableSubcategories = useMemo(() =>
-    categories
-      ?.filter((cat) => selectedCategories.includes(cat.slug))
-      .flatMap((cat) =>
-        (cat.subcategories || []).map((sub) => ({ ...sub, parent: cat.slug }))
-      ) || [], [categories, selectedCategories]);
+  const availableSubcategories = useMemo(
+    () =>
+      categories
+        ?.filter((cat) => selectedCategories.includes(cat.slug))
+        .flatMap((cat) =>
+          (cat.subcategories || []).map((sub) => ({ ...sub, parent: cat.slug }))
+        ) || [],
+    [categories, selectedCategories]
+  );
 
   // Clear subcategories when categories change
   useEffect(() => {
     // Only run this effect if we have categories data and the form has been initialized
     if (!categories || categories.length === 0) return;
-    
+
     const currentSubcategories = form.getValues("subcategories") || [];
-    const availableSubcategorySlugs = availableSubcategories.map(sub => sub.slug);
-    
+    const availableSubcategorySlugs = availableSubcategories.map(
+      (sub) => sub.slug
+    );
+
     // Only clear subcategories if we have selected categories but the subcategories are invalid
     if (selectedCategories.length > 0) {
       // Remove subcategories that are no longer valid for the selected categories
-      const validSubcategories = currentSubcategories.filter(subSlug => 
+      const validSubcategories = currentSubcategories.filter((subSlug) =>
         availableSubcategorySlugs.includes(subSlug)
       );
-      
+
       if (validSubcategories.length !== currentSubcategories.length) {
         form.setValue("subcategories", validSubcategories);
       }
     }
   }, [selectedCategories, form, availableSubcategories, categories]);
-
-
 
   // File upload:
   // obtaining image placeholder:
@@ -234,15 +260,17 @@ export function VendorProfileForm() {
     trpc.auth.createVendorProfile.mutationOptions({
       onSuccess: () => {
         // ✅ Add invalidation to update the cache immediately
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey 
+        queryClient.invalidateQueries({
+          queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
         });
         // Note: Success handling is now done in onSubmit for better control
         // This prevents double success messages
       },
       onError: (error) => {
         console.error("Error creating vendor profile:", error);
-        toast.error(error.message || "Failed to create vendor profile. Please try again.");
+        toast.error(
+          error.message || "Failed to create vendor profile. Please try again."
+        );
       },
     })
   );
@@ -252,11 +280,15 @@ export function VendorProfileForm() {
       onSuccess: () => {
         toast.success("Vendor profile updated successfully!");
         // Invalidate the getVendorProfile query to update the cache
-        queryClient.invalidateQueries({ queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey });
+        queryClient.invalidateQueries({
+          queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
+        });
       },
       onError: (error) => {
         console.error("Error updating profile:", error);
-        toast.error(error.message || "Failed to update profile. Please try again.");
+        toast.error(
+          error.message || "Failed to update profile. Please try again."
+        );
       },
     })
   );
@@ -282,30 +314,30 @@ export function VendorProfileForm() {
     try {
       // Prevent double submits
       if (createVendorProfile.isPending || updateVendorProfile.isPending) {
-        console.log('Submit already in progress, ignoring');
+        console.log("Submit already in progress, ignoring");
         return;
       }
 
       if (vendorProfile) {
         // EXISTING PROFILE: Upload image first, then update
         let imageData = values.image;
-        
+
         if (selectedFile) {
           const formData = new FormData();
-          formData.append('file', selectedFile);
-          
+          formData.append("file", selectedFile);
+
           // ✅ ADD THIS: Pass tenantId for existing profiles
           if (vendorProfile?.id) {
-            formData.append('tenantId', vendorProfile.id);
+            formData.append("tenantId", vendorProfile.id);
           }
 
-          const uploadResponse = await fetch('/api/upload', {
-            method: 'POST',
+          const uploadResponse = await fetch("/api/upload", {
+            method: "POST",
             body: formData,
           });
 
           if (!uploadResponse.ok) {
-            throw new Error('Failed to upload image');
+            throw new Error("Failed to upload image");
           }
 
           const uploadResult = await uploadResponse.json();
@@ -317,9 +349,10 @@ export function VendorProfileForm() {
           ...values,
           image: imageData,
         };
-        
-        updateVendorProfile.mutate(updatedValues);
-        
+
+        // Await to avoid races
+        await updateVendorProfile.mutateAsync(updatedValues);
+
         // Mark onboarding as completed after successful update
         try {
           updateUserProfile.mutate({
@@ -330,50 +363,58 @@ export function VendorProfileForm() {
             language: userProfile?.language || "en",
           });
         } catch (error) {
-          console.warn('Failed to mark onboarding as completed:', error);
+          console.warn("Failed to mark onboarding as completed:", error);
         }
-        
-        router.refresh(); // ✅ Refresh to show new image immediately
+
+        // Then invalidate/refetch to update UI
+        await queryClient.invalidateQueries({
+          queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
+        });
       } else {
         // NEW PROFILE: Create first, then upload image
         try {
           // Step 1: Create profile without image
-          console.log('Creating vendor profile without image...');
+          console.log("Creating vendor profile without image...");
           const createdProfile = await createVendorProfile.mutateAsync(values);
-          
+
           if (!createdProfile || !createdProfile.id) {
-            throw new Error('Profile created but no ID returned');
+            throw new Error("Profile created but no ID returned");
           }
-          
-          console.log('Profile created successfully, ID:', createdProfile.id);
-          
+
+          console.log("Profile created successfully, ID:", createdProfile.id);
+
           // Step 2: Upload image if selected
           if (selectedFile) {
-            console.log('Uploading image for new profile...');
-            
+            console.log("Uploading image for new profile...");
+
             const formData = new FormData();
-            formData.append('file', selectedFile);
-            formData.append('tenantId', createdProfile.id);
-            
-            const uploadResponse = await fetch('/api/upload', {
-              method: 'POST',
+            formData.append("file", selectedFile);
+            formData.append("tenantId", createdProfile.id);
+
+            const uploadResponse = await fetch("/api/upload", {
+              method: "POST",
               body: formData,
             });
-            
+
             if (!uploadResponse.ok) {
               const errorData = await uploadResponse.json();
-              console.warn('Profile created but image upload failed:', errorData);
-              
+              console.warn(
+                "Profile created but image upload failed:",
+                errorData
+              );
+
               // Don't fail the whole operation - show warning
-              toast.warning('Profile created successfully, but image upload failed. You can add the image later from the profile editor.');
+              toast.warning(
+                "Profile created successfully, but image upload failed. You can add the image later from the profile editor."
+              );
             } else {
-              console.log('Image uploaded successfully');
-              toast.success('Vendor profile created with image successfully!');
+              console.log("Image uploaded successfully");
+              toast.success("Vendor profile created with image successfully!");
             }
           } else {
-            toast.success('Vendor profile created successfully!');
+            toast.success("Vendor profile created successfully!");
           }
-          
+
           // Step 3: Mark onboarding as completed
           try {
             updateUserProfile.mutate({
@@ -384,29 +425,34 @@ export function VendorProfileForm() {
               language: userProfile?.language || "en",
             });
           } catch (error) {
-            console.warn('Failed to mark onboarding as completed:', error);
+            console.warn("Failed to mark onboarding as completed:", error);
           }
-          
-          // Step 4: Refresh the form to show the new profile and ensure we stay on vendor tab
-          router.refresh();
-          // Ensure we stay on the vendor tab after profile creation
-          setTimeout(() => {
-            router.push("/profile?tab=vendor");
-          }, 100);
-          
+
+          // Step 4: Hydrate cache and stay on vendor tab
+          // Invalidate and refetch to get the complete profile data
+          await queryClient.invalidateQueries({
+            queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
+          });
+          // Stay on vendor without adding a history entry
+          router.replace("/profile?tab=vendor");
         } catch (error) {
-          console.error('Error creating profile:', error);
-          
-          if (error instanceof Error && error.message.includes('already taken')) {
-            toast.error('Business name is already taken. Please choose a different name.');
+          console.error("Error creating profile:", error);
+
+          if (
+            error instanceof Error &&
+            error.message.includes("already taken")
+          ) {
+            toast.error(
+              "Business name is already taken. Please choose a different name."
+            );
           } else {
-            toast.error('Failed to create vendor profile. Please try again.');
+            toast.error("Failed to create vendor profile. Please try again.");
           }
         }
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Failed to upload image. Please try again.');
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload image. Please try again.");
     }
   };
 
@@ -442,26 +488,26 @@ export function VendorProfileForm() {
         className="flex flex-col gap-2 p-4 lg:p-10 overflow-y-auto max-h-[80vh]"
         autoComplete="off"
       >
-                 <div className="flex items-center justify-between mb-8">
-           <div className="flex items-center gap-4">
-             <Image
-               src="/images/infinisimo_logo_illustrator.png"
-               alt="Infinisimo Logo"
-               width={48}
-               height={48}
-               className="rounded-full bg-white"
-               priority
-             />
-             <h1 className="text-3xl font-bold">Service Provider Settings</h1>
-           </div>
-                       <Link
-              href="/"
-              className="flex items-center gap-3 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              <Home className="w-6 h-6" />
-              <span className="text-base font-medium">Home</span>
-            </Link>
-         </div>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Image
+              src="/images/infinisimo_logo_illustrator.png"
+              alt="Infinisimo Logo"
+              width={48}
+              height={48}
+              className="rounded-full bg-white"
+              priority
+            />
+            <h1 className="text-3xl font-bold">Service Provider Settings</h1>
+          </div>
+          <Link
+            href="/"
+            className="flex items-center gap-3 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            <Home className="w-6 h-6" />
+            <span className="text-base font-medium">Home</span>
+          </Link>
+        </div>
 
         {/* 2 column grid; for wider right column adjsut container - md:grid-cols-5, left: md:col-span-2, right:md:col-span-3  */}
         <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
@@ -519,24 +565,23 @@ export function VendorProfileForm() {
                 </FormItem>
               )}
             />
-                         {/* Business Name */}
-             <FormField
-               name="name"
-               control={form.control}
-               render={({ field }) => (
-                 <FormItem>
-                   <FormLabel>Business Name (for your page URL)</FormLabel>
-                   <FormControl>
-                     <Input 
-                       {...field} 
-                       autoComplete="off" 
-                       placeholder="Enter business name (letters, numbers, hyphens, underscores)"
-                     />
-                   </FormControl>
-
-                 </FormItem>
-               )}
-             />
+            {/* Business Name */}
+            <FormField
+              name="name"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business Name (for your page URL)</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter business name"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             {/* Hourly rate */}
             <FormField
               name="hourlyRate"
@@ -559,17 +604,20 @@ export function VendorProfileForm() {
                       onBlur={field.onBlur}
                       name={field.name}
                       onValueChange={(values: NumberFormatValues) => {
-                         // Pass the numeric value to the form
-                         
-                         // Handle empty value case
-                         if (values.floatValue === undefined || values.floatValue === null) {
-                           form.setValue("hourlyRate", 1);
-                         } else {
-                           // Ensure we're passing a number, not a string
-                           const numericValue = Number(values.floatValue);
-                           form.setValue("hourlyRate", numericValue);
-                         }
-                       }}
+                        // Pass the numeric value to the form
+
+                        // Handle empty value case
+                        if (
+                          values.floatValue === undefined ||
+                          values.floatValue === null
+                        ) {
+                          form.setValue("hourlyRate", 1);
+                        } else {
+                          // Ensure we're passing a number, not a string
+                          const numericValue = Number(values.floatValue);
+                          form.setValue("hourlyRate", numericValue);
+                        }
+                      }}
                     />
                   </FormControl>
                 </FormItem>
@@ -590,7 +638,11 @@ export function VendorProfileForm() {
                       value={field.value || []}
                       onValueChange={field.onChange}
                       placeholder={getServicesPlaceholder()}
-                      placeholderClassName={shouldUseBlackFont('services') ? "text-foreground font-medium" : ""}
+                      placeholderClassName={
+                        shouldUseBlackFont("services")
+                          ? "text-foreground font-medium"
+                          : ""
+                      }
                       maxCount={2}
                     />
                   </FormControl>
@@ -617,7 +669,11 @@ export function VendorProfileForm() {
                       defaultValue={field.value || []}
                       onValueChange={field.onChange}
                       placeholder={getCategoriesPlaceholder()}
-                      placeholderClassName={shouldUseBlackFont('categories') ? "text-foreground font-medium" : ""}
+                      placeholderClassName={
+                        shouldUseBlackFont("categories")
+                          ? "text-foreground font-medium"
+                          : ""
+                      }
                     />
                   </FormControl>
                 </FormItem>
@@ -640,7 +696,11 @@ export function VendorProfileForm() {
                       value={field.value || []}
                       onValueChange={field.onChange}
                       placeholder={getSubcategoriesPlaceholder()}
-                      placeholderClassName={shouldUseBlackFont('subcategories') ? "text-foreground font-medium" : ""}
+                      placeholderClassName={
+                        shouldUseBlackFont("subcategories")
+                          ? "text-foreground font-medium"
+                          : ""
+                      }
                     />
                   </FormControl>
                 </FormItem>
@@ -656,8 +716,8 @@ export function VendorProfileForm() {
                 <Image
                   src={
                     previewUrl ||
-                    (typeof vendorProfile?.image === 'string' 
-                      ? vendorProfile.image 
+                    (typeof vendorProfile?.image === "string"
+                      ? vendorProfile.image
                       : vendorProfile?.image?.url) ||
                     imageUrl ||
                     "https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=256&h=256&facepad=2"
@@ -669,7 +729,9 @@ export function VendorProfileForm() {
                 />
               </div>
               <label className="cursor-pointer px-4 py-2 bg-gray-100 rounded-lg border text-sm font-medium hover:bg-gray-200 transition-colors">
-                {selectedFile ? selectedFile.name : "Select Image for upload (max 5MB)"}
+                {selectedFile
+                  ? selectedFile.name
+                  : "Select Image for upload (max 5MB)"}
                 <input
                   type="file"
                   accept="image/*"
@@ -678,7 +740,6 @@ export function VendorProfileForm() {
                 />
               </label>
             </div>
-
 
             {/* Phone Number */}
             <FormField
@@ -691,11 +752,44 @@ export function VendorProfileForm() {
                     <PhoneInput
                       international
                       countries={[
-                        "DE", "FR", "IT", "ES", "NL", "BE", "AT", "PL", "CZ", "SK", 
-                        "HU", "RO", "BG", "HR", "SI", "GR", "PT", "DK", "SE", "FI", 
-                        "LU", "MT", "CY", "EE", "LV", "LT", "IE", "GB", "CH", "UA"
+                        "DE",
+                        "FR",
+                        "IT",
+                        "ES",
+                        "NL",
+                        "BE",
+                        "AT",
+                        "PL",
+                        "CZ",
+                        "SK",
+                        "HU",
+                        "RO",
+                        "BG",
+                        "HR",
+                        "SI",
+                        "GR",
+                        "PT",
+                        "DK",
+                        "SE",
+                        "FI",
+                        "LU",
+                        "MT",
+                        "CY",
+                        "EE",
+                        "LV",
+                        "LT",
+                        "IE",
+                        "GB",
+                        "CH",
+                        "UA",
                       ]}
-                      defaultCountry={userProfile?.country ? getCountryCodeFromName(userProfile.country) as Country : "DE"}
+                      defaultCountry={
+                        userProfile?.country
+                          ? (getCountryCodeFromName(
+                              userProfile.country
+                            ) as Country)
+                          : "DE"
+                      }
                       value={field.value || undefined}
                       onChange={(value) => {
                         // Ensure empty string is converted to undefined for proper clearing
@@ -717,9 +811,9 @@ export function VendorProfileForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      autoComplete="off" 
+                    <Input
+                      {...field}
+                      autoComplete="off"
                       placeholder="Website (optional)"
                     />
                   </FormControl>
@@ -757,15 +851,29 @@ export function VendorProfileForm() {
           type="submit"
           size="lg"
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
-          disabled={createVendorProfile.isPending || updateVendorProfile.isPending}
+          disabled={
+            createVendorProfile.isPending || updateVendorProfile.isPending
+          }
         >
           {createVendorProfile.isPending || updateVendorProfile.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {vendorProfile ? 'Updating...' : 'Creating...'}
+              {vendorProfile ? "Updating..." : "Creating..."}
             </>
+          ) : vendorProfile &&
+            (vendorProfile.name ||
+              vendorProfile.firstName ||
+              vendorProfile.lastName ||
+              vendorProfile.bio ||
+              vendorProfile.services?.length > 0 ||
+              vendorProfile.categories?.length > 0 ||
+              vendorProfile.website ||
+              vendorProfile.image ||
+              vendorProfile.phone ||
+              vendorProfile.hourlyRate > 1) ? (
+            "Update Provider Profile"
           ) : (
-            vendorProfile && (vendorProfile.name || vendorProfile.firstName || vendorProfile.lastName || vendorProfile.bio || vendorProfile.services?.length > 0 || vendorProfile.categories?.length > 0 || vendorProfile.website || vendorProfile.image || vendorProfile.phone || vendorProfile.hourlyRate > 1) ? "Update Provider Profile" : "Create Provider Profile"
+            "Create Provider Profile"
           )}
         </Button>
       </form>

@@ -40,9 +40,9 @@ export default function ProviderConfirmation({
   const isPrereq = mode === "prereq";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 -mt-12">
+    <div className="min-h-screen flex items-start justify-center p-4 sm:p-6 pt-20 sm:pt-24">
       <Card
-        className="relative w-full max-w-lg mx-auto"
+        className="relative w-full max-w-lg mx-auto border-0 shadow-lg"
         role="dialog"
         aria-live="polite"
         aria-labelledby="provider-confirmation-title"
@@ -129,7 +129,10 @@ export default function ProviderConfirmation({
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
             {isPrereq ? (
               // Alert Card - Single button that redirects to General Profile
-              <Button onClick={onSecondaryAction} className="w-full sm:w-auto min-w-[200px]">
+              <Button
+                onClick={onSecondaryAction}
+                className="w-full sm:w-auto min-w-[200px]"
+              >
                 Complete General Settings
               </Button>
             ) : (
@@ -146,7 +149,7 @@ export default function ProviderConfirmation({
                       aria-hidden
                     />
                   )}
-                  Complete Provider Profile
+                  Create Provider Profile
                 </Button>
                 <Button
                   variant="outline"

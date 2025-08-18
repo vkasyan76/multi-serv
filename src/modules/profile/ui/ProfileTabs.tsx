@@ -29,7 +29,12 @@ export function ProfileTabs() {
   // Determine provider status from database state
   const isProvider = !!vendorProfile;
   const hasCompletedOnboarding = userProfile?.onboardingCompleted || false;
-  const hasLocation = !!(userProfile?.coordinates?.lat && userProfile?.coordinates?.lng);
+  
+  // Robust location check that accepts 0 as valid coordinates
+  const { lat, lng } = userProfile?.coordinates ?? {};
+  const hasLocation = 
+    typeof lat === "number" && Number.isFinite(lat) &&
+    typeof lng === "number" && Number.isFinite(lng);
 
   // Read tab from query params on mount safely without useSearchParams
   useEffect(() => {
