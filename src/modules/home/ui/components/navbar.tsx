@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 
 import { NavbarSidebar } from "./navbar-sidebar";
 import { MenuIcon } from "lucide-react";
@@ -104,6 +105,13 @@ export const Navbar = () => {
           </SignInButton>
         </SignedOut>
         <SignedIn>
+          {/* Screen reader announcement for button text changes */}
+          <div aria-live="polite" className="sr-only">
+            {session.data?.user?.tenants?.length
+              ? "Navigation updated: Dashboard button available"
+              : "Navigation updated: Start Business button available"}
+          </div>
+
           {/* Show role/tenant-based buttons for authenticated users */}
           {session.data?.user?.roles?.includes("super-admin") ? (
             <Button
@@ -112,7 +120,7 @@ export const Navbar = () => {
             >
               <Link href="/admin">Admin panel</Link>
             </Button>
-          ) : session.data?.user?.tenants?.length ? (
+          ) : (
             <>
               <Button
                 asChild
@@ -121,21 +129,25 @@ export const Navbar = () => {
               >
                 <Link href="/profile">Profile</Link>
               </Button>
-              <Button
+              <LoadingButton
                 asChild
+                isLoading={session.isLoading}
+                loadingText=""
                 className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
               >
-                <Link href="/dashboard">Dashboard</Link>
-              </Button>
+                <Link
+                  href={
+                    session.data?.user?.tenants?.length
+                      ? "/dashboard"
+                      : "/profile?tab=vendor"
+                  }
+                >
+                  {session.data?.user?.tenants?.length
+                    ? "Dashboard"
+                    : "Start Business"}
+                </Link>
+              </LoadingButton>
             </>
-          ) : (
-            <Button
-              asChild
-              variant="secondary"
-              className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
-            >
-              <Link href="/profile">Profile</Link>
-            </Button>
           )}
 
           {/* Clerk user avatar/profile button (always shown when logged in) */}

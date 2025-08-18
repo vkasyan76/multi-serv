@@ -1,9 +1,9 @@
 "use client";
 
-import { RoleSelectionDialog } from "@/modules/auth/ui/views/onboarding/RoleSelectionDialog";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
+import Link from "next/link";
 
 export default function Home() {
   const trpc = useTRPC();
@@ -24,27 +24,14 @@ export default function Home() {
     enabled: !!session?.user, // Only run query if user is logged in
   });
 
-  async function handleRoleSelection(roles: string[]) {
-    // Save roles to localStorage for ProfileTabs
-    localStorage.setItem("infinisimo_roles", JSON.stringify(roles));
-    
-    // The onboarding will be marked as completed when the user submits their profile
-    // in the ProfileTabs component via updateUserProfile
-  }
-
   // Loading state - only show loading if we're fetching session or profile (when logged in)
   if (sessionLoading || (session?.user && profileLoading)) return <LoadingPage />;
 
   if (sessionError) return <div>Error loading session: {sessionError.message}</div>;
   if (session?.user && profileError) return <div>Error loading profile: {profileError.message}</div>;
 
-  // If user is logged in but hasn't completed onboarding, show role selection dialog
-  if (session?.user && !userProfile?.onboardingCompleted) {
-    return <RoleSelectionDialog onSelectAction={handleRoleSelection} />;
-  }
-
-  // If user is logged in and has completed onboarding, show the main home page content
-  if (session?.user && userProfile?.onboardingCompleted) {
+  // If user is logged in, show the main home page content immediately
+  if (session?.user) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
@@ -74,17 +61,35 @@ export default function Home() {
               </p>
             </div>
           </div>
+          
+          {/* NEW: Gentle profile completion prompt - guides without blocking */}
+          {!userProfile?.onboardingCompleted && (
+            <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                Complete Your Profile
+              </h3>
+              <p className="text-blue-700 mb-4">
+                Set up your profile to get the most out of Infinisimo.
+              </p>
+              <Link 
+                href="/profile" 
+                className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Go to Profile
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // If no user is logged in - show public home page
+  // Public home page for non-authenticated users
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Welcome to Infinisimo
+          Welcome to Infinisimo!
         </h1>
         <p className="text-xl text-gray-600 mb-8">
           Discover amazing services and connect with talented professionals.
@@ -108,14 +113,6 @@ export default function Home() {
               Build your business and expand your professional network.
             </p>
           </div>
-        </div>
-        <div className="mt-12">
-          <p className="text-lg text-gray-600 mb-4">
-            Ready to get started? Sign up to access all features.
-          </p>
-          <button className="bg-black text-white px-8 py-3 rounded-lg hover:bg-pink-400 transition-colors">
-            Get Started
-          </button>
         </div>
       </div>
     </div>

@@ -44,7 +44,7 @@ export const vendorSchema = z.object({
     .string()
     .min(2, "Business name is required")
     .max(50, "Business name must be less than 50 characters")
-    .regex(/^[a-zA-Z0-9]+$/, "Business name must be one word with only letters and numbers")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Business name can contain letters, numbers, hyphens, and underscores")
     .transform((val) => val.toLowerCase()), // Normalize to lowercase for uniqueness
   firstName: z.string().min(2, "First name is required"),
   lastName: z.string().min(2, "Last name is required"),
@@ -78,7 +78,7 @@ export const vendorSchema = z.object({
 });
 
 export const VENDOR_FIELD_LABELS = {
-  name: "Business Name (one word, letters & numbers only)",
+  name: "Business Name (letters, numbers, hyphens, underscores)",
   firstName: "First Name",
   lastName: "Last Name",
   bio: "Description",

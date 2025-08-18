@@ -79,33 +79,32 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                 </Link>
               )}
 
-              {!isAdmin && !hasTenant && (
+              {/* Profile - always visible for authenticated users */}
+              <Link
+                href="/profile"
+                className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                onClick={() => onOpenChange(false)}
+              >
+                Profile
+              </Link>
+
+              {/* Dashboard OR Start Business - conditional based on tenant status */}
+              {hasTenant ? (
                 <Link
-                  href="/profile"
+                  href="/dashboard"
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                   onClick={() => onOpenChange(false)}
                 >
-                  Profile
+                  Dashboard
                 </Link>
-              )}
-
-              {hasTenant && (
-                <>
-                  <Link
-                    href="/profile"
-                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    Profile
-                  </Link>
-                  <Link
-                    href="/dashboard"
-                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    Dashboard
-                  </Link>
-                </>
+              ) : (
+                <Link
+                  href="/profile?tab=vendor"
+                  className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Start Business
+                </Link>
               )}
               {/* Clerk SignOutButton does not accept custom onClick handlers -> const { signOut } = useClerk(); */}
               <div className="border-t">
