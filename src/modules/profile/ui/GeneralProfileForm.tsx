@@ -123,12 +123,19 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
           setLocationInput(userProfile.location);
         }
 
-        // Set selected location if country exists
+        // Set selected location if country exists - only display fields, not coordinate details
         if (userProfile.country) {
           setSelectedLocation({
             formattedAddress: userProfile.location || "",
             countryName: userProfile.country,
-            countryISO: userProfile.coordinates?.country,
+            countryISO: userProfile.coordinates?.countryISO,
+            // Don't populate old coordinate details - they will be fetched fresh when user selects new location
+            lat: undefined,
+            lng: undefined,
+            city: undefined,
+            region: undefined,
+            postalCode: undefined,
+            street: undefined,
           });
         }
       } else {
@@ -177,14 +184,19 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         placeDetails.address_components
       );
 
-      const location: SelectedLocation = {
+      // Single, direct state update
+      const next: SelectedLocation = {
         formattedAddress: placeDetails.formatted_address,
         lat: placeDetails.geometry?.location?.lat,
         lng: placeDetails.geometry?.location?.lng,
-        ...addressComponents,
+        city: addressComponents.city ?? undefined,
+        region: addressComponents.region ?? undefined,
+        postalCode: addressComponents.postalCode ?? undefined,
+        street: addressComponents.street ?? undefined,
+        countryISO: addressComponents.countryISO ?? undefined,
+        countryName: addressComponents.countryName ?? undefined,
       };
-
-      setSelectedLocation(location);
+      setSelectedLocation(next);
       setLocationInput(placeDetails.formatted_address);
       setPredictions([]);
 
@@ -201,22 +213,40 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   };
 
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
+    // Sanitize coordinates to ensure no old data is sent
+    const sanitizeCoordinates = (location: SelectedLocation | null) => {
+      if (!location || !Number.isFinite(location.lat ?? NaN) || !Number.isFinite(location.lng ?? NaN)) {
+        return undefined;
+      }
+      
+      // CRITICAL FIX: Always send explicit nulls to clear fields in MongoDB
+      // MongoDB/Payload treats undefined as "leave as-is", null as "clear this field"
+      return {
+        lat: location.lat as number,
+        lng: location.lng as number,
+        city: location.city ?? null,
+        countryISO: location.countryISO ?? null,
+        countryName: location.countryName ?? null,
+        region: location.region ?? null,
+        postalCode: location.postalCode ?? null,
+        street: location.street ?? null,
+        ipDetected: false,
+        manuallySet: true,
+      };
+      
+      // Return statement is now inline above
+    };
+
+    const coordinates = sanitizeCoordinates(selectedLocation);
+
+    // Dev log to verify coordinates before submission
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Submitting coordinates:', coordinates);
+    }
+
     const submission = {
       ...values,
-      coordinates:
-        selectedLocation && selectedLocation.lat && selectedLocation.lng
-          ? {
-              lat: selectedLocation.lat,
-              lng: selectedLocation.lng,
-              city: selectedLocation.city,
-              country: selectedLocation.countryISO, // Store ISO code
-              region: selectedLocation.region,
-              postalCode: selectedLocation.postalCode,
-              street: selectedLocation.street,
-              ipDetected: false, // User is manually setting location
-              manuallySet: true, // Mark as manually set
-            }
-          : undefined,
+      coordinates,
       // The server will automatically set onboardingCompleted: true
     };
 
@@ -306,11 +336,18 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                     <Input
                       {...field}
                       value={locationInput}
-                      onChange={(e) => {
-                        setLocationInput(e.target.value);
-                        field.onChange(e);
-                        form.setValue("country", "");
-                      }}
+                                  onChange={(e) => {
+              setLocationInput(e.target.value);
+              field.onChange(e);
+              form.setValue("country", "");
+              
+              // NUCLEAR OPTION: Completely clear ALL coordinate data when user types
+              // This ensures we never have stale coordinate data
+              if (e.target.value !== selectedLocation?.formattedAddress) {
+                console.log("Location input changed - clearing ALL coordinate data");
+                setSelectedLocation(null);
+              }
+            }}
                       autoComplete="off"
                       placeholder="Search for your address…"
                     />

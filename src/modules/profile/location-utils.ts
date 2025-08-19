@@ -40,8 +40,11 @@ export async function getLocationFromIP(ip: string): Promise<UserCoordinates | u
         lat,
         lng,
         city: data.city,
-        country: data.country_name,
+        countryISO: data.country_code,
+        countryName: data.country_name,
         region: data.region,
+        postalCode: null,
+        street: null,
         ipDetected: true,
         manuallySet: false
       };
@@ -132,25 +135,22 @@ export function hasValidCoordinates(coordinates: unknown): coordinates is UserCo
   return Number.isFinite(coords.lat) && Number.isFinite(coords.lng);
 }
 
-// Helper function to merge coordinates while preserving existing metadata
-export function mergeCoordinates(
-  existingCoords: Partial<UserCoordinates> | undefined,
+// Helper function to replace coordinates completely instead of merging
+export function replaceCoordinates(
   newCoords: Partial<UserCoordinates>,
   isManuallySet: boolean = false
 ): UserCoordinates {
-  const prev = existingCoords ?? {};
   return {
-    // Preserve existing fields when not provided in newCoords
-    lat: (newCoords.lat ?? prev.lat)!,
-    lng: (newCoords.lng ?? prev.lng)!,
-    city: newCoords.city ?? prev.city,
-    country: newCoords.country ?? prev.country,
-    region: newCoords.region ?? prev.region,
-    postalCode: newCoords.postalCode ?? prev.postalCode,
-    street: newCoords.street ?? prev.street,
-    ipDetected: isManuallySet
-      ? false
-      : (newCoords.ipDetected ?? prev.ipDetected ?? true),
+    // Use new coordinates directly - no preservation of old data
+    lat: newCoords.lat!,
+    lng: newCoords.lng!,
+    city: newCoords.city ?? null,
+    countryISO: newCoords.countryISO ?? null,
+    countryName: newCoords.countryName ?? null,
+    region: newCoords.region ?? null,
+    postalCode: newCoords.postalCode ?? null,
+    street: newCoords.street ?? null,
+    ipDetected: isManuallySet ? false : true,
     manuallySet: isManuallySet,
   };
 }
@@ -168,10 +168,10 @@ export function extractAddressComponents(components: Array<{ types: string[]; lo
     get("administrative_area_level_1")?.short_name ||
     get("administrative_area_level_2")?.short_name;
 
-  const street = [
-    get("route")?.long_name,
-    get("street_number")?.long_name
-  ].filter(Boolean).join(" ") || undefined;
+  // Enhanced street extraction - properly concatenate route and street number
+  const route = get("route")?.long_name;
+  const streetNumber = get("street_number")?.long_name;
+  const street = route && streetNumber ? `${route} ${streetNumber}` : route || undefined;
 
   return {
     city,
@@ -351,11 +351,11 @@ export function countryNameFromCode(code?: string, locale = "en"): string {
 }
 
 export function formatLocationFromCoords(
-  coords?: { city?: string; region?: string; country?: string },
+  coords?: { city?: string; region?: string; countryISO?: string },
   locale = "en",
 ): string {
   if (!coords) return "";
-  const country = countryNameFromCode(coords.country, locale);
+  const country = countryNameFromCode(coords.countryISO, locale);
   if (coords.city) return `${coords.city}, ${country}`;
   if (coords.region) return `${coords.region}, ${country}`;
   return country;

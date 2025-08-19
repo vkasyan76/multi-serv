@@ -20,6 +20,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Place ID is required" }, { status: 400 });
   }
 
+  // Validate server-side API key
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "Google Maps API key is not configured" },
+      { status: 500 }
+    );
+  }
+
   try {
     const { data } = await client.placeDetails({
       params: {
@@ -27,7 +36,7 @@ export async function GET(request: NextRequest) {
         fields: ["address_components", "formatted_address", "geometry"],
         language: validLanguage as Language,
         sessiontoken: sessionToken || undefined, // Include session token for billing
-        key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!, // Use client-side key for now
+        key: apiKey, // Use secure server-side key
       },
     });
 

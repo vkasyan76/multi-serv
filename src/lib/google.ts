@@ -12,7 +12,9 @@ export const autocomplete = async (
 ): Promise<PlacePrediction[]> => {
   if (!input || input.trim().length === 0) return [];
 
-  if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+  // Validate server-side API key
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
     console.error("Google Maps API key is not configured");
     return [];
   }
@@ -23,7 +25,7 @@ export const autocomplete = async (
         input,
         language: language as Language,
         sessiontoken: sessionToken || undefined, // Include session token for billing
-        key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+        key: apiKey, // Use secure server-side key
       },
     });
 

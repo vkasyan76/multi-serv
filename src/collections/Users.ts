@@ -175,11 +175,19 @@ export const Users: CollectionConfig = {
           },
         },
         {
-          name: "country",
+          name: "countryISO",
           type: "text",
-          label: "Country",
+          label: "Country ISO Code",
           admin: {
-            description: "Country name from IP geolocation",
+            description: "Country ISO code (e.g., DE, US)",
+          },
+        },
+        {
+          name: "countryName",
+          type: "text",
+          label: "Country Name",
+          admin: {
+            description: "Full country name (e.g., Germany, United States)",
           },
         },
         {

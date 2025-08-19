@@ -31,11 +31,12 @@ export type TenantWithRelations = Tenant & {
 export type UserCoordinates = {
   lat: number;
   lng: number;
-  city?: string;
-  country?: string; // ISO code (e.g., "DE")
-  region?: string;
-  postalCode?: string;
-  street?: string;
+  city: string | null;
+  countryISO: string | null;   // ISO code (e.g., "DE")
+  countryName: string | null;  // Full country name (e.g., "Germany")
+  region: string | null;
+  postalCode: string | null;
+  street: string | null;
   ipDetected?: boolean;
   manuallySet?: boolean;
 };
@@ -45,12 +46,12 @@ export type SelectedLocation = {
   formattedAddress: string;
   lat?: number;
   lng?: number;
-  city?: string;
-  region?: string;
-  postalCode?: string;
-  street?: string;
-  countryISO?: string;    // Store as ISO
-  countryName?: string;   // Display only
+  city?: string | null;
+  region?: string | null;
+  postalCode?: string | null;
+  street?: string | null;
+  countryISO?: string | null;    // Store as ISO
+  countryName?: string | null;   // Display only
 };
 
 // Type for autocomplete predictions (client-side only)
