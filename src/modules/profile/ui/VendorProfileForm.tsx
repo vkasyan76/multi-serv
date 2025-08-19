@@ -485,10 +485,10 @@ export function VendorProfileForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit, onError)}
-        className="flex flex-col gap-2 p-4 lg:p-10 overflow-y-auto max-h-[80vh]"
+        className="flex flex-col gap-2 p-4 lg:p-7 overflow-y-auto max-h-[80vh]"
         autoComplete="off"
       >
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Image
               src="/images/infinisimo_logo_illustrator.png"
@@ -821,29 +821,33 @@ export function VendorProfileForm() {
               )}
             />
 
-            {/* Description - Make Only the Description Stretch Without Changing the Grid */}
-
-            <div className="flex-1 flex flex-col">
-              <FormField
-                name="bio"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem className="h-full flex flex-col">
-                    <FormLabel>Description</FormLabel>
-                    <FormControl className="flex-1 flex flex-col rounded-lg">
-                      <textarea
-                        {...field}
-                        maxLength={600}
-                        className="w-full h-full border rounded px-2 py-2 bg-white flex-1 resize-none"
-                        autoComplete="off"
-                        style={{ minHeight: 150 }} // optional: ensures minimum height on all screens
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {/* Description - Fixed Height with Scroll */}
+            <FormField
+              name="bio"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <textarea
+                      {...field}
+                      maxLength={600}
+                      className="w-full border rounded px-3 py-2 bg-white resize-none overflow-y-auto"
+                      autoComplete="off"
+                      style={{
+                        height: "120px", // Fixed height instead of h-full
+                        minHeight: "120px",
+                      }}
+                      placeholder="Describe your services, experience, and what makes you unique..."
+                    />
+                  </FormControl>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {field.value?.length || 0}/600 characters
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         </div>
 

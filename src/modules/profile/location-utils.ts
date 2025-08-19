@@ -1,5 +1,5 @@
 import { Language } from "@googlemaps/google-maps-services-js";
-import type { UserCoordinates } from "@/modules/tenants/types";
+import type { UserCoordinates, SelectedLocation } from "@/modules/tenants/types";
 
 // IP Geolocation helper function using ipapi.co service
 // This provides accurate, production-ready IP geolocation with EU country detection
@@ -40,8 +40,11 @@ export async function getLocationFromIP(ip: string): Promise<UserCoordinates | u
         lat,
         lng,
         city: data.city,
-        country: data.country_name,
+        countryISO: data.country_code,
+        countryName: data.country_name,
         region: data.region,
+        postalCode: null,
+        street: null,
         ipDetected: true,
         manuallySet: false
       };
@@ -125,31 +128,58 @@ export function extractIPFromHeaders(headers: Headers): string {
   return possibleIPs[0] || '127.0.0.1';
 }
 
-// Helper function to check if coordinates are valid
+// Helper function to check if coordinates are valid (zero-friendly)
 export function hasValidCoordinates(coordinates: unknown): coordinates is UserCoordinates {
-  return !!coordinates &&
-    typeof (coordinates as UserCoordinates).lat === "number" &&
-    typeof (coordinates as UserCoordinates).lng === "number";
+  if (!coordinates || typeof coordinates !== "object") return false;
+  const coords = coordinates as Record<string, unknown>;
+  return Number.isFinite(coords.lat) && Number.isFinite(coords.lng);
 }
 
-// Helper function to merge coordinates while preserving existing metadata
-export function mergeCoordinates(
-  existingCoords: Partial<UserCoordinates> | undefined,
+// Helper function to replace coordinates completely instead of merging
+export function replaceCoordinates(
   newCoords: Partial<UserCoordinates>,
   isManuallySet: boolean = false
 ): UserCoordinates {
-  const prev = existingCoords ?? {};
   return {
-    // Preserve existing fields when not provided in newCoords
-    lat: (newCoords.lat ?? prev.lat)!,
-    lng: (newCoords.lng ?? prev.lng)!,
-    city: newCoords.city ?? prev.city,
-    country: newCoords.country ?? prev.country,
-    region: newCoords.region ?? prev.region,
-    ipDetected: isManuallySet
-      ? false
-      : (newCoords.ipDetected ?? prev.ipDetected ?? true),
+    // Use new coordinates directly - no preservation of old data
+    lat: newCoords.lat!,
+    lng: newCoords.lng!,
+    city: newCoords.city ?? null,
+    countryISO: newCoords.countryISO ?? null,
+    countryName: newCoords.countryName ?? null,
+    region: newCoords.region ?? null,
+    postalCode: newCoords.postalCode ?? null,
+    street: newCoords.street ?? null,
+    ipDetected: isManuallySet ? false : true,
     manuallySet: isManuallySet,
+  };
+}
+
+// Extract structured address components from Google Place Details
+export function extractAddressComponents(components: Array<{ types: string[]; long_name?: string; short_name?: string }>): Partial<SelectedLocation> {
+  const get = (type: string) => components.find(comp => comp.types.includes(type));
+  
+  const city =
+    get("locality")?.long_name ||
+    get("postal_town")?.long_name ||
+    get("sublocality")?.long_name;
+
+  const region =
+    get("administrative_area_level_1")?.short_name ||
+    get("administrative_area_level_2")?.short_name;
+
+  // Enhanced street extraction - properly concatenate route and street number
+  const route = get("route")?.long_name;
+  const streetNumber = get("street_number")?.long_name;
+  const street = route && streetNumber ? `${route} ${streetNumber}` : route || undefined;
+
+  return {
+    city,
+    region,
+    postalCode: get("postal_code")?.long_name,
+    street,
+    countryISO: get("country")?.short_name,
+    countryName: get("country")?.long_name,
   };
 }
 
@@ -321,11 +351,11 @@ export function countryNameFromCode(code?: string, locale = "en"): string {
 }
 
 export function formatLocationFromCoords(
-  coords?: { city?: string; region?: string; country?: string },
+  coords?: { city?: string; region?: string; countryISO?: string },
   locale = "en",
 ): string {
   if (!coords) return "";
-  const country = countryNameFromCode(coords.country, locale);
+  const country = countryNameFromCode(coords.countryISO, locale);
   if (coords.city) return `${coords.city}, ${country}`;
   if (coords.region) return `${coords.region}, ${country}`;
   return country;

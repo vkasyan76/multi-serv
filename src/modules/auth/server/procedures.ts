@@ -12,6 +12,7 @@ import { z } from "zod";
 import type { UserCoordinates } from "@/modules/tenants/types";
 import {
   hasValidCoordinates,
+  replaceCoordinates,
 } from "@/modules/profile/location-utils";
 
 // Consistent ID masking helper for PII protection
@@ -559,11 +560,14 @@ export const authRouter = createTRPCRouter({
             lat: currentUser.coordinates.lat,
             lng: currentUser.coordinates.lng,
             city: (currentUser.coordinates as UserCoordinates).city,
-            country: (currentUser.coordinates as UserCoordinates).country,
-            region: (currentUser.coordinates as UserCoordinates).region,
-            ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
-            manuallySet: (currentUser.coordinates as UserCoordinates)
-              .manuallySet,
+                                                            countryISO: (currentUser.coordinates as UserCoordinates).countryISO,
+                        countryName: (currentUser.coordinates as UserCoordinates).countryName,
+                        region: (currentUser.coordinates as UserCoordinates).region,
+                        postalCode: (currentUser.coordinates as UserCoordinates).postalCode,
+                        street: (currentUser.coordinates as UserCoordinates).street,
+                        ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
+                        manuallySet: (currentUser.coordinates as UserCoordinates)
+                          .manuallySet,
           }
         : undefined,
       onboardingCompleted: currentUser.onboardingCompleted || false,
@@ -697,19 +701,8 @@ export const authRouter = createTRPCRouter({
 
       // If user provides coordinates, mark them as manually set and preserve existing metadata
       let updatedCoordinates = input.coordinates;
-      if (hasValidCoordinates(input.coordinates) && input.coordinates) {
-        const existingCoords = currentUser.coordinates as
-          | Partial<UserCoordinates>
-          | undefined;
-        updatedCoordinates = {
-          lat: input.coordinates.lat,
-          lng: input.coordinates.lng,
-          city: input.coordinates.city ?? existingCoords?.city,
-          country: input.coordinates.country ?? existingCoords?.country,
-          region: input.coordinates.region ?? existingCoords?.region,
-          ipDetected: false, // Manual coordinates
-          manuallySet: true, // Lock against IP overwrite
-        };
+            if (hasValidCoordinates(input.coordinates) && input.coordinates) {
+        updatedCoordinates = replaceCoordinates(input.coordinates, true);
       }
 
       await ctx.db.update({
@@ -747,12 +740,15 @@ export const authRouter = createTRPCRouter({
   updateUserCoordinates: clerkProcedure
     .input(
       z.object({
-        coordinates: z.object({
+                coordinates: z.object({
           lat: z.number(),
           lng: z.number(),
           city: z.string().nullable().optional(),
-          country: z.string().nullable().optional(),
+          countryISO: z.string().nullable().optional(),
+          countryName: z.string().nullable().optional(),
           region: z.string().nullable().optional(),
+          postalCode: z.string().nullable().optional(),
+          street: z.string().nullable().optional(),
         }),
         // NEW: Optional top-level fields
         country: z.string().optional(),  // top-level display name
@@ -805,39 +801,48 @@ export const authRouter = createTRPCRouter({
       // Round coordinates to 3 decimal places for privacy and consistency
       const round = (n: number, d = 3) => Math.round(n * 10 ** d) / 10 ** d;
 
-      // Prepare incoming coordinates
-      const incoming = {
-        country: input.coordinates.country ?? null,
-        region: input.coordinates.region ?? null,
-        city: input.coordinates.city ?? null,
-        lat:
-          input.coordinates.lat != null
-            ? round(input.coordinates.lat, 3)
-            : null,
-        lng:
-          input.coordinates.lng != null
-            ? round(input.coordinates.lng, 3)
-            : null,
-      };
+                      // Prepare incoming coordinates - completely replace, don't merge
+        const incoming = {
+          countryISO: input.coordinates.countryISO ?? null,
+          countryName: input.coordinates.countryName ?? null,
+          region: input.coordinates.region ?? null,
+          city: input.coordinates.city ?? null,
+          postalCode: input.coordinates.postalCode ?? null,
+          street: input.coordinates.street ?? null,
+          lat:
+            input.coordinates.lat != null
+              ? round(input.coordinates.lat, 3)
+              : undefined,
+          lng:
+            input.coordinates.lng != null
+              ? round(input.coordinates.lng, 3)
+              : undefined,
+        };
 
-      // Merge incoming with existing data, preserving manual flag if it exists
-      const merged = {
-        country: incoming.country ?? existing?.country ?? null,
-        region: incoming.region ?? existing?.region ?? null,
-        city: incoming.city ?? existing?.city ?? null,
-        lat: incoming.lat ?? existing?.lat ?? null,
-        lng: incoming.lng ?? existing?.lng ?? null,
-        ipDetected: true,
-        manuallySet: existing?.manuallySet ?? false, // Preserve existing manual flag
-      };
+        // Use incoming coordinates directly - no merging with existing data
+        const merged = {
+          countryISO: incoming.countryISO,
+          countryName: incoming.countryName,
+          region: incoming.region,
+          city: incoming.city,
+          postalCode: incoming.postalCode,
+          street: incoming.street,
+          lat: incoming.lat,
+          lng: incoming.lng,
+          ipDetected: true,
+          manuallySet: existing?.manuallySet ?? false, // Preserve existing manual flag
+        };
 
-      // Check if anything actually changed
-      const changed =
-        merged.country !== existing?.country ||
-        merged.region !== existing?.region ||
-        merged.city !== existing?.city ||
-        merged.lat !== existing?.lat ||
-        merged.lng !== existing?.lng;
+              // Check if anything actually changed
+        const changed =
+          merged.countryISO !== existing?.countryISO ||
+          merged.countryName !== existing?.countryName ||
+          merged.region !== existing?.region ||
+          merged.city !== existing?.city ||
+          merged.postalCode !== existing?.postalCode ||
+          merged.street !== existing?.street ||
+          merged.lat !== existing?.lat ||
+          merged.lng !== existing?.lng;
 
       // Prepare updates object
       const updates: Record<string, unknown> = {
@@ -859,9 +864,13 @@ export const authRouter = createTRPCRouter({
       });
 
       // Log high-level outcome (avoid PII)
-      console.log(
-        `Geo update for user ${userId!.slice(0, 8)}...: stored=${changed}, country=${merged.country || "unknown"}`
-      );
+      const mask = (v?: string | null) => (v ? `${v.slice(0,4)}…${v.slice(-2)}` : "unknown");
+      
+      if (process.env.NODE_ENV !== "production") {
+        console.log(
+          `Geo update for user ${mask(userId)}: stored=${changed}, countryISO=${merged.countryISO ?? "unknown"}`
+        );
+      }
 
       return {
         success: true,

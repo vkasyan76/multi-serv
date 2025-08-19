@@ -180,13 +180,25 @@ export interface User {
      */
     city?: string | null;
     /**
-     * Country name from IP geolocation
+     * Country ISO code (e.g., DE, US)
      */
-    country?: string | null;
+    countryISO?: string | null;
+    /**
+     * Full country name (e.g., Germany, United States)
+     */
+    countryName?: string | null;
     /**
      * Region/state name from IP geolocation
      */
     region?: string | null;
+    /**
+     * Postal/ZIP code
+     */
+    postalCode?: string | null;
+    /**
+     * Street address
+     */
+    street?: string | null;
     /**
      * Whether coordinates were detected from IP
      */
@@ -416,8 +428,11 @@ export interface UsersSelect<T extends boolean = true> {
         lat?: T;
         lng?: T;
         city?: T;
-        country?: T;
+        countryISO?: T;
+        countryName?: T;
         region?: T;
+        postalCode?: T;
+        street?: T;
         ipDetected?: T;
         manuallySet?: T;
       };

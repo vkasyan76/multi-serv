@@ -106,7 +106,7 @@ export default function GeoBootstrap() {
 
         await updateUserCoordinates.mutateAsync({
           coordinates: {
-            country: geo.country ?? null,      // Keep ISO code in coordinates (e.g., "DE")
+            countryISO: geo.country ?? null,   // Keep ISO code in coordinates (e.g., "DE")
             region: geo.region ?? null,
             city: geo.city ?? null,
             lat: latNum,                       // Use normalized number

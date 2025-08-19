@@ -31,11 +31,34 @@ export type TenantWithRelations = Tenant & {
 export type UserCoordinates = {
   lat: number;
   lng: number;
-  city?: string;
-  country?: string;
-  region?: string;
+  city: string | null;
+  countryISO: string | null;   // ISO code (e.g., "DE")
+  countryName: string | null;  // Full country name (e.g., "Germany")
+  region: string | null;
+  postalCode: string | null;
+  street: string | null;
   ipDetected?: boolean;
   manuallySet?: boolean;
+};
+
+// New unified type for location selection
+export type SelectedLocation = {
+  formattedAddress: string;
+  lat?: number;
+  lng?: number;
+  city?: string | null;
+  region?: string | null;
+  postalCode?: string | null;
+  street?: string | null;
+  countryISO?: string | null;    // Store as ISO
+  countryName?: string | null;   // Display only
+};
+
+// Type for autocomplete predictions (client-side only)
+export type PlacePrediction = {
+  place_id: string;
+  description: string;
+  formatted_address?: string;
 };
 
 export type TenantsGetManyInput = {
