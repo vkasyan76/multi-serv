@@ -864,9 +864,13 @@ export const authRouter = createTRPCRouter({
       });
 
       // Log high-level outcome (avoid PII)
-      console.log(
-        `Geo update for user ${userId!.slice(0, 8)}...: stored=${changed}, countryISO=${merged.countryISO || "unknown"}`
-      );
+      const mask = (v?: string | null) => (v ? `${v.slice(0,4)}…${v.slice(-2)}` : "unknown");
+      
+      if (process.env.NODE_ENV !== "production") {
+        console.log(
+          `Geo update for user ${mask(userId)}: stored=${changed}, countryISO=${merged.countryISO ?? "unknown"}`
+        );
+      }
 
       return {
         success: true,
