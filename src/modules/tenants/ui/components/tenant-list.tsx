@@ -9,6 +9,7 @@ import { DEFAULT_LIMIT } from "@/constants";
 import type { TenantWithRelations } from "../../types";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 
 interface Props {
   category?: string;
@@ -34,7 +35,9 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
           category: category || null,
           subcategory: subcategory || null,
           ...filters,
-          ...(isSignedIn ? {} : { distanceFilterEnabled: false, maxDistance: null }),
+          ...(isSignedIn
+            ? {}
+            : { distanceFilterEnabled: false, maxDistance: null }),
           userLat: userProfile?.coordinates?.lat ?? null,
           userLng: userProfile?.coordinates?.lng ?? null,
           limit: DEFAULT_LIMIT,
@@ -72,13 +75,20 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
       {/* Tenant Cards Container */}
       <div className="flex flex-wrap gap-4 justify-start pt-2">
         {allTenants.map((tenant: TenantWithRelations) => (
-          <TenantCard
+          <Link
             key={tenant.id}
-            tenant={tenant}
-            reviewRating={3} // Placeholder - will be replaced with backend data
-            reviewCount={5} // Placeholder - will be replaced with backend data
-            isSignedIn={isSignedIn}
-          />
+            href={`/tenants/${tenant.slug}`}
+            className="block hover:scale-[1.02] transition-transform duration-200"
+          >
+            <TenantCard
+              key={tenant.id}
+              // tenantId={tenant.id}
+              tenant={tenant}
+              reviewRating={3} // Placeholder - will be replaced with backend data
+              reviewCount={5} // Placeholder - will be replaced with backend data
+              isSignedIn={isSignedIn}
+            />
+          </Link>
         ))}
       </div>
 

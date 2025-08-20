@@ -1,11 +1,12 @@
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
-import { Category } from "@payload-types";
+import { Category, Media, Tenant } from "@payload-types";
 import type { Sort, Where } from "payload";
 import { z } from "zod";
 import type { TenantsGetManyOutput } from "../types";
 import { SORT_VALUES } from "@/constants";
 import { calculateDistance } from "../distance-utils";
 import type { TenantWithRelations } from "../types";
+import { TRPCError } from "@trpc/server";
 
 // Helper interface for tenant user data
 interface TenantUserData {
@@ -130,7 +131,10 @@ export const tenantsRouter = createTRPCRouter({
 
       // For price sorting, we need to filter out tenants with undefined hourly rates
       // as they can't be properly sorted by price
-      if (input.sort === "price_low_to_high" || input.sort === "price_high_to_low") {
+      if (
+        input.sort === "price_low_to_high" ||
+        input.sort === "price_high_to_low"
+      ) {
         // Preserve existing price filters and add sorting requirements
         const existingPriceFilter = where.hourlyRate || {};
         where.hourlyRate = {
@@ -150,8 +154,6 @@ export const tenantsRouter = createTRPCRouter({
         pagination: true, // Enable pagination
       });
 
-
-
       // Calculate distances dynamically for the current user
       // Note: Price and tenure sorting are handled by the database query above
       // Only distance sorting requires additional processing after fetching
@@ -159,7 +161,9 @@ export const tenantsRouter = createTRPCRouter({
 
       // FALLBACK: If anonymous user requests distance sorting, fall back to price ascending
       if (input.sort === "distance" && (!input.userLat || !input.userLng)) {
-        console.log("Anonymous user requested distance sorting → falling back to price_low_to_high");
+        console.log(
+          "Anonymous user requested distance sorting → falling back to price_low_to_high"
+        );
         // Re-query with price sorting since we already fetched with distance sorting
         const priceSortedData = await ctx.db.find({
           collection: "tenants",
@@ -174,7 +178,9 @@ export const tenantsRouter = createTRPCRouter({
         Object.assign(data, priceSortedData);
         tenantsWithDistance = data.docs;
       } else if (input.sort === "distance" && input.userLat && input.userLng) {
-        console.log("Signed-in user requested distance sorting → using distance calculation");
+        console.log(
+          "Signed-in user requested distance sorting → using distance calculation"
+        );
       }
 
       // Note: Price sorting is now handled by database query with proper filtering
@@ -187,8 +193,12 @@ export const tenantsRouter = createTRPCRouter({
           // Get tenant location from user coordinates (since tenant is based on user)
           const tenantUser = (tenant as TenantWithRelations).user;
 
-          if (tenantUser?.coordinates?.lat && tenantUser?.coordinates?.lng && 
-              Number.isFinite(tenantUser.coordinates.lat) && Number.isFinite(tenantUser.coordinates.lng)) {
+          if (
+            tenantUser?.coordinates?.lat &&
+            tenantUser?.coordinates?.lng &&
+            Number.isFinite(tenantUser.coordinates.lat) &&
+            Number.isFinite(tenantUser.coordinates.lng)
+          ) {
             distance = calculateDistance(
               input.userLat!,
               input.userLng!,
@@ -198,12 +208,16 @@ export const tenantsRouter = createTRPCRouter({
           }
 
           // Safely extract user data with proper typing
-          const userData: TenantUserData | undefined = tenantUser && typeof tenantUser === 'object' ? {
-            id: tenantUser.id || '',
-            coordinates: tenantUser.coordinates || undefined,
-            // Add Clerk image URL for fallback - safely access properties
-            clerkImageUrl: (tenantUser as TenantUserData)?.clerkImageUrl || null,
-          } : undefined;
+          const userData: TenantUserData | undefined =
+            tenantUser && typeof tenantUser === "object"
+              ? {
+                  id: tenantUser.id || "",
+                  coordinates: tenantUser.coordinates || undefined,
+                  // Add Clerk image URL for fallback - safely access properties
+                  clerkImageUrl:
+                    (tenantUser as TenantUserData)?.clerkImageUrl || null,
+                }
+              : undefined;
 
           return {
             ...tenant,
@@ -231,28 +245,34 @@ export const tenantsRouter = createTRPCRouter({
           });
 
           // Combine sorted tenants with coordinates + tenants without coordinates
-          tenantsWithDistance = [...tenantsWithCoordinates, ...tenantsWithoutCoordinates];
+          tenantsWithDistance = [
+            ...tenantsWithCoordinates,
+            ...tenantsWithoutCoordinates,
+          ];
         }
       }
 
       // NEW: Apply distance filter if enabled and maxDistance is set
-      if (input.distanceFilterEnabled && input.maxDistance && input.maxDistance > 0) {
+      if (
+        input.distanceFilterEnabled &&
+        input.maxDistance &&
+        input.maxDistance > 0
+      ) {
         const beforeCount = tenantsWithDistance.length;
         tenantsWithDistance = tenantsWithDistance.filter(
-          (t) => (t as TenantWithRelations).distance === null || 
-                  (t as TenantWithRelations).distance! <= input.maxDistance!
+          (t) =>
+            (t as TenantWithRelations).distance === null ||
+            (t as TenantWithRelations).distance! <= input.maxDistance!
         );
-        console.log(`Distance filter applied: ${beforeCount} → ${tenantsWithDistance.length} tenants (max: ${input.maxDistance}km)`);
+        console.log(
+          `Distance filter applied: ${beforeCount} → ${tenantsWithDistance.length} tenants (max: ${input.maxDistance}km)`
+        );
       }
-
-
 
       // console.log("Query results:", data.docs.length);
 
       // Artificial delay for development/testing:
       // await new Promise((resolve) => setTimeout(resolve, 5000));
-
-
 
       return {
         ...data,
@@ -268,5 +288,34 @@ export const tenantsRouter = createTRPCRouter({
         limit: data.limit,
         pagingCounter: data.pagingCounter,
       } as TenantsGetManyOutput;
+    }),
+
+  getOne: baseProcedure
+    .input(
+      z.object({
+        slug: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // set-up for pagination:
+      const tenantsData = await ctx.db.find({
+        collection: "tenants",
+        depth: 1, // tenant.image is  a type of media (default depth is 2, so this is optional)
+        where: {
+          slug: {
+            equals: input.slug,
+          },
+        },
+        limit: 1,
+        pagination: false,
+      });
+
+      const tenant = tenantsData.docs[0];
+
+      if (!tenant) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      }
+
+      return tenant as Tenant & { image: Media | null };
     }),
 });
