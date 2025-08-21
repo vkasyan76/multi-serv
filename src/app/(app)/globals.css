@@ -76,6 +76,32 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Header height variables for sticky positioning */
+  --hdr: 120px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --hdr: 140px;
+  }
+}
+
+.sticky-under-headers {
+  top: var(--hdr);
+}
+
+.anchor-section {
+  scroll-margin-top: var(--hdr);
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 .dark {

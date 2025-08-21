@@ -23,10 +23,8 @@ export const Footer = ({ slug }: FooterProps) => {
   return (
     <footer className="border-t font-medium bg-white">
       <div className="max-w-[var(--breakpoint-xl)] mx-auto px-3 sm:px-4 lg:px-12 py-4 sm:py-6">
-        {/* One responsive layout: 
-           - Mobile: 2 cols (left tenant, right brand), contact spans both on row 2
-           - ≥sm:    3 cols (tenant | contact | brand) all in one row */}
-        <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[auto_1fr_auto] items-center gap-3 sm:gap-4">
+        {/* Responsive layout with better spacing */}
+        <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[auto_1fr_auto] items-center gap-4 sm:gap-6">
           {/* Left: Tenant Info */}
           <div className="col-start-1 row-start-1 flex items-center gap-3">
             {tenant?.image?.url && (
@@ -70,18 +68,18 @@ export const Footer = ({ slug }: FooterProps) => {
             </span>
           </Link>
 
-          {/* Middle: Contact Information */}
+          {/* Middle: Contact Information - Better responsive handling */}
           {(tenant?.phone || tenant?.website) && (
-            <div className="col-span-2 row-start-2 sm:col-start-2 sm:row-start-1 flex items-center justify-between lg:justify-center gap-4 lg:gap-10 min-w-0 px-0 sm:px-4 text-xs sm:text-sm">
+            <div className="col-span-2 row-start-2 sm:col-start-2 sm:row-start-1 flex items-center justify-between lg:justify-center gap-4 sm:gap-6 lg:gap-10 min-w-0 px-0 sm:px-4 text-xs sm:text-sm">
               {tenant?.phone && (
                 <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-600">{tenant.phone}</span>
+                  <Phone className="w-4 h-4 text-gray-500 shrink-0" />
+                  <span className="text-gray-600 truncate">{tenant.phone}</span>
                 </div>
               )}
               {tenant?.website && (
                 <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-gray-500" />
+                  <Globe className="w-4 h-4 text-gray-500 shrink-0" />
                   <a
                     href={
                       tenant.website.startsWith("http")
@@ -90,7 +88,7 @@ export const Footer = ({ slug }: FooterProps) => {
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline truncate"
+                    className="text-blue-600 hover:underline truncate max-w-[120px] sm:max-w-none"
                   >
                     {tenant.website}
                   </a>
