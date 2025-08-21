@@ -2,10 +2,12 @@
 
 import { MapPin, Clock, Monitor, MapPinOff, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import type { TenantWithRelations } from "../../types";
 import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
 import { formatDateForLocale, formatNumberForLocale } from "@/modules/profile/location-utils";
+import { cn } from "@/lib/utils";
 
 // Helper function to format market tenure - now uses consistent locale
 const formatMarketTenure = (createdAt: string): string => {
@@ -29,6 +31,10 @@ interface TenantCardProps {
   reviewRating?: number;
   reviewCount?: number;
   isSignedIn: boolean;
+  variant?: "list" | "detail";   // NEW: layout control
+  showActions?: boolean;          // NEW: button rendering control
+  onBook?: () => void;           // NEW: optional handler
+  onContact?: () => void;        // NEW: optional handler
 }
 
 export const TenantCard = ({
@@ -36,6 +42,10 @@ export const TenantCard = ({
   reviewRating = 3,
   reviewCount = 5,
   isSignedIn,
+  variant = "list",              // NEW
+  showActions = false,           // NEW
+  onBook,                        // NEW
+  onContact,                     // NEW
 }: TenantCardProps) => {
 
   // Helper function to handle image errors
@@ -51,8 +61,16 @@ export const TenantCard = ({
     }
   };
 
+  // Responsive width logic (ChatGPT's approach)
+  const wrapperClass = cn(
+    "border rounded-lg bg-white p-5 hover:shadow-lg transition-all duration-200 hover:border-blue-200",
+    variant === "list"
+      ? "w-[280px] max-w-[320px] flex-shrink-0"
+      : "w-full lg:w-[320px] lg:max-w-[320px] lg:flex-shrink-0"
+  );
+
   return (
-    <div className="border rounded-lg bg-white p-5 hover:shadow-lg transition-all duration-200 hover:border-blue-200 w-[280px] flex-shrink-0 flex-1 max-w-[320px]">
+    <div className={wrapperClass}>
       {/* Header with image and price/service types in flex column layout */}
       <div className="flex gap-4 mb-4">
         {/* Left Column: Tenant Image */}
@@ -183,6 +201,29 @@ export const TenantCard = ({
           </div>
         </div>
       </div>
+
+      {/* NEW: Action buttons with proper a11y (ChatGPT's refinements) */}
+      {showActions && (
+        <div className="mt-4 grid grid-cols-1 gap-2">
+          <Button
+            size="lg"
+            className="w-full"
+            aria-label="Book service"
+            onClick={onBook ?? (() => console.log("TODO: Book service"))}
+          >
+            Book service
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full"
+            aria-label="Contact provider"
+            onClick={onContact ?? (() => console.log("TODO: Contact"))}
+          >
+            Contact
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

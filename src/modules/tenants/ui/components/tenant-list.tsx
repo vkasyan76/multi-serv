@@ -88,6 +88,8 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
               reviewRating={3} // Placeholder - will be replaced with backend data
               reviewCount={5} // Placeholder - will be replaced with backend data
               isSignedIn={isSignedIn}
+              variant="list"
+              // showActions defaults to false, so no buttons
             />
           </Link>
         ))}

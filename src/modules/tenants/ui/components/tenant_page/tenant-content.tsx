@@ -6,36 +6,45 @@ import { TenantCard } from "@/modules/tenants/ui/components/tenant-card";
 import { normalizeForCard } from "@/modules/tenants/utils/normalize-for-card";
 import type { Category } from "@/payload-types";
 import { useUser } from "@clerk/nextjs";
-import { Phone, Globe } from "lucide-react";
 
 export default function TenantContent({ slug }: { slug: string }) {
   const trpc = useTRPC();
   const { isSignedIn } = useUser();
 
-  // The single-tenant data (old getOne stays as-is)
   const { data: tenantRaw } = useSuspenseQuery(
     trpc.tenants.getOne.queryOptions({ slug })
   ); // returns Tenant & { image: Media | null }
 
-  // Fetch viewer profile to derive coords (same approach as list view)
   const { data: userProfile } = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
     enabled: !!isSignedIn,
   });
 
   const viewerCoords =
-    userProfile?.coordinates?.lat != null && userProfile?.coordinates?.lng != null
+    userProfile?.coordinates?.lat != null &&
+    userProfile?.coordinates?.lng != null
       ? { lat: userProfile.coordinates.lat, lng: userProfile.coordinates.lng }
       : null;
 
-  // ✅ Normalize to the shape expected by TenantCard
   const cardTenant = normalizeForCard(tenantRaw, viewerCoords);
 
   return (
-    <div className="max-w-[var(--breakpoint-xl)] mx-auto px-3 sm:px-4 lg:px-12 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+    <div className="max-w-[var(--breakpoint-xl)] mx-auto px-3 sm:px-4 lg:px-12 py-2">
+      {/* NEW: Mobile card above grid (ChatGPT's approach) */}
+      <section className="lg:hidden mb-2">
+        <TenantCard
+          tenant={cardTenant}
+          reviewRating={4.5}
+          reviewCount={12}
+          isSignedIn={!!isSignedIn}
+          variant="detail"
+          showActions
+        />
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         {/* Main Content - Left Column */}
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* About Section */}
           <section
             id="about"
@@ -73,7 +82,6 @@ export default function TenantContent({ slug }: { slug: string }) {
                 </div>
               )}
 
-              {/* Categories */}
               {tenantRaw?.categories && tenantRaw.categories.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Categories</h3>
@@ -94,28 +102,32 @@ export default function TenantContent({ slug }: { slug: string }) {
                 </div>
               )}
 
-              {/* Subcategories */}
-              {tenantRaw?.subcategories && tenantRaw.subcategories.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Subcategories</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {tenantRaw.subcategories.map((subcategory: string | Category) => (
-                      <span
-                        key={
-                          typeof subcategory === "string"
-                            ? subcategory
-                            : subcategory.id
-                        }
-                        className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
-                      >
-                        {typeof subcategory === "string"
-                          ? subcategory
-                          : subcategory.name}
-                      </span>
-                    ))}
+              {tenantRaw?.subcategories &&
+                tenantRaw.subcategories.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Subcategories
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {tenantRaw.subcategories.map(
+                        (subcategory: string | Category) => (
+                          <span
+                            key={
+                              typeof subcategory === "string"
+                                ? subcategory
+                                : subcategory.id
+                            }
+                            className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                          >
+                            {typeof subcategory === "string"
+                              ? subcategory
+                              : subcategory.name}
+                          </span>
+                        )
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </section>
 
@@ -149,57 +161,19 @@ export default function TenantContent({ slug }: { slug: string }) {
           </section>
         </div>
 
-        {/* Sticky Sidebar - Right Column */}
+        {/* Desktop Sidebar - Right Column (updated with new props) */}
         <aside className="hidden lg:block">
           <div className="sticky top-[104px] sm:top-[120px] lg:top-[64px] space-y-4">
-            {/* ✅ Tenant Card now gets the normalized shape */}
+            {/* Desktop tenant card with action buttons */}
             <TenantCard
               tenant={cardTenant}
               reviewRating={4.5}
               reviewCount={12}
               isSignedIn={!!isSignedIn}
+              variant="detail"
+              showActions
             />
-
-            {/* Contact Information */}
-            {(tenantRaw?.phone || tenantRaw?.website) && (
-              <div className="bg-white p-4 rounded-lg border space-y-3">
-                <h3 className="font-semibold text-gray-900">Contact</h3>
-                {tenantRaw.phone && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Phone className="w-4 h-4" />
-                    <span>{tenantRaw.phone}</span>
-                  </div>
-                )}
-                {tenantRaw.website && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Globe className="w-4 h-4" />
-                    <a
-                      href={
-                        tenantRaw.website.startsWith("http")
-                          ? tenantRaw.website
-                          : `https://${tenantRaw.website}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline truncate"
-                    >
-                      {tenantRaw.website}
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Pricing */}
-            {tenantRaw?.hourlyRate && (
-              <div className="bg-white p-4 rounded-lg border">
-                <h3 className="font-semibold text-gray-900 mb-2">Pricing</h3>
-                <div className="text-2xl font-bold text-green-600">
-                  €{tenantRaw.hourlyRate}/hr
-                </div>
-                <p className="text-sm text-gray-600">Hourly rate</p>
-              </div>
-            )}
+            {/* REMOVED: Contact and Pricing sections - now redundant */}
           </div>
         </aside>
       </div>
