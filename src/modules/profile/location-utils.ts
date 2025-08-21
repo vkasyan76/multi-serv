@@ -360,3 +360,25 @@ export function formatLocationFromCoords(
   if (coords.region) return `${coords.region}, ${country}`;
   return country;
 }
+
+export function formatDateForLocale(date: Date | string, options?: Intl.DateTimeFormatOptions) {
+  const { locale } = getLocaleAndCurrency();
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  return dateObj.toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    ...options
+  });
+}
+
+export function formatNumberForLocale(value: number, options?: Intl.NumberFormatOptions) {
+  const { locale } = getLocaleAndCurrency();
+  
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+    ...options
+  }).format(value);
+}

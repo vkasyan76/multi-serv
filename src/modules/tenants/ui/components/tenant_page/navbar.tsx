@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { TenantSubnav } from "./tenant-subnav";
-import { generateTenantUrl } from "@/lib/utils";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["700"] });
 
@@ -22,7 +21,7 @@ export const Navbar = ({ slug }: Props) => {
   );
 
   return (
-    <div className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
+    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
       <div className="max-w-[var(--breakpoint-xl)] mx-auto px-3 sm:px-4 lg:px-12">
         {/* Large screens: Single row layout */}
         <div className="hidden lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-4 lg:h-16">
@@ -37,7 +36,12 @@ export const Navbar = ({ slug }: Props) => {
                 alt={tenant?.name ?? "Tenant"}
               />
             )}
-            <p className={cn("text-xl font-semibold truncate", poppins.className)}>
+            <p
+              className={cn(
+                "text-xl font-semibold truncate",
+                poppins.className
+              )}
+            >
               {tenant?.name}
             </p>
           </div>
@@ -59,7 +63,9 @@ export const Navbar = ({ slug }: Props) => {
                 height={28}
                 className="shrink-0"
               />
-              <span className={cn("text-base font-semibold", poppins.className)}>
+              <span
+                className={cn("text-base font-semibold", poppins.className)}
+              >
                 Infinisimo
               </span>
             </Link>
@@ -81,7 +87,12 @@ export const Navbar = ({ slug }: Props) => {
                   alt={tenant?.name ?? "Tenant"}
                 />
               )}
-              <p className={cn("text-lg sm:text-xl font-semibold truncate", poppins.className)}>
+              <p
+                className={cn(
+                  "text-lg sm:text-xl font-semibold truncate",
+                  poppins.className
+                )}
+              >
                 {tenant?.name}
               </p>
             </div>
@@ -95,7 +106,9 @@ export const Navbar = ({ slug }: Props) => {
                 height={24}
                 className="shrink-0"
               />
-              <span className={cn("text-base font-semibold", poppins.className)}>
+              <span
+                className={cn("text-base font-semibold", poppins.className)}
+              >
                 Infinisimo
               </span>
             </div>
@@ -109,7 +122,7 @@ export const Navbar = ({ slug }: Props) => {
           </div>
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 
@@ -129,7 +142,10 @@ export const NavbarSkeleton = () => {
           <div className="flex justify-center">
             <div className="flex gap-3 sm:gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-20 h-8 bg-gray-200 rounded-full animate-pulse" />
+                <div
+                  key={i}
+                  className="w-20 h-8 bg-gray-200 rounded-full animate-pulse"
+                />
               ))}
             </div>
           </div>
@@ -165,7 +181,10 @@ export const NavbarSkeleton = () => {
             <div className="h-12 sm:h-14 flex items-center justify-center px-3">
               <div className="flex gap-2 sm:gap-3">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-16 sm:w-20 h-8 bg-gray-200 rounded-full animate-pulse" />
+                  <div
+                    key={i}
+                    className="w-16 sm:w-20 h-8 bg-gray-200 rounded-full animate-pulse"
+                  />
                 ))}
               </div>
             </div>

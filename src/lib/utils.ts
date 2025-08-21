@@ -12,7 +12,8 @@ export function generateTenantUrl(tenantSlug: string) {
 
   // In development or subdomain routing disabled mode, use normal routing
   if (isDevelopment || !isSubdomainRoutingEnabled) {
-    return `${process.env.NEXT_PUBLIC_APP_URL}/tenants/${tenantSlug}`;
+    // return `${process.env.NEXT_PUBLIC_APP_URL}/tenants/${tenantSlug}`;
+    return `/tenants/${tenantSlug}`; // relative path for SPA nav & prefetch
   }
 
   const protocol = "https";

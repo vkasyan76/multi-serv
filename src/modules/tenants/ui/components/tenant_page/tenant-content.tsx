@@ -1,18 +1,35 @@
 "use client";
 
 import { useTRPC } from "@/trpc/client";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { TenantCard } from "@/modules/tenants/ui/components/tenant-card";
-import { Phone, Globe } from "lucide-react";
+import { normalizeForCard } from "@/modules/tenants/utils/normalize-for-card";
+import type { Category } from "@/payload-types";
 import { useUser } from "@clerk/nextjs";
+import { Phone, Globe } from "lucide-react";
 
 export default function TenantContent({ slug }: { slug: string }) {
   const trpc = useTRPC();
   const { isSignedIn } = useUser();
 
-  const { data: tenant } = useSuspenseQuery(
+  // The single-tenant data (old getOne stays as-is)
+  const { data: tenantRaw } = useSuspenseQuery(
     trpc.tenants.getOne.queryOptions({ slug })
-  );
+  ); // returns Tenant & { image: Media | null }
+
+  // Fetch viewer profile to derive coords (same approach as list view)
+  const { data: userProfile } = useQuery({
+    ...trpc.auth.getUserProfile.queryOptions(),
+    enabled: !!isSignedIn,
+  });
+
+  const viewerCoords =
+    userProfile?.coordinates?.lat != null && userProfile?.coordinates?.lng != null
+      ? { lat: userProfile.coordinates.lat, lng: userProfile.coordinates.lng }
+      : null;
+
+  // ✅ Normalize to the shape expected by TenantCard
+  const cardTenant = normalizeForCard(tenantRaw, viewerCoords);
 
   return (
     <div className="max-w-[var(--breakpoint-xl)] mx-auto px-3 sm:px-4 lg:px-12 py-6">
@@ -27,7 +44,7 @@ export default function TenantContent({ slug }: { slug: string }) {
             <h2 className="text-2xl font-bold mb-4">About</h2>
             <div className="prose max-w-none">
               <p className="text-gray-700 leading-relaxed">
-                {tenant?.bio || "No bio available."}
+                {tenantRaw?.bio || "No bio available."}
               </p>
             </div>
           </section>
@@ -40,11 +57,11 @@ export default function TenantContent({ slug }: { slug: string }) {
             <h2 className="text-2xl font-bold mb-4">Services</h2>
             <div className="space-y-4">
               {/* Service Types */}
-              {tenant?.services && tenant.services.length > 0 && (
+              {tenantRaw?.services && tenantRaw.services.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Service Types</h3>
                   <div className="flex flex-wrap gap-2">
-                    {tenant.services.map((service) => (
+                    {tenantRaw.services.map((service: string) => (
                       <span
                         key={service}
                         className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
@@ -57,11 +74,11 @@ export default function TenantContent({ slug }: { slug: string }) {
               )}
 
               {/* Categories */}
-              {tenant?.categories && tenant.categories.length > 0 && (
+              {tenantRaw?.categories && tenantRaw.categories.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Categories</h3>
                   <div className="flex flex-wrap gap-2">
-                    {tenant.categories.map((category) => (
+                    {tenantRaw.categories.map((category: string | Category) => (
                       <span
                         key={
                           typeof category === "string" ? category : category.id
@@ -78,11 +95,11 @@ export default function TenantContent({ slug }: { slug: string }) {
               )}
 
               {/* Subcategories */}
-              {tenant?.subcategories && tenant.subcategories.length > 0 && (
+              {tenantRaw?.subcategories && tenantRaw.subcategories.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Subcategories</h3>
                   <div className="flex flex-wrap gap-2">
-                    {tenant.subcategories.map((subcategory) => (
+                    {tenantRaw.subcategories.map((subcategory: string | Category) => (
                       <span
                         key={
                           typeof subcategory === "string"
@@ -135,38 +152,38 @@ export default function TenantContent({ slug }: { slug: string }) {
         {/* Sticky Sidebar - Right Column */}
         <aside className="hidden lg:block">
           <div className="sticky top-[104px] sm:top-[120px] lg:top-[64px] space-y-4">
-            {/* Tenant Card */}
+            {/* ✅ Tenant Card now gets the normalized shape */}
             <TenantCard
-              tenant={tenant}
+              tenant={cardTenant}
               reviewRating={4.5}
               reviewCount={12}
-              isSignedIn={isSignedIn ?? false}
+              isSignedIn={!!isSignedIn}
             />
 
             {/* Contact Information */}
-            {(tenant?.phone || tenant?.website) && (
+            {(tenantRaw?.phone || tenantRaw?.website) && (
               <div className="bg-white p-4 rounded-lg border space-y-3">
                 <h3 className="font-semibold text-gray-900">Contact</h3>
-                {tenant.phone && (
+                {tenantRaw.phone && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Phone className="w-4 h-4" />
-                    <span>{tenant.phone}</span>
+                    <span>{tenantRaw.phone}</span>
                   </div>
                 )}
-                {tenant.website && (
+                {tenantRaw.website && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Globe className="w-4 h-4" />
                     <a
                       href={
-                        tenant.website.startsWith("http")
-                          ? tenant.website
-                          : `https://${tenant.website}`
+                        tenantRaw.website.startsWith("http")
+                          ? tenantRaw.website
+                          : `https://${tenantRaw.website}`
                       }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline truncate"
                     >
-                      {tenant.website}
+                      {tenantRaw.website}
                     </a>
                   </div>
                 )}
@@ -174,11 +191,11 @@ export default function TenantContent({ slug }: { slug: string }) {
             )}
 
             {/* Pricing */}
-            {tenant?.hourlyRate && (
+            {tenantRaw?.hourlyRate && (
               <div className="bg-white p-4 rounded-lg border">
                 <h3 className="font-semibold text-gray-900 mb-2">Pricing</h3>
                 <div className="text-2xl font-bold text-green-600">
-                  €{tenant.hourlyRate}/hr
+                  €{tenantRaw.hourlyRate}/hr
                 </div>
                 <p className="text-sm text-gray-600">Hourly rate</p>
               </div>

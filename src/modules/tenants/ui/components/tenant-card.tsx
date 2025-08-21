@@ -5,11 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import type { TenantWithRelations } from "../../types";
 import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
+import { formatDateForLocale, formatNumberForLocale } from "@/modules/profile/location-utils";
 
-// Helper function to format market tenure - simple date format
+// Helper function to format market tenure - now uses consistent locale
 const formatMarketTenure = (createdAt: string): string => {
-  const created = new Date(createdAt);
-  return created.toLocaleDateString();
+  return formatDateForLocale(createdAt);
 };
 
 // Helper function to render star rating
@@ -141,11 +141,8 @@ export const TenantCard = ({
       <div className="mb-3">
         <div className="flex items-center gap-1">
           <div className="flex items-center">{renderStars(reviewRating)}</div>
-          <span className="text-sm text-gray-500 ml-1">
-            {new Intl.NumberFormat(navigator.language, {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-            }).format(reviewRating)}{" "}
+          <span className="text-sm text-gray-500 ml-1" suppressHydrationWarning>
+            {formatNumberForLocale(reviewRating)}{" "}
             ({reviewCount} reviews)
           </span>
         </div>
@@ -170,17 +167,19 @@ export const TenantCard = ({
             )
           ) : (
             // Show sign-in prompt for anonymous users
-                         <AuthTooltip isSignedIn={!!isSignedIn}>
-               <div className="flex items-center gap-1 cursor-help">
-                 <span className="text-gray-400">Sign in to see distance</span>
-               </div>
-             </AuthTooltip>
+            <AuthTooltip isSignedIn={!!isSignedIn}>
+              <div className="flex items-center gap-1 cursor-help">
+                <span className="text-gray-400">Sign in to see distance</span>
+              </div>
+            </AuthTooltip>
           )}
 
           {/* Market Tenure */}
           <div className="flex items-center gap-1">
             <Clock className="h-4 w-4 text-green-600" />
-            <span>{formatMarketTenure(tenant.createdAt)}</span>
+            <span suppressHydrationWarning>
+              {formatMarketTenure(tenant.createdAt)}
+            </span>
           </div>
         </div>
       </div>

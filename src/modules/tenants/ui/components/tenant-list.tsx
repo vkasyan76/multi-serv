@@ -10,6 +10,7 @@ import type { TenantWithRelations } from "../../types";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { generateTenantUrl } from "@/lib/utils";
 
 interface Props {
   category?: string;
@@ -77,12 +78,12 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
         {allTenants.map((tenant: TenantWithRelations) => (
           <Link
             key={tenant.id}
-            href={`/tenants/${tenant.slug}`}
+            // href={`/tenants/${tenant.slug}`}
+            href={generateTenantUrl(tenant.slug)}
             className="block hover:scale-[1.02] transition-transform duration-200"
           >
             <TenantCard
               key={tenant.id}
-              // tenantId={tenant.id}
               tenant={tenant}
               reviewRating={3} // Placeholder - will be replaced with backend data
               reviewCount={5} // Placeholder - will be replaced with backend data
