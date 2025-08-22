@@ -1,18 +1,13 @@
 "use client";
 
-import { MapPin, Clock, Monitor, MapPinOff, Star, BadgeCheck } from "lucide-react";
+import { MapPin, Monitor, MapPinOff, Star, BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import type { TenantWithRelations } from "../../types";
 import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
-import { formatDateForLocale, formatMonthYearForLocale, formatNumberForLocale, formatIntegerForLocale } from "@/modules/profile/location-utils";
+import { formatMonthYearForLocale, formatNumberForLocale, formatIntegerForLocale, formatOneDecimalForLocale } from "@/modules/profile/location-utils";
 import { cn } from "@/lib/utils";
-
-// Helper function to format market tenure - now uses consistent locale
-const formatMarketTenure = (createdAt: string): string => {
-  return formatMonthYearForLocale(createdAt);
-};
 
 // Helper function to handle image errors
 const handleImageError = (
@@ -164,7 +159,9 @@ export const TenantCard = ({
                 canShowDistance ? (
                   <span className="inline-flex items-center gap-1">
                     <MapPin className="h-4 w-4 text-blue-600 shrink-0" />
-                    <span>{tenant.distance!.toFixed(1)} km</span>
+                    <span suppressHydrationWarning>
+                      {formatOneDecimalForLocale(tenant.distance!)} km
+                    </span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1">

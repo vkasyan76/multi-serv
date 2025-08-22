@@ -140,17 +140,20 @@ export function replaceCoordinates(
   newCoords: Partial<UserCoordinates>,
   isManuallySet: boolean = false
 ): UserCoordinates {
+  if (newCoords.lat == null || newCoords.lng == null) {
+    throw new Error("replaceCoordinates requires both lat and lng.");
+  }
   return {
     // Use new coordinates directly - no preservation of old data
-    lat: newCoords.lat!,
-    lng: newCoords.lng!,
+    lat: newCoords.lat,
+    lng: newCoords.lng,
     city: newCoords.city ?? null,
     countryISO: newCoords.countryISO ?? null,
     countryName: newCoords.countryName ?? null,
     region: newCoords.region ?? null,
     postalCode: newCoords.postalCode ?? null,
     street: newCoords.street ?? null,
-    ipDetected: isManuallySet ? false : true,
+    ipDetected: !isManuallySet,
     manuallySet: isManuallySet,
   };
 }
@@ -380,7 +383,10 @@ export function formatNumberForLocale(
   const { locale } = getLocaleAndCurrency();
 
   // Extract and normalize
-  let { minimumFractionDigits, maximumFractionDigits, ...rest } = opts;
+  let { minimumFractionDigits, maximumFractionDigits } = opts;
+  const rest = { ...opts };
+  delete rest.minimumFractionDigits;
+  delete rest.maximumFractionDigits;
 
   // Default only if BOTH are missing (maintains your previous default of 1)
   if (minimumFractionDigits == null && maximumFractionDigits == null) {
