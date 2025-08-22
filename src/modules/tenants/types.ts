@@ -22,6 +22,14 @@ export type TenantWithRelations = Tenant & {
     coordinates?: {
       lat: number;
       lng: number;
+      city?: string | null;
+      countryISO?: string | null;
+      countryName?: string | null;
+      region?: string | null;
+      postalCode?: string | null;
+      street?: string | null;
+      ipDetected?: boolean;
+      manuallySet?: boolean;
     };
     clerkImageUrl?: string | null; // Clerk profile image URL for fallback
   };
