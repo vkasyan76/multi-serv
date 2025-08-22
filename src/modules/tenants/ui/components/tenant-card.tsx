@@ -1,12 +1,24 @@
 "use client";
 
-import { MapPin, Monitor, MapPinOff, Star, BadgeCheck } from "lucide-react";
+import {
+  MapPin,
+  Monitor,
+  MapPinOff,
+  Star,
+  BadgeCheck,
+  // Lock,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import type { TenantWithRelations } from "../../types";
 import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
-import { formatMonthYearForLocale, formatNumberForLocale, formatIntegerForLocale, formatOneDecimalForLocale } from "@/modules/profile/location-utils";
+import {
+  formatMonthYearForLocale,
+  formatNumberForLocale,
+  formatIntegerForLocale,
+  formatOneDecimalForLocale,
+} from "@/modules/profile/location-utils";
 import { cn } from "@/lib/utils";
 
 // Helper function to handle image errors
@@ -27,10 +39,10 @@ interface TenantCardProps {
   reviewRating?: number;
   reviewCount?: number;
   isSignedIn: boolean;
-  variant?: "list" | "detail";   // NEW: layout control
-  showActions?: boolean;          // NEW: button rendering control
-  onBook?: () => void;           // NEW: optional handler
-  onContact?: () => void;        // NEW: optional handler
+  variant?: "list" | "detail"; // NEW: layout control
+  showActions?: boolean; // NEW: button rendering control
+  onBook?: () => void; // NEW: optional handler
+  onContact?: () => void; // NEW: optional handler
   ordersCount?: number; // NEW: optional orders count
 }
 
@@ -45,11 +57,11 @@ export const TenantCard = ({
   onContact,
   ordersCount, // NEW
 }: TenantCardProps) => {
-
   // Edge case variables for cleaner logic
   const hasServices = !!tenant.services?.length;
   const canShowDistance = isSignedIn && tenant.distance != null;
   const showDistanceRow = hasServices || isSignedIn; // we still render a left block (unavailable / tooltip) for balance
+  // const isList = variant === "list";
 
   // Responsive width logic with group hover
   const wrapperClass = cn(
@@ -62,17 +74,21 @@ export const TenantCard = ({
   return (
     <div className={wrapperClass}>
       {/* Image Section with aspect ratio instead of fixed height */}
-      <div className={cn(
-        "relative overflow-hidden rounded-t-lg",
-        variant === "list" ? "aspect-[16/9]" : "aspect-[4/3]"
-      )}>
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-t-lg",
+          variant === "list" ? "aspect-[16/9]" : "aspect-[4/3]"
+        )}
+      >
         {tenant.image?.url || tenant.user?.clerkImageUrl ? (
           <Image
             src={(tenant.image?.url || tenant.user?.clerkImageUrl) ?? ""}
             alt={tenant.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            sizes={variant === "list" ? "(min-width:1024px) 320px, 90vw" : "320px"}
+            sizes={
+              variant === "list" ? "(min-width:1024px) 320px, 90vw" : "320px"
+            }
             onError={handleImageError}
             // Remove unoptimized in production
           />
@@ -83,17 +99,23 @@ export const TenantCard = ({
             </span>
           </div>
         )}
-        
+
         {/* Subtle gradient for overlay readability */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-        
+
         {/* Enhanced Rating Overlay with accessibility */}
         {reviewCount > 0 ? (
           <div className="absolute top-2 right-2 rounded-full bg-black/70 backdrop-blur px-2 py-1 text-white text-xs flex items-center gap-1">
-            <Star aria-hidden className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+            <Star
+              aria-hidden
+              className="h-3 w-3 text-yellow-400 fill-yellow-400"
+            />
             <span className="sr-only">Rating</span>
             <span suppressHydrationWarning>
-              {formatNumberForLocale(reviewRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+              {formatNumberForLocale(reviewRating, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              })}
             </span>
             <span className="opacity-80">({reviewCount})</span>
           </div>
@@ -111,7 +133,10 @@ export const TenantCard = ({
           <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3 py-1 truncate">
             {tenant.name}
           </Badge>
-          <Badge variant="outline" className="text-gray-700 text-sm font-medium px-3 py-1 border-gray-300 truncate">
+          <Badge
+            variant="outline"
+            className="text-gray-700 text-sm font-medium px-3 py-1 border-gray-300 truncate"
+          >
             {tenant.firstName} {tenant.lastName}
           </Badge>
         </div>
@@ -130,7 +155,8 @@ export const TenantCard = ({
                 <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
                 <span className="truncate text-gray-700">
                   {tenant.user.coordinates.city}
-                  {tenant.user.coordinates.countryISO && `, ${tenant.user.coordinates.countryISO}`}
+                  {tenant.user.coordinates.countryISO &&
+                    `, ${tenant.user.coordinates.countryISO}`}
                 </span>
               </div>
             )}
@@ -152,39 +178,57 @@ export const TenantCard = ({
 
         {/* Distance + Services (single row) */}
         {showDistanceRow && (
-          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 min-h-[28px]">
             {/* Left: Distance / hint / unavailable */}
-            <div className="flex items-center gap-1 text-sm text-gray-500 min-w-0">
+            <div className="flex items-center gap-1 text-gray-500 min-w-0">
               {isSignedIn ? (
                 canShowDistance ? (
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1 text-sm">
                     <MapPin className="h-4 w-4 text-blue-600 shrink-0" />
-                    <span suppressHydrationWarning>
+                    <span className="tabular-nums" suppressHydrationWarning>
                       {formatOneDecimalForLocale(tenant.distance!)} km
                     </span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1 text-sm">
                     <MapPinOff className="h-4 w-4 text-gray-400 shrink-0" />
-                    <span>Distance unavailable</span>
+                    <span className="truncate max-w-[10ch]">Unavailable</span>
                   </span>
                 )
               ) : (
-                <AuthTooltip isSignedIn={!!isSignedIn}>
-                  <span className="text-gray-400 cursor-help">Sign in to see distance</span>
+                <AuthTooltip isSignedIn={false}>
+                  <div
+                    className={cn(
+                      "flex items-center gap-1 text-gray-400",
+                      // ↓ smaller only in list cards
+                      variant === "list" ? "text-[11px] leading-4" : "text-sm"
+                    )}
+                  >
+                    {/* <Lock className={cn("shrink-0", variant === "list" ? "h-3.5 w-3.5" : "h-4 w-4")} /> */}
+                    <span className="whitespace-nowrap">
+                      Log in for distance
+                    </span>
+                  </div>
                 </AuthTooltip>
               )}
             </div>
 
             {/* Right: Service badges */}
             {hasServices && (
-              <div className="ml-auto flex gap-2 flex-wrap">
+              <div
+                className={cn(
+                  "ml-auto flex flex-wrap",
+                  variant === "list" ? "gap-1" : "gap-2"
+                )}
+              >
                 {tenant.services!.map((service) => (
                   <span
                     key={service}
-                    className={`px-2 py-1 text-xs font-medium rounded-full inline-flex items-center gap-1 ${
-                      service === "on-site" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-                    }`}
+                    className={`px-2 py-1 font-medium rounded-full inline-flex items-center gap-1 ${
+                      service === "on-site"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-blue-100 text-blue-800"
+                    } ${variant === "list" ? "text-[10px]" : "text-xs"}`}
                   >
                     {service === "on-site" ? (
                       <>
