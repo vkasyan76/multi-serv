@@ -85,11 +85,11 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
             <TenantCard
               key={tenant.id}
               tenant={tenant}
-              reviewRating={3} // Placeholder - will be replaced with backend data
-              reviewCount={5} // Placeholder - will be replaced with backend data
+              reviewRating={3}
+              reviewCount={5}
               isSignedIn={isSignedIn}
               variant="list"
-              // showActions defaults to false, so no buttons
+              ordersCount={12} // placeholder; wire real value later
             />
           </Link>
         ))}

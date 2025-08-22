@@ -300,7 +300,7 @@ export const tenantsRouter = createTRPCRouter({
       // set-up for pagination:
       const tenantsData = await ctx.db.find({
         collection: "tenants",
-        depth: 1, // tenant.image is  a type of media (default depth is 2, so this is optional)
+        depth: 3, // populate "categories", "subcategories", "image", and "user" with coordinates
         where: {
           slug: {
             equals: input.slug,

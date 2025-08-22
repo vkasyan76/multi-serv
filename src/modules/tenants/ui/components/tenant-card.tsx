@@ -1,29 +1,30 @@
 "use client";
 
-import { MapPin, Clock, Monitor, MapPinOff, Star } from "lucide-react";
+import { MapPin, Clock, Monitor, MapPinOff, Star, BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import type { TenantWithRelations } from "../../types";
 import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
-import { formatDateForLocale, formatNumberForLocale } from "@/modules/profile/location-utils";
+import { formatDateForLocale, formatMonthYearForLocale, formatNumberForLocale, formatIntegerForLocale } from "@/modules/profile/location-utils";
 import { cn } from "@/lib/utils";
 
 // Helper function to format market tenure - now uses consistent locale
 const formatMarketTenure = (createdAt: string): string => {
-  return formatDateForLocale(createdAt);
+  return formatMonthYearForLocale(createdAt);
 };
 
-// Helper function to render star rating
-const renderStars = (rating: number) => {
-  return Array.from({ length: 5 }, (_, i) => (
-    <Star
-      key={i}
-      className={`h-4 w-4 ${
-        i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-      }`}
-    />
-  ));
+// Helper function to handle image errors
+const handleImageError = (
+  event: React.SyntheticEvent<HTMLImageElement, Event>
+) => {
+  // Hide the broken image and show fallback
+  const img = event.currentTarget;
+  img.style.display = "none";
+  const fallback = img.nextElementSibling as HTMLElement;
+  if (fallback) {
+    fallback.style.display = "flex";
+  }
 };
 
 interface TenantCardProps {
@@ -35,6 +36,7 @@ interface TenantCardProps {
   showActions?: boolean;          // NEW: button rendering control
   onBook?: () => void;           // NEW: optional handler
   onContact?: () => void;        // NEW: optional handler
+  ordersCount?: number; // NEW: optional orders count
 }
 
 export const TenantCard = ({
@@ -42,28 +44,21 @@ export const TenantCard = ({
   reviewRating = 3,
   reviewCount = 5,
   isSignedIn,
-  variant = "list",              // NEW
-  showActions = false,           // NEW
-  onBook,                        // NEW
-  onContact,                     // NEW
+  variant = "list",
+  showActions = false,
+  onBook,
+  onContact,
+  ordersCount, // NEW
 }: TenantCardProps) => {
 
-  // Helper function to handle image errors
-  const handleImageError = (
-    event: React.SyntheticEvent<HTMLImageElement, Event>
-  ) => {
-    // Hide the broken image and show fallback
-    const img = event.currentTarget;
-    img.style.display = "none";
-    const fallback = img.nextElementSibling as HTMLElement;
-    if (fallback) {
-      fallback.style.display = "flex";
-    }
-  };
+  // Edge case variables for cleaner logic
+  const hasServices = !!tenant.services?.length;
+  const canShowDistance = isSignedIn && tenant.distance != null;
+  const showDistanceRow = hasServices || isSignedIn; // we still render a left block (unavailable / tooltip) for balance
 
-  // Responsive width logic (ChatGPT's approach)
+  // Responsive width logic with group hover
   const wrapperClass = cn(
-    "border rounded-lg bg-white p-5 hover:shadow-lg transition-all duration-200 hover:border-blue-200",
+    "border rounded-lg bg-white hover:shadow-lg transition-all duration-200 hover:border-blue-200 overflow-hidden group",
     variant === "list"
       ? "w-[280px] max-w-[320px] flex-shrink-0"
       : "w-full lg:w-[320px] lg:max-w-[320px] lg:flex-shrink-0"
@@ -71,159 +66,193 @@ export const TenantCard = ({
 
   return (
     <div className={wrapperClass}>
-      {/* Header with image and price/service types in flex column layout */}
-      <div className="flex gap-4 mb-4">
-        {/* Left Column: Tenant Image */}
-        <div className="flex-shrink-0">
-          {/* Larger Square Image Component */}
-          <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shadow-sm relative">
-            {tenant.image?.url || tenant.user?.clerkImageUrl ? (
-              <Image
-                src={(tenant.image?.url || tenant.user?.clerkImageUrl) ?? ""}
-                alt={tenant.name}
-                fill
-                className="object-cover"
-                sizes="96px"
-                onError={handleImageError}
-                unoptimized={true}
-              />
-            ) : null}
-            <div
-              className={`bg-blue-100 text-blue-600 font-semibold text-2xl flex items-center justify-center w-full h-full ${tenant.image?.url || tenant.user?.clerkImageUrl ? "hidden" : ""}`}
-            >
+      {/* Image Section with aspect ratio instead of fixed height */}
+      <div className={cn(
+        "relative overflow-hidden rounded-t-lg",
+        variant === "list" ? "aspect-[16/9]" : "aspect-[4/3]"
+      )}>
+        {tenant.image?.url || tenant.user?.clerkImageUrl ? (
+          <Image
+            src={(tenant.image?.url || tenant.user?.clerkImageUrl) ?? ""}
+            alt={tenant.name}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            sizes={variant === "list" ? "(min-width:1024px) 320px, 90vw" : "320px"}
+            onError={handleImageError}
+            // Remove unoptimized in production
+          />
+        ) : (
+          <div className="w-full h-full bg-blue-100 flex items-center justify-center">
+            <span className="text-blue-600 font-semibold text-2xl">
               {tenant.name.charAt(0).toUpperCase()}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Price and Service Types */}
-        <div className="flex flex-col flex-1">
-          {/* Price */}
-          <div className="text-right mb-3">
-            <span className="text-2xl font-bold text-blue-600">
-              €{tenant.hourlyRate}/h
             </span>
           </div>
-
-          {/* Service Type Icons Below Price */}
-          {tenant.services && tenant.services.length > 0 && (
-            <div className="flex gap-2 flex-wrap justify-end">
-              {tenant.services.map((service) => (
-                <span
-                  key={service}
-                  className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-                    service === "on-site"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-blue-100 text-blue-800"
-                  }`}
-                >
-                  {service === "on-site" ? (
-                    <>
-                      <MapPin className="h-3 w-3" />
-                      On-site
-                    </>
-                  ) : (
-                    <>
-                      <Monitor className="h-3 w-3" />
-                      On-line
-                    </>
-                  )}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
+        
+        {/* Subtle gradient for overlay readability */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+        
+        {/* Enhanced Rating Overlay with accessibility */}
+        {reviewCount > 0 ? (
+          <div className="absolute top-2 right-2 rounded-full bg-black/70 backdrop-blur px-2 py-1 text-white text-xs flex items-center gap-1">
+            <Star aria-hidden className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+            <span className="sr-only">Rating</span>
+            <span suppressHydrationWarning>
+              {formatNumberForLocale(reviewRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+            </span>
+            <span className="opacity-80">({reviewCount})</span>
+          </div>
+        ) : (
+          <div className="absolute top-2 right-2 rounded-full bg-black/70 backdrop-blur px-2 py-1 text-white text-xs">
+            New
+          </div>
+        )}
       </div>
 
-      {/* Both Names Below Image and Price Section - Left/Right Justified */}
-      <div className="flex justify-between items-center mb-3 gap-4">
-        {/* Tenant Name - Left Aligned */}
-        <div className="flex-1 min-w-0">
+      {/* Information Section (70% height) */}
+      <div className="p-4 space-y-2">
+        {/* Name Row with truncation */}
+        <div className="flex justify-between items-center gap-2">
           <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3 py-1 truncate">
             {tenant.name}
           </Badge>
-        </div>
-
-        {/* First + Last Name - Right Aligned */}
-        <div className="flex-1 text-right min-w-0">
-          <Badge
-            variant="outline"
-            className="text-gray-700 text-sm font-medium px-3 py-1 border-gray-300 truncate"
-          >
+          <Badge variant="outline" className="text-gray-700 text-sm font-medium px-3 py-1 border-gray-300 truncate">
             {tenant.firstName} {tenant.lastName}
           </Badge>
         </div>
-      </div>
 
-      {/* Rating Section - moved to bottom for better spacing */}
-      <div className="mb-3">
-        <div className="flex items-center gap-1">
-          <div className="flex items-center">{renderStars(reviewRating)}</div>
-          <span className="text-sm text-gray-500 ml-1" suppressHydrationWarning>
-            {formatNumberForLocale(reviewRating)}{" "}
-            ({reviewCount} reviews)
-          </span>
-        </div>
-      </div>
+        {/* City + Price (single row) */}
+        {(tenant.user?.coordinates?.city || tenant.hourlyRate != null) && (
+          <div
+            className={cn(
+              "flex items-baseline",
+              tenant.user?.coordinates?.city ? "justify-between" : "justify-end"
+            )}
+          >
+            {/* City (left) */}
+            {tenant.user?.coordinates?.city && (
+              <div className="flex items-center gap-2 min-w-0">
+                <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+                <span className="truncate text-gray-700">
+                  {tenant.user.coordinates.city}
+                  {tenant.user.coordinates.countryISO && `, ${tenant.user.coordinates.countryISO}`}
+                </span>
+              </div>
+            )}
 
-      {/* Distance and Market Tenure */}
-      <div className="border-t border-gray-100 pt-3">
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          {/* Distance */}
-          {isSignedIn ? (
-            // Show distance for signed-in users
-            tenant.distance !== null && tenant.distance !== undefined ? (
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4 text-blue-600" />
-                <span>{tenant.distance.toFixed(1)} km</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <MapPinOff className="h-4 w-4 text-gray-400" />
-                <span>Distance unavailable</span>
-              </div>
-            )
-          ) : (
-            // Show sign-in prompt for anonymous users
-            <AuthTooltip isSignedIn={!!isSignedIn}>
-              <div className="flex items-center gap-1 cursor-help">
-                <span className="text-gray-400">Sign in to see distance</span>
-              </div>
-            </AuthTooltip>
-          )}
-
-          {/* Market Tenure */}
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4 text-green-600" />
-            <span suppressHydrationWarning>
-              {formatMarketTenure(tenant.createdAt)}
-            </span>
+            {/* Price (right) */}
+            {tenant.hourlyRate != null && (
+              <span
+                className={cn(
+                  "font-bold text-blue-600 whitespace-nowrap",
+                  variant === "list" ? "text-xl" : "text-2xl"
+                )}
+                suppressHydrationWarning
+              >
+                €{tenant.hourlyRate}/h
+              </span>
+            )}
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* NEW: Action buttons with proper a11y (ChatGPT's refinements) */}
-      {showActions && (
-        <div className="mt-4 grid grid-cols-1 gap-2">
-          <Button
-            size="lg"
-            className="w-full"
-            aria-label="Book service"
-            onClick={onBook ?? (() => console.log("TODO: Book service"))}
-          >
-            Book service
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="w-full"
-            aria-label="Contact provider"
-            onClick={onContact ?? (() => console.log("TODO: Contact"))}
-          >
-            Contact
-          </Button>
-        </div>
-      )}
+        {/* Distance + Services (single row) */}
+        {showDistanceRow && (
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+            {/* Left: Distance / hint / unavailable */}
+            <div className="flex items-center gap-1 text-sm text-gray-500 min-w-0">
+              {isSignedIn ? (
+                canShowDistance ? (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-4 w-4 text-blue-600 shrink-0" />
+                    <span>{tenant.distance!.toFixed(1)} km</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPinOff className="h-4 w-4 text-gray-400 shrink-0" />
+                    <span>Distance unavailable</span>
+                  </span>
+                )
+              ) : (
+                <AuthTooltip isSignedIn={!!isSignedIn}>
+                  <span className="text-gray-400 cursor-help">Sign in to see distance</span>
+                </AuthTooltip>
+              )}
+            </div>
+
+            {/* Right: Service badges */}
+            {hasServices && (
+              <div className="ml-auto flex gap-2 flex-wrap">
+                {tenant.services!.map((service) => (
+                  <span
+                    key={service}
+                    className={`px-2 py-1 text-xs font-medium rounded-full inline-flex items-center gap-1 ${
+                      service === "on-site" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {service === "on-site" ? (
+                      <>
+                        <MapPin className="h-3 w-3" />
+                        On-site
+                      </>
+                    ) : (
+                      <>
+                        <Monitor className="h-3 w-3" />
+                        On-line
+                      </>
+                    )}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Orders fulfilled + Active since (one row) */}
+        {(typeof ordersCount === "number" || tenant.createdAt) && (
+          <div className="flex items-center justify-between text-sm text-gray-500 pt-2">
+            {/* Left: fulfilled orders (placeholder-ready) */}
+            <div className="flex items-center gap-1">
+              <BadgeCheck className="h-4 w-4 text-emerald-600" />
+              <span suppressHydrationWarning>
+                {typeof ordersCount === "number"
+                  ? `${formatIntegerForLocale(ordersCount)} orders`
+                  : "—"}
+              </span>
+            </div>
+
+            {/* Right: Active since (Month + Year) */}
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500">Since:</span>
+              <span suppressHydrationWarning>
+                {formatMonthYearForLocale(tenant.createdAt)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons (only when showActions is true) */}
+        {showActions && (
+          <div className="grid grid-cols-1 gap-2 pt-2">
+            <Button
+              size="lg"
+              className="w-full"
+              aria-label="Book service"
+              onClick={onBook ?? (() => console.log("TODO: Book service"))}
+            >
+              Book service
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full"
+              aria-label="Contact provider"
+              onClick={onContact ?? (() => console.log("TODO: Contact"))}
+            >
+              Contact
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

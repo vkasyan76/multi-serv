@@ -373,12 +373,57 @@ export function formatDateForLocale(date: Date | string, options?: Intl.DateTime
   });
 }
 
-export function formatNumberForLocale(value: number, options?: Intl.NumberFormatOptions) {
+export function formatNumberForLocale(
+  value: number,
+  opts: Intl.NumberFormatOptions = {}
+) {
   const { locale } = getLocaleAndCurrency();
-  
+
+  // Extract and normalize
+  let { minimumFractionDigits, maximumFractionDigits, ...rest } = opts;
+
+  // Default only if BOTH are missing (maintains your previous default of 1)
+  if (minimumFractionDigits == null && maximumFractionDigits == null) {
+    minimumFractionDigits = 1;
+    maximumFractionDigits = 1;
+  }
+
+  // If only one bound is provided, mirror it to the other so they never conflict
+  if (minimumFractionDigits == null && maximumFractionDigits != null) {
+    minimumFractionDigits = Math.max(0, Math.min(maximumFractionDigits, 20));
+  }
+  if (maximumFractionDigits == null && minimumFractionDigits != null) {
+    maximumFractionDigits = Math.max(0, Math.min(minimumFractionDigits, 20));
+  }
+
+  // Clamp if a caller passed max < min (prevents runtime errors)
+  if (
+    minimumFractionDigits != null &&
+    maximumFractionDigits != null &&
+    maximumFractionDigits < minimumFractionDigits
+  ) {
+    minimumFractionDigits = maximumFractionDigits;
+  }
+
   return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-    ...options
+    minimumFractionDigits,
+    maximumFractionDigits,
+    ...rest,
   }).format(value);
+}
+
+// Convenience wrappers for common formatting patterns
+export const formatIntegerForLocale = (n: number) =>
+  formatNumberForLocale(n, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+export const formatOneDecimalForLocale = (n: number) =>
+  formatNumberForLocale(n, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+export function formatMonthYearForLocale(
+  date: Date | string,
+  monthStyle: "short" | "long" = "short"
+) {
+  const { locale } = getLocaleAndCurrency();
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString(locale, { month: monthStyle, year: "numeric" });
 }

@@ -39,6 +39,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           isSignedIn={!!isSignedIn}
           variant="detail"
           showActions
+          ordersCount={12} // placeholder; wire real value later
         />
       </section>
 
@@ -172,6 +173,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               isSignedIn={!!isSignedIn}
               variant="detail"
               showActions
+              ordersCount={12} // placeholder; wire real value later
             />
             {/* REMOVED: Contact and Pricing sections - now redundant */}
           </div>
