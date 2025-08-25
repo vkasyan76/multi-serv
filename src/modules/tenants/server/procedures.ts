@@ -318,4 +318,48 @@ export const tenantsRouter = createTRPCRouter({
 
       return tenant as Tenant & { image: Media | null };
     }),
+
+  // getMine: baseProcedure
+  //   .input(z.object({})) // no input
+  //   .query(async ({ ctx }) => {
+  //     const userId = ctx.auth?.userId;
+  //     if (!userId) {
+  //       throw new TRPCError({ code: "UNAUTHORIZED" });
+  //     }
+
+  //     // Use ctx.db (which is the payload instance) instead of importing payload
+  //     const res = await ctx.db.find({
+  //       collection: "tenants",
+  //       where: {
+  //         user: { equals: userId }, // Based on your Tenant collection structure
+  //       },
+  //       limit: 1,
+  //     });
+
+  //     return res.docs[0] ?? null;
+  //   }),
+  getMine: baseProcedure.input(z.object({})).query(async ({ ctx }) => {
+    const clerkUserId = ctx.auth?.userId; // "user_…"
+    if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+    // Clerk -> Payload user id
+    const me = await ctx.db.find({
+      collection: "users",
+      where: { clerkUserId: { equals: clerkUserId } },
+      limit: 1,
+      depth: 0,
+    });
+    const payloadUserId = me.docs[0]?.id;
+    if (!payloadUserId) return null;
+
+    // Payload user -> tenant
+    const t = await ctx.db.find({
+      collection: "tenants",
+      where: { user: { equals: payloadUserId } },
+      sort: "-createdAt",
+      limit: 1,
+      depth: 0,
+    });
+    return t.docs[0] ?? null;
+  }),
 });

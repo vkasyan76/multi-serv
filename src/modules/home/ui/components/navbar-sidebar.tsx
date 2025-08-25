@@ -15,6 +15,7 @@ import {
   // SignOutButton,
 } from "@clerk/nextjs";
 import { useClerk } from "@clerk/nextjs";
+import { generateTenantUrl } from "@/lib/utils";
 
 interface NavbarItem {
   href: string;
@@ -34,6 +35,19 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
 
   const isAdmin = user?.roles?.includes("super-admin");
   const hasTenant = !!user?.tenants?.length;
+
+  // Get info for user's tenant:
+  // Get info for user's tenant:
+  const { data: myTenant } = useQuery({
+    ...trpc.tenants.getMine.queryOptions({}),
+    enabled: !!session.data?.user?.id,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const dashHref = myTenant
+    ? `${generateTenantUrl(myTenant.slug)}/dashboard`
+    : "/profile?tab=vendor";
 
   const { signOut } = useClerk();
 
@@ -89,7 +103,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
               </Link>
 
               {/* Dashboard OR Start Business - conditional based on tenant status */}
-              {hasTenant ? (
+              {/* {hasTenant ? (
                 <Link
                   href="/dashboard"
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
@@ -105,17 +119,17 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                 >
                   Start Business
                 </Link>
-              )}
+              )} */}
+              <Link
+                href={dashHref}
+                className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                onClick={() => onOpenChange(false)}
+              >
+                {hasTenant ? "Dashboard" : "Start Business"}
+              </Link>
+
               {/* Clerk SignOutButton does not accept custom onClick handlers -> const { signOut } = useClerk(); */}
               <div className="border-t">
-                {/* <SignOutButton redirectUrl="/">
-                  <button
-                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                    type="button"
-                  >
-                    Sign out
-                  </button>
-                </SignOutButton> */}
                 <button
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                   type="button"

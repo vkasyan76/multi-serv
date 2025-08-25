@@ -29,9 +29,9 @@ const Layout = async ({ children }: Props) => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       {/* <SearchFilters data={formatedData} /> */}
       <HydrationBoundary state={dehydrate(queryClient)}>
+        <Navbar />
         <Suspense fallback={<SearchFiltersSkeleton />}>
           <SearchFilters />
         </Suspense>
