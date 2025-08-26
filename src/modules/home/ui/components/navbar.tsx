@@ -62,7 +62,10 @@ export const Navbar = () => {
   const session = useQuery(trpc.auth.session.queryOptions());
 
   // Get info for user's tenant:
-  const { data: myTenant } = useQuery({
+  const {
+    data: myTenant,
+    isLoading: isMineLoading,
+  } = useQuery({
     ...trpc.tenants.getMine.queryOptions({}),
     enabled: !!session.data?.user?.id,
     staleTime: 30_000,
@@ -72,6 +75,10 @@ export const Navbar = () => {
   const dashHref = myTenant
     ? `${generateTenantUrl(myTenant.slug)}/dashboard`
     : "/profile?tab=vendor";
+
+  // Only disable when session says user has a tenant but getMine hasn't returned it yet
+  const hasTenant = !!session.data?.user?.tenants?.length;
+  const isDashLoading = hasTenant && !myTenant && isMineLoading;
 
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -143,21 +150,19 @@ export const Navbar = () => {
               </Button>
               <LoadingButton
                 asChild
-                isLoading={session.isLoading}
+                isLoading={session.isLoading || isDashLoading}
                 loadingText=""
                 className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
               >
                 <Link
-                  // href={
-                  //   session.data?.user?.tenants?.length
-                  //     ? "/dashboard"
-                  //     : "/profile?tab=vendor"
-                  // }
                   href={dashHref}
+                  className={`${
+                    isDashLoading ? "pointer-events-none opacity-60" : ""
+                  }`}
+                  aria-disabled={isDashLoading}
                 >
-                  {session.data?.user?.tenants?.length
-                    ? "Dashboard"
-                    : "Start Business"}
+                  {/* Label now depends on the same source as href */}
+                  {myTenant ? "Dashboard" : "Start Business"}
                 </Link>
               </LoadingButton>
             </>

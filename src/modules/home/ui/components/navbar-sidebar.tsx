@@ -37,8 +37,10 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
   const hasTenant = !!user?.tenants?.length;
 
   // Get info for user's tenant:
-  // Get info for user's tenant:
-  const { data: myTenant } = useQuery({
+  const {
+    data: myTenant,
+    isLoading: isMineLoading,
+  } = useQuery({
     ...trpc.tenants.getMine.queryOptions({}),
     enabled: !!session.data?.user?.id,
     staleTime: 30_000,
@@ -48,6 +50,9 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
   const dashHref = myTenant
     ? `${generateTenantUrl(myTenant.slug)}/dashboard`
     : "/profile?tab=vendor";
+
+  // Only disable when session says user has a tenant but getMine hasn't returned it yet
+  const isDashLoading = hasTenant && !myTenant && isMineLoading;
 
   const { signOut } = useClerk();
 
@@ -122,10 +127,13 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
               )} */}
               <Link
                 href={dashHref}
-                className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                className={`w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium ${
+                  isDashLoading ? "pointer-events-none opacity-60" : ""
+                }`}
+                aria-disabled={isDashLoading}
                 onClick={() => onOpenChange(false)}
               >
-                {hasTenant ? "Dashboard" : "Start Business"}
+                {myTenant ? "Dashboard" : "Start Business"}
               </Link>
 
               {/* Clerk SignOutButton does not accept custom onClick handlers -> const { signOut } = useClerk(); */}

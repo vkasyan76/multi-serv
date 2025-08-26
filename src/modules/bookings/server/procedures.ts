@@ -24,21 +24,76 @@ export const bookingRouter = createTRPCRouter({
       const tenantId = tenants.docs[0]?.id;
       if (!tenantId) return [];
 
-             // Find overlapping bookings with inclusive boundaries
-       const res = await ctx.db.find({
-         collection: "bookings",
-         where: {
-           and: [
-             { tenant: { equals: tenantId } },
-             { start: { less_than_equal: input.to } },
-             { end: { greater_than_equal: input.from } },
-           ],
-         },
-         limit: 500,
-         depth: 0,
-       });
+      // Find overlapping bookings with inclusive boundaries (only available slots)
+      const res = await ctx.db.find({
+        collection: "bookings",
+        where: {
+          and: [
+            { tenant: { equals: tenantId } },
+            { start: { less_than_equal: input.to } },
+            { end: { greater_than_equal: input.from } },
+            { status: { equals: "available" } },
+          ],
+        },
+        limit: 500,
+        depth: 0,
+      });
 
       return res.docs;
+    }),
+
+  // List all slots for tenant owner (dashboard view)
+  listMine: baseProcedure
+    .input(
+      z.object({
+        tenantId: z.string(),
+        from: z.string().datetime(),
+        to: z.string().datetime(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const clerkUserId = ctx.auth?.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      // Map Clerk → Payload user id
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUserId = me.docs[0]?.id as string | undefined;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // Verify ownership
+      const tenant = (await ctx.db.findByID({
+        collection: "tenants",
+        id: input.tenantId,
+        depth: 0,
+        overrideAccess: true,
+      })) as Tenant | null;
+      
+      const ownerId = typeof tenant?.user === "string" ? tenant?.user : tenant?.user?.id;
+      if (!ownerId || ownerId !== payloadUserId) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      // Get all slots (available + confirmed) for owner view
+      const res = await ctx.db.find({
+        collection: "bookings",
+        where: {
+          and: [
+            { tenant: { equals: input.tenantId } },
+            { start: { less_than_equal: input.to } },
+            { end: { greater_than_equal: input.from } },
+          ],
+        },
+        overrideAccess: true, // ← bypass read ACL for owner dashboard
+        limit: 500,
+        depth: 0,
+      });
+
+      return res.docs as Booking[];
     }),
 
   // Create available slot (tenant only)
@@ -75,6 +130,7 @@ export const bookingRouter = createTRPCRouter({
         collection: "tenants",
         id: input.tenantId,
         depth: 0,
+        overrideAccess: true,
       })) as Tenant | null;
       if (!tenantDoc)
         throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
@@ -122,19 +178,29 @@ export const bookingRouter = createTRPCRouter({
       return { id: created.id };
     }),
 
-  // Book a slot (customer)
+  // Book a slot (customer) - FIXED: Clerk ID mapping + overrideAccess
   bookSlot: baseProcedure
     .input(z.object({ bookingId: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const userId = ctx.auth?.userId;
-      if (!userId) {
-        throw new TRPCError({ code: "UNAUTHORIZED" });
-      }
+      const clerkUserId = ctx.auth?.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-      const existing = await ctx.db.findByID({
+      // Map Clerk → Payload user id (same as createAvailableSlot)
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUserId = me.docs[0]?.id as string | undefined;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // Load booking
+      const existing = (await ctx.db.findByID({
         collection: "bookings",
         id: input.bookingId,
-      });
+        depth: 0,
+      })) as Booking | null;
 
       if (!existing || existing.status !== "available") {
         throw new TRPCError({
@@ -143,15 +209,73 @@ export const bookingRouter = createTRPCRouter({
         });
       }
 
-      const updated = await ctx.db.update({
+      // Confirm booking (bypass collection access after our checks)
+      const updated = (await ctx.db.update({
         collection: "bookings",
         id: input.bookingId,
-        data: {
-          status: "confirmed",
-          customer: userId,
-        },
-      });
+        data: { status: "confirmed", customer: payloadUserId },
+        overrideAccess: true, // ← required if you tighten collection update
+        depth: 0,
+      })) as Booking;
 
       return { ok: true, bookingId: updated.id };
+    }),
+
+  // Remove available slot (tenant only) - NEW: allows cleanup
+  removeSlot: baseProcedure
+    .input(z.object({ bookingId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const clerkUserId = ctx.auth?.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      // Clerk → Payload user
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUserId = me.docs[0]?.id as string | undefined;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // Load booking
+      const b = (await ctx.db.findByID({
+        collection: "bookings",
+        id: input.bookingId,
+        depth: 0,
+      })) as Booking | null;
+      if (!b) throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (b.status !== "available") {
+        throw new TRPCError({ 
+          code: "CONFLICT", 
+          message: "Only available slots can be removed" 
+        });
+      }
+
+      // Verify tenant ownership
+      const tenantId = typeof b.tenant === "string" ? b.tenant : b.tenant?.id;
+      if (!tenantId) throw new TRPCError({ code: "BAD_REQUEST" });
+
+      const tenant = (await ctx.db.findByID({
+        collection: "tenants",
+        id: tenantId,
+        depth: 0,
+        overrideAccess: true,
+      })) as Tenant | null;
+
+      const ownerId = typeof tenant?.user === "string" ? tenant?.user : tenant?.user?.id;
+      if (!ownerId || ownerId !== payloadUserId) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      // Delete (bypass collection ACL)
+      await ctx.db.delete({
+        collection: "bookings",
+        id: b.id,
+        overrideAccess: true, // ← required if collection delete is restricted
+      });
+
+      return { ok: true };
     }),
 });
