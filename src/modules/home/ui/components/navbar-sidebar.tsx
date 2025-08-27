@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { cn, generateTenantUrl } from "@/lib/utils";
 import {
   SignInButton,
   SignedIn,
@@ -15,7 +16,6 @@ import {
   // SignOutButton,
 } from "@clerk/nextjs";
 import { useClerk } from "@clerk/nextjs";
-import { generateTenantUrl } from "@/lib/utils";
 
 interface NavbarItem {
   href: string;
@@ -127,11 +127,17 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
               )} */}
               <Link
                 href={dashHref}
-                className={`w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium ${
-                  isDashLoading ? "pointer-events-none opacity-60" : ""
-                }`}
+                className={cn(
+                  "w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium",
+                  isDashLoading && "opacity-60"
+                )}
                 aria-disabled={isDashLoading}
-                onClick={() => onOpenChange(false)}
+                aria-busy={isDashLoading}
+                onClick={
+                  isDashLoading
+                    ? (e) => e.preventDefault()            // block keyboard + mouse activation
+                    : () => onOpenChange(false)            // current behavior when ready
+                }
               >
                 {myTenant ? "Dashboard" : "Start Business"}
               </Link>

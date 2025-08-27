@@ -155,3 +155,27 @@
     overflow: hidden;
   }
 }
+
+/* Calendar past hour styling */
+.rbc-slot-past {
+  background-color: #f3f4f6 !important;
+}
+
+/* Make today's column white in time views; keep our past-slot styling */
+.rbc-time-view .rbc-today {
+  background-color: transparent !important;
+}
+
+/* Hide RBC's default label + content only for available events */
+.rbc-event.ev-available .rbc-event-label,
+.rbc-event.ev-available .rbc-event-content {
+  display: none;
+}
+
+/* Style for booked events text */
+.rbc-event.ev-booked .rbc-event-content {
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 1rem;
+  color: white;
+}

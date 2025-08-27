@@ -156,10 +156,10 @@ export const Navbar = () => {
               >
                 <Link
                   href={dashHref}
-                  className={`${
-                    isDashLoading ? "pointer-events-none opacity-60" : ""
-                  }`}
+                  onClick={isDashLoading ? (e) => e.preventDefault() : undefined}
+                  className={cn(isDashLoading && "opacity-60")}
                   aria-disabled={isDashLoading}
+                  aria-busy={isDashLoading}
                 >
                   {/* Label now depends on the same source as href */}
                   {myTenant ? "Dashboard" : "Start Business"}
