@@ -19,13 +19,15 @@ export const SUPPORTED_LOCALES: Record<string, Locale> = {
   lt, lv, et,
 };
 
+export type CultureCode = keyof typeof SUPPORTED_LOCALES;
+
 /**
  * If you have src/modules/profile/location-utils.ts exposing getLocaleAndCurrency(),
  * you can pass it here to stay consistent with the rest of the app.
  */
 export function getCultureFromProfile(
   getLocaleAndCurrency?: () => { locale?: string } | undefined
-): keyof typeof SUPPORTED_LOCALES {
+): CultureCode {
   const loc =
     getLocaleAndCurrency?.()?.locale ??
     (typeof navigator !== "undefined" ? navigator.language : undefined);
@@ -42,17 +44,22 @@ export const rolling = {
 export const rbcLocalizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek: (date: Date) =>
-    rolling.useRollingWeek ? rolling.anchor : dfnsStartOfWeek(date),
+  startOfWeek: (date: Date, options?: { locale?: Locale }) =>
+    rolling.useRollingWeek ? rolling.anchor : dfnsStartOfWeek(date, options),
   getDay,
   locales: SUPPORTED_LOCALES,
 });
 
 /** Normalize culture for consistent formatting */
-function resolveCulture(culture?: string): string {
+function resolveCulture(culture?: string): CultureCode {
   if (!culture) return "en-GB";
-  const base = culture.split(/[-_]/)[0];
-  return base === "en" ? "en-GB" : culture;
+  const [base] = culture.split(/[-_]/);
+  if (base === "en") return "en-GB";
+  if (base === "pt") return "pt-PT";
+  // Prefer exact key if present, else fall back to base if supported, else default
+  if (culture in SUPPORTED_LOCALES) return culture as CultureCode;
+  if (base && base in SUPPORTED_LOCALES) return base as CultureCode;
+  return "en-GB";
 }
 
 /** RBC formats: localized headers, weekday labels, time gutter, event time ranges. */

@@ -1,4 +1,4 @@
-import TenantCalendar from "@/modules/bookings/ui/TenantCalender";
+import TenantCalendar from "@/modules/bookings/ui/TenantCalendar";
 
 interface Props {
   params: Promise<{ slug: string }>;

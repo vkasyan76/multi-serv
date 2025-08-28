@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
+import { isBefore, addHours, startOfHour, isEqual } from "date-fns";
 import type { Booking, Tenant } from "@/payload-types";
 
 export const bookingRouter = createTRPCRouter({
@@ -277,5 +278,109 @@ export const bookingRouter = createTRPCRouter({
       });
 
       return { ok: true };
+    }),
+
+  // Move/resize existing slot (tenant only) - atomic update with overlap validation
+  updateSlotTime: baseProcedure
+    .input(
+      z.object({
+        bookingId: z.string(),
+        start: z.string().datetime(),
+        end: z.string().datetime(),
+      })
+      .refine((v) => new Date(v.start) < new Date(v.end), {
+        message: "start must be before end",
+        path: ["end"],
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const clerkUserId = ctx.auth?.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const start = startOfHour(new Date(input.start));
+      const end = startOfHour(new Date(input.end));
+
+      // Policy: exactly 60 minutes, snapped to hour, no 23:00 starts
+      if (start.getHours() === 23) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "23:00 not allowed" });
+      }
+      if (!isEqual(addHours(start, 1), end)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Duration must be 60 minutes" });
+      }
+      if (isBefore(start, new Date())) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Past moves not allowed" });
+      }
+
+      // Map Clerk → Payload user
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUserId = me.docs[0]?.id as string | undefined;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // Load the current booking
+      const current = (await ctx.db.findByID({
+        collection: "bookings",
+        id: input.bookingId,
+        depth: 0,
+      })) as Booking | null;
+
+      if (!current) throw new TRPCError({ code: "NOT_FOUND" });
+      if (current.status !== "available") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only available slots are movable" });
+      }
+
+      // Verify tenant ownership
+      const tenantId = typeof current.tenant === "string" ? current.tenant : current.tenant?.id;
+      if (!tenantId) throw new TRPCError({ code: "BAD_REQUEST" });
+
+      const tenant = (await ctx.db.findByID({
+        collection: "tenants",
+        id: tenantId,
+        depth: 0,
+        overrideAccess: true,
+      })) as Tenant | null;
+
+      const ownerId = typeof tenant?.user === "string" ? tenant?.user : tenant?.user?.id;
+      if (!ownerId || ownerId !== payloadUserId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your tenant" });
+      }
+
+      // Overlap guard (same tenant, exclude current booking id)
+      const overlapping = await ctx.db.find({
+        collection: "bookings",
+        where: {
+          and: [
+            { tenant: { equals: tenantId } },
+            { id: { not_equals: input.bookingId } },
+            { start: { less_than: end.toISOString() } },
+            { end: { greater_than: start.toISOString() } },
+          ],
+        },
+        limit: 1,
+        depth: 0,
+        overrideAccess: true,
+      });
+
+      if (overlapping.docs.length > 0) {
+        throw new TRPCError({ code: "CONFLICT", message: "Overlapping slot" });
+      }
+
+      // Update the booking time
+      const updated = (await ctx.db.update({
+        collection: "bookings",
+        id: input.bookingId,
+        data: { 
+          start: start.toISOString(), 
+          end: end.toISOString() 
+        },
+        overrideAccess: true,
+        depth: 0,
+      })) as Booking;
+
+      return { id: updated.id, start: updated.start, end: updated.end };
     }),
 });

@@ -6,6 +6,19 @@ import { TenantCard } from "@/modules/tenants/ui/components/tenant-card";
 import { normalizeForCard } from "@/modules/tenants/utils/normalize-for-card";
 import type { Category } from "@/payload-types";
 import { useUser } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
+// import TenantCalendar from "@/modules/bookings/ui/TenantCalendar";
+
+// Dynamic import for calendar to reduce initial bundle size
+const TenantCalendar = dynamic(
+  () => import("@/modules/bookings/ui/TenantCalendar"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[50vh] bg-muted animate-pulse rounded-lg" />
+    ),
+  }
+);
 
 export default function TenantContent({ slug }: { slug: string }) {
   const trpc = useTRPC();
@@ -29,7 +42,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   const cardTenant = normalizeForCard(tenantRaw, viewerCoords);
 
   return (
-    <div className="max-w-[var(--breakpoint-xl)] mx-auto px-3 sm:px-4 lg:px-12 py-2">
+    <div className="px-3 sm:px-4 lg:px-12 py-2">
       {/* NEW: Mobile card above grid (ChatGPT's approach) */}
       <section className="lg:hidden mb-2">
         <TenantCard
@@ -43,9 +56,9 @@ export default function TenantContent({ slug }: { slug: string }) {
         />
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
         {/* Main Content - Left Column */}
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           {/* About Section */}
           <section
             id="about"
@@ -138,13 +151,7 @@ export default function TenantContent({ slug }: { slug: string }) {
             className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
           >
             <h2 className="text-2xl font-bold mb-4">Availability</h2>
-            <div className="bg-gray-50 p-6 rounded-lg text-center">
-              <p className="text-gray-600">Calendar integration coming soon</p>
-              <p className="text-sm text-gray-500 mt-2">
-                Schedule management and booking functionality will be available
-                here.
-              </p>
-            </div>
+            <TenantCalendar tenantSlug={slug} />
           </section>
 
           {/* Reviews Section */}

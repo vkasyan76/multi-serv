@@ -179,3 +179,103 @@
   line-height: 1rem;
   color: white;
 }
+
+/* Space optimization: remove unused all-day event row in time views */
+.rbc-time-view .rbc-allday-cell,
+.rbc-time-view .rbc-allday-events {
+  display: none !important;
+}
+
+.rbc-time-view .rbc-time-header {
+  border-bottom: 0 !important;
+}
+
+/* ---- React Big Calendar gutter alignment (desktop + mobile) ---- */
+.rbc-time-gutter,
+.rbc-time-header-gutter {
+  width: 52px;
+  flex: 0 0 52px;     /* lock the flex-basis so it can't shrink */
+  box-sizing: border-box;
+}
+
+/* Some RBC builds don't emit .rbc-time-header-gutter; cover that too */
+.rbc-time-header .rbc-time-gutter {
+  width: 52px;
+  flex: 0 0 52px;
+  box-sizing: border-box;
+}
+
+/* Removed scrollbar-gutter to prevent double compensation with RBC's JS margin */
+
+.rbc-time-gutter .rbc-time-slot {
+  padding: 0 4px; /* tighter padding */
+  font-size: 11px; /* slightly smaller font for compactness */
+}
+
+/* Drag and drop visual feedback */
+.rbc-addons-dnd .rbc-addons-dnd-drag-preview {
+  opacity: 0.9;
+  transform: rotate(2deg);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.rbc-addons-dnd .rbc-event.rbc-addons-dnd-dragged-event {
+  opacity: 0.35;
+  transform: scale(0.95);
+}
+
+/* Enhanced resize handles */
+.rbc-addons-dnd .rbc-addons-dnd-resize-anchor {
+  background-color: #3b82f6;
+  border: 1px solid #1d4ed8;
+}
+
+/* Mobile responsive optimizations */
+@media (max-width: 640px) {
+  .rbc-time-header,
+  .rbc-time-content {
+    font-size: 12px;
+  }
+  
+  .rbc-time-gutter,
+  .rbc-time-header-gutter,
+  .rbc-time-header .rbc-time-gutter {
+    width: 70px !important;
+    flex: 0 0 70px !important;
+    font-size: 11px;
+  }
+  
+  .rbc-time-gutter .rbc-time-slot {
+    padding: 0 6px !important; /* More padding for mobile */
+    font-size: 11px;
+  }
+  
+  /* Hide all-day row in time views on mobile */
+  .rbc-time-view .rbc-allday-cell {
+    display: none;
+  }
+  
+  /* Enhanced touch targets for mobile */
+  .rbc-time-slot {
+    min-height: 44px; /* iOS HIG minimum touch target */
+  }
+  
+  .rbc-event {
+    min-height: 36px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  
+  /* Better spacing for day headers on mobile */
+  .rbc-header {
+    padding: 8px 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+  /* Improve touch behavior inside the time grid */
+  .rbc-time-view,
+  .rbc-time-content {
+    touch-action: manipulation; /* prefer taps; no double-tap zoom */
+  }
+}

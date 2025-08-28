@@ -1,12 +1,12 @@
 "use client";
 
-export function CalendarLegend() {
+export function CalendarLegend({ className = "" }: { className?: string }) {
   const Square = ({ className }: { className: string }) => (
     <span className={`inline-block size-3 ${className}`} />
   );
 
   return (
-    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+    <div className={`flex items-center gap-4 text-xs text-muted-foreground ${className}`}>
       <span className="flex items-center gap-1.5">
         <Square className="bg-emerald-400" /> Available
       </span>
