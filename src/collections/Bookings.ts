@@ -37,11 +37,11 @@ export const Bookings: CollectionConfig = {
     {
       name: "status",
       type: "select",
-      options: ["available", "confirmed"],
+      options: ["available", "booked", "confirmed"],
       defaultValue: "available",
       required: true,
       index: true,
-    }, // optional, for later pricing
+    }, // available -> booked -> confirmed (for payment flow)
     { name: "notes", type: "textarea" },
   ],
   indexes: [

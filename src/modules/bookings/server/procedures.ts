@@ -25,7 +25,8 @@ export const bookingRouter = createTRPCRouter({
       const tenantId = tenants.docs[0]?.id;
       if (!tenantId) return [];
 
-      // Find overlapping bookings with inclusive boundaries (only available slots)
+      // Find overlapping bookings with inclusive boundaries
+      const nowIso = new Date().toISOString();
       const res = await ctx.db.find({
         collection: "bookings",
         where: {
@@ -33,10 +34,20 @@ export const bookingRouter = createTRPCRouter({
             { tenant: { equals: tenantId } },
             { start: { less_than_equal: input.to } },
             { end: { greater_than_equal: input.from } },
-            { status: { equals: "available" } },
+            {
+              or: [
+                { status: { equals: "booked" } },
+                { status: { equals: "confirmed" } },
+                { and: [ 
+                  { status: { equals: "available" } }, 
+                  { start: { greater_than: nowIso } } 
+                ] },
+              ],
+            },
           ],
         },
-        limit: 500,
+        sort: "start",
+        limit: 1000,
         depth: 0,
       });
 
@@ -79,7 +90,8 @@ export const bookingRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      // Get all slots (available + confirmed) for owner view
+      // Get all slots (available + confirmed) for owner view, excluding past available
+      const nowIso = new Date().toISOString();
       const res = await ctx.db.find({
         collection: "bookings",
         where: {
@@ -87,6 +99,16 @@ export const bookingRouter = createTRPCRouter({
             { tenant: { equals: input.tenantId } },
             { start: { less_than_equal: input.to } },
             { end: { greater_than_equal: input.from } },
+            {
+              or: [
+                { status: { equals: "booked" } },
+                { status: { equals: "confirmed" } },
+                { and: [ 
+                  { status: { equals: "available" } }, 
+                  { start: { greater_than: nowIso } } 
+                ] },
+              ],
+            },
           ],
         },
         overrideAccess: true, // ← bypass read ACL for owner dashboard
@@ -413,5 +435,71 @@ export const bookingRouter = createTRPCRouter({
       })) as Booking;
 
       return { id: updated.id, start: updated.start, end: updated.end };
+    }),
+
+  bookSlots: baseProcedure
+    .input(z.object({ bookingIds: z.array(z.string()).min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      const { bookingIds } = input;
+      const clerkUserId = ctx.auth?.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      // Map Clerk → Payload user id
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUserId = me.docs[0]?.id as string | undefined;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // Fetch first to validate state
+      const { docs } = await ctx.db.find({
+        collection: "bookings",
+        where: { id: { in: bookingIds } },
+        depth: 0,
+        limit: bookingIds.length,
+      });
+
+      const now = Date.now();
+      const validSlots = docs.filter((b: Booking) => 
+        b.status === "available" && new Date(b.start).getTime() > now
+      );
+
+      if (validSlots.length === 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "No valid slots available for booking.",
+        });
+      }
+
+      // Update valid slots to booked
+      let updated = 0;
+      for (const slot of validSlots) {
+        await ctx.db.update({
+          collection: "bookings",
+          id: slot.id,
+          data: { 
+            status: "booked", 
+            customer: payloadUserId 
+          },
+          overrideAccess: true,
+          depth: 0,
+        });
+        updated++;
+      }
+
+      const bookedIds = validSlots.map(s => s.id);
+      const unavailableIds = docs
+        .filter(d => !validSlots.includes(d))
+        .map(d => d.id);
+
+      return { 
+        bookedIds, 
+        unavailableIds, 
+        invalidIds: [],
+        updated 
+      };
     }),
 });

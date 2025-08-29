@@ -345,7 +345,7 @@ export interface Booking {
   start: string;
   end: string;
   mode: 'online' | 'onsite';
-  status: 'available' | 'confirmed';
+  status: 'available' | 'booked' | 'confirmed';
   notes?: string | null;
   updatedAt: string;
   createdAt: string;

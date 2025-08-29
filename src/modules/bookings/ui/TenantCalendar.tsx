@@ -26,6 +26,7 @@ import type { Booking } from "@/payload-types";
 import { getLocaleAndCurrency } from "@/modules/profile/location-utils";
 import CalendarNav from "@/modules/bookings/ui/CalendarNav";
 import { CalendarLegend } from "./CalendarLegend";
+import { BOOKING_CH } from "@/constants";
 
 import {
   rbcLocalizer,
@@ -41,6 +42,9 @@ type Props = {
   height?: number | string; // default 520px - controls internal scroll viewport
   defaultStartHour?: number; // default 8 - used to build scrollToTime
   editable?: boolean; // default false - controls DnD and mutation features
+  selectForBooking?: boolean; // default false - controls if slots can be selected for booking
+  selectedIds?: string[]; // default [] - list of selected booking IDs
+  onToggleSelect?: (id: string) => void; // callback to toggle selection
 };
 
 type RbcEvent = {
@@ -74,11 +78,13 @@ export default function TenantCalendar({
   height = 520,
   defaultStartHour = 8,
   editable = false,
+  selectForBooking = false,
+  selectedIds = [],
+  onToggleSelect,
 }: Props) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-
-  // Responsive breakpoint detection
+    // Responsive breakpoint detection
   const isMobile = useMediaQuery("(max-width: 640px)");
 
   // DnD enabled only when editable and not mobile
@@ -162,6 +168,61 @@ export default function TenantCalendar({
     rolling.anchor = startOfDay(anchor);
   }, [activeView, anchor]);
 
+  // NEW: Listen for broadcast messages from other tabs
+  useEffect(() => {
+    if (typeof window === "undefined" || !("BroadcastChannel" in window)) return;
+    
+    const ch = new BroadcastChannel(BOOKING_CH);
+    const onMsg = (ev: MessageEvent<any>) => {
+      const d = ev?.data;
+      if (!d || d.tenantSlug !== tenantSlug) return;
+      if (
+        d.type !== 'slot:created' && 
+        d.type !== 'slot:removed' && 
+        d.type !== 'slot:moved' &&
+        d.type !== 'booking:updated'
+      ) return;
+
+      if (d.type === 'slot:removed' && d.id) {
+        // Instant prune when a removal comes in (optional performance boost)
+        queryClient.setQueryData(
+          trpc.bookings.listPublicSlots.queryKey({ tenantSlug, from: range.start.toISOString(), to: range.end.toISOString() }),
+          (prev: Booking[] | undefined) => prev?.filter(b => b.id !== d.id)
+        );
+      }
+
+      if (d.type === 'slot:moved' && d.id && d.start && d.end) {
+        // patch in-place so the move is visible immediately
+        const patches = queryClient.getQueriesData<Booking[]>({
+          predicate: (q) => {
+            const s = JSON.stringify((q as any).queryKey ?? []);
+            return s.includes('"bookings"') && s.includes('"listPublicSlots"');
+          },
+        });
+        for (const [key, arr] of patches) {
+          if (!arr) continue;
+          queryClient.setQueryData<Booking[]>(
+            key,
+            arr.map((b) => (b.id === d.id ? { ...b, start: d.start, end: d.end } : b))
+          );
+        }
+      }
+
+      // keep existing global invalidation so everything stays consistent
+      queryClient.invalidateQueries({
+        predicate: (q) => {
+          const s = JSON.stringify((q as any).queryKey ?? []);
+          return s.includes('"bookings"') && (s.includes('listPublicSlots') || s.includes('listMine'));
+        },
+      });
+    };
+    ch.addEventListener('message', onMsg);
+    
+    return () => {
+      ch.close();
+    };
+  }, [tenantSlug, queryClient, range.start, range.end]);
+
   // Navigation label using the existing formatters
   const navLabel = useMemo(() => {
     const dayFmt = new Intl.DateTimeFormat(culture, { weekday: "short", month: "short", day: "numeric" });
@@ -176,17 +237,21 @@ export default function TenantCalendar({
     trpc.tenants.getOne.queryOptions({ slug: tenantSlug })
   );
 
-  // Load slots for the visible range - v5 correct syntax
+  // Load slots for the visible range - v5 correct syntax with optimized options
   const slotsQ = useQuery({
     ...trpc.bookings.listPublicSlots.queryOptions({
       tenantSlug,
       from: range.start.toISOString(),
       to: range.end.toISOString(),
     }),
+    // keep previous data visible during fetch => no flash
     placeholderData: (prev: Booking[] | undefined) => prev,
-    staleTime: 30_000,
-    refetchInterval: 60_000, // Poll each minute to keep data fresh
+    // avoid focus-triggered refetches
     refetchOnWindowFocus: false,
+    // tiny payloads; 5s is smooth on dashboard, 60s is fine on public
+    refetchInterval: editable ? 5000 : 60000,
+    // helps avoid redundant re-fetches
+    staleTime: 30_000,
   });
 
   // Debug logging to help verify ranges
@@ -314,7 +379,23 @@ export default function TenantCalendar({
   // Slot creation mutation with proper query invalidation and error handling
   const createSlot = useMutation({
     ...trpc.bookings.createAvailableSlot.mutationOptions(),
-    onSuccess: invalidateSlots,
+    onSuccess: (result) => {
+      invalidateSlots();
+      
+      // Notify other tabs about the new slot
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        try {
+          const ch = new BroadcastChannel(BOOKING_CH);
+          ch.postMessage({ 
+            type: "slot:created", 
+            tenantSlug, 
+            id: result.id, 
+            ts: Date.now() 
+          });
+          ch.close();
+        } catch {}
+      }
+    },
     onError: (err: TRPCClientErrorLike<AppRouter>) => {
       if (err.data?.code === "CONFLICT") return; // legit double click
       console.error("Failed to create slot:", err);
@@ -324,7 +405,23 @@ export default function TenantCalendar({
   // Slot removal mutation
   const removeSlot = useMutation({
     ...trpc.bookings.removeSlot.mutationOptions(),
-    onSuccess: invalidateSlots,
+    onSuccess: (result, variables) => {
+      invalidateSlots();
+      
+      // Notify other tabs about the removed slot
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        try {
+          const ch = new BroadcastChannel(BOOKING_CH);
+          ch.postMessage({ 
+            type: "slot:removed", 
+            tenantSlug, 
+            id: variables.bookingId, // the removed slot ID
+            ts: Date.now() 
+          });
+          ch.close();
+        } catch {}
+      }
+    },
     onError: (err: TRPCClientErrorLike<AppRouter>) => {
       console.error("Failed to remove slot:", err);
     },
@@ -333,10 +430,65 @@ export default function TenantCalendar({
   // Slot move/resize mutation
   const moveSlot = useMutation({
     ...trpc.bookings.updateSlotTime.mutationOptions(),
-    onSuccess: invalidateSlots,
-    onError: (err: TRPCClientErrorLike<AppRouter>) => {
-      console.error("Failed to move/resize slot:", err);
-      invalidateSlots(); // snap back to server truth
+
+    // Optimistic update so the dashboard calendar snaps immediately
+    onMutate: async (vars: { bookingId: string; start: string; end: string }) => {
+      const { bookingId, start, end } = vars;
+
+      // snapshot relevant caches (all listPublicSlots queries)
+      const snapshots = queryClient.getQueriesData<Booking[]>({
+        predicate: (q) => {
+          const s = JSON.stringify((q as any).queryKey ?? []);
+          return s.includes('"bookings"') && s.includes('"listPublicSlots"');
+        },
+      });
+
+      // patch all caches where this slot exists
+      for (const [key, data] of snapshots) {
+        if (!data) continue;
+        queryClient.setQueryData<Booking[]>(
+          key,
+          data.map((b) => (b.id === bookingId ? { ...b, start, end } : b))
+        );
+      }
+
+      // pass snapshots for rollback
+      return { snapshots };
+    },
+
+    // If the server rejects, restore previous cache state
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.snapshots) {
+        ctx.snapshots.forEach(([key, data]) => {
+          queryClient.setQueryData(key, data);
+        });
+      }
+    },
+
+    // Broadcast to other tabs/pages so tenant-content updates instantly
+    onSuccess: (_res, vars) => {
+      try {
+        const ch = new BroadcastChannel(BOOKING_CH);
+        ch.postMessage({
+          type: "slot:moved",
+          tenantSlug,
+          id: vars.bookingId,
+          start: vars.start,
+          end: vars.end,
+          ts: Date.now(),
+        });
+        ch.close();
+      } catch {}
+    },
+
+    // Still refetch to sync with server truth
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        predicate: (q) => {
+          const s = JSON.stringify((q as any).queryKey ?? []);
+          return s.includes('"bookings"') && s.includes('"listPublicSlots"');
+        },
+      });
     },
   });
 
@@ -345,39 +497,66 @@ export default function TenantCalendar({
   // Ref for precise header-body scrollbar compensation
   const rootRef = useRef<HTMLDivElement | null>(null);
 
-  // Map bookings -> RBC events with UI cleanup for past available slots
-  const events: RbcEvent[] = useMemo(() => {
-    const nowMs = nowTick; // Use the ticking "now"
-    return (slotsQ.data ?? [])
-      .filter((b) => {
-        if (b.status === "confirmed") return true; // keep all confirmed (past + future)
-        // Hide available slots once their start time has arrived
-        const startMs = new Date(b.start).getTime();
-        return startMs > nowMs;
-      })
-      .map(
-        (b: Booking): RbcEvent => ({
+      // Map bookings -> RBC events with UI cleanup for past available slots
+    const events: RbcEvent[] = useMemo(() => {
+      const nowMs = nowTick;
+      return (slotsQ.data ?? [])
+        .filter((b) => {
+          const startMs = new Date(b.start).getTime();
+          switch (b.status) {
+            case "booked":
+            case "confirmed":
+              return true;            // always show (past + future)
+            case "available":
+              return startMs > nowMs; // hide past available, show only future
+            default:
+              return false;
+          }
+        })
+        .map((b) => ({
           id: b.id,
-          title: b.status === "available" ? "" : "Booked", // Empty title for available events
+          title: b.status === "available" ? "" : "Booked",
           start: new Date(b.start),
           end: new Date(b.end),
           resource: b,
-        })
-      );
-  }, [slotsQ.data, nowTick]);
+        }));
+    }, [slotsQ.data, nowTick]);
+
+  // Handle slot selection (controlled - no internal state)
+  const handleSlotSelect = useCallback((event: RbcEvent) => {
+    if (!selectForBooking || !onToggleSelect) return;
+    if (event.resource.status !== "available") return;
+    if (event.start.getTime() <= Date.now()) return;
+    
+    onToggleSelect(event.id);
+  }, [selectForBooking, onToggleSelect]);
 
   // Color-code events and tag by status for CSS styling
   const eventPropGetter: EventPropGetter<RbcEvent> = useCallback((event) => {
     const isAvailable = event.resource.status === "available";
-    return {
-      className: isAvailable ? "ev-available" : "ev-booked",
-      style: {
-        backgroundColor: isAvailable ? "#86efac" : "#fbbf24", // emerald-300 vs amber-400 (friendlier)
-        border: "none",
-        color: "#111827",
-      },
-    };
-  }, []);
+    const isSelected = selectForBooking && isAvailable && selectedIds.includes(event.id);
+
+    if (isAvailable && isSelected) {
+      return {
+        className: "ring-2 ring-gray-500",
+        style: {
+          backgroundColor: "#e5e7eb",
+          borderColor: "#6b7280",
+          color: "#111827",
+        },
+      };
+    } else if (isAvailable) {
+      return {
+        className: "ev-available",
+        style: { backgroundColor: "#86efac", border: "none", color: "#111827" },
+      };
+    } else {
+      return {
+        className: "ev-booked",
+        style: { backgroundColor: "#fbbf24", border: "none", color: "#111827" },
+      };
+    }
+  }, [selectForBooking, selectedIds]);
 
   // Visually mute past hours and disable 23:00 slots
   const slotPropGetter: SlotPropGetter = useCallback(
@@ -432,6 +611,8 @@ export default function TenantCalendar({
     []
   );
   const resizableAccessor = draggableAccessor;
+
+
 
   // Drag-drop move handler
   const onEventDrop = useCallback(
@@ -509,12 +690,20 @@ export default function TenantCalendar({
         if (isMobile) {
           if (!canCreateAt(start)) return;
           if (existingHasRange(start, end)) return;
-          await createSlot.mutateAsync({
-            tenantId,
-            start: start.toISOString(),
-            end: end.toISOString(),
-            mode: "online",
-          });
+          if (createSlot.isPending || removeSlot.isPending) return; // prevent double-firing
+          try {
+            await createSlot.mutateAsync({
+              tenantId,
+              start: start.toISOString(),
+              end: end.toISOString(),
+              mode: "online",
+            });
+          } catch (err: any) {
+            // Ignore benign conflicts from double-clicks / slow re-renders
+            if (err?.data?.code !== "CONFLICT") {
+              console.error("Failed to create slot:", err);
+            }
+          }
           return;
         }
 
@@ -529,12 +718,20 @@ export default function TenantCalendar({
 
           if (!canCreateAt(start)) return;
           if (existingHasRange(start, end)) return;
-          await createSlot.mutateAsync({
-            tenantId,
-            start: start.toISOString(),
-            end: end.toISOString(),
-            mode: "online",
-          });
+          if (createSlot.isPending || removeSlot.isPending) return; // prevent double-firing
+          try {
+            await createSlot.mutateAsync({
+              tenantId,
+              start: start.toISOString(),
+              end: end.toISOString(),
+              mode: "online",
+            });
+          } catch (err: any) {
+            // Ignore benign conflicts from double-clicks / slow re-renders
+            if (err?.data?.code !== "CONFLICT") {
+              console.error("Failed to create slot:", err);
+            }
+          }
           return;
         }
 
@@ -552,12 +749,20 @@ export default function TenantCalendar({
           lastSlotClickRef.current = null;
           if (isMutating || !canCreateAt(start) || existingHasRange(start, end))
             return;
-          await createSlot.mutateAsync({
-            tenantId,
-            start: start.toISOString(),
-            end: end.toISOString(),
-            mode: "online",
-          });
+          if (createSlot.isPending || removeSlot.isPending) return; // prevent double-firing
+          try {
+            await createSlot.mutateAsync({
+              tenantId,
+              start: start.toISOString(),
+              end: end.toISOString(),
+              mode: "online",
+            });
+          } catch (err: any) {
+            // Ignore benign conflicts from double-clicks / slow re-renders
+            if (err?.data?.code !== "CONFLICT") {
+              console.error("Failed to create slot:", err);
+            }
+          }
         }, DOUBLE_MS);
       } finally {
         inFlightSlotKeys.current.delete(startMs);
@@ -569,6 +774,9 @@ export default function TenantCalendar({
   // Handle double-click on existing event to remove slot (immediate action)
   const onDoubleClickEvent = useCallback(
     async (event: RbcEvent) => {
+      // Ignore double-clicks in booking mode
+      if (selectForBooking) return;
+
       if (event.resource.status !== "available") return;
 
       // Check in-flight lock for this event
@@ -582,17 +790,32 @@ export default function TenantCalendar({
           eventSingleTimerRef.current = null;
         }
         lastEventClickRef.current = null;
-        await removeSlot.mutateAsync({ bookingId: event.id });
+        if (createSlot.isPending || removeSlot.isPending) return; // prevent double-firing
+        try {
+          await removeSlot.mutateAsync({ bookingId: event.id });
+        } catch (err: any) {
+          // Ignore benign conflicts from double-clicks / slow re-renders
+          if (err?.data?.code !== "NOT_FOUND") {
+            console.error("Failed to delete slot:", err);
+          }
+        }
       } finally {
         inFlightEventIds.current.delete(event.id);
       }
     },
-    [removeSlot]
+    [selectForBooking, removeSlot]
   );
 
-  // Handle single-click event selection for removal
+  // Handle single-click event selection for removal or booking
   const onSelectEvent = useCallback(
     async (event: RbcEvent) => {
+      // Handle booking selection mode
+      if (selectForBooking && onToggleSelect) {
+        handleSlotSelect(event);
+        return;
+      }
+
+      // Handle removal mode (dashboard only)
       if (isMutating || event.resource.status !== "available") return;
 
       // Check in-flight lock for this event
@@ -631,7 +854,7 @@ export default function TenantCalendar({
         inFlightEventIds.current.delete(event.id);
       }
     },
-    [isMutating, removeSlot]
+    [selectForBooking, onToggleSelect, handleSlotSelect, isMutating, removeSlot]
   );
 
   if (tenantQ.isLoading) {
@@ -679,8 +902,8 @@ export default function TenantCalendar({
                   endAccessor="end"
                   style={{ height: isMobile ? "70vh" : height }}
                   onSelectSlot={editable ? onSelectSlot : undefined}
-                  onSelectEvent={editable ? onSelectEvent : undefined}
-                  onDoubleClickEvent={editable ? onDoubleClickEvent : undefined}
+                  onSelectEvent={(editable || selectForBooking) ? onSelectEvent : undefined}
+                  onDoubleClickEvent={(editable || selectForBooking) ? onDoubleClickEvent : undefined}
                   selectable={editable ? "ignoreEvents" : false}
                   toolbar={false} // hide RBC toolbar
                   date={anchor} // controlled date
@@ -712,8 +935,8 @@ export default function TenantCalendar({
                   endAccessor="end"
                   style={{ height: isMobile ? "70vh" : height }}
                   onSelectSlot={editable ? onSelectSlot : undefined}
-                  onSelectEvent={editable ? onSelectEvent : undefined}
-                  onDoubleClickEvent={editable ? onDoubleClickEvent : undefined}
+                  onSelectEvent={(editable || selectForBooking) ? onSelectEvent : undefined}
+                  onDoubleClickEvent={(editable || selectForBooking) ? onDoubleClickEvent : undefined}
                   selectable={editable ? "ignoreEvents" : false}
                   toolbar={false} // hide RBC toolbar
                   date={anchor} // controlled date
