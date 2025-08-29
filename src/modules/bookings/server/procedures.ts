@@ -145,14 +145,45 @@ export const bookingRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN", message: "Not your tenant" });
       }
 
-      // Prevent overlaps
+      // Basic sanity check
+      const start = new Date(input.start);
+      const end = new Date(input.end);
+
+      if (start >= end) {
+        throw new TRPCError({ 
+          code: "BAD_REQUEST", 
+          message: "Start must be before end" 
+        });
+      }
+
+      // Snap both to hour
+      start.setMinutes(0, 0, 0);
+      end.setMinutes(0, 0, 0);
+
+      // Exactly 60 minutes
+      if (end.getTime() - start.getTime() !== 60 * 60 * 1000) {
+        throw new TRPCError({ 
+          code: "BAD_REQUEST", 
+          message: "Duration must be 60 minutes" 
+        });
+      }
+
+      // Not in the past
+      if (start.getTime() <= Date.now()) {
+        throw new TRPCError({ 
+          code: "BAD_REQUEST", 
+          message: "Start must be in the future" 
+        });
+      }
+
+      // Use normalized times for overlap check
       const overlap = await ctx.db.find({
         collection: "bookings",
         where: {
           and: [
             { tenant: { equals: input.tenantId } },
-            { start: { less_than: input.end } },
-            { end: { greater_than: input.start } },
+            { start: { less_than: end.toISOString() } },
+            { end: { greater_than: start.toISOString() } },
           ],
         },
         limit: 1,
@@ -162,13 +193,13 @@ export const bookingRouter = createTRPCRouter({
         throw new TRPCError({ code: "CONFLICT", message: "Overlapping slot" });
       }
 
-      // Create slot (bypass access; we verified ownership)
+      // Store normalized UTC
       const created = (await ctx.db.create({
         collection: "bookings",
         data: {
           tenant: input.tenantId,
-          start: input.start,
-          end: input.end,
+          start: start.toISOString(),
+          end: end.toISOString(),
           mode: input.mode,
           status: "available",
         },

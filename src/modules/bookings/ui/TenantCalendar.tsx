@@ -7,8 +7,6 @@ import type {
   SlotPropGetter,
 } from "react-big-calendar";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import type { TRPCClientErrorLike } from "@trpc/client";
@@ -42,6 +40,7 @@ type Props = {
   tenantSlug: string;
   height?: number | string; // default 520px - controls internal scroll viewport
   defaultStartHour?: number; // default 8 - used to build scrollToTime
+  editable?: boolean; // default false - controls DnD and mutation features
 };
 
 type RbcEvent = {
@@ -74,12 +73,16 @@ export default function TenantCalendar({
   tenantSlug,
   height = 520,
   defaultStartHour = 8,
+  editable = false,
 }: Props) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   // Responsive breakpoint detection
   const isMobile = useMediaQuery("(max-width: 640px)");
+
+  // DnD enabled only when editable and not mobile
+  const dndEnabled = editable && !isMobile;
 
   // Get culture from profile utility (consistent with rest of app)
   const culture = useMemo(
@@ -338,9 +341,6 @@ export default function TenantCalendar({
   });
 
   const isMutating = createSlot.isPending || removeSlot.isPending || moveSlot.isPending;
-
-  // Disable DnD on mobile to avoid conflicts with touch scrolling
-  const dndEnabled = !isMobile;
 
   // Ref for precise header-body scrollbar compensation
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -678,10 +678,10 @@ export default function TenantCalendar({
                   startAccessor="start"
                   endAccessor="end"
                   style={{ height: isMobile ? "70vh" : height }}
-                  onSelectSlot={onSelectSlot}
-                  onSelectEvent={onSelectEvent}
-                  onDoubleClickEvent={onDoubleClickEvent}
-                  selectable="ignoreEvents"
+                  onSelectSlot={editable ? onSelectSlot : undefined}
+                  onSelectEvent={editable ? onSelectEvent : undefined}
+                  onDoubleClickEvent={editable ? onDoubleClickEvent : undefined}
+                  selectable={editable ? "ignoreEvents" : false}
                   toolbar={false} // hide RBC toolbar
                   date={anchor} // controlled date
                   view={activeView}
@@ -711,10 +711,10 @@ export default function TenantCalendar({
                   startAccessor="start"
                   endAccessor="end"
                   style={{ height: isMobile ? "70vh" : height }}
-                  onSelectSlot={onSelectSlot}
-                  onSelectEvent={onSelectEvent}
-                  onDoubleClickEvent={onDoubleClickEvent}
-                  selectable="ignoreEvents"
+                  onSelectSlot={editable ? onSelectSlot : undefined}
+                  onSelectEvent={editable ? onSelectEvent : undefined}
+                  onDoubleClickEvent={editable ? onDoubleClickEvent : undefined}
+                  selectable={editable ? "ignoreEvents" : false}
                   toolbar={false} // hide RBC toolbar
                   date={anchor} // controlled date
                   view={activeView}
