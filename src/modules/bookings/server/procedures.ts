@@ -264,7 +264,7 @@ export const bookingRouter = createTRPCRouter({
       return created;
     }),
 
-  // Book a slot (customer) - FIXED: Clerk ID mapping + overrideAccess
+  // Book a slot (customer) - FIXED: Race condition prevention + Clerk ID mapping
   bookSlot: baseProcedure
     .input(z.object({ bookingId: z.string() }))
     .mutation(async ({ input, ctx }): Promise<DocWithId<Booking>> => {
@@ -281,33 +281,40 @@ export const bookingRouter = createTRPCRouter({
       const payloadUserId = me.docs[0]?.id;
       if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
 
-      // Load booking
-      const existing = (await ctx.db.findByID({
+      const nowIso = new Date().toISOString();
+      
+      // Atomic conditional update: only book if still available and in the future
+      const res = await ctx.db.update({
         collection: "bookings",
-        id: input.bookingId,
+        where: {
+          and: [
+            { id: { equals: input.bookingId } },
+            { status: { equals: "available" } },
+            { start: { greater_than: nowIso } },
+          ],
+        },
+        data: { status: "booked", customer: payloadUserId },
+        overrideAccess: true,
         depth: 0,
-      })) as Booking | null;
+      });
 
-      if (!existing || existing.status !== "available") {
+      // Payload returns { docs: [...] } for update-many
+      const updated = Array.isArray(res?.docs)
+        ? (res.docs[0] as DocWithId<Booking> | undefined)
+        : undefined;
+
+      if (!updated) {
+        // Nothing matched our WHERE; someone else won the race, or slot is in the past
         throw new TRPCError({
           code: "CONFLICT",
           message: "Slot already taken or does not exist",
         });
       }
 
-      // Confirm booking (bypass collection access after our checks)
-      const updated = (await ctx.db.update({
-        collection: "bookings",
-        id: input.bookingId,
-        data: { status: "confirmed", customer: payloadUserId },
-        overrideAccess: true, // ← required if you tighten collection update
-        depth: 0,
-      })) as DocWithId<Booking>;
-
       return updated;
     }),
 
-  // Remove available slot (tenant only) - NEW: allows cleanup
+  // Remove available slot (tenant only) - FIXED: Race condition prevention
   removeSlot: baseProcedure
     .input(z.object({ bookingId: z.string() }))
     .mutation(async ({ input, ctx }): Promise<{ deletedId: string }> => {
@@ -324,20 +331,13 @@ export const bookingRouter = createTRPCRouter({
       const payloadUserId = me.docs[0]?.id;
       if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
 
-      // Load booking
+      // Load booking for ownership verification (we still need this for tenant check)
       const b = (await ctx.db.findByID({
         collection: "bookings",
         id: input.bookingId,
         depth: 0,
       })) as Booking | null;
       if (!b) throw new TRPCError({ code: "NOT_FOUND" });
-
-      if (b.status !== "available") {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Only available slots can be removed",
-        });
-      }
 
       // Verify tenant ownership
       const tenantId = typeof b.tenant === "string" ? b.tenant : b.tenant?.id;
@@ -356,12 +356,25 @@ export const bookingRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      // Delete (bypass collection ACL)
-      await ctx.db.delete({
+      // Atomic conditional delete: only delete if still available
+      const deleteRes = await ctx.db.delete({
         collection: "bookings",
-        id: b.id,
-        overrideAccess: true, // ← required if collection delete is restricted
+        where: {
+          and: [
+            { id: { equals: input.bookingId } },
+            { status: { equals: "available" } },
+          ],
+        },
+        overrideAccess: true,
       });
+
+      // Check if deletion was successful
+      if (!deleteRes?.docs || deleteRes.docs.length === 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Slot already taken or does not exist",
+        });
+      }
 
       return { deletedId: input.bookingId };
     }),
@@ -417,7 +430,7 @@ export const bookingRouter = createTRPCRouter({
       const payloadUserId = me.docs[0]?.id;
       if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
 
-      // Load the current booking
+      // Load the current booking for ownership verification
       const current = (await ctx.db.findByID({
         collection: "bookings",
         id: input.bookingId,
@@ -425,12 +438,6 @@ export const bookingRouter = createTRPCRouter({
       })) as Booking | null;
 
       if (!current) throw new TRPCError({ code: "NOT_FOUND" });
-      if (current.status !== "available") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only available slots are movable",
-        });
-      }
 
       // Verify tenant ownership
       const tenantId =
@@ -472,17 +479,34 @@ export const bookingRouter = createTRPCRouter({
         throw new TRPCError({ code: "CONFLICT", message: "Overlapping slot" });
       }
 
-      // Update the booking time
-      const updated = (await ctx.db.update({
+      // Atomic conditional update: only update if still available
+      const updateRes = await ctx.db.update({
         collection: "bookings",
-        id: input.bookingId,
+        where: {
+          and: [
+            { id: { equals: input.bookingId } },
+            { status: { equals: "available" } },
+          ],
+        },
         data: {
           start: start.toISOString(),
           end: end.toISOString(),
         },
         overrideAccess: true,
         depth: 0,
-      })) as DocWithId<Booking>;
+      });
+
+      // Check if update was successful
+      const updated = Array.isArray(updateRes?.docs)
+        ? (updateRes.docs[0] as DocWithId<Booking> | undefined)
+        : undefined;
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Slot already taken or does not exist",
+        });
+      }
 
       return updated;
     }),
