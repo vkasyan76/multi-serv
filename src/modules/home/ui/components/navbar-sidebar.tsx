@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { cn, generateTenantUrl } from "@/lib/utils";
 import {
   SignInButton,
   SignedIn,
@@ -34,6 +35,24 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
 
   const isAdmin = user?.roles?.includes("super-admin");
   const hasTenant = !!user?.tenants?.length;
+
+  // Get info for user's tenant:
+  const {
+    data: myTenant,
+    isLoading: isMineLoading,
+  } = useQuery({
+    ...trpc.tenants.getMine.queryOptions({}),
+    enabled: !!session.data?.user?.id,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const dashHref = myTenant
+    ? `${generateTenantUrl(myTenant.slug)}/dashboard`
+    : "/profile?tab=vendor";
+
+  // Only disable when session says user has a tenant but getMine hasn't returned it yet
+  const isDashLoading = hasTenant && !myTenant && isMineLoading;
 
   const { signOut } = useClerk();
 
@@ -89,7 +108,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
               </Link>
 
               {/* Dashboard OR Start Business - conditional based on tenant status */}
-              {hasTenant ? (
+              {/* {hasTenant ? (
                 <Link
                   href="/dashboard"
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
@@ -105,17 +124,26 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                 >
                   Start Business
                 </Link>
-              )}
+              )} */}
+              <Link
+                href={dashHref}
+                className={cn(
+                  "w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium",
+                  isDashLoading && "opacity-60"
+                )}
+                aria-disabled={isDashLoading}
+                aria-busy={isDashLoading}
+                onClick={
+                  isDashLoading
+                    ? (e) => e.preventDefault()            // block keyboard + mouse activation
+                    : () => onOpenChange(false)            // current behavior when ready
+                }
+              >
+                {myTenant ? "Dashboard" : "Start Business"}
+              </Link>
+
               {/* Clerk SignOutButton does not accept custom onClick handlers -> const { signOut } = useClerk(); */}
               <div className="border-t">
-                {/* <SignOutButton redirectUrl="/">
-                  <button
-                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                    type="button"
-                  >
-                    Sign out
-                  </button>
-                </SignOutButton> */}
                 <button
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                   type="button"
