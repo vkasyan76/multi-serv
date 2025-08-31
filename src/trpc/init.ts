@@ -49,10 +49,21 @@ export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 // export const baseProcedure = t.procedure;
 
-export const baseProcedure = t.procedure.use(async ({ next }) => {
-  // connect to payload:
-  const payload = await getPayload({ config });
-  return next({ ctx: { db: payload } });
+// export const baseProcedure = t.procedure.use(async ({ ctx, next }) => {
+//   // connect to payload:
+//   const payload = await getPayload({ config });
+//   // Merge: keep existing context (auth, userId, headers, req) and add/update db
+//   return next({ ctx: { ...ctx, db: payload } });
+// });
+
+// optimized baseProcedure - No wasted work - If createTRPCContext already put db on ctx, we don’t build it again. That saves an extra async init per call and avoids creating two clients per request.
+export const baseProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.db) {
+    // only if missing
+    const payload = await getPayload({ config }); // create Payload client
+    ctx = { ...ctx, db: payload }; // attach it once
+  }
+  return next({ ctx }); // keep everything else intact
 });
 
 export const clerkProcedure = baseProcedure.use(async ({ ctx, next }) => {

@@ -230,6 +230,14 @@ export const bookingRouter = createTRPCRouter({
         });
       }
 
+      // Policy: no 23:00 starts (consistent with updateSlotTime)
+      if (start.getHours() === 23) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "23:00 not allowed",
+        });
+      }
+
       // Use normalized times for overlap check
       const overlap = await ctx.db.find({
         collection: "bookings",
@@ -528,57 +536,60 @@ export const bookingRouter = createTRPCRouter({
       const payloadUserId = me.docs[0]?.id;
       if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
 
-      // Fetch once to know which ids exist (keeps good UX: we can return invalidIds)
+      // Fetch once to know which ids exist and validate they're bookable
       const { docs } = await ctx.db.find({
         collection: "bookings",
-        where: { id: { in: bookingIds } },
+        where: { 
+          and: [
+            { id: { in: bookingIds } },
+            { status: { equals: "available" } },
+            { start: { greater_than: new Date().toISOString() } }
+          ]
+        },
         depth: 0,
         limit: bookingIds.length,
       });
 
       const foundSet = new Set(docs.map((d: DocWithId<Booking>) => d.id));
       const invalidIds: string[] = bookingIds.filter((id) => !foundSet.has(id));
+      const bookableIds = Array.from(foundSet);
 
-      const nowIso = new Date().toISOString();
-      const bookedIds: string[] = [];
-      const unavailableIds: string[] = [];
+      if (bookableIds.length === 0) {
+        return {
+          bookedIds: [],
+          unavailableIds: bookingIds.filter(id => !invalidIds.includes(id)),
+          invalidIds,
+          updated: 0,
+        };
+      }
 
-      // Per-id "compare-and-set": only flip if still available and in the future
-      // Use Promise.allSettled for parallel updates without failing the whole mutation on one error
-      await Promise.allSettled(
-        bookingIds.map(async (id) => {
-          if (!foundSet.has(id)) return;
+      // Atomic bulk update: book all available slots in one operation
+      const bulkUpdateRes = await ctx.db.update({
+        collection: "bookings",
+        where: {
+          and: [
+            { id: { in: bookableIds } },
+            { status: { equals: "available" } },
+            { start: { greater_than: new Date().toISOString() } }
+          ]
+        },
+        data: { status: "booked", customer: payloadUserId },
+        overrideAccess: true,
+        depth: 0,
+      });
 
-          const res = await ctx.db.update({
-            collection: "bookings",
-            where: {
-              and: [
-                { id: { equals: id } },
-                { status: { equals: "available" } },
-                { start: { greater_than: nowIso } },
-              ],
-            },
-            data: { status: "booked", customer: payloadUserId },
-            overrideAccess: true,
-            depth: 0,
-          });
+      const successfullyBooked = Array.isArray(bulkUpdateRes?.docs) 
+        ? bulkUpdateRes.docs.map(doc => doc.id)
+        : [];
 
-          const updatedOne = Array.isArray(res?.docs) && res.docs.length === 1;
-
-          if (updatedOne) {
-            bookedIds.push(id);
-          } else {
-            // Either it was already booked/confirmed, or it moved to the past
-            unavailableIds.push(id);
-          }
-        })
-      );
+      // Calculate unavailable (bookable but not successfully booked due to race conditions)
+      const unavailableIds = bookableIds.filter(id => !successfullyBooked.includes(id));
 
       return {
-        bookedIds,
-        unavailableIds,
+        bookedIds: successfullyBooked,
+        unavailableIds: [...unavailableIds, ...bookingIds.filter(id => !foundSet.has(id) && !invalidIds.includes(id))],
         invalidIds,
-        updated: bookedIds.length,
+        updated: successfullyBooked.length,
       };
     }),
 });
