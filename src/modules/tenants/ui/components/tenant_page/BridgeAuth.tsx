@@ -12,16 +12,38 @@ export default function BridgeAuth({
   refreshMs?: number;
 }) {
   useEffect(() => {
-    const ping = () =>
-      fetch("/api/auth/bridge", {
-        credentials: "include",
-        cache: "no-store",
-      }).catch(() => {});
+    const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN!; // e.g. "infinisimo.com"
+
+    const pingOnce = async () => {
+      try {
+        // 1) try local subdomain first
+        const r = await fetch("/api/auth/bridge", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const data = await r.json().catch(() => ({}));
+
+        // 2) if not authenticated AND we're on a tenant subdomain, call APEX bridge
+        const host = window.location.hostname;
+        const onTenantSubdomain =
+          ROOT && host !== ROOT && host.endsWith(`.${ROOT}`);
+
+        if (!data?.authenticated && onTenantSubdomain) {
+          await fetch(`https://${ROOT}/api/auth/bridge`, {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+            // CORS with credentials: server must echo our Origin (below)
+            mode: "cors",
+          }).catch(() => {});
+        }
+      } catch {}
+    };
 
     // initial + keepalive + on tab focus
-    ping();
-    const id = setInterval(ping, refreshMs);
-    const onVis = () => document.visibilityState === "visible" && ping();
+    pingOnce();
+    const id = setInterval(pingOnce, refreshMs);
+    const onVis = () => document.visibilityState === "visible" && pingOnce();
     document.addEventListener("visibilitychange", onVis);
 
     return () => {
