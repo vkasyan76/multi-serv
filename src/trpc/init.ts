@@ -18,8 +18,12 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   if (req) {
     headers = Object.fromEntries(req.headers.entries());
   } else {
-    const h = await nextHeaders(); // <-- await
-    headers = Object.fromEntries(h.entries());
+    try {
+      const h = await nextHeaders(); // <-- keep await for current types
+      headers = Object.fromEntries(h.entries());
+    } catch {
+      headers = {};
+    }
   }
 
   // keep whatever you already return in ctx (payload, headers, etc.)
@@ -40,7 +44,7 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   let bridgedUid: string | null = null;
 
   try {
-    const cookieStore = await nextCookies();
+    const cookieStore = await nextCookies(); // <-- keep await for current types
     const token = cookieStore.get(BRIDGE_COOKIE)?.value;
     if (token) {
       const { uid } = await verifyBridgeToken(token);

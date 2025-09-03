@@ -118,7 +118,7 @@ export const authRouter = createTRPCRouter({
   // Clerk session procedure: clerkSession only fetches a record; it never creates one. This causes the “no record created” behavior.
   clerkSession: clerkProcedure.query(async ({ ctx }) => {
     // Now you have ctx.db (payload instance) and ctx.auth (if present in your context)
-    const userId = ctx.auth?.userId;
+    const userId = ctx.userId;
     if (!userId) return null;
 
     // Use ctx.db (no need to call getPayload again)
