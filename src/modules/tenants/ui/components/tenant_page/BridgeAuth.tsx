@@ -12,32 +12,48 @@ export default function BridgeAuth({
   refreshMs?: number;
 }) {
   useEffect(() => {
-    const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN!; // e.g. "infinisimo.com"
+    const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN || ""; // "infinisimo.com"
+    const host = window.location.hostname;
+    const onTenantSubdomain =
+      ROOT && host !== ROOT && host.endsWith(`.${ROOT}`);
 
-    const pingOnce = async () => {
+    const call = async (url: string) => {
       try {
-        // 1) try local subdomain first
-        const r = await fetch("/api/auth/bridge", {
+        const r = await fetch(url, {
+          method: "GET",
           credentials: "include",
           cache: "no-store",
+          mode: "cors",
         });
         const data = await r.json().catch(() => ({}));
+        // Quick console breadcrumbs
 
-        // 2) if not authenticated AND we're on a tenant subdomain, call APEX bridge
-        const host = window.location.hostname;
-        const onTenantSubdomain =
-          ROOT && host !== ROOT && host.endsWith(`.${ROOT}`);
+        console.log("bridge", {
+          url,
+          status: r.status,
+          auth: data?.authenticated,
+        });
+        return Boolean(data?.authenticated);
+      } catch {
+        console.warn("bridge fetch failed", url);
+        return false;
+      }
+    };
 
-        if (!data?.authenticated && onTenantSubdomain) {
-          await fetch(`https://${ROOT}/api/auth/bridge`, {
-            method: "GET",
-            credentials: "include",
-            cache: "no-store",
-            // CORS with credentials: server must echo our Origin (below)
-            mode: "cors",
-          }).catch(() => {});
-        }
-      } catch {}
+    const pingOnce = async () => {
+      // 1) try current origin
+      const okLocal = await call("/api/auth/bridge");
+      if (okLocal || !onTenantSubdomain) return;
+
+      // 2) try apex
+      if (ROOT) {
+        const okApex = await call(`https://${ROOT}/api/auth/bridge`);
+        if (okApex) return;
+
+        // 3) try www.apex (in case you're signed in there)
+        const okWWW = await call(`https://www.${ROOT}/api/auth/bridge`);
+        if (okWWW) return;
+      }
     };
 
     // initial + keepalive + on tab focus

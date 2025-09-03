@@ -10,7 +10,9 @@ function withCors(res: NextResponse, req: Request) {
   const origin = req.headers.get("origin") ?? "";
   const allowed =
     !!ROOT &&
-    (origin === `https://${ROOT}` || origin.endsWith(`.${ROOT}`));
+    (origin === `https://${ROOT}` ||
+     origin === `https://www.${ROOT}` ||
+     origin.endsWith(`.${ROOT}`));
 
   if (allowed) {
     res.headers.set("Access-Control-Allow-Origin", origin);
