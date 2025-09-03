@@ -5,12 +5,13 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 import { auth } from "@clerk/nextjs/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import { BRIDGE_COOKIE } from "@/constants";
 
 import { cookies as nextCookies, headers as nextHeaders } from "next/headers";
 import { verifyBridgeToken } from "@/lib/app-auth";
 
 export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
-  const BRIDGE_COOKIE = "inf_br";
+  // const BRIDGE_COOKIE = "inf_br";
 
   const req = opts?.req;
   let headers: Record<string, string> = {};
@@ -39,17 +40,13 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   let bridgedUid: string | null = null;
 
   try {
-    const cookieStore = await nextCookies(); // <-- await
+    const cookieStore = await nextCookies();
     const token = cookieStore.get(BRIDGE_COOKIE)?.value;
     if (token) {
       const { uid } = await verifyBridgeToken(token);
-      if (typeof uid === "string" && uid.length > 0) {
-        bridgedUid = uid;
-      }
+      if (typeof uid === "string" && uid.length > 0) bridgedUid = uid;
     }
-  } catch {
-    // ignore invalid/expired token; it just means no bridged auth
-  }
+  } catch {}
 
   const userId = clerkAuth?.userId ?? bridgedUid ?? null;
 
@@ -82,7 +79,7 @@ export const baseProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 export const clerkProcedure = baseProcedure.use(async ({ ctx, next }) => {
-  if (!ctx.auth?.userId) {
+  if (!ctx.userId) {
     // throw new Error("UNAUTHORIZED");
     throw new TRPCError({
       code: "UNAUTHORIZED",

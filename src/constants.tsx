@@ -17,4 +17,6 @@ export const MAX_SLOTS_PER_BOOKING = 8;
 export const TOAST_MS_SUCCESS = 3000;
 export const TOAST_MS_WARNING = 5000;
 export const FAIL_HIGHLIGHT_MS = 2000;
-export const BOOKING_CH = 'booking-updates' as const;
+export const BOOKING_CH = "booking-updates" as const;
+
+export const BRIDGE_COOKIE = "inf_br" as const;
