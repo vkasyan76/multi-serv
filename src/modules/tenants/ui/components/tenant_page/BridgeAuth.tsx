@@ -41,18 +41,16 @@ export default function BridgeAuth({
     };
 
     const pingOnce = async () => {
-      // 1) try current origin
-      const okLocal = await call("/api/auth/bridge");
-      if (okLocal || !onTenantSubdomain) return;
-
-      // 2) try apex
-      if (ROOT) {
-        const okApex = await call(`https://${ROOT}/api/auth/bridge`);
-        if (okApex) return;
-
-        // 3) try www.apex (in case you're signed in there)
-        const okWWW = await call(`https://www.${ROOT}/api/auth/bridge`);
-        if (okWWW) return;
+      if (onTenantSubdomain && ROOT) {
+        // 1) try apex (where you’re signed in)
+        if (await call(`https://${ROOT}/api/auth/bridge`)) return;
+        // 2) try www.apex
+        if (await call(`https://www.${ROOT}/api/auth/bridge`)) return;
+        // 3) last resort: local host
+        await call("/api/auth/bridge");
+      } else {
+        // Not on a tenant subdomain → just call local
+        await call("/api/auth/bridge");
       }
     };
 

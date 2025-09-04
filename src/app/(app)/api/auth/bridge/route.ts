@@ -11,8 +11,8 @@ function withCors(res: NextResponse, req: Request) {
   const allowed =
     !!ROOT &&
     (origin === `https://${ROOT}` ||
-     origin === `https://www.${ROOT}` ||
-     origin.endsWith(`.${ROOT}`));
+      origin === `https://www.${ROOT}` ||
+      origin.endsWith(`.${ROOT}`));
 
   if (allowed) {
     res.headers.set("Access-Control-Allow-Origin", origin);
@@ -36,6 +36,9 @@ export async function GET(req: Request) {
   const secure = process.env.NODE_ENV === "production";
   const sameSite = secure ? ("none" as const) : ("lax" as const);
 
+  const host = new URL(req.url).host; // e.g. "valentisimo.infinisimo.com"
+  const isApex = !!ROOT && (host === ROOT || host === `www.${ROOT}`);
+
   if (userId) {
     const token = await signBridgeToken(
       { uid: userId, sid: sessionId ?? undefined },
@@ -49,8 +52,8 @@ export async function GET(req: Request) {
       path: "/",
       maxAge: 120,
     });
-  } else {
-    // clear any stale cookie
+  } else if (isApex) {
+    // clear ONLY from apex; never clear from tenant subdomains
     res.cookies.set(BRIDGE_COOKIE, "", {
       httpOnly: true,
       secure,
