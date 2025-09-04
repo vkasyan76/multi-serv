@@ -21,6 +21,12 @@ export default function BridgeAuth({
     const onTenantSubdomain =
       ROOT && host !== ROOT && host.endsWith(`.${ROOT}`);
 
+    console.log("[BridgeAuth debug]", {
+      ROOT,
+      host,
+      onTenantSubdomain,
+    });
+
     const call = async (url: string, bearer?: string) => {
       try {
         const r = await fetch(url, {
@@ -40,24 +46,13 @@ export default function BridgeAuth({
     };
 
     const pingOnce = async () => {
-      if (onTenantSubdomain && ROOT) {
-        // Try cookie-based calls first (what you had):
+      // Always try apex first – this guarantees we try to mint the cookie where the Clerk session lives.
+      if (ROOT) {
         if (await call(`https://${ROOT}/api/auth/bridge`)) return;
         if (await call(`https://www.${ROOT}/api/auth/bridge`)) return;
-
-        // Fallback: get a Clerk JWT and retry apex with Authorization
-        const jwt = await getToken().catch(() => null);
-        if (jwt) {
-          if (await call(`https://${ROOT}/api/auth/bridge`, jwt)) return;
-          if (await call(`https://www.${ROOT}/api/auth/bridge`, jwt)) return;
-        }
-
-        // Last resort: local origin (won't auth cookies cross-origin, but harmless)
-        await call("/api/auth/bridge");
-      } else {
-        // Not on a tenant subdomain → just call local
-        await call("/api/auth/bridge");
       }
+      // Last resort: local route on whatever host we're on.
+      await call("/api/auth/bridge");
     };
 
     // initial + keepalive + on tab focus
