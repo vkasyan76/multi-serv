@@ -33,16 +33,25 @@ function withCors(res: NextResponse, req: Request) {
 export async function GET(req: Request) {
   // Debug logging to understand what's being received
   const url = new URL(req.url);
+  const origin = req.headers.get("origin");
+  
+  // --- DIAG START ---
   const cookieHeader = req.headers.get("cookie") || "";
+  const hasSessionCookie = /(?:^|;\s*)__session=/.test(cookieHeader);
+  const hasAnyClerkCookie = /__clerk|__session/.test(cookieHeader);
+  // --- DIAG END ---
+  
   const authz = req.headers.get("authorization") || "";
 
   console.log("[bridge] req", {
     host: url.host,
-    origin: req.headers.get("origin"),
-    hasCookie: cookieHeader.includes("__clerk") || cookieHeader.includes("__session"),
+    origin: origin || null,
+    hasCookie: !!cookieHeader,
     cookieLen: cookieHeader.length,
+    hasSessionCookie,
+    hasAnyClerkCookie,
     hasAuthz: authz.startsWith("Bearer "),
-    authzPrefix: authz.slice(0, 20), // harmless preview
+    authzPrefix: authz.slice(0, 10),
   });
 
   let { userId, sessionId } = await auth();
@@ -72,6 +81,8 @@ export async function GET(req: Request) {
 
   // helpful while testing
   res.headers.set("x-bridge-auth", userId ? "yes" : "no");
+  res.headers.set("x-bridge-has-session-cookie", hasSessionCookie ? "yes" : "no");
+  res.headers.set("x-bridge-has-any-clerk-cookie", hasAnyClerkCookie ? "yes" : "no");
 
   const secure = process.env.NODE_ENV === "production";
   const sameSite = secure ? ("none" as const) : ("lax" as const);
