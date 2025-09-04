@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 
 /**
  * Pings /api/auth/bridge to mint/refresh a short-lived HttpOnly cookie
@@ -11,28 +12,26 @@ export default function BridgeAuth({
 }: {
   refreshMs?: number;
 }) {
+  // ✅ call the hook at the top level
+  const { getToken } = useAuth();
+
   useEffect(() => {
     const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN || ""; // "infinisimo.com"
     const host = window.location.hostname;
     const onTenantSubdomain =
       ROOT && host !== ROOT && host.endsWith(`.${ROOT}`);
 
-    const call = async (url: string) => {
+    const call = async (url: string, bearer?: string) => {
       try {
         const r = await fetch(url, {
           method: "GET",
           credentials: "include",
           cache: "no-store",
           mode: "cors",
+          headers: bearer ? { Authorization: `Bearer ${bearer}` } : undefined,
         });
         const data = await r.json().catch(() => ({}));
-        // Quick console breadcrumbs
-
-        console.log("bridge", {
-          url,
-          status: r.status,
-          auth: data?.authenticated,
-        });
+        console.log("bridge", { url, status: r.status, auth: data?.authenticated });
         return Boolean(data?.authenticated);
       } catch {
         console.warn("bridge fetch failed", url);
@@ -42,11 +41,18 @@ export default function BridgeAuth({
 
     const pingOnce = async () => {
       if (onTenantSubdomain && ROOT) {
-        // 1) try apex (where you’re signed in)
+        // Try cookie-based calls first (what you had):
         if (await call(`https://${ROOT}/api/auth/bridge`)) return;
-        // 2) try www.apex
         if (await call(`https://www.${ROOT}/api/auth/bridge`)) return;
-        // 3) last resort: local host
+
+        // Fallback: get a Clerk JWT and retry apex with Authorization
+        const jwt = await getToken().catch(() => null);
+        if (jwt) {
+          if (await call(`https://${ROOT}/api/auth/bridge`, jwt)) return;
+          if (await call(`https://www.${ROOT}/api/auth/bridge`, jwt)) return;
+        }
+
+        // Last resort: local origin (won't auth cookies cross-origin, but harmless)
         await call("/api/auth/bridge");
       } else {
         // Not on a tenant subdomain → just call local
@@ -64,7 +70,7 @@ export default function BridgeAuth({
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [refreshMs]);
+  }, [refreshMs, getToken]); // ✅ include getToken
 
   return null;
 }

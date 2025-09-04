@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { verifyToken } from "@clerk/backend";
 import { signBridgeToken } from "@/lib/app-auth";
 import { BRIDGE_COOKIE } from "@/constants";
+
+type MinimalClerkJWT = {
+  sub?: string;
+  sid?: string;
+};
 
 const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN; // no default
 const COOKIE_DOMAIN = ROOT ? `.${ROOT}` : undefined;
@@ -18,12 +24,32 @@ function withCors(res: NextResponse, req: Request) {
     res.headers.set("Access-Control-Allow-Origin", origin);
     res.headers.set("Vary", "Origin");
     res.headers.set("Access-Control-Allow-Credentials", "true");
+    res.headers.set("Access-Control-Allow-Methods", "GET,OPTIONS");
+    res.headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
   }
   return res;
 }
 
 export async function GET(req: Request) {
-  const { userId, sessionId } = await auth();
+  let { userId, sessionId } = await auth();
+
+  // Fallback: if the apex couldn't see Clerk cookies, accept a Bearer token
+  if (!userId) {
+    const authz = req.headers.get("authorization") || "";
+    const m = authz.match(/^Bearer\s+(.+)$/i);
+    if (m?.[1]) {
+      try {
+        const v = (await verifyToken(m[1], {
+          secretKey: process.env.CLERK_SECRET_KEY!, // must be set on Vercel
+        })) as MinimalClerkJWT;
+
+        userId = typeof v.sub === "string" ? v.sub : null;
+        sessionId = typeof v.sid === "string" ? v.sid : null;
+      } catch {
+        // ignore; we'll respond as unauthenticated
+      }
+    }
+  }
 
   const res = NextResponse.json(
     { ok: true, authenticated: Boolean(userId) },
