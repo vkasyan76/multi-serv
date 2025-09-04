@@ -46,12 +46,14 @@ export default function BridgeAuth({
     };
 
     const pingOnce = async () => {
-      // Always try apex first – this guarantees we try to mint the cookie where the Clerk session lives.
       if (ROOT) {
-        if (await call(`https://${ROOT}/api/auth/bridge`)) return;
-        if (await call(`https://www.${ROOT}/api/auth/bridge`)) return;
+        // Try apex first (where the Clerk session lives).
+        const jwt = await getToken().catch(() => null) || undefined;
+
+        if (await call(`https://${ROOT}/api/auth/bridge`, jwt)) return;
+        if (await call(`https://www.${ROOT}/api/auth/bridge`, jwt)) return;
       }
-      // Last resort: local route on whatever host we're on.
+      // Last resort: local host (harmless; won't set cookie cross-origin)
       await call("/api/auth/bridge");
     };
 
