@@ -13,7 +13,7 @@ export default function BridgeAuth({
   refreshMs?: number;
 }) {
   // ✅ call the hook at the top level
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
 
   useEffect(() => {
     const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN || ""; // "infinisimo.com"
@@ -27,17 +27,27 @@ export default function BridgeAuth({
       onTenantSubdomain,
     });
 
-    const call = async (url: string, bearer?: string | null) => {
+    const call = async (url: string) => {
       try {
+        // get a short-lived Clerk session token (default template is fine)
+        const jwt = isLoaded ? await getToken().catch(() => null) : null;
+
         const r = await fetch(url, {
           method: "GET",
           credentials: "include",
           cache: "no-store",
           mode: "cors",
-          headers: bearer ? { Authorization: `Bearer ${bearer}` } : undefined,
+          headers: jwt ? { authorization: `Bearer ${jwt}` } : undefined,
         });
+
         const data = await r.json().catch(() => ({}));
-        console.log("bridge", { url, status: r.status, auth: data?.authenticated });
+
+        console.debug("[BridgeAuth] bridge", {
+          url,
+          status: r.status,
+          auth: data?.authenticated,
+        });
+
         return Boolean(data?.authenticated);
       } catch {
         console.warn("bridge fetch failed", url);
@@ -46,14 +56,12 @@ export default function BridgeAuth({
     };
 
     const pingOnce = async () => {
-      const bearer = (await getToken().catch(() => null)) ?? null;
-
       // try apex first (where Clerk session lives)
-      if (ROOT && (await call(`https://${ROOT}/api/auth/bridge`, bearer))) return;
-      if (ROOT && (await call(`https://www.${ROOT}/api/auth/bridge`, bearer))) return;
+      if (ROOT && (await call(`https://${ROOT}/api/auth/bridge`))) return;
+      if (ROOT && (await call(`https://www.${ROOT}/api/auth/bridge`))) return;
 
       // finally local host
-      await call("/api/auth/bridge", bearer);
+      await call("/api/auth/bridge");
     };
 
     // initial + keepalive + on tab focus
@@ -66,7 +74,7 @@ export default function BridgeAuth({
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [refreshMs, getToken]); // ✅ include getToken
+  }, [refreshMs, getToken, isLoaded]); // ✅ include getToken and isLoaded
 
   return null;
 }
