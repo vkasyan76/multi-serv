@@ -27,17 +27,14 @@ export default function BridgeAuth({
       onTenantSubdomain,
     });
 
-    const call = async (url: string) => {
+    const call = async (url: string, bearer?: string | null) => {
       try {
-        // get a short-lived Clerk token if available
-        const jwt = (await getToken?.().catch(() => null)) || undefined;
-
         const r = await fetch(url, {
           method: "GET",
           credentials: "include",
           cache: "no-store",
           mode: "cors",
-          headers: jwt ? { Authorization: `Bearer ${jwt}` } : undefined,
+          headers: bearer ? { Authorization: `Bearer ${bearer}` } : undefined,
         });
         const data = await r.json().catch(() => ({}));
         console.log("bridge", { url, status: r.status, auth: data?.authenticated });
@@ -49,12 +46,14 @@ export default function BridgeAuth({
     };
 
     const pingOnce = async () => {
-      // try apex (and www) first, then local
-      if (ROOT) {
-        if (await call(`https://${ROOT}/api/auth/bridge`)) return;
-        if (await call(`https://www.${ROOT}/api/auth/bridge`)) return;
-      }
-      await call("/api/auth/bridge");
+      const bearer = (await getToken().catch(() => null)) ?? null;
+
+      // try apex first (where Clerk session lives)
+      if (ROOT && (await call(`https://${ROOT}/api/auth/bridge`, bearer))) return;
+      if (ROOT && (await call(`https://www.${ROOT}/api/auth/bridge`, bearer))) return;
+
+      // finally local host
+      await call("/api/auth/bridge", bearer);
     };
 
     // initial + keepalive + on tab focus
