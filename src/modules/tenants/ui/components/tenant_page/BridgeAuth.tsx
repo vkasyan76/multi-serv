@@ -27,14 +27,17 @@ export default function BridgeAuth({
       onTenantSubdomain,
     });
 
-    const call = async (url: string, bearer?: string) => {
+    const call = async (url: string) => {
       try {
+        // get a short-lived Clerk token if available
+        const jwt = (await getToken?.().catch(() => null)) || undefined;
+
         const r = await fetch(url, {
           method: "GET",
           credentials: "include",
           cache: "no-store",
           mode: "cors",
-          headers: bearer ? { Authorization: `Bearer ${bearer}` } : undefined,
+          headers: jwt ? { Authorization: `Bearer ${jwt}` } : undefined,
         });
         const data = await r.json().catch(() => ({}));
         console.log("bridge", { url, status: r.status, auth: data?.authenticated });
@@ -46,14 +49,11 @@ export default function BridgeAuth({
     };
 
     const pingOnce = async () => {
+      // try apex (and www) first, then local
       if (ROOT) {
-        // Try apex first (where the Clerk session lives).
-        const jwt = await getToken().catch(() => null) || undefined;
-
-        if (await call(`https://${ROOT}/api/auth/bridge`, jwt)) return;
-        if (await call(`https://www.${ROOT}/api/auth/bridge`, jwt)) return;
+        if (await call(`https://${ROOT}/api/auth/bridge`)) return;
+        if (await call(`https://www.${ROOT}/api/auth/bridge`)) return;
       }
-      // Last resort: local host (harmless; won't set cookie cross-origin)
       await call("/api/auth/bridge");
     };
 
