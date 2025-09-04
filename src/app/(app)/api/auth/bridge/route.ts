@@ -31,6 +31,20 @@ function withCors(res: NextResponse, req: Request) {
 }
 
 export async function GET(req: Request) {
+  // Debug logging to understand what's being received
+  const url = new URL(req.url);
+  const cookieHeader = req.headers.get("cookie") || "";
+  const authz = req.headers.get("authorization") || "";
+
+  console.log("[bridge] req", {
+    host: url.host,
+    origin: req.headers.get("origin"),
+    hasCookie: cookieHeader.includes("__clerk") || cookieHeader.includes("__session"),
+    cookieLen: cookieHeader.length,
+    hasAuthz: authz.startsWith("Bearer "),
+    authzPrefix: authz.slice(0, 20), // harmless preview
+  });
+
   let { userId, sessionId } = await auth();
 
   // Fallback: if the apex couldn't see Clerk cookies, accept a Bearer token

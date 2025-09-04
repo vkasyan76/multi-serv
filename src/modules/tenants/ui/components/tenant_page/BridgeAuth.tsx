@@ -27,27 +27,19 @@ export default function BridgeAuth({
       onTenantSubdomain,
     });
 
-    const call = async (url: string) => {
+    const call = async (url: string, bearer?: string) => {
       try {
-        // get a short-lived Clerk session token (default template is fine)
-        const jwt = isLoaded ? await getToken().catch(() => null) : null;
-
         const r = await fetch(url, {
           method: "GET",
           credentials: "include",
           cache: "no-store",
           mode: "cors",
-          headers: jwt ? { authorization: `Bearer ${jwt}` } : undefined,
+          headers: bearer ? { Authorization: `Bearer ${bearer}` } : undefined,
         });
 
         const data = await r.json().catch(() => ({}));
 
-        console.debug("[BridgeAuth] bridge", {
-          url,
-          status: r.status,
-          auth: data?.authenticated,
-        });
-
+        console.log("bridge", { url, status: r.status, auth: data?.authenticated });
         return Boolean(data?.authenticated);
       } catch {
         console.warn("bridge fetch failed", url);
@@ -56,11 +48,22 @@ export default function BridgeAuth({
     };
 
     const pingOnce = async () => {
-      // try apex first (where Clerk session lives)
-      if (ROOT && (await call(`https://${ROOT}/api/auth/bridge`))) return;
-      if (ROOT && (await call(`https://www.${ROOT}/api/auth/bridge`))) return;
+      const bearer = await getToken().catch(() => null); // if null, we still try cookie path
+      
+      // Debug logging
+      console.log("[BridgeAuth] debug", { 
+        ROOT, 
+        host: window.location.hostname, 
+        onTenantSubdomain, 
+        hasBearer: !!bearer 
+      });
 
-      // finally local host
+      // Try apex first (where your session lives)
+      if (ROOT) {
+        if (await call(`https://${ROOT}/api/auth/bridge`, bearer ?? undefined)) return;
+        if (await call(`https://www.${ROOT}/api/auth/bridge`, bearer ?? undefined)) return;
+      }
+      // Last resort: local host (harmless)
       await call("/api/auth/bridge");
     };
 
