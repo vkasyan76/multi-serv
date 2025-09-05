@@ -10,6 +10,8 @@ export const runtime = "nodejs";
 const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN; // no default
 const COOKIE_DOMAIN = ROOT ? `.${ROOT}` : undefined;
 
+const BRIDGE_TTL_S = 600; // 10 minutes (was 120)
+
 function withCors(res: NextResponse, req: Request) {
   const origin = req.headers.get("origin") ?? "";
   const allowed =
@@ -39,7 +41,9 @@ export async function GET(req: Request) {
   const cookieHeader = req.headers.get("cookie") || "";
   const hasSessionCookie = /(?:^|;\s*)__session=/.test(cookieHeader);
   const hasAnyClerkCookie = /__clerk|__session/.test(cookieHeader);
-  const hasBridgeCookie = new RegExp(`(?:^|;\\s*)${BRIDGE_COOKIE}=`).test(cookieHeader);
+  const hasBridgeCookie = new RegExp(`(?:^|;\\s*)${BRIDGE_COOKIE}=`).test(
+    cookieHeader
+  );
   const authz = req.headers.get("authorization") || "";
   // --- DIAG END ---
 
@@ -134,6 +138,13 @@ export async function GET(req: Request) {
     { ok: true, authenticated: Boolean(userId) },
     { status: 200 }
   );
+  res.headers.set("Cache-Control", "no-store"); //no-cache header
+
+  res.headers.set("x-bridge-has-bridge-cookie", hasBridgeCookie ? "yes" : "no");
+  res.headers.append(
+    "Access-Control-Expose-Headers",
+    ",x-bridge-has-bridge-cookie"
+  );
 
   // helpful while testing
   res.headers.set("x-bridge-auth", userId ? "yes" : "no");
@@ -154,35 +165,19 @@ export async function GET(req: Request) {
   const secure = process.env.NODE_ENV === "production";
   const sameSite = "lax" as const;
 
-  const host = new URL(req.url).host; // e.g. "valentisimo.infinisimo.com"
-  const isApex = !!ROOT && (host === ROOT || host === `www.${ROOT}`);
-
   if (userId) {
     const token = await signBridgeToken(
       { uid: userId, sid: sessionId ?? undefined },
-      120
+      BRIDGE_TTL_S
     );
+
     res.cookies.set(BRIDGE_COOKIE, token, {
       httpOnly: true,
       secure,
       sameSite,
       ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
       path: "/",
-      maxAge: 120,
-    });
-  } else if (
-    isApex &&
-    hasBridgeCookie &&                         // we actually had inf_br
-    (Boolean(bearer) || hasAnyClerkCookie)    // caller presented auth material
-  ) {
-    // clear ONLY when a real auth attempt failed on the apex
-    res.cookies.set(BRIDGE_COOKIE, "", {
-      httpOnly: true,
-      secure,
-      sameSite,
-      ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
-      path: "/",
-      maxAge: 0,
+      maxAge: BRIDGE_TTL_S,
     });
   }
 

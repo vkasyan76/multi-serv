@@ -20,10 +20,7 @@ export default function BridgeAuth({
     const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN!;
     const host = window.location.hostname;
     const onApex = host === ROOT || host === `www.${ROOT}`;
-    const apexUrls = [
-      `https://${ROOT}/api/auth/bridge`,
-      `https://www.${ROOT}/api/auth/bridge`,
-    ];
+    const apexUrl = `https://${ROOT}/api/auth/bridge`;
 
     const pingOnce = async () => {
       let token: string | null = null;
@@ -41,7 +38,7 @@ export default function BridgeAuth({
       }
 
       // Always ping apex from tenants; only use local when we *are* on the apex.
-      const targets = onApex ? ["/api/auth/bridge"] : apexUrls;
+      const targets = onApex ? ["/api/auth/bridge"] : [apexUrl];
 
       const headers: HeadersInit = token
         ? { Authorization: `Bearer ${token}` }
