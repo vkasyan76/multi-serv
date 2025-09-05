@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { verifyToken } from "@clerk/backend";
+import { createClerkClient } from "@clerk/backend";
 import { signBridgeToken } from "@/lib/app-auth";
 import { BRIDGE_COOKIE } from "@/constants";
 
-type MinimalClerkJWT = {
-  sub?: string;
-  sid?: string;
-};
+export const runtime = "nodejs";
 
 const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN; // no default
 const COOKIE_DOMAIN = ROOT ? `.${ROOT}` : undefined;
@@ -54,24 +51,26 @@ export async function GET(req: Request) {
     authzPrefix: authz.slice(0, 10),
   });
 
-  let { userId, sessionId } = await auth();
+  let userId: string | null = null;
+  let sessionId: string | null = null;
 
-  // Fallback: if the apex couldn't see Clerk cookies, accept a Bearer token
+  // 1) Prefer request-bound auth (reads Authorization: Bearer OR cookies on this Request)
+  const clerk = createClerkClient({
+    secretKey: process.env.CLERK_SECRET_KEY!,
+    publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!,
+  });
+  const state = await clerk.authenticateRequest(req);
+  if (state.isAuthenticated) {
+    const a = state.toAuth();
+    userId = a.userId ?? null;
+    sessionId = a.sessionId ?? null;
+  }
+
+  // 2) Fallback to App Router auth() (cookie-based)
   if (!userId) {
-    const authz = req.headers.get("authorization") || "";
-    const m = authz.match(/^Bearer\s+(.+)$/i);
-    if (m?.[1]) {
-      try {
-        const v = (await verifyToken(m[1], {
-          secretKey: process.env.CLERK_SECRET_KEY!, // must be set on Vercel
-        })) as MinimalClerkJWT;
-
-        userId = typeof v.sub === "string" ? v.sub : null;
-        sessionId = typeof v.sid === "string" ? v.sid : null;
-      } catch {
-        // ignore; we'll respond as unauthenticated
-      }
-    }
+    const a = await auth();
+    userId = a.userId ?? null;
+    sessionId = a.sessionId ?? null;
   }
 
   const res = NextResponse.json(
@@ -85,7 +84,8 @@ export async function GET(req: Request) {
   res.headers.set("x-bridge-has-any-clerk-cookie", hasAnyClerkCookie ? "yes" : "no");
 
   const secure = process.env.NODE_ENV === "production";
-  const sameSite = secure ? ("none" as const) : ("lax" as const);
+  // Same-site (apex<->subdomain) cookies work with Lax; simpler and more predictable.
+  const sameSite = "lax" as const;
 
   const host = new URL(req.url).host; // e.g. "valentisimo.infinisimo.com"
   const isApex = !!ROOT && (host === ROOT || host === `www.${ROOT}`);
