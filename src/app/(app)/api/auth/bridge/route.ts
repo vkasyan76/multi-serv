@@ -1,6 +1,7 @@
+// src/app/(app)/api/auth/bridge/route.ts
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createClerkClient } from "@clerk/backend";
+import { verifyToken } from "@clerk/backend";
 import { signBridgeToken } from "@/lib/app-auth";
 import { BRIDGE_COOKIE } from "@/constants";
 
@@ -28,17 +29,15 @@ function withCors(res: NextResponse, req: Request) {
 }
 
 export async function GET(req: Request) {
-  // Debug logging to understand what's being received
   const url = new URL(req.url);
-  const origin = req.headers.get("origin");
-  
+  const origin = req.headers.get("origin") ?? undefined;
+
   // --- DIAG START ---
   const cookieHeader = req.headers.get("cookie") || "";
   const hasSessionCookie = /(?:^|;\s*)__session=/.test(cookieHeader);
   const hasAnyClerkCookie = /__clerk|__session/.test(cookieHeader);
-  // --- DIAG END ---
-  
   const authz = req.headers.get("authorization") || "";
+  // --- DIAG END ---
 
   console.log("[bridge] req", {
     host: url.host,
@@ -53,24 +52,67 @@ export async function GET(req: Request) {
 
   let userId: string | null = null;
   let sessionId: string | null = null;
+  let source: "none" | "bearer" | "cookie" | "auth()" = "none";
 
-  // 1) Prefer request-bound auth (reads Authorization: Bearer OR cookies on this Request)
-  const clerk = createClerkClient({
-    secretKey: process.env.CLERK_SECRET_KEY!,
-    publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!,
-  });
-  const state = await clerk.authenticateRequest(req);
-  if (state.isAuthenticated) {
-    const a = state.toAuth();
-    userId = a.userId ?? null;
-    sessionId = a.sessionId ?? null;
+  // ---- 1) Bearer-first: verify explicit Authorization header ----
+  const bearer = authz.startsWith("Bearer ") ? authz.slice(7).trim() : null;
+  if (bearer) {
+    try {
+      const v = (await verifyToken(bearer, {
+        secretKey: process.env.CLERK_SECRET_KEY!,
+      })) as unknown as { sub?: string; sid?: string; iat?: number; exp?: number };
+      userId = typeof v.sub === "string" ? v.sub : null;
+      sessionId = typeof v.sid === "string" ? v.sid : null;
+      source = userId ? "bearer" : source;
+      console.log("[bridge] bearer OK", {
+        sub_tail: userId?.slice(-6),
+        sid_tail: sessionId?.slice(-6),
+        iat: v.iat,
+        exp: v.exp,
+      });
+    } catch (e) {
+      console.log("[bridge] bearer VERIFY FAIL:", String(e));
+    }
   }
 
-  // 2) Fallback to App Router auth() (cookie-based)
+  // ---- 2) Cookie path: verify the __session cookie yourself ----
+  if (!userId && cookieHeader) {
+    try {
+      const m = cookieHeader.match(/(?:^|;\s*)__session=([^;]+)/);
+      const raw = m?.[1] ? decodeURIComponent(m[1]) : null;
+      if (raw) {
+        const v = (await verifyToken(raw, {
+          secretKey: process.env.CLERK_SECRET_KEY!,
+        })) as unknown as { sub?: string; sid?: string; iat?: number; exp?: number };
+        userId = typeof v.sub === "string" ? v.sub : null;
+        sessionId = typeof v.sid === "string" ? v.sid : null;
+        source = userId ? "cookie" : source;
+        console.log("[bridge] cookie OK", {
+          sub_tail: userId?.slice(-6),
+          sid_tail: sessionId?.slice(-6),
+          iat: v.iat,
+          exp: v.exp,
+        });
+      }
+    } catch (e) {
+      console.log("[bridge] cookie VERIFY FAIL:", String(e));
+    }
+  }
+
+  // ---- 3) Last resort: App Router helper (reads cookies) ----
   if (!userId) {
     const a = await auth();
     userId = a.userId ?? null;
     sessionId = a.sessionId ?? null;
+    source = userId ? "auth()" : source;
+    if (userId) {
+      console.log("[bridge] auth() OK", {
+        sub_tail: userId.slice(-6),
+        sid_tail: sessionId?.slice(-6),
+      });
+    } else {
+      console.log("[bridge] auth() empty");
+    }
   }
 
   const res = NextResponse.json(
@@ -80,11 +122,15 @@ export async function GET(req: Request) {
 
   // helpful while testing
   res.headers.set("x-bridge-auth", userId ? "yes" : "no");
+  res.headers.set("x-bridge-source", source);
   res.headers.set("x-bridge-has-session-cookie", hasSessionCookie ? "yes" : "no");
   res.headers.set("x-bridge-has-any-clerk-cookie", hasAnyClerkCookie ? "yes" : "no");
+  res.headers.append(
+    "Access-Control-Expose-Headers",
+    "x-bridge-auth,x-bridge-source,x-bridge-has-session-cookie,x-bridge-has-any-clerk-cookie"
+  );
 
   const secure = process.env.NODE_ENV === "production";
-  // Same-site (apex<->subdomain) cookies work with Lax; simpler and more predictable.
   const sameSite = "lax" as const;
 
   const host = new URL(req.url).host; // e.g. "valentisimo.infinisimo.com"
@@ -118,7 +164,6 @@ export async function GET(req: Request) {
   return withCors(res, req);
 }
 
-// Optional (for completeness)
 export async function OPTIONS(req: Request) {
   const res = new NextResponse(null, { status: 204 });
   return withCors(res, req);

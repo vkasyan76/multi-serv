@@ -12,59 +12,46 @@ export default function BridgeAuth({
 }: {
   refreshMs?: number;
 }) {
-  // ✅ call the hook at the top level
   const { getToken, isLoaded } = useAuth();
 
   useEffect(() => {
-    const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN || ""; // "infinisimo.com"
-    const host = window.location.hostname;
-    const onTenantSubdomain =
-      ROOT && host !== ROOT && host.endsWith(`.${ROOT}`);
+    if (!isLoaded) return;
 
-    console.log("[BridgeAuth debug]", {
-      ROOT,
-      host,
-      onTenantSubdomain,
-    });
-
-    const call = async (url: string, bearer?: string) => {
-      try {
-        const r = await fetch(url, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-          mode: "cors",
-          headers: bearer ? { Authorization: `Bearer ${bearer}` } : undefined,
-        });
-
-        const data = await r.json().catch(() => ({}));
-
-        console.log("bridge", { url, status: r.status, auth: data?.authenticated });
-        return Boolean(data?.authenticated);
-      } catch {
-        console.warn("bridge fetch failed", url);
-        return false;
-      }
-    };
+    const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN!;
+    const urls = [
+      `https://${ROOT}/api/auth/bridge`,
+      `https://www.${ROOT}/api/auth/bridge`,
+    ];
 
     const pingOnce = async () => {
-      const bearer = await getToken().catch(() => null); // if null, we still try cookie path
-      
-      // Debug logging
-      console.log("[BridgeAuth] debug", { 
-        ROOT, 
-        host: window.location.hostname, 
-        onTenantSubdomain, 
-        hasBearer: !!bearer 
-      });
-
-      // Try apex first (where your session lives)
-      if (ROOT) {
-        if (await call(`https://${ROOT}/api/auth/bridge`, bearer ?? undefined)) return;
-        if (await call(`https://www.${ROOT}/api/auth/bridge`, bearer ?? undefined)) return;
+      let token: string | null = null;
+      try {
+        // try a scoped template if you have one; otherwise plain getToken()
+        token = (await getToken(/* { template: "bridge" } */)) ?? null;
+      } catch {
+        token = null;
       }
-      // Last resort: local host (harmless)
-      await call("/api/auth/bridge");
+
+      if (!token) {
+        console.warn("[BridgeAuth] getToken() returned null — sending request WITHOUT Authorization (may fail)");
+      }
+
+      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+      await Promise.allSettled(
+        urls.map((u) =>
+          fetch(u, {
+            method: "GET",
+            credentials: "include", // send cookies to apex
+            headers,
+            cache: "no-store",
+            mode: "cors",
+          })
+            .then((r) => r.json().catch(() => ({})))
+            .then((j) => console.log("[BridgeAuth] bridge", u, j))
+            .catch((e) => console.error("[BridgeAuth] bridge error", u, e))
+        )
+      );
     };
 
     // initial + keepalive + on tab focus
@@ -77,7 +64,7 @@ export default function BridgeAuth({
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [refreshMs, getToken, isLoaded]); // ✅ include getToken and isLoaded
+  }, [isLoaded, getToken, refreshMs]);
 
   return null;
 }
