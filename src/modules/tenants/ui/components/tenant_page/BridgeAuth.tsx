@@ -27,16 +27,20 @@ export default function BridgeAuth({
       let token: string | null = null;
       try {
         // try a scoped template if you have one; otherwise plain getToken()
-        token = (await getToken(/* { template: "bridge" } */)) ?? null;
+        token = (await getToken({ template: "bridge" })) ?? null;
       } catch {
         token = null;
       }
 
       if (!token) {
-        console.warn("[BridgeAuth] getToken() returned null — sending request WITHOUT Authorization (may fail)");
+        console.warn(
+          "[BridgeAuth] getToken() returned null — sending request WITHOUT Authorization (may fail)"
+        );
       }
 
-      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+      const headers: HeadersInit = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
 
       await Promise.allSettled(
         urls.map((u) =>

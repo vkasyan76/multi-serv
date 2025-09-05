@@ -23,7 +23,10 @@ function withCors(res: NextResponse, req: Request) {
     res.headers.set("Vary", "Origin");
     res.headers.set("Access-Control-Allow-Credentials", "true");
     res.headers.set("Access-Control-Allow-Methods", "GET,OPTIONS");
-    res.headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    res.headers.set(
+      "Access-Control-Allow-Headers",
+      "Authorization, Content-Type"
+    );
   }
   return res;
 }
@@ -60,7 +63,13 @@ export async function GET(req: Request) {
     try {
       const v = (await verifyToken(bearer, {
         secretKey: process.env.CLERK_SECRET_KEY!,
-      })) as unknown as { sub?: string; sid?: string; iat?: number; exp?: number };
+        audience: "bridge",
+      })) as unknown as {
+        sub?: string;
+        sid?: string;
+        iat?: number;
+        exp?: number;
+      };
       userId = typeof v.sub === "string" ? v.sub : null;
       sessionId = typeof v.sid === "string" ? v.sid : null;
       source = userId ? "bearer" : source;
@@ -83,7 +92,12 @@ export async function GET(req: Request) {
       if (raw) {
         const v = (await verifyToken(raw, {
           secretKey: process.env.CLERK_SECRET_KEY!,
-        })) as unknown as { sub?: string; sid?: string; iat?: number; exp?: number };
+        })) as unknown as {
+          sub?: string;
+          sid?: string;
+          iat?: number;
+          exp?: number;
+        };
         userId = typeof v.sub === "string" ? v.sub : null;
         sessionId = typeof v.sid === "string" ? v.sid : null;
         source = userId ? "cookie" : source;
@@ -123,8 +137,14 @@ export async function GET(req: Request) {
   // helpful while testing
   res.headers.set("x-bridge-auth", userId ? "yes" : "no");
   res.headers.set("x-bridge-source", source);
-  res.headers.set("x-bridge-has-session-cookie", hasSessionCookie ? "yes" : "no");
-  res.headers.set("x-bridge-has-any-clerk-cookie", hasAnyClerkCookie ? "yes" : "no");
+  res.headers.set(
+    "x-bridge-has-session-cookie",
+    hasSessionCookie ? "yes" : "no"
+  );
+  res.headers.set(
+    "x-bridge-has-any-clerk-cookie",
+    hasAnyClerkCookie ? "yes" : "no"
+  );
   res.headers.append(
     "Access-Control-Expose-Headers",
     "x-bridge-auth,x-bridge-source,x-bridge-has-session-cookie,x-bridge-has-any-clerk-cookie"
