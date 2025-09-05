@@ -39,6 +39,7 @@ export async function GET(req: Request) {
   const cookieHeader = req.headers.get("cookie") || "";
   const hasSessionCookie = /(?:^|;\s*)__session=/.test(cookieHeader);
   const hasAnyClerkCookie = /__clerk|__session/.test(cookieHeader);
+  const hasBridgeCookie = new RegExp(`(?:^|;\\s*)${BRIDGE_COOKIE}=`).test(cookieHeader);
   const authz = req.headers.get("authorization") || "";
   // --- DIAG END ---
 
@@ -169,8 +170,12 @@ export async function GET(req: Request) {
       path: "/",
       maxAge: 120,
     });
-  } else if (isApex) {
-    // clear ONLY from apex; never clear from tenant subdomains
+  } else if (
+    isApex &&
+    hasBridgeCookie &&                         // we actually had inf_br
+    (Boolean(bearer) || hasAnyClerkCookie)    // caller presented auth material
+  ) {
+    // clear ONLY when a real auth attempt failed on the apex
     res.cookies.set(BRIDGE_COOKIE, "", {
       httpOnly: true,
       secure,

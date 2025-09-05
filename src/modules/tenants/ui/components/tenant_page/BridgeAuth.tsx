@@ -18,6 +18,8 @@ export default function BridgeAuth({
     if (!isLoaded) return;
 
     const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN!;
+    const host = window.location.hostname;
+    const onApex = host === ROOT || host === `www.${ROOT}`;
     const urls = [
       `https://${ROOT}/api/auth/bridge`,
       `https://www.${ROOT}/api/auth/bridge`,
@@ -36,6 +38,13 @@ export default function BridgeAuth({
         console.warn(
           "[BridgeAuth] getToken() returned null — sending request WITHOUT Authorization (may fail)"
         );
+      }
+
+      // If we're on a tenant subdomain and Clerk can't give us a token,
+      // don't ping the apex — it can cause the bridge cookie to be cleared.
+      if (!onApex && !token) {
+        console.warn("[BridgeAuth] no token on subdomain — skipping apex ping");
+        return;
       }
 
       const headers: HeadersInit = token
