@@ -40,8 +40,8 @@ export default function BridgeAuth({
         );
       }
 
-      // On tenant subdomains with no token, ping local origin so server can read __session
-      const targets = !onApex && !token ? ["/api/auth/bridge"] : apexUrls;
+      // Always ping apex from tenants; only use local when we *are* on the apex.
+      const targets = onApex ? ["/api/auth/bridge"] : apexUrls;
 
       const headers: HeadersInit = token
         ? { Authorization: `Bearer ${token}` }
@@ -55,6 +55,7 @@ export default function BridgeAuth({
             headers,
             cache: "no-store",
             mode: "cors",
+            keepalive: true, // optional improve reliability when the tab closes or navigates.
           })
             .then((r) => r.json().catch(() => ({})))
             .then((j) => console.log("[BridgeAuth] bridge", u, j))
