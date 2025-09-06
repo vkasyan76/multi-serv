@@ -319,6 +319,53 @@ export const tenantsRouter = createTRPCRouter({
       return tenant as Tenant & { image: Media | null };
     }),
 
+  getOneForCard: baseProcedure
+    .input(
+      z.object({
+        slug: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // 1) Load tenant (same as getOne)
+      const tenantsData = await ctx.db.find({
+        collection: "tenants",
+        depth: 3, // populate "categories", "subcategories", "image", and "user" with coordinates
+        where: {
+          slug: {
+            equals: input.slug,
+          },
+        },
+        limit: 1,
+        pagination: false,
+      });
+
+      const tenant = tenantsData.docs[0];
+
+      if (!tenant) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      }
+
+      // 2) Derive viewerCoords on the SERVER using bridged ctx.userId
+      let viewerCoords: { lat: number; lng: number } | null = null;
+
+      if (ctx.userId) {
+        const viewer = await ctx.db.find({
+          collection: "users",
+          where: { clerkUserId: { equals: ctx.userId } },
+          limit: 1,
+        }).then(r => r.docs[0]);
+
+        const c = viewer?.coordinates;
+        if (typeof c?.lat === "number" && typeof c?.lng === "number") {
+          viewerCoords = { lat: c.lat, lng: c.lng };
+        }
+      }
+
+      // 3) Import and use normalizeForCard on the server (this computes distance)
+      const { normalizeForCard } = await import("../utils/normalize-for-card");
+      return normalizeForCard(tenant as Tenant & { image: Media | null }, viewerCoords);
+    }),
+
   // getMine: baseProcedure
   //   .input(z.object({})) // no input
   //   .query(async ({ ctx }) => {
@@ -339,7 +386,7 @@ export const tenantsRouter = createTRPCRouter({
   //     return res.docs[0] ?? null;
   //   }),
   getMine: baseProcedure.input(z.object({})).query(async ({ ctx }) => {
-    const clerkUserId = ctx.auth?.userId; // "user_…"
+    const clerkUserId = ctx.userId; // "user_…"
     if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
     // Clerk -> Payload user id

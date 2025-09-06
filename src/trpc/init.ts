@@ -5,12 +5,25 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 import { auth } from "@clerk/nextjs/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import { BRIDGE_COOKIE } from "@/constants";
+
+import { cookies as nextCookies, headers as nextHeaders } from "next/headers";
+import { verifyBridgeToken } from "@/lib/app-auth";
 
 export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
+  // const BRIDGE_COOKIE = "inf_br";
+
   const req = opts?.req;
   let headers: Record<string, string> = {};
   if (req) {
     headers = Object.fromEntries(req.headers.entries());
+  } else {
+    try {
+      const h = await nextHeaders(); // <-- keep await for current types
+      headers = Object.fromEntries(h.entries());
+    } catch {
+      headers = {};
+    }
   }
 
   // keep whatever you already return in ctx (payload, headers, etc.)
@@ -27,7 +40,19 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
     clerkAuth = null;
   }
 
-  const userId = clerkAuth?.userId ?? null;
+  // Try bridge cookie (works on tenant subdomains after /api/auth/bridge ran)
+  let bridgedUid: string | null = null;
+
+  try {
+    const cookieStore = await nextCookies(); // <-- keep await for current types
+    const token = cookieStore.get(BRIDGE_COOKIE)?.value;
+    if (token) {
+      const { uid } = await verifyBridgeToken(token);
+      if (typeof uid === "string" && uid.length > 0) bridgedUid = uid;
+    }
+  } catch {}
+
+  const userId = clerkAuth?.userId ?? bridgedUid ?? null;
 
   const payload = await getPayload({ config });
   return {
@@ -47,16 +72,7 @@ const t = initTRPC.context<TRPCContext>().create({ transformer: superjson });
 // Base router and procedure helpers
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
-// export const baseProcedure = t.procedure;
 
-// export const baseProcedure = t.procedure.use(async ({ ctx, next }) => {
-//   // connect to payload:
-//   const payload = await getPayload({ config });
-//   // Merge: keep existing context (auth, userId, headers, req) and add/update db
-//   return next({ ctx: { ...ctx, db: payload } });
-// });
-
-// optimized baseProcedure - No wasted work - If createTRPCContext already put db on ctx, we don’t build it again. That saves an extra async init per call and avoids creating two clients per request.
 export const baseProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.db) {
     // only if missing
@@ -67,7 +83,7 @@ export const baseProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 export const clerkProcedure = baseProcedure.use(async ({ ctx, next }) => {
-  if (!ctx.auth?.userId) {
+  if (!ctx.userId) {
     // throw new Error("UNAUTHORIZED");
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -79,27 +95,3 @@ export const clerkProcedure = baseProcedure.use(async ({ ctx, next }) => {
   // (If you prefer being explicit, you can still do:)
   return next({ ctx: { ...ctx, userId: ctx.userId } });
 });
-
-// protected procedure - only if the user is logged in
-// export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
-//   const headers = await getHeaders();
-//   const session = await ctx.db.auth({
-//     headers,
-//   });
-
-//   if (!session.user) {
-//     throw new TRPCError({
-//       code: "UNAUTHORIZED",
-//       message: "Not authenticated",
-//     });
-//   }
-//   return next({
-//     ctx: {
-//       ...ctx,
-//       session: {
-//         ...session,
-//         user: session.user,
-//       },
-//     },
-//   });
-// });
