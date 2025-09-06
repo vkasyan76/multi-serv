@@ -27,6 +27,7 @@ export default function BridgeAuth({
       try {
         // try a scoped template if you have one; otherwise plain getToken()
         token = (await getToken({ template: "bridge" })) ?? null;
+        if (!token) token = (await getToken()) ?? null; // ← fallback to default session JWT
       } catch {
         token = null;
       }

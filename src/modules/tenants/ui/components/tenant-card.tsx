@@ -59,7 +59,6 @@ export const TenantCard = ({
 }: TenantCardProps) => {
   // Edge case variables for cleaner logic
   const hasServices = !!tenant.services?.length;
-  const canShowDistance = isSignedIn && tenant.distance != null;
   const showDistanceRow = hasServices || isSignedIn; // we still render a left block (unavailable / tooltip) for balance
   // const isList = variant === "list";
 
@@ -181,20 +180,18 @@ export const TenantCard = ({
           <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 min-h-[28px]">
             {/* Left: Distance / hint / unavailable */}
             <div className="flex items-center gap-1 text-gray-500 min-w-0">
-              {isSignedIn ? (
-                canShowDistance ? (
-                  <span className="inline-flex items-center gap-1 text-sm">
-                    <MapPin className="h-4 w-4 text-blue-600 shrink-0" />
-                    <span className="tabular-nums" suppressHydrationWarning>
-                      {formatOneDecimalForLocale(tenant.distance!)} km
-                    </span>
+              {tenant.distance != null ? (
+                <span className="inline-flex items-center gap-1 text-sm">
+                  <MapPin className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="tabular-nums" suppressHydrationWarning>
+                    {formatOneDecimalForLocale(tenant.distance)} km
                   </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-sm">
-                    <MapPinOff className="h-4 w-4 text-gray-400 shrink-0" />
-                    <span className="truncate max-w-[10ch]">Unavailable</span>
-                  </span>
-                )
+                </span>
+              ) : isSignedIn ? (
+                <span className="inline-flex items-center gap-1 text-sm">
+                  <MapPinOff className="h-4 w-4 text-gray-400 shrink-0" />
+                  <span className="truncate max-w-[10ch]">Unavailable</span>
+                </span>
               ) : (
                 <AuthTooltip isSignedIn={false}>
                   <div
