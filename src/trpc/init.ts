@@ -5,10 +5,11 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 import { auth } from "@clerk/nextjs/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
-import { BRIDGE_COOKIE } from "@/constants";
 
-import { cookies as nextCookies, headers as nextHeaders } from "next/headers";
-import { verifyBridgeToken } from "@/lib/app-auth";
+import { headers as nextHeaders } from "next/headers";
+
+// ★ NEW: import the small helper (optional but keeps init.ts tidy)
+import { readBridgeUidFromRequest } from "./auth-utils";
 
 export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   // const BRIDGE_COOKIE = "inf_br";
@@ -41,18 +42,33 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   }
 
   // Try bridge cookie (works on tenant subdomains after /api/auth/bridge ran)
-  let bridgedUid: string | null = null;
+  // ★ BEFORE (your inline code) is fine to keep, but we’ll use the helper:
+  // let bridgedUid: string | null = null;
+  // try { ... } catch {}
 
-  try {
-    const cookieStore = await nextCookies(); // <-- keep await for current types
-    const token = cookieStore.get(BRIDGE_COOKIE)?.value;
-    if (token) {
-      const { uid } = await verifyBridgeToken(token);
-      if (typeof uid === "string" && uid.length > 0) bridgedUid = uid;
-    }
-  } catch {}
+  // ★ NEW (non-intrusive): use the helper instead of duplicating the logic:
+  const bridgedUid = await readBridgeUidFromRequest(req);
+
+  // Try bridge cookie (works on tenant subdomains after /api/auth/bridge ran)
+  // let bridgedUid: string | null = null;
+
+  // try {
+  //   const cookieStore = await nextCookies(); // <-- keep await for current types
+  //   const token = cookieStore.get(BRIDGE_COOKIE)?.value;
+  //   if (token) {
+  //     const { uid } = await verifyBridgeToken(token);
+  //     if (typeof uid === "string" && uid.length > 0) bridgedUid = uid;
+  //   }
+  // } catch {}
 
   const userId = clerkAuth?.userId ?? bridgedUid ?? null;
+
+  // ★ OPTIONAL (debug-only): record where identity came from; harmless to include
+  const authSource: "clerk" | "bridge-cookie" | "none" = clerkAuth?.userId
+    ? "clerk"
+    : bridgedUid
+      ? "bridge-cookie"
+      : "none";
 
   const payload = await getPayload({ config });
   return {
@@ -61,6 +77,7 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
     db: payload,
     headers,
     userId,
+    authSource, // optional, handy in logs / debugging
   };
 };
 

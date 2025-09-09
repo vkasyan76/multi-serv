@@ -17,10 +17,16 @@ export default function BridgeAuth({
   useEffect(() => {
     if (!isLoaded) return;
 
-    const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN!;
-    const host = window.location.hostname;
-    const onApex = host === ROOT || host === `www.${ROOT}`;
-    const apexUrl = `https://${ROOT}/api/auth/bridge`;
+    const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN!; // e.g. "infinisimo.com" or "localhost:3000"
+    const rootHost = ROOT.replace(/^https?:\/\//, ""); // normalize
+    const pageHost = window.location.host; // includes port (e.g. "localhost:3000")
+    const onApex = pageHost === rootHost || pageHost === `www.${rootHost}`;
+
+    // Use https in prod, mirror the current page protocol for localhost
+    const isLocalRoot = /(^|\.)(localhost)(:\d+)?$/.test(rootHost);
+    const proto = isLocalRoot ? window.location.protocol : "https:";
+
+    const apexUrl = `${proto}//${rootHost}/api/auth/bridge`;
 
     const pingOnce = async () => {
       let token: string | null = null;

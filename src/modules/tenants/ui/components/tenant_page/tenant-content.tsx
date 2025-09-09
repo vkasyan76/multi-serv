@@ -15,6 +15,10 @@ import { toast } from "sonner";
 import { MAX_SLOTS_PER_BOOKING } from "@/constants";
 import { TenantCard } from "@/modules/tenants/ui/components/tenant-card";
 
+import type { Category } from "@/payload-types";
+import { useUser } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
+
 // near top (module scope is fine)
 const BOOKING_CH = "booking-updates" as const;
 
@@ -51,9 +55,6 @@ const isMineSlotsKey = (q: { queryKey: readonly unknown[] }) =>
   q.queryKey[0] === "bookings" &&
   q.queryKey[1] === "listMine";
 
-import type { Category } from "@/payload-types";
-import { useUser } from "@clerk/nextjs";
-import dynamic from "next/dynamic";
 // import TenantCalendar from "@/modules/bookings/ui/TenantCalendar";
 
 // Dynamic import for calendar to reduce initial bundle size
@@ -71,7 +72,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
 
   // Clear selections on unmount
   useEffect(() => () => setSelected([]), []);
@@ -219,7 +220,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           tenant={cardTenant}
           reviewRating={4.5}
           reviewCount={12}
-          isSignedIn={!!isSignedIn}
+          isSignedIn={isLoaded ? !!isSignedIn : null} // ← tri-state: true | false | null
           variant="detail"
           showActions
           ordersCount={12} // placeholder; wire real value later
