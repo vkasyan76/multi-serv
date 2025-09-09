@@ -23,10 +23,11 @@ export default function BridgeAuth({
     const onApex = pageHost === rootHost || pageHost === `www.${rootHost}`;
 
     // Use https in prod, mirror the current page protocol for localhost
-    const isLocalRoot = /(^|\.)(localhost)(:\d+)?$/.test(rootHost);
-    const proto = isLocalRoot ? window.location.protocol : "https:";
+    const isLocalRoot = /(^|\.)(localhost|127\.0\.0\.1|\[::1\])(:(\d+))?$/.test(
+      rootHost
+    );
 
-    const apexUrl = `${proto}//${rootHost}/api/auth/bridge`;
+    const proto = isLocalRoot ? window.location.protocol : "https:";
 
     const pingOnce = async () => {
       let token: string | null = null;
@@ -45,7 +46,12 @@ export default function BridgeAuth({
       }
 
       // Always ping apex from tenants; only use local when we *are* on the apex.
-      const targets = onApex ? ["/api/auth/bridge"] : [apexUrl];
+      const targets = onApex
+        ? ["/api/auth/bridge", `${proto}//www.${rootHost}/api/auth/bridge`]
+        : [
+            `${proto}//${rootHost}/api/auth/bridge`,
+            `${proto}//www.${rootHost}/api/auth/bridge`,
+          ];
 
       const headers: HeadersInit = token
         ? { Authorization: `Bearer ${token}` }
