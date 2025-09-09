@@ -58,6 +58,30 @@ export const tenantsRouter = createTRPCRouter({
 
       const sort: Sort = mapSortToPayloadFormat(input.sort);
 
+      // --- derive viewer coords on the SERVER (prefer bridged ctx.userId) ---
+      let viewerCoords: { lat: number; lng: number } | null = null;
+
+      if (ctx.userId) {
+        const viewer = await ctx.db
+          .find({
+            collection: "users",
+            where: { clerkUserId: { equals: ctx.userId } },
+            limit: 1,
+            depth: 0,
+          })
+          .then((r) => r.docs[0]);
+
+        const c = viewer?.coordinates;
+        if (typeof c?.lat === "number" && typeof c?.lng === "number") {
+          viewerCoords = { lat: c.lat, lng: c.lng };
+        }
+      }
+
+      // If the client provided coords, use them only if server coords are missing
+      if (!viewerCoords && input.userLat && input.userLng) {
+        viewerCoords = { lat: input.userLat, lng: input.userLng };
+      }
+
       // Apply maxPrice filter if it has actual value (not empty string)
       if (input.maxPrice && input.maxPrice.trim() !== "") {
         const maxPriceValue = Number(input.maxPrice);
@@ -159,61 +183,56 @@ export const tenantsRouter = createTRPCRouter({
       // Only distance sorting requires additional processing after fetching
       let tenantsWithDistance = data.docs;
 
-      // FALLBACK: If anonymous user requests distance sorting, fall back to price ascending
-      if (input.sort === "distance" && (!input.userLat || !input.userLng)) {
+      // FALLBACK: If distance sorting requested but we don't have viewer coords yet
+      if (input.sort === "distance" && !viewerCoords) {
         console.log(
-          "Anonymous user requested distance sorting → falling back to price_low_to_high"
+          "Anonymous/unknown viewer requested distance sorting → falling back to price_low_to_high"
         );
-        // Re-query with price sorting since we already fetched with distance sorting
         const priceSortedData = await ctx.db.find({
           collection: "tenants",
           depth: 3,
           where,
-          sort: "hourlyRate", // Sort by price ascending (low to high)
+          sort: "hourlyRate", // low → high
           limit: input.limit,
           page: input.cursor || 1,
           pagination: true,
         });
-        // Update our data reference - we need to reassign the variable
         Object.assign(data, priceSortedData);
         tenantsWithDistance = data.docs;
-      } else if (input.sort === "distance" && input.userLat && input.userLng) {
+      } else if (input.sort === "distance" && viewerCoords) {
         console.log(
-          "Signed-in user requested distance sorting → using distance calculation"
+          `${ctx.authSource ?? "unknown"} user requested distance sorting → using distance calculation`
         );
       }
 
       // Note: Price sorting is now handled by database query with proper filtering
 
-      if (input.userLat && input.userLng) {
+      if (viewerCoords) {
         // Preserve the database sort order by mapping in the same order
         tenantsWithDistance = data.docs.map((tenant) => {
-          let distance = null;
+          let distance: number | null = null;
 
-          // Get tenant location from user coordinates (since tenant is based on user)
           const tenantUser = (tenant as TenantWithRelations).user;
 
           if (
-            tenantUser?.coordinates?.lat &&
-            tenantUser?.coordinates?.lng &&
+            typeof tenantUser?.coordinates?.lat === "number" &&
+            typeof tenantUser?.coordinates?.lng === "number" &&
             Number.isFinite(tenantUser.coordinates.lat) &&
             Number.isFinite(tenantUser.coordinates.lng)
           ) {
             distance = calculateDistance(
-              input.userLat!,
-              input.userLng!,
+              viewerCoords!.lat,
+              viewerCoords!.lng,
               tenantUser.coordinates.lat,
               tenantUser.coordinates.lng
             );
           }
 
-          // Safely extract user data with proper typing
           const userData: TenantUserData | undefined =
             tenantUser && typeof tenantUser === "object"
               ? {
                   id: tenantUser.id || "",
                   coordinates: tenantUser.coordinates || undefined,
-                  // Add Clerk image URL for fallback - safely access properties
                   clerkImageUrl:
                     (tenantUser as TenantUserData)?.clerkImageUrl || null,
                 }
@@ -221,15 +240,13 @@ export const tenantsRouter = createTRPCRouter({
 
           return {
             ...tenant,
-            distance, // This distance is specific to the current user
+            distance, // now computed from viewerCoords
             user: userData,
           } as TenantWithRelations;
         });
 
-        // Only sort by distance if explicitly requested as "distance" sort
-        // Price and tenure sorting should NOT be overridden by distance calculation
+        // Only sort by distance if explicitly requested
         if (input.sort === "distance") {
-          // Filter out tenants without coordinates first to avoid unnecessary sorting
           const tenantsWithCoordinates = tenantsWithDistance.filter(
             (t) => (t as TenantWithRelations).distance !== null
           );
@@ -237,14 +254,12 @@ export const tenantsRouter = createTRPCRouter({
             (t) => (t as TenantWithRelations).distance === null
           );
 
-          // Sort only tenants with coordinates by distance
           tenantsWithCoordinates.sort((a, b) => {
             const distanceA = (a as TenantWithRelations).distance!;
             const distanceB = (b as TenantWithRelations).distance!;
-            return distanceA - distanceB; // Sort by distance ascending (nearest first)
+            return distanceA - distanceB;
           });
 
-          // Combine sorted tenants with coordinates + tenants without coordinates
           tenantsWithDistance = [
             ...tenantsWithCoordinates,
             ...tenantsWithoutCoordinates,
@@ -349,11 +364,13 @@ export const tenantsRouter = createTRPCRouter({
       let viewerCoords: { lat: number; lng: number } | null = null;
 
       if (ctx.userId) {
-        const viewer = await ctx.db.find({
-          collection: "users",
-          where: { clerkUserId: { equals: ctx.userId } },
-          limit: 1,
-        }).then(r => r.docs[0]);
+        const viewer = await ctx.db
+          .find({
+            collection: "users",
+            where: { clerkUserId: { equals: ctx.userId } },
+            limit: 1,
+          })
+          .then((r) => r.docs[0]);
 
         const c = viewer?.coordinates;
         if (typeof c?.lat === "number" && typeof c?.lng === "number") {
@@ -363,7 +380,10 @@ export const tenantsRouter = createTRPCRouter({
 
       // 3) Import and use normalizeForCard on the server (this computes distance)
       const { normalizeForCard } = await import("../utils/normalize-for-card");
-      return normalizeForCard(tenant as Tenant & { image: Media | null }, viewerCoords);
+      return normalizeForCard(
+        tenant as Tenant & { image: Media | null },
+        viewerCoords
+      );
     }),
 
   // getMine: baseProcedure

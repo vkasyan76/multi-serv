@@ -41,25 +41,8 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
     clerkAuth = null;
   }
 
-  // Try bridge cookie (works on tenant subdomains after /api/auth/bridge ran)
-  // ★ BEFORE (your inline code) is fine to keep, but we’ll use the helper:
-  // let bridgedUid: string | null = null;
-  // try { ... } catch {}
-
   // ★ NEW (non-intrusive): use the helper instead of duplicating the logic:
   const bridgedUid = await readBridgeUidFromRequest(req);
-
-  // Try bridge cookie (works on tenant subdomains after /api/auth/bridge ran)
-  // let bridgedUid: string | null = null;
-
-  // try {
-  //   const cookieStore = await nextCookies(); // <-- keep await for current types
-  //   const token = cookieStore.get(BRIDGE_COOKIE)?.value;
-  //   if (token) {
-  //     const { uid } = await verifyBridgeToken(token);
-  //     if (typeof uid === "string" && uid.length > 0) bridgedUid = uid;
-  //   }
-  // } catch {}
 
   const userId = clerkAuth?.userId ?? bridgedUid ?? null;
 
