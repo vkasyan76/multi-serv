@@ -1,190 +1,140 @@
 // src/app/(app)/api/auth/bridge/route.ts
 import { NextResponse } from "next/server";
+import { cookies as nextCookies } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
 import { verifyToken } from "@clerk/backend";
-import { signBridgeToken } from "@/lib/app-auth";
 import { BRIDGE_COOKIE } from "@/constants";
+import { signBridgeToken, verifyBridgeToken } from "@/lib/app-auth";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN; // no default
-const COOKIE_DOMAIN = ROOT ? `.${ROOT}` : undefined;
+const isProd = process.env.NODE_ENV === "production";
 
-const BRIDGE_TTL_S = 600; // 10 minutes (was 120)
+const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "";
+const COOKIE_DOMAIN = isProd
+  ? process.env.CLERK_COOKIE_DOMAIN || (ROOT ? `.${ROOT}` : undefined)
+  : undefined;
 
-function withCors(res: NextResponse, req: Request) {
-  const origin = req.headers.get("origin") ?? "";
-  const allowed =
-    !!ROOT &&
-    (origin === `https://${ROOT}` ||
-      origin === `https://www.${ROOT}` ||
-      origin.endsWith(`.${ROOT}`));
+const TTL_SECONDS = 90; // Bridge cookie lifetime
 
-  if (allowed) {
-    res.headers.set("Access-Control-Allow-Origin", origin);
-    res.headers.set("Vary", "Origin");
-    res.headers.set("Access-Control-Allow-Credentials", "true");
-    res.headers.set("Access-Control-Allow-Methods", "GET,OPTIONS");
-    res.headers.set(
-      "Access-Control-Allow-Headers",
-      "Authorization, Content-Type"
-    );
-  }
-  return res;
-}
-
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const origin = req.headers.get("origin") ?? undefined;
-
-  // --- DIAG START ---
-  const cookieHeader = req.headers.get("cookie") || "";
-  const hasSessionCookie = /(?:^|;\s*)__session=/.test(cookieHeader);
-  const hasAnyClerkCookie = /__clerk|__session/.test(cookieHeader);
-  const hasBridgeCookie = new RegExp(`(?:^|;\\s*)${BRIDGE_COOKIE}=`).test(
-    cookieHeader
-  );
-  const authz = req.headers.get("authorization") || "";
-  // --- DIAG END ---
-
-  console.log("[bridge] req", {
-    host: url.host,
-    origin: origin || null,
-    hasCookie: !!cookieHeader,
-    cookieLen: cookieHeader.length,
-    hasSessionCookie,
-    hasAnyClerkCookie,
-    hasAuthz: authz.startsWith("Bearer "),
-    authzPrefix: authz.slice(0, 10),
-  });
-
-  let userId: string | null = null;
-  let sessionId: string | null = null;
-  let source: "none" | "bearer" | "cookie" | "auth()" = "none";
-
-  // ---- 1) Bearer-first: verify explicit Authorization header ----
-  const bearer = authz.startsWith("Bearer ") ? authz.slice(7).trim() : null;
-  if (bearer) {
-    try {
-      const v = (await verifyToken(bearer, {
-        secretKey: process.env.CLERK_SECRET_KEY!,
-        audience: "bridge",
-      })) as unknown as {
-        sub?: string;
-        sid?: string;
-        iat?: number;
-        exp?: number;
-      };
-      userId = typeof v.sub === "string" ? v.sub : null;
-      sessionId = typeof v.sid === "string" ? v.sid : null;
-      source = userId ? "bearer" : source;
-      console.log("[bridge] bearer OK", {
-        sub_tail: userId?.slice(-6),
-        sid_tail: sessionId?.slice(-6),
-        iat: v.iat,
-        exp: v.exp,
-      });
-    } catch (e) {
-      console.log("[bridge] bearer VERIFY FAIL:", String(e));
-    }
-  }
-
-  // ---- 2) Cookie path: verify the __session cookie yourself ----
-  if (!userId && cookieHeader) {
-    try {
-      const m = cookieHeader.match(/(?:^|;\s*)__session=([^;]+)/);
-      const raw = m?.[1] ? decodeURIComponent(m[1]) : null;
-      if (raw) {
-        const v = (await verifyToken(raw, {
-          secretKey: process.env.CLERK_SECRET_KEY!,
-        })) as unknown as {
-          sub?: string;
-          sid?: string;
-          iat?: number;
-          exp?: number;
-        };
-        userId = typeof v.sub === "string" ? v.sub : null;
-        sessionId = typeof v.sid === "string" ? v.sid : null;
-        source = userId ? "cookie" : source;
-        console.log("[bridge] cookie OK", {
-          sub_tail: userId?.slice(-6),
-          sid_tail: sessionId?.slice(-6),
-          iat: v.iat,
-          exp: v.exp,
-        });
-      }
-    } catch (e) {
-      console.log("[bridge] cookie VERIFY FAIL:", String(e));
-    }
-  }
-
-  // ---- 3) Last resort: App Router helper (reads cookies) ----
-  if (!userId) {
-    const a = await auth();
-    userId = a.userId ?? null;
-    sessionId = a.sessionId ?? null;
-    source = userId ? "auth()" : source;
-    if (userId) {
-      console.log("[bridge] auth() OK", {
-        sub_tail: userId.slice(-6),
-        sid_tail: sessionId?.slice(-6),
-      });
-    } else {
-      console.log("[bridge] auth() empty");
-    }
-  }
-
-  const res = NextResponse.json(
-    { ok: true, authenticated: Boolean(userId) },
-    { status: 200 }
-  );
-  res.headers.set("Cache-Control", "no-store"); //no-cache header
-
-  res.headers.set("x-bridge-has-bridge-cookie", hasBridgeCookie ? "yes" : "no");
-  res.headers.append(
-    "Access-Control-Expose-Headers",
-    ",x-bridge-has-bridge-cookie"
-  );
-
-  // helpful while testing
-  res.headers.set("x-bridge-auth", userId ? "yes" : "no");
-  res.headers.set("x-bridge-source", source);
-  res.headers.set(
-    "x-bridge-has-session-cookie",
-    hasSessionCookie ? "yes" : "no"
-  );
-  res.headers.set(
-    "x-bridge-has-any-clerk-cookie",
-    hasAnyClerkCookie ? "yes" : "no"
-  );
-  res.headers.append(
-    "Access-Control-Expose-Headers",
-    "x-bridge-auth,x-bridge-source,x-bridge-has-session-cookie,x-bridge-has-any-clerk-cookie"
-  );
-
-  const secure = process.env.NODE_ENV === "production";
-  const sameSite = "lax" as const;
-
-  if (userId) {
-    const token = await signBridgeToken(
-      { uid: userId, sid: sessionId ?? undefined },
-      BRIDGE_TTL_S
-    );
-
-    res.cookies.set(BRIDGE_COOKIE, token, {
-      httpOnly: true,
-      secure,
-      sameSite,
-      ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
-      path: "/",
-      maxAge: BRIDGE_TTL_S,
-    });
-  }
-
-  return withCors(res, req);
+function corsHeaders(origin?: string): HeadersInit {
+  if (!origin) return {};
+  return {
+    "Access-Control-Allow-Origin": origin, // must echo, not '*'
+    "Access-Control-Allow-Credentials": "true", // allow cookies
+    Vary: "Origin",
+  };
 }
 
 export async function OPTIONS(req: Request) {
-  const res = new NextResponse(null, { status: 204 });
-  return withCors(res, req);
+  const origin = req.headers.get("origin") ?? "";
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      ...corsHeaders(origin),
+      "Access-Control-Allow-Methods": "GET,OPTIONS",
+      "Access-Control-Allow-Headers": "Authorization,Content-Type",
+    },
+  });
+}
+
+export async function GET(req: Request) {
+  const origin = req.headers.get("origin") ?? undefined;
+
+  // Clerk helper bound to this request (async in your version)
+  const a = await auth(); // <-- await
+  let userId: string | null = a.userId ?? null;
+  let sessionId: string | null = a.sessionId ?? null;
+  let source: "auth" | "bearer" | "cookie" | "bridge" | "none" = userId
+    ? "auth"
+    : "none";
+
+  // 2) If Authorization: Bearer is present, verify it (template "bridge")
+  if (!userId) {
+    const authz = req.headers.get("authorization") || "";
+    const bearer = authz.startsWith("Bearer ") ? authz.slice(7).trim() : "";
+    if (bearer) {
+      try {
+        const t = (await verifyToken(bearer, {
+          secretKey: process.env.CLERK_SECRET_KEY!,
+          audience: "bridge",
+        })) as { sub?: string; sid?: string };
+        if (t?.sub) {
+          userId = t.sub;
+          sessionId = t.sid || null;
+          source = "bearer";
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  // 3) If still no user, verify the __session cookie manually
+  if (!userId) {
+    const cookieHeader = req.headers.get("cookie") || "";
+    const m = cookieHeader.match(/(?:^|;\s*)__session=([^;]+)/);
+    const raw = m?.[1] ? decodeURIComponent(m[1]) : null;
+    if (raw) {
+      try {
+        const t = (await verifyToken(raw, {
+          secretKey: process.env.CLERK_SECRET_KEY!,
+        })) as { sub?: string; sid?: string };
+        if (t?.sub) {
+          userId = t.sub;
+          sessionId = t.sid || null;
+          source = "cookie";
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  // 4) Fallback to an existing bridge cookie (if present & valid)
+  const jar = await nextCookies();
+  const existing = jar.get(BRIDGE_COOKIE)?.value;
+  if (!userId && existing) {
+    try {
+      const data = await verifyBridgeToken(existing);
+      if (data?.uid) {
+        userId = data.uid;
+        if (data?.sid && !sessionId) sessionId = data.sid;
+        if (userId) source = "bridge";
+      }
+    } catch {
+      /* ignore invalid/expired */
+    }
+  }
+
+  // Response + CORS
+  const res = NextResponse.json(
+    { ok: true, authenticated: !!userId, source },
+    { headers: corsHeaders(origin) }
+  );
+
+  // Set / clear the apex-scoped bridge cookie
+  if (userId) {
+    const token = await signBridgeToken(
+      { uid: userId, sid: sessionId || undefined },
+      TTL_SECONDS
+    );
+    res.cookies.set(BRIDGE_COOKIE, token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "lax",
+      domain: COOKIE_DOMAIN,
+      path: "/",
+      maxAge: TTL_SECONDS,
+    });
+  } else if (existing) {
+    res.cookies.set(BRIDGE_COOKIE, "", {
+      domain: COOKIE_DOMAIN,
+      path: "/",
+      maxAge: 0,
+    });
+  }
+
+  return res;
 }
