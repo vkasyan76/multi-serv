@@ -73,6 +73,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { isSignedIn, isLoaded } = useUser();
+  const signedState = isLoaded ? !!isSignedIn : null;
 
   // Clear selections on unmount
   useEffect(() => () => setSelected([]), []);
@@ -220,7 +221,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           tenant={cardTenant}
           reviewRating={4.5}
           reviewCount={12}
-          isSignedIn={isLoaded ? !!isSignedIn : null} // ← tri-state: true | false | null
+          isSignedIn={signedState} // ← tri-state: true | false | null
           variant="detail"
           showActions
           ordersCount={12} // placeholder; wire real value later
@@ -396,7 +397,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               tenant={cardTenant}
               reviewRating={4.5}
               reviewCount={12}
-              isSignedIn={!!isSignedIn}
+              isSignedIn={signedState}
               variant="detail"
               showActions
               ordersCount={12} // placeholder; wire real value later

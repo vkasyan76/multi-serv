@@ -59,7 +59,7 @@ export const TenantCard = ({
 }: TenantCardProps) => {
   // Edge case variables for cleaner logic
   const hasServices = !!tenant.services?.length;
-  const showDistanceRow = hasServices || isSignedIn; // we still render a left block (unavailable / tooltip) for balance
+  const showDistanceRow = hasServices || isSignedIn || tenant.distance != null; // we still render a left block (unavailable / tooltip) for balance
   // const isList = variant === "list";
 
   // Responsive width logic with group hover

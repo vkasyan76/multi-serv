@@ -335,34 +335,24 @@ export const tenantsRouter = createTRPCRouter({
     }),
 
   getOneForCard: baseProcedure
-    .input(
-      z.object({
-        slug: z.string(),
-      })
-    )
+    .input(z.object({ slug: z.string() }))
     .query(async ({ ctx, input }) => {
-      // 1) Load tenant (same as getOne)
+      // 1) Load tenant
       const tenantsData = await ctx.db.find({
         collection: "tenants",
-        depth: 3, // populate "categories", "subcategories", "image", and "user" with coordinates
-        where: {
-          slug: {
-            equals: input.slug,
-          },
-        },
+        depth: 3,
+        where: { slug: { equals: input.slug } },
         limit: 1,
         pagination: false,
       });
 
       const tenant = tenantsData.docs[0];
-
       if (!tenant) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
       }
 
-      // 2) Derive viewerCoords on the SERVER using bridged ctx.userId
+      // 2) Derive viewer coords
       let viewerCoords: { lat: number; lng: number } | null = null;
-
       if (ctx.userId) {
         const viewer = await ctx.db
           .find({
@@ -378,12 +368,12 @@ export const tenantsRouter = createTRPCRouter({
         }
       }
 
-      // 3) Import and use normalizeForCard on the server (this computes distance)
+      // 3) Normalize (this should compute distance)
       const { normalizeForCard } = await import("../utils/normalize-for-card");
       return normalizeForCard(
         tenant as Tenant & { image: Media | null },
         viewerCoords
-      );
+      ) as TenantWithRelations; // <- no `any`, no extra guards
     }),
 
   // getMine: baseProcedure
