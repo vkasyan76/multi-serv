@@ -7,6 +7,7 @@ import { SORT_VALUES } from "@/constants";
 import { calculateDistance } from "../distance-utils";
 import type { TenantWithRelations } from "../types";
 import { TRPCError } from "@trpc/server";
+import { headers as getHeaders } from "next/headers";
 
 // Helper interface for tenant user data
 interface TenantUserData {
@@ -352,6 +353,7 @@ export const tenantsRouter = createTRPCRouter({
       }
 
       // 2) Derive viewer coords
+      // 2a) Prefer DB coords for logged-in users (unchanged)
       let viewerCoords: { lat: number; lng: number } | null = null;
       if (ctx.userId) {
         const viewer = await ctx.db
@@ -365,6 +367,15 @@ export const tenantsRouter = createTRPCRouter({
         const c = viewer?.coordinates;
         if (typeof c?.lat === "number" && typeof c?.lng === "number") {
           viewerCoords = { lat: c.lat, lng: c.lng };
+        }
+      }
+      // 2b) ✅ NEW: Fall back to IP-based coords (Vercel headers) if DB coords weren’t found
+      if (!viewerCoords) {
+        const h = await getHeaders();
+        const lat = Number(h.get("x-vercel-ip-latitude"));
+        const lng = Number(h.get("x-vercel-ip-longitude"));
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          viewerCoords = { lat, lng };
         }
       }
 

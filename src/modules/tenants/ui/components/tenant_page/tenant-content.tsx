@@ -223,10 +223,13 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const { data: cardTenant, isLoading: cardLoading } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug }),
-    enabled: !!bridge?.ok, // don't fire until bridge endpoint has responded (cookie set if any)
-    staleTime: 60_000,
+    enabled: !!bridge?.ok, // keep this
+    staleTime: 0, // ← was 60_000; must be 0
+    gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
+    refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
+    refetchOnReconnect: "always",
     refetchOnWindowFocus: false,
-    placeholderData: keepPreviousData, // <- replaces keepPreviousData: true
+    placeholderData: keepPreviousData,
   });
 
   if (waitingForBridge || cardLoading || !cardTenant) {
