@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 
 type BridgeJson = {
   ok?: boolean;
@@ -97,4 +98,22 @@ export default function BridgeAuth({
   }, [isLoaded, getToken, refreshMs, router]);
 
   return null;
+}
+
+type BridgeResponse = { ok: boolean; authenticated?: boolean; source?: string };
+
+export function useBridge() {
+  return useQuery<BridgeResponse>({
+    queryKey: ["auth", "bridge"],
+    queryFn: async () => {
+      const r = await fetch("/api/auth/bridge", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!r.ok) throw new Error("Bridge failed");
+      return r.json();
+    },
+    staleTime: 60_000,
+    retry: 0,
+  });
 }

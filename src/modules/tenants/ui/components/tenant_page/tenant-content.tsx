@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useTRPC } from "@/trpc/client";
 import {
   useQueryClient,
-  useSuspenseQuery,
+  useQuery,
   useMutation,
+  keepPreviousData,
 } from "@tanstack/react-query";
 import type { TRPCClientErrorLike } from "@trpc/client";
 import type { AppRouter } from "@/trpc/routers/_app";
@@ -14,6 +15,9 @@ import { toast } from "sonner";
 
 import { MAX_SLOTS_PER_BOOKING } from "@/constants";
 import { TenantCard } from "@/modules/tenants/ui/components/tenant-card";
+
+import { useBridge } from "./BridgeAuth";
+import LoadingPage from "@/components/shared/loading";
 
 import type { Category } from "@/payload-types";
 import { useUser } from "@clerk/nextjs";
@@ -74,6 +78,12 @@ export default function TenantContent({ slug }: { slug: string }) {
   const queryClient = useQueryClient();
   const { isSignedIn, isLoaded } = useUser();
   const signedState = isLoaded ? !!isSignedIn : null;
+
+  const {
+    data: bridge,
+    isLoading: bridgeLoading,
+    isFetching: bridgeFetching,
+  } = useBridge(); // Gate the tRPC query with the bridge in your client component
 
   // Clear selections on unmount
   useEffect(() => () => setSelected([]), []);
@@ -209,9 +219,19 @@ export default function TenantContent({ slug }: { slug: string }) {
     setSelected([]);
   };
 
-  const { data: cardTenant } = useSuspenseQuery(
-    trpc.tenants.getOneForCard.queryOptions({ slug })
-  ); // returns TenantWithRelations with distance calculated on server
+  const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok;
+
+  const { data: cardTenant, isLoading: cardLoading } = useQuery({
+    ...trpc.tenants.getOneForCard.queryOptions({ slug }),
+    enabled: !!bridge?.ok, // don't fire until bridge endpoint has responded (cookie set if any)
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData, // <- replaces keepPreviousData: true
+  });
+
+  if (waitingForBridge || cardLoading || !cardTenant) {
+    return <LoadingPage />; // full-screen overlay while we warm up
+  }
 
   return (
     <div className="px-3 sm:px-4 lg:px-12 py-2">
