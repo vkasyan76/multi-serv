@@ -1,7 +1,11 @@
 // src/lib/app-auth.ts
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
-const secret = new TextEncoder().encode(process.env.APP_BRIDGE_SECRET);
+const RAW_SECRET = process.env.APP_BRIDGE_SECRET ?? "";
+if (RAW_SECRET.length < 32) {
+  throw new Error("APP_BRIDGE_SECRET must be set and at least 32 chars.");
+}
+const secret = new TextEncoder().encode(RAW_SECRET);
 const ISS = "infinisimo/bridge";
 
 export type BridgeClaims = JWTPayload & {
@@ -10,7 +14,7 @@ export type BridgeClaims = JWTPayload & {
 };
 
 export async function signBridgeToken(claims: BridgeClaims, ttlSec = 90) {
-  const now = Math.floor(Date.now() / 1000);
+  const nowSec = Math.floor(Date.now() / 1000); // Convert to seconds
 
   // Build a JWTPayload explicitly (no `any`)
   const payload: JWTPayload = {
@@ -22,13 +26,18 @@ export async function signBridgeToken(claims: BridgeClaims, ttlSec = 90) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuer(ISS)
-    .setIssuedAt(now)
-    .setExpirationTime(now + ttlSec)
+    .setAudience("bridge")
+    .setIssuedAt(nowSec)
+    .setNotBefore("0s")
+    .setExpirationTime(nowSec + ttlSec)
     .sign(secret);
 }
 
 export async function verifyBridgeToken(token: string) {
-  const { payload } = await jwtVerify(token, secret, { issuer: ISS });
-  // payload now includes `uid` (and maybe `sid`) because we set them
-  return payload as BridgeClaims;
+  const { payload: verifiedPayload } = await jwtVerify(token, secret, {
+    issuer: ISS,
+    audience: "bridge",
+    clockTolerance: "2s",
+  });
+  return verifiedPayload as BridgeClaims;
 }
