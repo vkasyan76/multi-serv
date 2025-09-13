@@ -9,6 +9,10 @@ export default clerkMiddleware((auth, req) => {
   // Don't touch anything unless subdomain routing is on and we know the root domain
   if (!ENABLED || !ROOT) return NextResponse.next();
 
+  // ⛔️ Never rewrite API (incl. tRPC) calls
+  const { pathname } = req.nextUrl;
+  if (pathname.startsWith("/api")) return NextResponse.next();
+
   const host = req.headers.get("host") ?? ""; // e.g. react_jedi.infinisimo.com
   const suffix = `.${ROOT}`; // ".infinisimo.com"
 

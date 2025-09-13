@@ -2,6 +2,8 @@ import type { TenantWithRelations } from "@/modules/tenants/types";
 import type { Category, Tenant, Media, User } from "@/payload-types";
 import { calculateDistance } from "@/modules/tenants/distance-utils";
 
+const round1 = (n: number) => Math.max(0, Math.round(n * 10) / 10);
+
 type ViewerCoords = { lat: number; lng: number } | null | undefined;
 
 // Type for the raw data returned by getOne procedure
@@ -63,12 +65,13 @@ export function normalizeForCard(raw: RawTenantData, viewerCoords?: ViewerCoords
     user?.coordinates?.lat != null &&
     user?.coordinates?.lng != null
   ) {
-    distance = calculateDistance(
+    const rawDistance = calculateDistance(
       viewerCoords.lat,
       viewerCoords.lng,
       user.coordinates.lat,
       user.coordinates.lng
     );
+    distance = round1(rawDistance);
   }
 
   return {

@@ -85,7 +85,7 @@ export const bookingRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }): Promise<Array<BookingWithName>> => {
-      const clerkUserId = ctx.auth?.userId;
+      const clerkUserId = ctx.userId;
       if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       // Map Clerk → Payload user id
@@ -167,7 +167,7 @@ export const bookingRouter = createTRPCRouter({
         })
     )
     .mutation(async ({ input, ctx }): Promise<DocWithId<Booking>> => {
-      const clerkUserId = ctx.auth?.userId;
+      const clerkUserId = ctx.userId;
       if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       // Clerk -> Payload user
@@ -276,7 +276,7 @@ export const bookingRouter = createTRPCRouter({
   bookSlot: baseProcedure
     .input(z.object({ bookingId: z.string() }))
     .mutation(async ({ input, ctx }): Promise<DocWithId<Booking>> => {
-      const clerkUserId = ctx.auth?.userId;
+      const clerkUserId = ctx.userId;
       if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       // Map Clerk → Payload user id (same as createAvailableSlot)
@@ -326,7 +326,7 @@ export const bookingRouter = createTRPCRouter({
   removeSlot: baseProcedure
     .input(z.object({ bookingId: z.string() }))
     .mutation(async ({ input, ctx }): Promise<{ deletedId: string }> => {
-      const clerkUserId = ctx.auth?.userId;
+      const clerkUserId = ctx.userId;
       if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       // Clerk → Payload user
@@ -402,7 +402,7 @@ export const bookingRouter = createTRPCRouter({
         })
     )
     .mutation(async ({ input, ctx }): Promise<DocWithId<Booking>> => {
-      const clerkUserId = ctx.auth?.userId;
+      const clerkUserId = ctx.userId;
       if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       const start = startOfHour(new Date(input.start));
@@ -523,7 +523,7 @@ export const bookingRouter = createTRPCRouter({
     .input(z.object({ bookingIds: z.array(z.string()).min(1) }))
     .mutation(async ({ input, ctx }): Promise<BookSlotsResult> => {
       const { bookingIds } = input;
-      const clerkUserId = ctx.auth?.userId;
+      const clerkUserId = ctx.userId;
       if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       // Map Clerk → Payload user id
