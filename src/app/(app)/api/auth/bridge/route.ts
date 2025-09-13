@@ -3,18 +3,11 @@ import { NextResponse } from "next/server";
 import { cookies as nextCookies } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
 import { verifyToken } from "@clerk/backend";
-import { BRIDGE_COOKIE } from "@/constants";
+import { BRIDGE_COOKIE, BRIDGE_COOKIE_OPTS } from "@/constants";
 import { signBridgeToken, verifyBridgeToken } from "@/lib/app-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const isProd = process.env.NODE_ENV === "production";
-
-const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "";
-const COOKIE_DOMAIN = isProd
-  ? process.env.CLERK_COOKIE_DOMAIN || (ROOT ? `.${ROOT}` : undefined)
-  : undefined;
 
 const TTL_SECONDS = 90; // Bridge cookie lifetime
 
@@ -121,17 +114,12 @@ export async function GET(req: Request) {
       TTL_SECONDS
     );
     res.cookies.set(BRIDGE_COOKIE, token, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: "lax",
-      domain: COOKIE_DOMAIN,
-      path: "/",
+      ...BRIDGE_COOKIE_OPTS,
       maxAge: TTL_SECONDS,
     });
   } else if (existing) {
     res.cookies.set(BRIDGE_COOKIE, "", {
-      domain: COOKIE_DOMAIN,
-      path: "/",
+      ...BRIDGE_COOKIE_OPTS,
       maxAge: 0,
     });
   }

@@ -29,27 +29,35 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   });
 
   // Use infinite query for tenants with Load More functionality
+  const base = trpc.tenants.getMany.infiniteQueryOptions(
+    {
+      category: category || null,
+      subcategory: subcategory || null,
+      ...filters,
+      ...(isSignedIn
+        ? {}
+        : { distanceFilterEnabled: false, maxDistance: null }),
+      userLat: userProfile?.coordinates?.lat ?? null,
+      userLng: userProfile?.coordinates?.lng ?? null,
+      limit: DEFAULT_LIMIT,
+    },
+    {
+      getNextPageParam: (lastPage) => {
+        return lastPage.hasNextPage ? lastPage.nextPage : undefined;
+      },
+    }
+  );
+
+  // Add cache controls (mirror tenant detail page)
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useSuspenseInfiniteQuery(
-      trpc.tenants.getMany.infiniteQueryOptions(
-        {
-          category: category || null,
-          subcategory: subcategory || null,
-          ...filters,
-          ...(isSignedIn
-            ? {}
-            : { distanceFilterEnabled: false, maxDistance: null }),
-          userLat: userProfile?.coordinates?.lat ?? null,
-          userLng: userProfile?.coordinates?.lng ?? null,
-          limit: DEFAULT_LIMIT,
-        },
-        {
-          getNextPageParam: (lastPage) => {
-            return lastPage.hasNextPage ? lastPage.nextPage : undefined;
-          },
-        }
-      )
-    );
+    useSuspenseInfiniteQuery({
+      ...base,
+      staleTime: 0,
+      gcTime: 0,
+      refetchOnMount: "always",
+      refetchOnReconnect: "always",
+      refetchOnWindowFocus: false,
+    });
 
   // Flatten all pages into a single array
   const allTenants = data.pages.flatMap((page) => page.docs);

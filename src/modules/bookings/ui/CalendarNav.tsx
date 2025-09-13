@@ -22,7 +22,6 @@ type Props = {
 };
 
 export default function CalendarNav(props: Props) {
-  // eslint-disable-next-line -- Next.js "serializable props" false positive for client→client usage
   const {
     anchor,
     onAnchorChange,
