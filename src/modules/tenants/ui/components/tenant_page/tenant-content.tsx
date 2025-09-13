@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useTRPC } from "@/trpc/client";
-import { useQueryClient, useSuspenseQuery, useQuery, useMutation } from "@tanstack/react-query";
+import {
+  useQueryClient,
+  useQuery,
+  useMutation,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import type { TRPCClientErrorLike } from "@trpc/client";
 import type { AppRouter } from "@/trpc/routers/_app";
 import { Button } from "@/components/ui/button";
@@ -10,10 +15,16 @@ import { toast } from "sonner";
 
 import { MAX_SLOTS_PER_BOOKING } from "@/constants";
 import { TenantCard } from "@/modules/tenants/ui/components/tenant-card";
-import { normalizeForCard } from "@/modules/tenants/utils/normalize-for-card";
+
+import { useBridge } from "./BridgeAuth";
+import LoadingPage from "@/components/shared/loading";
+
+import type { Category } from "@/payload-types";
+import { useUser } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
 
 // near top (module scope is fine)
-const BOOKING_CH = 'booking-updates' as const;
+const BOOKING_CH = "booking-updates" as const;
 
 // Type definitions for type-safe cache operations
 type BookingStatus = "available" | "booked" | "confirmed";
@@ -23,7 +34,7 @@ type BookingLite = {
   id: string;
   status: BookingStatus;
   start: string; // ISO
-  end: string;   // ISO
+  end: string; // ISO
 };
 
 type BookSlotsVars = { bookingIds: string[] };
@@ -48,9 +59,6 @@ const isMineSlotsKey = (q: { queryKey: readonly unknown[] }) =>
   q.queryKey[0] === "bookings" &&
   q.queryKey[1] === "listMine";
 
-import type { Category } from "@/payload-types";
-import { useUser } from "@clerk/nextjs";
-import dynamic from "next/dynamic";
 // import TenantCalendar from "@/modules/bookings/ui/TenantCalendar";
 
 // Dynamic import for calendar to reduce initial bundle size
@@ -68,7 +76,14 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
+  const signedState = isLoaded ? !!isSignedIn : null;
+
+  const {
+    data: bridge,
+    isLoading: bridgeLoading,
+    isFetching: bridgeFetching,
+  } = useBridge(); // Gate the tRPC query with the bridge in your client component
 
   // Clear selections on unmount
   useEffect(() => () => setSelected([]), []);
@@ -179,12 +194,14 @@ export default function TenantContent({ slug }: { slug: string }) {
   });
 
   const handleToggleSelect = (id: string) => {
-    setSelected(prev => {
+    setSelected((prev) => {
       if (prev.includes(id)) {
-        return prev.filter(slotId => slotId !== id);
+        return prev.filter((slotId) => slotId !== id);
       } else {
         if (prev.length >= MAX_SLOTS_PER_BOOKING) {
-          toast.warning(`You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`);
+          toast.warning(
+            `You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`
+          );
           return prev;
         }
         return [...prev, id];
@@ -202,22 +219,22 @@ export default function TenantContent({ slug }: { slug: string }) {
     setSelected([]);
   };
 
-  const { data: tenantRaw } = useSuspenseQuery(
-    trpc.tenants.getOne.queryOptions({ slug })
-  ); // returns Tenant & { image: Media | null }
+  const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok;
 
-  const { data: userProfile } = useQuery({
-    ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: !!isSignedIn,
+  const { data: cardTenant, isLoading: cardLoading } = useQuery({
+    ...trpc.tenants.getOneForCard.queryOptions({ slug }),
+    enabled: !!bridge?.ok, // keep this
+    staleTime: 0, // ← was 60_000; must be 0
+    gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
+    refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
-  const viewerCoords =
-    userProfile?.coordinates?.lat != null &&
-    userProfile?.coordinates?.lng != null
-      ? { lat: userProfile.coordinates.lat, lng: userProfile.coordinates.lng }
-      : null;
-
-  const cardTenant = normalizeForCard(tenantRaw, viewerCoords);
+  if (waitingForBridge || cardLoading || !cardTenant) {
+    return <LoadingPage />; // full-screen overlay while we warm up
+  }
 
   return (
     <div className="px-3 sm:px-4 lg:px-12 py-2">
@@ -227,7 +244,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           tenant={cardTenant}
           reviewRating={4.5}
           reviewCount={12}
-          isSignedIn={!!isSignedIn}
+          isSignedIn={signedState} // ← tri-state: true | false | null
           variant="detail"
           showActions
           ordersCount={12} // placeholder; wire real value later
@@ -245,7 +262,7 @@ export default function TenantContent({ slug }: { slug: string }) {
             <h2 className="text-2xl font-bold mb-4">About</h2>
             <div className="prose max-w-none">
               <p className="text-gray-700 leading-relaxed">
-                {tenantRaw?.bio || "No bio available."}
+                {cardTenant?.bio || "No bio available."}
               </p>
             </div>
           </section>
@@ -258,11 +275,11 @@ export default function TenantContent({ slug }: { slug: string }) {
             <h2 className="text-2xl font-bold mb-4">Services</h2>
             <div className="space-y-4">
               {/* Service Types */}
-              {tenantRaw?.services && tenantRaw.services.length > 0 && (
+              {cardTenant?.services && cardTenant.services.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Service Types</h3>
                   <div className="flex flex-wrap gap-2">
-                    {tenantRaw.services.map((service: string) => (
+                    {cardTenant.services.map((service: string) => (
                       <span
                         key={service}
                         className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
@@ -274,34 +291,38 @@ export default function TenantContent({ slug }: { slug: string }) {
                 </div>
               )}
 
-              {tenantRaw?.categories && tenantRaw.categories.length > 0 && (
+              {cardTenant?.categories && cardTenant.categories.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Categories</h3>
                   <div className="flex flex-wrap gap-2">
-                    {tenantRaw.categories.map((category: string | Category) => (
-                      <span
-                        key={
-                          typeof category === "string" ? category : category.id
-                        }
-                        className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
-                      >
-                        {typeof category === "string"
-                          ? category
-                          : category.name}
-                      </span>
-                    ))}
+                    {cardTenant.categories.map(
+                      (category: string | Category) => (
+                        <span
+                          key={
+                            typeof category === "string"
+                              ? category
+                              : category.id
+                          }
+                          className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                        >
+                          {typeof category === "string"
+                            ? category
+                            : category.name}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
               )}
 
-              {tenantRaw?.subcategories &&
-                tenantRaw.subcategories.length > 0 && (
+              {cardTenant?.subcategories &&
+                cardTenant.subcategories.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold mb-2">
                       Subcategories
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {tenantRaw.subcategories.map(
+                      {cardTenant.subcategories.map(
                         (subcategory: string | Category) => (
                           <span
                             key={
@@ -344,10 +365,9 @@ export default function TenantContent({ slug }: { slug: string }) {
                 onClick={handleBookSelected}
                 className="px-4 py-2 rounded-lg bg-black text-white disabled:opacity-50"
               >
-                {bookSlots.isPending 
-                  ? "Booking..." 
-                  : `Book selected (${selected.length})`
-                }
+                {bookSlots.isPending
+                  ? "Booking..."
+                  : `Book selected (${selected.length})`}
               </Button>
               {selected.length > 0 && (
                 <Button
@@ -361,9 +381,9 @@ export default function TenantContent({ slug }: { slug: string }) {
             </div>
 
             {/* Sticky mobile CTA (mobile only) */}
-            <div 
+            <div
               className="sm:hidden sticky bottom-0 inset-x-0 z-20 bg-background/95 border-t p-3"
-              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} // for notches
+              style={{ paddingBottom: "env(safe-area-inset-bottom)" }} // for notches
             >
               <Button
                 className="w-full"
@@ -400,7 +420,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               tenant={cardTenant}
               reviewRating={4.5}
               reviewCount={12}
-              isSignedIn={!!isSignedIn}
+              isSignedIn={signedState}
               variant="detail"
               showActions
               ordersCount={12} // placeholder; wire real value later

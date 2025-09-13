@@ -38,7 +38,7 @@ interface TenantCardProps {
   tenant: TenantWithRelations;
   reviewRating?: number;
   reviewCount?: number;
-  isSignedIn: boolean;
+  isSignedIn: boolean | null; // ← was boolean accepts null
   variant?: "list" | "detail"; // NEW: layout control
   showActions?: boolean; // NEW: button rendering control
   onBook?: () => void; // NEW: optional handler
@@ -59,8 +59,7 @@ export const TenantCard = ({
 }: TenantCardProps) => {
   // Edge case variables for cleaner logic
   const hasServices = !!tenant.services?.length;
-  const canShowDistance = isSignedIn && tenant.distance != null;
-  const showDistanceRow = hasServices || isSignedIn; // we still render a left block (unavailable / tooltip) for balance
+  const showDistanceRow = hasServices || isSignedIn || tenant.distance != null; // we still render a left block (unavailable / tooltip) for balance
   // const isList = variant === "list";
 
   // Responsive width logic with group hover
@@ -179,36 +178,59 @@ export const TenantCard = ({
         {/* Distance + Services (single row) */}
         {showDistanceRow && (
           <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 min-h-[28px]">
-            {/* Left: Distance / hint / unavailable */}
-            <div className="flex items-center gap-1 text-gray-500 min-w-0">
-              {isSignedIn ? (
-                canShowDistance ? (
-                  <span className="inline-flex items-center gap-1 text-sm">
-                    <MapPin className="h-4 w-4 text-blue-600 shrink-0" />
-                    <span className="tabular-nums" suppressHydrationWarning>
-                      {formatOneDecimalForLocale(tenant.distance!)} km
-                    </span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-sm">
-                    <MapPinOff className="h-4 w-4 text-gray-400 shrink-0" />
-                    <span className="truncate max-w-[10ch]">Unavailable</span>
-                  </span>
-                )
+            {/* Left: Distance / hint / unavailable  — stable tree to avoid hydration error */}
+            <div
+              className="inline-flex items-center gap-1 text-sm min-w-0"
+              suppressHydrationWarning
+            >
+              {/* Icons stay mounted; just toggle visibility */}
+              <MapPin
+                aria-hidden
+                suppressHydrationWarning
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  tenant.distance != null ? "text-blue-600 inline" : "hidden"
+                )}
+              />
+              <MapPinOff
+                aria-hidden
+                suppressHydrationWarning
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  tenant.distance == null && isSignedIn === true
+                    ? "text-gray-400 inline"
+                    : "hidden"
+                )}
+              />
+
+              {/* Content */}
+              {tenant.distance != null ? (
+                <span className="tabular-nums" suppressHydrationWarning>
+                  {`${formatOneDecimalForLocale(tenant.distance)} km`}
+                </span>
+              ) : isSignedIn === null ? (
+                // auth unknown → neutral placeholder (prevents the “Log in…” flash)
+                <span
+                  aria-busy="true"
+                  className="inline-block h-4 w-24 rounded bg-gray-200/60 animate-pulse"
+                />
+              ) : isSignedIn === true ? (
+                <span className="truncate max-w-[10ch] text-gray-500">
+                  Unavailable
+                </span>
               ) : (
+                // signed out (known) → show tooltip
                 <AuthTooltip isSignedIn={false}>
-                  <div
+                  <span
                     className={cn(
-                      "flex items-center gap-1 text-gray-400",
-                      // ↓ smaller only in list cards
-                      variant === "list" ? "text-[11px] leading-4" : "text-sm"
+                      "truncate",
+                      variant === "list"
+                        ? "text-[11px] leading-4 text-gray-400"
+                        : "text-sm text-gray-400"
                     )}
                   >
-                    {/* <Lock className={cn("shrink-0", variant === "list" ? "h-3.5 w-3.5" : "h-4 w-4")} /> */}
-                    <span className="whitespace-nowrap">
-                      Log in for distance
-                    </span>
-                  </div>
+                    Log in for distance
+                  </span>
                 </AuthTooltip>
               )}
             </div>

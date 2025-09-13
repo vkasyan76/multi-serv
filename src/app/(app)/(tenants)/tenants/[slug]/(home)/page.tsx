@@ -1,3 +1,4 @@
+// import BridgeAuth from "@/modules/tenants/ui/components/tenant_page/BridgeAuth";
 import TenantContent from "@/modules/tenants/ui/components/tenant_page/tenant-content";
 
 interface Props {
@@ -9,6 +10,7 @@ export default async function TenantPage({ params }: Props) {
 
   return (
     <div className="py-8">
+      {/* <BridgeAuth /> */}
       <TenantContent slug={slug} />
     </div>
   );
