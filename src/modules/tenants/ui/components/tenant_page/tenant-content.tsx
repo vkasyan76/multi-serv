@@ -22,6 +22,11 @@ import LoadingPage from "@/components/shared/loading";
 import type { Category } from "@/payload-types";
 import { useUser } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
+// import { CartButton } from "@/modules/checkout/ui/cart-button";
+// add:
+import { BookSlotsButton } from "@/modules/checkout/ui/book-slots-button";
+import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
+import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 
 // near top (module scope is fine)
 const BOOKING_CH = "booking-updates" as const;
@@ -379,6 +384,13 @@ export default function TenantContent({ slug }: { slug: string }) {
                 </Button>
               )}
             </div>
+            <BookSlotsButton
+              tenantSlug={slug}
+              selectedIds={selected}
+              pricePerHourCents={getHourlyRateCents(cardTenant)}
+              onAdded={() => setSelected([])} // clear calendar selection
+            />
+            <CartDrawer />
 
             {/* Sticky mobile CTA (mobile only) */}
             <div
@@ -394,6 +406,12 @@ export default function TenantContent({ slug }: { slug: string }) {
                   ? `Book ${selected.length} slot${selected.length > 1 ? "s" : ""}`
                   : "Select slots to book"}
               </Button>
+              <BookSlotsButton
+                tenantSlug={slug}
+                selectedIds={selected}
+                pricePerHourCents={getHourlyRateCents(cardTenant)}
+                onAdded={() => setSelected([])} // clear calendar selection
+              />
             </div>
           </section>
 
