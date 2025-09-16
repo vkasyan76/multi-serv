@@ -1,15 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTRPC } from "@/trpc/client";
-import {
-  useQueryClient,
-  useQuery,
-  useMutation,
-  keepPreviousData,
-} from "@tanstack/react-query";
-import type { TRPCClientErrorLike } from "@trpc/client";
-import type { AppRouter } from "@/trpc/routers/_app";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -27,42 +20,7 @@ import dynamic from "next/dynamic";
 import { BookSlotsButton } from "@/modules/checkout/ui/book-slots-button";
 import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
-
-// near top (module scope is fine)
-const BOOKING_CH = "booking-updates" as const;
-
-// Type definitions for type-safe cache operations
-type BookingStatus = "available" | "booked" | "confirmed";
-
-/** Minimal shape we read/write in the cache */
-type BookingLite = {
-  id: string;
-  status: BookingStatus;
-  start: string; // ISO
-  end: string; // ISO
-};
-
-type BookSlotsVars = { bookingIds: string[] };
-
-type BookSlotsResult = {
-  bookedIds: string[];
-  unavailableIds: string[];
-  invalidIds?: string[];
-  updated?: number;
-};
-
-/** Narrow, type-safe predicates for queryClient predicates */
-const isPublicSlotsKey = (q: { queryKey: readonly unknown[] }) =>
-  Array.isArray(q.queryKey) &&
-  q.queryKey.length >= 2 &&
-  q.queryKey[0] === "bookings" &&
-  q.queryKey[1] === "listPublicSlots";
-
-const isMineSlotsKey = (q: { queryKey: readonly unknown[] }) =>
-  Array.isArray(q.queryKey) &&
-  q.queryKey.length >= 2 &&
-  q.queryKey[0] === "bookings" &&
-  q.queryKey[1] === "listMine";
+import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 
 // import TenantCalendar from "@/modules/bookings/ui/TenantCalendar";
 
@@ -80,7 +38,7 @@ const TenantCalendar = dynamic(
 export default function TenantContent({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
+
   const { isSignedIn, isLoaded } = useUser();
   const signedState = isLoaded ? !!isSignedIn : null;
 
@@ -93,135 +51,37 @@ export default function TenantContent({ slug }: { slug: string }) {
   // Clear selections on unmount
   useEffect(() => () => setSelected([]), []);
 
-  const bookSlots = useMutation<
-    BookSlotsResult,
-    TRPCClientErrorLike<AppRouter>,
-    BookSlotsVars,
-    { snapshots: Array<[readonly unknown[], BookingLite[] | undefined]> }
-  >({
-    ...trpc.bookings.bookSlots.mutationOptions(),
+  const handleClearSelection = () => {
+    setSelected([]);
+  };
+  const cartOpen = useCartStore((s) => s.open);
+  const prevOpenRef = useRef(cartOpen);
 
-    // 1) Optimistic update
-    onMutate: async (vars) => {
-      // cancel in-flight fetches for public slots
-      await queryClient.cancelQueries({ predicate: isPublicSlotsKey });
-
-      // snapshot public slots data so we can roll back
-      const snapshots = queryClient.getQueriesData<BookingLite[]>({
-        predicate: isPublicSlotsKey,
-      });
-
-      // mark each selected id as booked in every matching cache
-      for (const [key, data] of snapshots) {
-        if (!data) continue;
-        queryClient.setQueryData<BookingLite[]>(
-          key,
-          data.map((b) =>
-            vars.bookingIds.includes(b.id) ? { ...b, status: "booked" } : b
-          )
-        );
-      }
-
-      return { snapshots };
-    },
-
-    // 2) Success handling (typed result)
-    onSuccess: async (result) => {
-      const { bookedIds, unavailableIds } = result;
-
-      // clear selection
-      setSelected((prev) => {
-        const next = new Set(prev);
-        bookedIds.forEach((id) => next.delete(id));
-        unavailableIds.forEach((id) => next.delete(id));
-        return Array.from(next);
-      });
-
-      // revert "missed" ones immediately
-      if (unavailableIds.length) {
-        const snaps = queryClient.getQueriesData<BookingLite[]>({
-          predicate: isPublicSlotsKey,
-        });
-        for (const [key, data] of snaps) {
-          if (!data) continue;
-          queryClient.setQueryData<BookingLite[]>(
-            key,
-            data.map((b) =>
-              unavailableIds.includes(b.id) ? { ...b, status: "available" } : b
-            )
-          );
-        }
-      }
-
-      // toasts (unchanged)
-      if (bookedIds.length && !unavailableIds.length) {
-        toast.success(
-          `Successfully booked ${bookedIds.length} slot${bookedIds.length > 1 ? "s" : ""}.`
-        );
-      } else if (bookedIds.length && unavailableIds.length) {
-        toast.warning(
-          `Booked ${bookedIds.length} slot${bookedIds.length > 1 ? "s" : ""}. ${unavailableIds.length} were no longer available.`
-        );
-      } else {
-        toast.error("No slots were available for booking.");
-      }
-
-      // broadcast (unchanged)
-      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-        const ch = new BroadcastChannel(BOOKING_CH);
-        ch.postMessage({
-          type: "booking:updated",
-          tenantSlug: slug,
-          ids: bookedIds,
-          ts: Date.now(),
-        });
-        ch.close();
-      }
-    },
-
-    // 3) Rollback on error (typed error & context)
-    onError: (err, _vars, ctx) => {
-      if (ctx?.snapshots) {
-        for (const [key, data] of ctx.snapshots) {
-          queryClient.setQueryData<BookingLite[] | undefined>(key, data);
-        }
-      }
-      toast.error(err.message ?? "An error occurred while booking slots.");
-    },
-
-    // 4) Always refetch to sync truth
-    onSettled: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ predicate: isPublicSlotsKey }),
-        queryClient.invalidateQueries({ predicate: isMineSlotsKey }),
-      ]);
-    },
-  });
+  // grey slots selection cleared when cart closes
+  useEffect(() => {
+    // open -> closed
+    if (prevOpenRef.current && !cartOpen) {
+      setSelected([]); // clear grey selection on close
+    }
+    prevOpenRef.current = cartOpen;
+  }, [cartOpen]);
 
   const handleToggleSelect = (id: string) => {
     setSelected((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((slotId) => slotId !== id);
-      } else {
-        if (prev.length >= MAX_SLOTS_PER_BOOKING) {
-          toast.warning(
-            `You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`
-          );
-          return prev;
-        }
-        return [...prev, id];
+      // remove if already selected
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+
+      // enforce selection cap
+      if (prev.length >= MAX_SLOTS_PER_BOOKING) {
+        toast.warning(
+          `You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`
+        );
+        return prev;
       }
+
+      // add
+      return [...prev, id];
     });
-  };
-
-  const handleBookSelected = async () => {
-    if (!selected.length) return;
-    await bookSlots.mutateAsync({ bookingIds: selected });
-    // Nothing else here. onSuccess/onError already do toasts + invalidation.
-  };
-
-  const handleClearSelection = () => {
-    setSelected([]);
   };
 
   const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok;
@@ -364,55 +224,37 @@ export default function TenantContent({ slug }: { slug: string }) {
             />
 
             {/* Selection controls */}
-            <div className="mt-3 flex items-center gap-3">
-              <Button
-                disabled={!selected.length || bookSlots.isPending}
-                onClick={handleBookSelected}
-                className="px-4 py-2 rounded-lg bg-black text-white disabled:opacity-50"
-              >
-                {bookSlots.isPending
-                  ? "Booking..."
-                  : `Book selected (${selected.length})`}
-              </Button>
-              {selected.length > 0 && (
+            {selected.length > 0 && (
+              <div className="mt-4 hidden sm:flex gap-3">
+                <div className="flex-1">
+                  <BookSlotsButton
+                    tenantSlug={slug}
+                    selectedIds={selected}
+                    pricePerHourCents={getHourlyRateCents(cardTenant)}
+                  />
+                </div>
                 <Button
                   variant="outline"
                   onClick={handleClearSelection}
-                  className="text-sm text-gray-600 underline"
+                  className="flex-1"
                 >
                   Clear selection
                 </Button>
-              )}
-            </div>
-            <BookSlotsButton
-              tenantSlug={slug}
-              selectedIds={selected}
-              pricePerHourCents={getHourlyRateCents(cardTenant)}
-              onAdded={() => setSelected([])} // clear calendar selection
-            />
+              </div>
+            )}
+
             <CartDrawer />
 
             {/* Sticky mobile CTA (mobile only) */}
-            <div
-              className="sm:hidden sticky bottom-0 inset-x-0 z-20 bg-background/95 border-t p-3"
-              style={{ paddingBottom: "env(safe-area-inset-bottom)" }} // for notches
-            >
-              <Button
-                className="w-full"
-                disabled={!selected.length || bookSlots.isPending}
-                onClick={handleBookSelected}
-              >
-                {selected.length
-                  ? `Book ${selected.length} slot${selected.length > 1 ? "s" : ""}`
-                  : "Select slots to book"}
-              </Button>
-              <BookSlotsButton
-                tenantSlug={slug}
-                selectedIds={selected}
-                pricePerHourCents={getHourlyRateCents(cardTenant)}
-                onAdded={() => setSelected([])} // clear calendar selection
-              />
-            </div>
+            {selected.length > 0 && (
+              <div className="sm:hidden sticky bottom-0 inset-x-0 z-20 bg-background/95 border-t p-3">
+                <BookSlotsButton
+                  tenantSlug={slug}
+                  selectedIds={selected}
+                  pricePerHourCents={getHourlyRateCents(cardTenant)}
+                />
+              </div>
+            )}
           </section>
 
           {/* Reviews Section */}

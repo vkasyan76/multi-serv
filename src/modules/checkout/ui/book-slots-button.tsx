@@ -7,7 +7,6 @@ import {
   slotToCartItem,
   type CartItem,
 } from "@/modules/checkout/store/use-cart-store";
-import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 type Props = {
@@ -40,29 +39,27 @@ export function BookSlotsButton({
   pricePerHourCents,
   onAdded,
 }: Props) {
-  const { addSelected, openCart } = useCart(tenantSlug);
+  const { addSelected, openCart, clearTenantCart } = useCart(tenantSlug);
   const qc = useQueryClient();
 
   // Build an index of id -> {start,end} from ALL bookings queries in cache
-  const slotIndex = useMemo(() => {
-    const index = new Map<string, { start: string; end: string }>();
-    const snaps = qc.getQueriesData<MaybeBookings>({
-      predicate: (q) => {
-        const s = JSON.stringify(q.queryKey ?? []);
-        return (
-          s.includes('"bookings"') &&
-          (s.includes('"listPublicSlots"') || s.includes('"listMine"'))
-        );
-      },
-    });
+  const snaps = qc.getQueriesData<unknown>({
+    predicate: (q) => {
+      const s = JSON.stringify(q.queryKey ?? []);
+      return (
+        s.includes('"bookings"') &&
+        (s.includes('"listPublicSlots"') || s.includes('"listMine"'))
+      );
+    },
+  });
 
-    for (const [, data] of snaps) {
-      for (const b of toBookingsArray(data)) {
-        index.set(String(b.id), { start: String(b.start), end: String(b.end) });
-      }
+  const slotIndex = new Map<string, { start: string; end: string }>();
+  for (const [, payload] of snaps) {
+    const arr = toBookingsArray(payload as MaybeBookings); // typed narrowing
+    for (const b of arr) {
+      slotIndex.set(b.id, { start: b.start, end: b.end });
     }
-    return index;
-  }, [qc]);
+  }
 
   const onClick = () => {
     if (!selectedIds.length) return;
@@ -76,6 +73,14 @@ export function BookSlotsButton({
       );
     }
 
+    if (items.length === 0) {
+      // nothing resolved from cache yet; keep selection so user can retry
+      openCart();
+      return;
+    }
+
+    clearTenantCart();
+
     const ok = addSelected(items);
     if (ok) {
       onAdded?.(); // clear selection if you passed it
@@ -84,11 +89,7 @@ export function BookSlotsButton({
   };
 
   return (
-    <Button
-      disabled={!selectedIds.length}
-      onClick={onClick}
-      className="px-4 py-2"
-    >
+    <Button disabled={!selectedIds.length} onClick={onClick} className="w-full">
       {selectedIds.length ? `Book slots (${selectedIds.length})` : "Book slots"}
     </Button>
   );

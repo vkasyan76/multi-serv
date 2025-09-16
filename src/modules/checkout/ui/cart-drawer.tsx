@@ -10,6 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 
+import { useTRPC } from "@/trpc/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
 const EUR = new Intl.NumberFormat(undefined, {
   style: "currency",
   currency: "EUR",
@@ -23,9 +27,58 @@ export function CartDrawer() {
 
   const totalCents = items.reduce((sum, it) => sum + (it.priceCents ?? 0), 0);
 
+  const trpc = useTRPC();
+  const qc = useQueryClient();
+
+  // invalidate all bookings lists (public + mine)
+  const invalidateBookings = () =>
+    qc.invalidateQueries({
+      predicate: (q) => {
+        const s = JSON.stringify(q.queryKey ?? []);
+        return (
+          s.includes('"bookings"') &&
+          (s.includes('"listPublicSlots"') || s.includes('"listMine"'))
+        );
+      },
+    });
+
+  const bookSlots = useMutation({
+    ...trpc.bookings.bookSlots.mutationOptions(),
+    onSuccess: async () => {
+      await invalidateBookings();
+      if ("BroadcastChannel" in window) {
+        const ch = new BroadcastChannel("booking-updates");
+        ch.postMessage({ type: "booking:updated", ts: Date.now() });
+        ch.close();
+      }
+    },
+  });
+
+  // called by the Checkout button
+  const handleCheckout = async () => {
+    const ids = items.map((i) => i.id);
+    if (!ids.length) return;
+    try {
+      await bookSlots.mutateAsync({ bookingIds: ids });
+    } catch {
+      toast.error("Please sign in to book slots.");
+    } finally {
+      setOpen(false);
+    }
+  };
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" className="w-[420px] sm:w-[520px]">
+    <Sheet
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) clear(); // close = empty cart
+      }}
+    >
+      <SheetContent
+        side="right"
+        className="w-screen max-w-[100vw] p-4 sm:w-[520px] sm:max-w-[520px] sm:p-6 rounded-none sm:rounded-l-xl"
+      >
         <SheetHeader>
           <SheetTitle>Booking cart</SheetTitle>
         </SheetHeader>
@@ -33,7 +86,7 @@ export function CartDrawer() {
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground mt-4">Cart is empty.</p>
         ) : (
-          <ul className="mt-4 space-y-3">
+          <ul className="mt-3 space-y-2 sm:mt-4 sm:space-y-3">
             {items.map((it) => {
               const start = new Date(it.startIso);
               const end = new Date(it.endIso);
@@ -61,8 +114,8 @@ export function CartDrawer() {
           </ul>
         )}
 
-        <SheetFooter className="mt-4">
-          <div className="w-full">
+        <SheetFooter className="mt-3 sm:mt-4">
+          <div className="w-full pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-between text-base mb-3">
               <span>Total</span>
               <span className="font-semibold">
@@ -70,11 +123,8 @@ export function CartDrawer() {
               </span>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => clear()}>
-                Clear
-              </Button>
-              <Button className="flex-1" onClick={() => setOpen(false)}>
-                Checkout (soon)
+              <Button className="flex-1" onClick={handleCheckout}>
+                Checkout
               </Button>
             </div>
           </div>
