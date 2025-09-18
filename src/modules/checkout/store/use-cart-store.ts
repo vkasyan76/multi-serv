@@ -48,9 +48,10 @@ export const useCartStore = create<CartState>((set, get) => ({
     if (s.items.length && s.tenant && s.tenant !== tenant) return false;
     set((prev) => {
       const exists = prev.items.some((x) => x.id === item.id);
+      const nextItems = exists ? prev.items : [...prev.items, item]; // on an empty cart the tenant must be (re)assigned to the new tenant; otherwise a stale tenant can stick.
       return {
-        tenant: prev.tenant ?? tenant,
-        items: exists ? prev.items : [...prev.items, item],
+        tenant: prev.items.length === 0 ? tenant : (prev.tenant ?? tenant),
+        items: nextItems,
       };
     });
     return true;
@@ -62,27 +63,42 @@ export const useCartStore = create<CartState>((set, get) => ({
     set((prev) => {
       const seen = new Set(prev.items.map((x) => x.id));
       const merged = items.filter((x) => !seen.has(x.id));
+      const nextItems = [...prev.items, ...merged];
       return {
-        tenant: prev.tenant ?? tenant,
-        items: [...prev.items, ...merged],
+        tenant: prev.items.length === 0 ? tenant : (prev.tenant ?? tenant), // reassign the tenant
+        items: nextItems,
       };
     });
     return true;
   },
 
   remove: (slotId) =>
-    set((prev) => ({ items: prev.items.filter((x) => x.id !== slotId) })),
+    set((prev) => {
+      const nextItems = prev.items.filter((x) => x.id !== slotId);
+      return {
+        items: nextItems,
+        tenant: nextItems.length ? prev.tenant : null,
+      };
+    }), // reste tenant
 
   toggle: (tenant, item) => {
     const s = get();
     if (s.items.length && s.tenant && s.tenant !== tenant) return false;
-    const exists = s.items.some((x) => x.id === item.id);
-    set((prev) => ({
-      tenant: prev.tenant ?? tenant,
-      items: exists
-        ? prev.items.filter((x) => x.id !== item.id)
-        : [...prev.items, item],
-    }));
+    set((prev) => {
+      const exists = prev.items.some((x) => x.id === item.id);
+      // keeps tenant consistent across add/remove of the final item.
+      if (exists) {
+        const nextItems = prev.items.filter((x) => x.id !== item.id);
+        return {
+          items: nextItems,
+          tenant: nextItems.length ? prev.tenant : null,
+        };
+      }
+      return {
+        items: [...prev.items, item],
+        tenant: prev.items.length === 0 ? tenant : (prev.tenant ?? tenant),
+      };
+    });
     return true;
   },
 
@@ -98,7 +114,9 @@ export function slotToCartItem(
   pricePerHourCents: number
 ): CartItem {
   const ms = +new Date(slot.end) - +new Date(slot.start);
-  const hours = Math.max(1, Math.round(ms / 3_600_000));
+  const valid = Number.isFinite(ms) && ms > 0; // avoids undercharging (61–89 min), and prevents NaN/negative totals if dates are odd.
+  const hours = valid ? Math.max(1, Math.ceil(ms / 3_600_000)) : 1;
+
   return {
     id: slot.id,
     startIso: slot.start,

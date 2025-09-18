@@ -14,6 +14,9 @@ import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { BOOKING_CH } from "@/constants";
+import { TRPCClientError } from "@trpc/client";
+
 const EUR = new Intl.NumberFormat(undefined, {
   style: "currency",
   currency: "EUR",
@@ -24,6 +27,8 @@ export function CartDrawer() {
   const setOpen = useCartStore((s) => s.setOpen);
   const items = useCartStore((s) => s.items);
   const clear = useCartStore((s) => s.clear);
+
+  const tenantSlug = useCartStore((s) => s.tenant);
 
   const totalCents = items.reduce((sum, it) => sum + (it.priceCents ?? 0), 0);
 
@@ -42,14 +47,23 @@ export function CartDrawer() {
       },
     });
 
+  // calendar listeners filter by channel + tenant; including tenantSlug and ids makes cross-tab refresh precise.
   const bookSlots = useMutation({
     ...trpc.bookings.bookSlots.mutationOptions(),
     onSuccess: async () => {
       await invalidateBookings();
-      if ("BroadcastChannel" in window) {
-        const ch = new BroadcastChannel("booking-updates");
-        ch.postMessage({ type: "booking:updated", ts: Date.now() });
-        ch.close();
+      if ("BroadcastChannel" in window && tenantSlug) {
+        try {
+          const ch = new BroadcastChannel(BOOKING_CH);
+          const ids = items.map((i) => i.id);
+          ch.postMessage({
+            type: "booking:updated",
+            tenantSlug,
+            ids,
+            ts: Date.now(),
+          });
+          ch.close();
+        } catch {}
       }
     },
   });
@@ -60,8 +74,15 @@ export function CartDrawer() {
     if (!ids.length) return;
     try {
       await bookSlots.mutateAsync({ bookingIds: ids });
-    } catch {
-      toast.error("Please sign in to book slots.");
+    } catch (err) {
+      let msg = "Checkout failed. Please try again.";
+      if (err instanceof TRPCClientError) {
+        msg =
+          err.data?.code === "UNAUTHORIZED"
+            ? "Please sign in to book slots."
+            : err.message || msg;
+      }
+      toast.error(msg);
     } finally {
       setOpen(false);
     }

@@ -11,7 +11,8 @@
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
     "db:fresh": "payload migrate:fresh",
-    "db:seed": "node --loader ts-node/esm ./src/seed.ts"
+    "db:seed": "node --loader ts-node/esm ./src/seed.ts",
+    "db:clear:bookings": "node --loader ts-node/esm ./src/scripts/clear-bookings.ts"
   },
   "dependencies": {
     "@clerk/backend": "^2.4.2",
