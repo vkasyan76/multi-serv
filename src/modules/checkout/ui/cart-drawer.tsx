@@ -1,5 +1,11 @@
 "use client";
 
+import { useMemo, useCallback } from "react";
+import {
+  getLocaleAndCurrency,
+  formatDateForLocale,
+} from "@/modules/profile/location-utils";
+import { X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -11,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 
 import { useTRPC } from "@/trpc/client";
+import { TRPCClientError } from "@trpc/client";
+
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Select,
@@ -21,20 +29,14 @@ import {
 } from "@/components/ui/select";
 const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
-
 import { BOOKING_CH } from "@/constants";
-import { TRPCClientError } from "@trpc/client";
-
-const EUR = new Intl.NumberFormat(undefined, {
-  style: "currency",
-  currency: "EUR",
-});
 
 export function CartDrawer() {
   const open = useCartStore((s) => s.open);
   const setOpen = useCartStore((s) => s.setOpen);
   const items = useCartStore((s) => s.items);
   const clear = useCartStore((s) => s.clear);
+  const remove = useCartStore((s) => s.remove);
   const setService = useCartStore((s) => s.setService); // ← NEW
 
   const tenantSlug = useCartStore((s) => s.tenant);
@@ -52,6 +54,18 @@ export function CartDrawer() {
     enabled: !!tenantSlug,
     staleTime: 0,
   });
+
+  // Locale & currency from your location utils
+  const { locale, currency } = getLocaleAndCurrency();
+  const money = useMemo(
+    () => new Intl.NumberFormat(locale, { style: "currency", currency }),
+    [locale, currency]
+  );
+  const fmtTime = useCallback(
+    (d: Date) =>
+      d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
+    [locale]
+  );
 
   type IdName = { id: string; name?: string | null };
   type RelRef = string | IdName;
@@ -148,83 +162,104 @@ export function CartDrawer() {
     >
       <SheetContent
         side="right"
-        className="w-screen max-w-[100vw] p-4 sm:w-[520px] sm:max-w-[520px] sm:p-6 rounded-none sm:rounded-l-xl"
+        className="w-screen max-w-[100vw] p-4 sm:w-[520px] sm:max-w-[520px] sm:p-6 rounded-none flex flex-col"
       >
         <SheetHeader>
           <SheetTitle>Booking cart</SheetTitle>
         </SheetHeader>
+        <div className="mt-3 sm:mt-4 flex-1 min-h-0 overflow-y-auto">
+          {items.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Cart is empty.</p>
+          ) : (
+            <ul className="space-y-2 sm:space-y-3 pr-1">
+              {items.map((it) => {
+                const start = new Date(it.startIso);
+                const end = new Date(it.endIso);
+                const when =
+                  isFinite(start.getTime()) && isFinite(end.getTime())
+                    ? `${formatDateForLocale(start)} • ${fmtTime(start)}–${fmtTime(end)}`
+                    : "—";
 
-        {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground mt-4">Cart is empty.</p>
-        ) : (
-          <ul className="mt-3 space-y-2 sm:mt-4 sm:space-y-3">
-            {items.map((it) => {
-              const start = new Date(it.startIso);
-              const end = new Date(it.endIso);
-              const when =
-                isFinite(start.getTime()) && isFinite(end.getTime())
-                  ? `${start.toLocaleDateString()} • ${start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}–${end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                  : "—";
-              return (
-                <li
-                  key={it.id}
-                  className="border rounded-md p-3 text-sm flex items-center justify-between"
-                >
-                  <div className="mr-3">
-                    <div className="font-medium">{when}</div>
-                    <div className="text-muted-foreground">
-                      Slot ID: {it.id}
-                    </div>
-                    {/* Service picker (subcategory preferred; fallback to category) */}
-                    {serviceOptions.length > 0 && (
-                      <div className="mt-2">
-                        <Select
-                          value={it.serviceId ?? NONE} // empty string = "no selection"
-                          onValueChange={(val) =>
-                            setService(it.id, val === NONE ? null : val)
-                          }
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select service" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={NONE} disabled>
-                              Pick a service
-                            </SelectItem>
-                            {serviceOptions.map((opt) => (
-                              <SelectItem key={opt.id} value={opt.id}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                return (
+                  <li
+                    key={it.id}
+                    className="border rounded-md p-3 text-sm flex items-center justify-between"
+                  >
+                    <div className="mr-3">
+                      <div className="font-medium">{when}</div>
+                      <div className="text-muted-foreground">
+                        Slot ID: {it.id}
                       </div>
-                    )}
-                  </div>
-                  <div className="font-semibold">
-                    {EUR.format((it.priceCents ?? 0) / 100)}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                      {/* Service picker (subcategory preferred; fallback to category) */}
+                      {serviceOptions.length > 0 && (
+                        <div className="mt-2">
+                          <Select
+                            value={it.serviceId ?? NONE} // empty string = "no selection"
+                            onValueChange={(val) =>
+                              setService(it.id, val === NONE ? null : val)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select service" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={NONE} disabled>
+                                Pick a service
+                              </SelectItem>
+                              {serviceOptions.map((opt) => (
+                                <SelectItem key={opt.id} value={opt.id}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                    <div className="font-semibold">
+                      {money.format((it.priceCents ?? 0) / 100)}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(it.id)}
+                      aria-label="Remove slot"
+                      title="Remove"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
 
         <SheetFooter className="mt-3 sm:mt-4">
           <div className="w-full pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-between text-base mb-3">
               <span>Total</span>
               <span className="font-semibold">
-                {EUR.format(totalCents / 100)}
+                {money.format(totalCents / 100)}
               </span>
             </div>
             <div className="flex gap-2">
               <Button
                 className="flex-1"
                 onClick={handleCheckout}
-                disabled={!allHaveService || bookSlots.isPending}
+                disabled={
+                  items.length === 0 || !allHaveService || bookSlots.isPending
+                }
               >
                 Checkout
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setOpen(false)} // closes drawer → will clear due to onOpenChange
+                disabled={bookSlots.isPending}
+              >
+                Cancel
               </Button>
             </div>
           </div>
