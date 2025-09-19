@@ -1,6 +1,6 @@
 // src/modules/bookings/server/book-slot-helpers.ts
 import type { TRPCContext } from "@/trpc/init";
-import type { Booking } from "@/payload-types";
+import type { Booking, Tenant, Category } from "@/payload-types";
 
 type DocWithId<T> = T & { id: string };
 
@@ -43,46 +43,136 @@ export async function fetchBookable(
   return (res.docs ?? []) as Array<DocWithId<Booking>>;
 }
 
-// group bookingIds by serviceId
-export function groupByService(items: CartItem[]): Map<string, string[]> {
-  const m = new Map<string, string[]>();
-  for (const { bookingId, serviceId } of items) {
-    if (!serviceId) continue; // just in case
-    const arr = m.get(serviceId) ?? [];
-    arr.push(bookingId);
-    m.set(serviceId, arr);
-  }
-  return m;
+// --- snapshots (tiny caches) ---
+type ServiceSnap = { name: string | null; slug: string | null };
+type TenantSnap = {
+  name: string | null;
+  slug: string | null;
+  hourlyRate: number | null;
+};
+type SnapCaches = {
+  service: Map<string, ServiceSnap>;
+  tenant: Map<string, TenantSnap>;
+};
+
+function makeSnapCaches(): SnapCaches {
+  return { service: new Map(), tenant: new Map() };
 }
 
-// run one update per service group, so each doc gets its service
-export async function bulkBookGroups(
+async function getServiceSnap(
   ctx: TRPCContext,
-  groups: Map<string, string[]>,
-  nowIso: string,
-  payloadUserId: string
-): Promise<string[]> {
-  let booked: string[] = [];
-  for (const [serviceId, ids] of groups) {
-    if (!ids.length) continue;
+  serviceId: string,
+  caches: SnapCaches
+): Promise<ServiceSnap> {
+  const hit = caches.service.get(serviceId);
+  if (hit) return hit;
+  const doc = (await ctx.db.findByID({
+    collection: "categories",
+    id: serviceId,
+    depth: 0,
+  })) as Category | null;
+
+  const snap: ServiceSnap = {
+    name: doc?.name ?? null,
+    slug: doc?.slug ?? null,
+  };
+
+  caches.service.set(serviceId, snap);
+  return snap;
+}
+
+async function getTenantSnap(
+  ctx: TRPCContext,
+  tenantId: string,
+  caches: SnapCaches
+): Promise<TenantSnap> {
+  const hit = caches.tenant.get(tenantId);
+  if (hit) return hit;
+  const doc = (await ctx.db.findByID({
+    collection: "tenants",
+    id: tenantId,
+    depth: 0,
+  })) as Tenant | null;
+
+  const snap: TenantSnap = {
+    name: doc?.name ?? null,
+    slug: doc?.slug ?? null,
+    hourlyRate: doc?.hourlyRate ?? null, // price lives on tenant
+  };
+
+  caches.tenant.set(tenantId, snap);
+  return snap;
+}
+
+async function buildServiceSnapshot(
+  ctx: TRPCContext,
+  tenantId: string,
+  serviceId: string,
+  caches: SnapCaches
+) {
+  const [ten, svc] = await Promise.all([
+    getTenantSnap(ctx, tenantId, caches),
+    getServiceSnap(ctx, serviceId, caches),
+  ]);
+  return {
+    serviceName: svc.name,
+    serviceSlug: svc.slug,
+    tenantName: ten.name,
+    tenantSlug: ten.slug,
+    hourlyRate: ten.hourlyRate,
+  };
+}
+
+// --- one-by-one atomic updates, writing the snapshot ---
+export async function bulkBookIndividually(opts: {
+  ctx: TRPCContext;
+  items: CartItem[];
+  bookableById: Map<string, DocWithId<Booking>>;
+  payloadUserId: string;
+  nowIso: string;
+}): Promise<string[]> {
+  const { ctx, items, bookableById, payloadUserId, nowIso } = opts;
+  const caches = makeSnapCaches();
+  const booked: string[] = [];
+
+  for (const it of items) {
+    const b = bookableById.get(it.bookingId);
+    if (!b) continue;
+
+    const tenantId = typeof b.tenant === "string" ? b.tenant : b.tenant?.id;
+    if (!tenantId) continue;
+
+    const serviceSnapshot = await buildServiceSnapshot(
+      ctx,
+      tenantId,
+      it.serviceId,
+      caches
+    );
+
     const res = await ctx.db.update({
       collection: "bookings",
       where: {
         and: [
-          { id: { in: ids } },
+          { id: { equals: it.bookingId } },
           { status: { equals: "available" } },
           { start: { greater_than: nowIso } },
         ],
       },
-      data: { status: "booked", customer: payloadUserId, service: serviceId },
+      data: {
+        status: "booked",
+        customer: payloadUserId,
+        service: it.serviceId,
+        serviceSnapshot,
+      },
       overrideAccess: true,
       depth: 0,
     });
-    if (Array.isArray(res?.docs)) {
-      booked = booked.concat(
-        (res.docs as Array<DocWithId<Booking>>).map((d) => d.id)
-      );
-    }
+
+    const updatedId = Array.isArray(res?.docs)
+      ? (res.docs[0] as { id?: string })?.id
+      : undefined;
+    if (updatedId) booked.push(updatedId);
   }
+
   return booked;
 }

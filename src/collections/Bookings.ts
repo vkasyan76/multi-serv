@@ -29,12 +29,6 @@ export const Bookings: CollectionConfig = {
     { name: "start", type: "date", required: true, index: true }, // ISO UTC
     { name: "end", type: "date", required: true },
     {
-      name: "mode",
-      type: "select",
-      options: ["online", "onsite"],
-      required: true,
-    },
-    {
       name: "status",
       type: "select",
       options: ["available", "booked", "confirmed"],
@@ -56,6 +50,24 @@ export const Bookings: CollectionConfig = {
     },
 
     { name: "notes", type: "textarea" },
+    {
+      name: "serviceSnapshot",
+      type: "group",
+      admin: {
+        description: "Denormalized display-only snapshot at booking time",
+        position: "sidebar",
+      },
+      fields: [
+        // service (category) bits
+        { name: "serviceName", type: "text", admin: { readOnly: true } },
+        { name: "serviceSlug", type: "text", admin: { readOnly: true } },
+
+        // tenant bits (where the price lives)
+        { name: "tenantName", type: "text", admin: { readOnly: true } },
+        { name: "tenantSlug", type: "text", admin: { readOnly: true } },
+        { name: "hourlyRate", type: "number", admin: { readOnly: true } },
+      ],
+    },
   ],
   indexes: [
     // Compound index for tenant + start time queries (most common)

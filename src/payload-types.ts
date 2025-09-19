@@ -344,13 +344,22 @@ export interface Booking {
   customer?: (string | null) | User;
   start: string;
   end: string;
-  mode: 'online' | 'onsite';
   status: 'available' | 'booked' | 'confirmed';
   /**
    * Selected service (subcategory) for this booking.
    */
   service?: (string | null) | Category;
   notes?: string | null;
+  /**
+   * Denormalized display-only snapshot at booking time
+   */
+  serviceSnapshot?: {
+    serviceName?: string | null;
+    serviceSlug?: string | null;
+    tenantName?: string | null;
+    tenantSlug?: string | null;
+    hourlyRate?: number | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -542,10 +551,18 @@ export interface BookingsSelect<T extends boolean = true> {
   customer?: T;
   start?: T;
   end?: T;
-  mode?: T;
   status?: T;
   service?: T;
   notes?: T;
+  serviceSnapshot?:
+    | T
+    | {
+        serviceName?: T;
+        serviceSlug?: T;
+        tenantName?: T;
+        tenantSlug?: T;
+        hourlyRate?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

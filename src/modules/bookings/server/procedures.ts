@@ -6,9 +6,8 @@ import type { Booking, Tenant, User } from "@/payload-types";
 import {
   uniqueIds,
   fetchBookable,
-  bulkBookGroups,
   type CartItem,
-  groupByService,
+  bulkBookIndividually,
 } from "./book-slot-helpers";
 
 // Payload returns docs with an id. Make that explicit.
@@ -166,7 +165,6 @@ export const bookingRouter = createTRPCRouter({
           tenantId: z.string(),
           start: z.string().datetime(),
           end: z.string().datetime(),
-          mode: z.enum(["online", "onsite"]),
         })
         .refine((v) => new Date(v.start) < new Date(v.end), {
           message: "start must be before end",
@@ -269,7 +267,6 @@ export const bookingRouter = createTRPCRouter({
           tenant: input.tenantId,
           start: start.toISOString(),
           end: end.toISOString(),
-          mode: input.mode,
           status: "available",
         },
         overrideAccess: true,
@@ -298,6 +295,27 @@ export const bookingRouter = createTRPCRouter({
 
       const nowIso = new Date().toISOString();
 
+      const current = await ctx.db.findByID({
+        collection: "bookings",
+        id: input.bookingId,
+        depth: 0,
+      });
+
+      // set snapshot:
+      const tenantId =
+        typeof current?.tenant === "string"
+          ? current.tenant
+          : current?.tenant?.id;
+
+      const [tenantDoc, serviceDoc] = await Promise.all([
+        ctx.db.findByID({ collection: "tenants", id: tenantId, depth: 0 }),
+        ctx.db.findByID({
+          collection: "categories",
+          id: input.serviceId,
+          depth: 0,
+        }),
+      ]);
+
       // Atomic conditional update: only book if still available and in the future
       const res = await ctx.db.update({
         collection: "bookings",
@@ -312,6 +330,13 @@ export const bookingRouter = createTRPCRouter({
           status: "booked",
           customer: payloadUserId,
           service: input.serviceId,
+          serviceSnapshot: {
+            serviceName: serviceDoc?.name ?? null,
+            serviceSlug: serviceDoc?.slug ?? null,
+            tenantName: tenantDoc?.name ?? null,
+            tenantSlug: tenantDoc?.slug ?? null,
+            hourlyRate: tenantDoc?.hourlyRate ?? null,
+          },
         },
         overrideAccess: true,
         depth: 0,
@@ -565,7 +590,8 @@ export const bookingRouter = createTRPCRouter({
 
       // 2) snapshot of what is still bookable right now
       const bookable = await fetchBookable(ctx, ids, nowIso);
-      const seenIds = new Set(bookable.map((b) => b.id));
+      const byId = new Map(bookable.map((b) => [b.id, b]));
+      const seenIds = new Set(byId.keys());
 
       if (bookable.length === 0) {
         // nothing in requested set is currently bookable
@@ -580,15 +606,14 @@ export const bookingRouter = createTRPCRouter({
       // keep only items that were seen as bookable in the snapshot
       const bookableItems = items.filter((it) => seenIds.has(it.bookingId));
 
-      // 3) group by service and run one atomic update per service
-      const groups = groupByService(bookableItems);
-      const bookedIds = await bulkBookGroups(
+      // 3) one atomic update per booking (writes snapshot too)
+      const bookedIds = await bulkBookIndividually({
         ctx,
-        groups,
+        items: bookableItems,
+        bookableById: byId,
+        payloadUserId,
         nowIso,
-        payloadUserId
-      );
-
+      });
       // 4) summary
       // requested & was seen as bookable, but didn’t get updated → lost the race
       const raceLost = ids.filter(
