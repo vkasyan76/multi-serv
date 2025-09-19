@@ -42,6 +42,19 @@ export const Bookings: CollectionConfig = {
       required: true,
       index: true,
     }, // available -> booked -> confirmed (for payment flow)
+
+    // NEW: chosen subcategory/service at booking time
+    {
+      name: "service",
+      type: "relationship",
+      relationTo: "categories",
+      required: false,
+      index: true,
+      admin: {
+        description: "Selected service (subcategory) for this booking.",
+      },
+    },
+
     { name: "notes", type: "textarea" },
   ],
   indexes: [

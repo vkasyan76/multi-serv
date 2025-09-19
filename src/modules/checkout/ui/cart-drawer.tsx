@@ -11,7 +11,15 @@ import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 
 import { useTRPC } from "@/trpc/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
 
 import { BOOKING_CH } from "@/constants";
@@ -27,13 +35,43 @@ export function CartDrawer() {
   const setOpen = useCartStore((s) => s.setOpen);
   const items = useCartStore((s) => s.items);
   const clear = useCartStore((s) => s.clear);
+  const setService = useCartStore((s) => s.setService); // ← NEW
 
   const tenantSlug = useCartStore((s) => s.tenant);
 
   const totalCents = items.reduce((sum, it) => sum + (it.priceCents ?? 0), 0);
+  // --- helper: are all slots assigned a service? ---
+  const allHaveService = items.every((i) => !!i.serviceId);
 
   const trpc = useTRPC();
   const qc = useQueryClient();
+
+  // Pull tenant's subcategories/categories to build "Service" options
+  const { data: tenant } = useQuery({
+    ...trpc.tenants.getOneForCard.queryOptions({ slug: tenantSlug ?? "" }),
+    enabled: !!tenantSlug,
+    staleTime: 0,
+  });
+
+  type IdName = { id: string; name?: string | null };
+  type RelRef = string | IdName;
+
+  const toOption = (x: RelRef): { id: string; label: string } =>
+    typeof x === "string"
+      ? { id: x, label: x }
+      : { id: x.id, label: x.name ?? x.id };
+
+  const serviceOptions = ((): Array<{ id: string; label: string }> => {
+    if (!tenant) return [];
+    // Prefer subcategories; fallback to categories
+    const sub = ((tenant.subcategories ?? []) as RelRef[]).map(toOption);
+    const cat = ((tenant.categories ?? []) as RelRef[]).map(toOption);
+    const raw = sub.length > 0 ? sub : cat;
+
+    // de-dupe by id, preserve order
+    const seen = new Set<string>();
+    return raw.filter((o) => (seen.has(o.id) ? false : (seen.add(o.id), true)));
+  })();
 
   // invalidate all bookings lists (public + mine)
   const invalidateBookings = () =>
@@ -70,10 +108,22 @@ export function CartDrawer() {
 
   // called by the Checkout button
   const handleCheckout = async () => {
-    const ids = items.map((i) => i.id);
-    if (!ids.length) return;
+    if (!items.length) return;
+
+    // hard-guard in case someone disables the button in dev tools
+    if (!items.every((i) => !!i.serviceId)) {
+      toast.error("Please select a service for every slot.");
+      return;
+    }
+
     try {
-      await bookSlots.mutateAsync({ bookingIds: ids });
+      await bookSlots.mutateAsync({
+        // NOTE: server will require serviceId, so we send strings
+        items: items.map((i) => ({
+          bookingId: i.id,
+          serviceId: i.serviceId as string,
+        })),
+      });
     } catch (err) {
       let msg = "Checkout failed. Please try again.";
       if (err instanceof TRPCClientError) {
@@ -125,6 +175,31 @@ export function CartDrawer() {
                     <div className="text-muted-foreground">
                       Slot ID: {it.id}
                     </div>
+                    {/* Service picker (subcategory preferred; fallback to category) */}
+                    {serviceOptions.length > 0 && (
+                      <div className="mt-2">
+                        <Select
+                          value={it.serviceId ?? NONE} // empty string = "no selection"
+                          onValueChange={(val) =>
+                            setService(it.id, val === NONE ? null : val)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select service" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NONE} disabled>
+                              Pick a service
+                            </SelectItem>
+                            {serviceOptions.map((opt) => (
+                              <SelectItem key={opt.id} value={opt.id}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                   <div className="font-semibold">
                     {EUR.format((it.priceCents ?? 0) / 100)}
@@ -144,7 +219,11 @@ export function CartDrawer() {
               </span>
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1" onClick={handleCheckout}>
+              <Button
+                className="flex-1"
+                onClick={handleCheckout}
+                disabled={!allHaveService || bookSlots.isPending}
+              >
                 Checkout
               </Button>
             </div>

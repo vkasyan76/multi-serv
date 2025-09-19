@@ -346,6 +346,10 @@ export interface Booking {
   end: string;
   mode: 'online' | 'onsite';
   status: 'available' | 'booked' | 'confirmed';
+  /**
+   * Selected service (subcategory) for this booking.
+   */
+  service?: (string | null) | Category;
   notes?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -540,6 +544,7 @@ export interface BookingsSelect<T extends boolean = true> {
   end?: T;
   mode?: T;
   status?: T;
+  service?: T;
   notes?: T;
   updatedAt?: T;
   createdAt?: T;

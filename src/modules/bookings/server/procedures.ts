@@ -3,6 +3,13 @@ import { TRPCError } from "@trpc/server";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { isBefore, addHours, startOfHour, isEqual } from "date-fns";
 import type { Booking, Tenant, User } from "@/payload-types";
+import {
+  uniqueIds,
+  fetchBookable,
+  bulkBookGroups,
+  type CartItem,
+  groupByService,
+} from "./book-slot-helpers";
 
 // Payload returns docs with an id. Make that explicit.
 type DocWithId<T> = T & { id: string };
@@ -274,7 +281,7 @@ export const bookingRouter = createTRPCRouter({
 
   // Book a slot (customer) - FIXED: Race condition prevention + Clerk ID mapping
   bookSlot: baseProcedure
-    .input(z.object({ bookingId: z.string() }))
+    .input(z.object({ bookingId: z.string(), serviceId: z.string().min(1) }))
     .mutation(async ({ input, ctx }): Promise<DocWithId<Booking>> => {
       const clerkUserId = ctx.userId;
       if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -290,7 +297,7 @@ export const bookingRouter = createTRPCRouter({
       if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
 
       const nowIso = new Date().toISOString();
-      
+
       // Atomic conditional update: only book if still available and in the future
       const res = await ctx.db.update({
         collection: "bookings",
@@ -301,7 +308,11 @@ export const bookingRouter = createTRPCRouter({
             { start: { greater_than: nowIso } },
           ],
         },
-        data: { status: "booked", customer: payloadUserId },
+        data: {
+          status: "booked",
+          customer: payloadUserId,
+          service: input.serviceId,
+        },
         overrideAccess: true,
         depth: 0,
       });
@@ -520,76 +531,77 @@ export const bookingRouter = createTRPCRouter({
     }),
 
   bookSlots: baseProcedure
-    .input(z.object({ bookingIds: z.array(z.string()).min(1) }))
+    .input(
+      z.object({
+        items: z
+          .array(
+            z.object({
+              bookingId: z.string(),
+              // require a non-empty string (service is mandatory)
+              serviceId: z.string().min(1),
+            })
+          )
+          .min(1),
+      })
+    )
     .mutation(async ({ input, ctx }): Promise<BookSlotsResult> => {
-      const { bookingIds } = input;
+      // 0) auth → payload user
       const clerkUserId = ctx.userId;
       if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-      // Map Clerk → Payload user id
-      const me = (await ctx.db.find({
+      const me = await ctx.db.find({
         collection: "users",
         where: { clerkUserId: { equals: clerkUserId } },
         limit: 1,
         depth: 0,
-      })) as { docs: Array<DocWithId<User>> };
-      const payloadUserId = me.docs[0]?.id;
+      });
+      const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
       if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
 
-      // Fetch once to know which ids exist and validate they're bookable
-      const { docs } = await ctx.db.find({
-        collection: "bookings",
-        where: { 
-          and: [
-            { id: { in: bookingIds } },
-            { status: { equals: "available" } },
-            { start: { greater_than: new Date().toISOString() } }
-          ]
-        },
-        depth: 0,
-        limit: bookingIds.length,
-      });
+      // 1) normalize → ids
+      const items = input.items as CartItem[];
+      const ids = uniqueIds(input.items);
+      const nowIso = new Date().toISOString();
 
-      const foundSet = new Set(docs.map((d: DocWithId<Booking>) => d.id));
-      const invalidIds: string[] = bookingIds.filter((id) => !foundSet.has(id));
-      const bookableIds = Array.from(foundSet);
+      // 2) snapshot of what is still bookable right now
+      const bookable = await fetchBookable(ctx, ids, nowIso);
+      const seenIds = new Set(bookable.map((b) => b.id));
 
-      if (bookableIds.length === 0) {
+      if (bookable.length === 0) {
+        // nothing in requested set is currently bookable
         return {
           bookedIds: [],
-          unavailableIds: bookingIds.filter(id => !invalidIds.includes(id)),
-          invalidIds,
+          unavailableIds: ids, // taken / past
+          invalidIds: [], // (we don’t distinguish “non-existent” here)
           updated: 0,
         };
       }
 
-      // Atomic bulk update: book all available slots in one operation
-      const bulkUpdateRes = await ctx.db.update({
-        collection: "bookings",
-        where: {
-          and: [
-            { id: { in: bookableIds } },
-            { status: { equals: "available" } },
-            { start: { greater_than: new Date().toISOString() } }
-          ]
-        },
-        data: { status: "booked", customer: payloadUserId },
-        overrideAccess: true,
-        depth: 0,
-      });
+      // keep only items that were seen as bookable in the snapshot
+      const bookableItems = items.filter((it) => seenIds.has(it.bookingId));
 
-      const successfullyBooked = Array.isArray(bulkUpdateRes?.docs) 
-        ? bulkUpdateRes.docs.map(doc => doc.id)
-        : [];
+      // 3) group by service and run one atomic update per service
+      const groups = groupByService(bookableItems);
+      const bookedIds = await bulkBookGroups(
+        ctx,
+        groups,
+        nowIso,
+        payloadUserId
+      );
 
-      // Calculate unavailable (bookable but not successfully booked due to race conditions)
-      const unavailableIds = bookableIds.filter(id => !successfullyBooked.includes(id));
+      // 4) summary
+      // requested & was seen as bookable, but didn’t get updated → lost the race
+      const raceLost = ids.filter(
+        (id) => seenIds.has(id) && !bookedIds.includes(id)
+      );
+      // requested & never seen as bookable in snapshot (past / already taken)
+      const neverSeen = ids.filter((id) => !seenIds.has(id));
 
       return {
-        bookedIds: successfullyBooked,
-        unavailableIds: [...unavailableIds, ...bookingIds.filter(id => !foundSet.has(id) && !invalidIds.includes(id))],
-        invalidIds,
-        updated: successfullyBooked.length,
+        bookedIds,
+        unavailableIds: [...raceLost, ...neverSeen],
+        invalidIds: [], // keep empty unless you add an existence check
+        updated: bookedIds.length,
       };
     }),
 });
