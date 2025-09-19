@@ -11,7 +11,8 @@
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
     "db:fresh": "payload migrate:fresh",
-    "db:seed": "node --loader ts-node/esm ./src/seed.ts"
+    "db:seed": "node --loader ts-node/esm ./src/seed.ts",
+    "db:clear:bookings": "node --loader ts-node/esm ./src/scripts/clear-bookings.ts"
   },
   "dependencies": {
     "@clerk/backend": "^2.4.2",
@@ -92,7 +93,8 @@
     "svix": "^1.69.0",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
-    "zod": "^3.25.75"
+    "zod": "^3.25.75",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
