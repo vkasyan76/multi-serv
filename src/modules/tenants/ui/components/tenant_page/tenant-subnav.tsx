@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from "react";
 const SECTIONS = [
   { id: "about", label: "About" },
   { id: "services", label: "Services" },
-  { id: "availability", label: "Availability" },
+  { id: "booking", label: "Booking" },
   { id: "reviews", label: "Reviews" },
 ];
 
@@ -36,6 +36,20 @@ export function TenantSubnav({
         clearTimeout(scrollTimeoutRef.current);
       }
     };
+  }, []);
+
+  // Accept a custom event that sets the active tab explicitly (e.g. from "Book" buttons)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (["about", "services", "booking", "reviews"].includes(id)) {
+        lastClickTimeRef.current = Date.now(); // avoid IO flicker
+        setActive(id);
+      }
+    };
+    window.addEventListener("tenant:set-active", handler as EventListener);
+    return () =>
+      window.removeEventListener("tenant:set-active", handler as EventListener);
   }, []);
 
   // Scrollspy: highlight only (no history writes)

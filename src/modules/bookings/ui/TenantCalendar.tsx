@@ -288,8 +288,10 @@ export default function TenantCalendar({
     ch.addEventListener("message", onMsg);
 
     return () => {
+      ch.removeEventListener("message", onMsg);
       ch.close();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantSlug, queryClient, range.start, range.end]);
 
   // Navigation label using the existing formatters
@@ -330,7 +332,7 @@ export default function TenantCalendar({
   const slotsQ = useQuery({
     ...baseOpts,
     // keep previous data visible during fetch => no flash
-            placeholderData: (prev) => prev,
+    placeholderData: (prev) => prev,
     // avoid focus-triggered refetches
     refetchOnWindowFocus: false,
     // tiny payloads; 5s is smooth on dashboard, 60s is fine on public
@@ -353,16 +355,18 @@ export default function TenantCalendar({
       );
       console.log("Slots returned:", slotsQ.data?.length || 0);
 
-              // Debug customer names for booked slots
-        const oneBooked = (slotsQ.data ?? []).find(b => b.status !== "available");
-        if (oneBooked) {
-          console.log("Booked sample:", {
-            id: oneBooked.id,
-            status: oneBooked.status,
-            customer: oneBooked.customer,
-            customerType: typeof oneBooked.customer,
-          });
-        }
+      // Debug customer names for booked slots
+      const oneBooked = (slotsQ.data ?? []).find(
+        (b) => b.status !== "available"
+      );
+      if (oneBooked) {
+        console.log("Booked sample:", {
+          id: oneBooked.id,
+          status: oneBooked.status,
+          customer: oneBooked.customer,
+          customerType: typeof oneBooked.customer,
+        });
+      }
     }
   }, [range, slotsQ.data]);
 
@@ -372,12 +376,12 @@ export default function TenantCalendar({
       const items = slotsQ.data ?? [];
       const s = +start;
       const e = +end;
-          return items.some(b => {
-      if (b.id === excludeId) return false;
-      const bs = +new Date(b.start);
-      const be = +new Date(b.end);
-      return bs < e && be > s;
-    });
+      return items.some((b) => {
+        if (b.id === excludeId) return false;
+        const bs = +new Date(b.start);
+        const be = +new Date(b.end);
+        return bs < e && be > s;
+      });
     },
     [slotsQ.data]
   );
@@ -861,7 +865,6 @@ export default function TenantCalendar({
               tenantId,
               start: start.toISOString(),
               end: end.toISOString(),
-              mode: "online",
             });
           } catch (err: unknown) {
             // Ignore benign conflicts from double-clicks / slow re-renders
@@ -889,7 +892,6 @@ export default function TenantCalendar({
               tenantId,
               start: start.toISOString(),
               end: end.toISOString(),
-              mode: "online",
             });
           } catch (err: unknown) {
             // Ignore benign conflicts from double-clicks / slow re-renders
@@ -920,7 +922,6 @@ export default function TenantCalendar({
               tenantId,
               start: start.toISOString(),
               end: end.toISOString(),
-              mode: "online",
             });
           } catch (err: unknown) {
             // Ignore benign conflicts from double-clicks / slow re-renders
@@ -933,6 +934,7 @@ export default function TenantCalendar({
         inFlightSlotKeys.current.delete(startMs);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       tenantQ.data?.id,
       isMutating,
@@ -975,6 +977,7 @@ export default function TenantCalendar({
         inFlightEventIds.current.delete(event.id);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectForBooking, removeSlot]
   );
 
@@ -1067,7 +1070,7 @@ export default function TenantCalendar({
           <div
             className={
               isMobile
-                ? "-mx-3 sm:mx-0 overflow-x-hidden"
+                ? "px-3 sm:px-0 overflow-x-hidden"
                 : "mx-0 overflow-x-hidden"
             }
           >
