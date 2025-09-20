@@ -3,7 +3,7 @@
 import { useMemo, useCallback } from "react";
 import { useCartStore, type CartItem } from "../store/use-cart-store";
 
-const EMPTY: CartItem[] = []; // stable, top-level constant
+const EMPTY: readonly CartItem[] = []; // stable, top-level constant read-only makes it immutable
 
 /** Tenant-scoped cart helpers (tutorial-style ergonomics). */
 export function useCart(tenantId: string) {

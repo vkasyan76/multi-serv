@@ -42,6 +42,15 @@ export default function TenantContent({ slug }: { slug: string }) {
   const { isSignedIn, isLoaded } = useUser();
   const signedState = isLoaded ? !!isSignedIn : null;
 
+  const scrollToCalendar = () => {
+    window.dispatchEvent(
+      new CustomEvent("tenant:set-active", { detail: "booking" })
+    );
+    document
+      .getElementById("booking")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const {
     data: bridge,
     isLoading: bridgeLoading,
@@ -113,6 +122,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           variant="detail"
           showActions
           ordersCount={12} // placeholder; wire real value later
+          onBook={scrollToCalendar}
         />
       </section>
 
@@ -209,12 +219,12 @@ export default function TenantContent({ slug }: { slug: string }) {
             </div>
           </section>
 
-          {/* Availability Section */}
+          {/* booking Section */}
           <section
-            id="availability"
+            id="booking"
             className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
           >
-            <h2 className="text-2xl font-bold mb-4">Availability</h2>
+            <h2 className="text-2xl font-bold mb-4">Booking</h2>
             <TenantCalendar
               tenantSlug={slug}
               editable={false}
@@ -284,6 +294,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               variant="detail"
               showActions
               ordersCount={12} // placeholder; wire real value later
+              onBook={scrollToCalendar}
             />
             {/* REMOVED: Contact and Pricing sections - now redundant */}
           </div>

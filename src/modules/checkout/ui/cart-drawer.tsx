@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useEffect } from "react";
 import {
   getLocaleAndCurrency,
   formatDateForLocale,
@@ -151,6 +151,13 @@ export function CartDrawer() {
       setOpen(false);
     }
   };
+
+  // Close the drawer automatically when the cart becomes empty
+  useEffect(() => {
+    if (open && items.length === 0) {
+      setOpen(false); // onOpenChange will run and clear() (safe even if already empty)
+    }
+  }, [open, items.length, setOpen]);
 
   return (
     <Sheet

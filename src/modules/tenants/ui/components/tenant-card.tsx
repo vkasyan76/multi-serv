@@ -300,7 +300,7 @@ export const TenantCard = ({
               size="lg"
               className="w-full"
               aria-label="Book service"
-              onClick={onBook ?? (() => console.log("TODO: Book service"))}
+              onClick={onBook}
             >
               Book service
             </Button>
