@@ -12,7 +12,9 @@
     "generate:importmap": "payload generate:importmap",
     "db:fresh": "payload migrate:fresh",
     "db:seed": "node --loader ts-node/esm ./src/seed.ts",
-    "db:clear:bookings": "node --loader ts-node/esm ./src/scripts/clear-bookings.ts"
+    "db:clear:bookings": "node --loader ts-node/esm ./src/scripts/clear-bookings.ts",
+    "db:clear:orders:all": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --all",
+    "db:clear:orders:unpaid": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --unpaid"
   },
   "dependencies": {
     "@clerk/backend": "^2.4.2",

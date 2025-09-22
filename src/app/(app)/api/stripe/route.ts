@@ -7,6 +7,18 @@ import { stripe } from "@/lib/stripe";
 import { parseSlotIdsCsv } from "@/modules/checkout/server/types";
 import type { Order } from "@/payload-types";
 
+export const runtime = "nodejs"; // ensure Node runtime for raw body access
+
+const devLog = (...args: unknown[]) => {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.STRIPE_WEBHOOK_LOGS === "1"
+  ) {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+};
+
 /**
  * Small helper to read the Payment Intent id from a Checkout Session
  * (Stripe returns it as a string OR as an expanded object).
@@ -31,8 +43,8 @@ export async function POST(req: Request) {
     // Stripe sends a signature header we verify against our webhook secret
     const sig = req.headers.get("stripe-signature") as string;
 
-    // IMPORTANT: we must give Stripe the *raw* request body bytes (not parsed JSON)
-    const rawBody = await (await req.blob()).text();
+    // IMPORTANT: we must give Stripe the *raw* request body bytes (not parsed JSON)  already set export const runtime = "nodejs", you can simplify
+    const rawBody = await req.text();
 
     // Create a trusted Event object or throw if the signature is invalid
     event = stripe.webhooks.constructEvent(
@@ -40,6 +52,8 @@ export async function POST(req: Request) {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET as string
     );
+
+    devLog("[webhook] received:", event.type);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Invalid signature";
     console.error("❌ Webhook verify failed:", msg);
@@ -70,6 +84,12 @@ export async function POST(req: Request) {
 
         // If anything critical is missing, we quietly “ack” the webhook (no hard failure)
         if (!orderId || !userId || slotIds.length === 0) {
+          devLog("[webhook] session.completed missing metadata", {
+            orderId,
+            userId,
+            slotIdsCsv: session.metadata?.slotIdsCsv,
+          });
+
           return NextResponse.json({ ok: true }, { status: 200 });
         }
 

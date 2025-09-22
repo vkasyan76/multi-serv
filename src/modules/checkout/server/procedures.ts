@@ -214,6 +214,14 @@ export const checkoutRouter = createTRPCRouter({
       // Money routes to the vendor via transfer_data; your fee via application_fee_amount
       const bookingIds = bookings.map((b) => b.id);
 
+      // Prepare shared metadata once
+      const metadata = {
+        orderId: order.id,
+        userId: payloadUserId,
+        tenantId,
+        slotIdsCsv: bookingIds.join(","),
+      } as CheckoutMetadata;
+
       try {
         // Create Stripe Checkout Session on the PLATFORM
         const session = await stripe.checkout.sessions.create({
@@ -237,13 +245,11 @@ export const checkoutRouter = createTRPCRouter({
           payment_intent_data: {
             application_fee_amount: feeCents,
             transfer_data: { destination: tenant.stripeAccountId as string },
+            // ensure PI also carries metadata (fallback webhook path)
+            metadata,
           },
-          metadata: {
-            orderId: order.id,
-            userId: payloadUserId,
-            tenantId,
-            slotIdsCsv: bookingIds.join(","),
-          } as CheckoutMetadata,
+          // still keep metadata on the Checkout Session
+          metadata,
           invoice_creation: { enabled: true },
         });
 
@@ -305,10 +311,23 @@ export const checkoutRouter = createTRPCRouter({
       return res.docs?.[0] ?? null;
     }),
 
-  // --- allow instant release when user lands on ?checkout=cancel ---
+  // --- allow instant release when user lands on ?checkout=cancel --- check that the caller owns that order
   releaseOnCancel: baseProcedure
     .input(z.object({ sessionId: z.string().min(1) }))
     .mutation(async ({ input, ctx }) => {
+      // Resolve current Payload user (same pattern as createSession)
+      const clerkUserId = ctx.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUser = me.docs?.[0] as { id: string } | undefined;
+      if (!payloadUser) throw new TRPCError({ code: "FORBIDDEN" });
+
       const res = await ctx.db.find({
         collection: "orders",
         where: { checkoutSessionId: { equals: input.sessionId } },
@@ -316,10 +335,25 @@ export const checkoutRouter = createTRPCRouter({
         depth: 0,
         overrideAccess: true,
       });
+
       const order = res.docs?.[0] as
-        | { id: string; status?: string; slots?: string[] }
+        | {
+            id: string;
+            user?: string | { id: string };
+            status?: string;
+            slots?: string[];
+          }
         | undefined;
-      if (!order || (order.status && order.status !== "pending")) return;
+
+      if (!order) return;
+
+      // ensure owner
+      const ownerId =
+        typeof order.user === "string" ? order.user : order.user?.id;
+      if (ownerId !== payloadUser.id)
+        throw new TRPCError({ code: "FORBIDDEN" });
+
+      if (order.status && order.status !== "pending") return;
 
       await ctx.db.update({
         collection: "orders",
@@ -334,10 +368,13 @@ export const checkoutRouter = createTRPCRouter({
           and: [
             { id: { in: (order.slots ?? []) as string[] } },
             { status: { equals: "booked" } },
+            { customer: { equals: payloadUser.id } }, // extra safety
           ],
         },
         data: { status: "available", customer: null },
         overrideAccess: true,
       });
+
+      return { ok: true };
     }),
 });
