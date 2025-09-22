@@ -120,6 +120,11 @@ export function CartDrawer() {
     },
   });
 
+  // create Stripe Checkout session for the reserved slots
+  const createSession = useMutation({
+    ...trpc.checkout.createSession.mutationOptions(),
+  });
+
   // called by the Checkout button
   const handleCheckout = async () => {
     if (!items.length) return;
@@ -131,6 +136,7 @@ export function CartDrawer() {
     }
 
     try {
+      // Step 1 — reserve the slots (available -> booked)
       await bookSlots.mutateAsync({
         // NOTE: server will require serviceId, so we send strings
         items: items.map((i) => ({
@@ -138,6 +144,20 @@ export function CartDrawer() {
           serviceId: i.serviceId as string,
         })),
       });
+
+      // Step 2 — create the Checkout session for these slot ids
+      const res = await createSession.mutateAsync({
+        slotIds: items.map((i) => i.id),
+      });
+
+      // Step 3 — send the user to Stripe
+      if (res?.url) {
+        // optional: close the drawer for a cleaner UX
+        setOpen(false);
+        window.location.assign(res.url);
+      } else {
+        toast.error("Could not start checkout. Please try again.");
+      }
     } catch (err) {
       let msg = "Checkout failed. Please try again.";
       if (err instanceof TRPCClientError) {
@@ -255,10 +275,15 @@ export function CartDrawer() {
                 className="flex-1"
                 onClick={handleCheckout}
                 disabled={
-                  items.length === 0 || !allHaveService || bookSlots.isPending
+                  items.length === 0 ||
+                  !allHaveService ||
+                  bookSlots.isPending ||
+                  createSession.isPending
                 }
               >
-                Checkout
+                {bookSlots.isPending || createSession.isPending
+                  ? "Redirecting…"
+                  : "Checkout"}
               </Button>
               <Button
                 variant="outline"

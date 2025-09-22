@@ -73,6 +73,7 @@ export interface Config {
     tenants: Tenant;
     tags: Tag;
     bookings: Booking;
+    orders: Order;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -89,6 +90,7 @@ export interface Config {
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -365,6 +367,53 @@ export interface Booking {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: string;
+  status: 'pending' | 'paid' | 'canceled' | 'refunded';
+  user: string | User;
+  tenant: string | Tenant;
+  /**
+   * Booked slots included in this order.
+   */
+  slots: (string | Booking)[];
+  /**
+   * Total amount in cents.
+   */
+  amount: number;
+  currency: string;
+  /**
+   * Platform fee in cents.
+   */
+  applicationFee?: number | null;
+  /**
+   * Connected account (Stripe) receiving the funds.
+   */
+  destination?: string | null;
+  /**
+   * Stripe Checkout Session ID.
+   */
+  checkoutSessionId?: string | null;
+  /**
+   * Stripe Payment Intent ID.
+   */
+  paymentIntentId?: string | null;
+  /**
+   * Stripe Balance Transaction ID (optional).
+   */
+  balanceTxId?: string | null;
+  receiptUrl?: string | null;
+  /**
+   * Optional hold window for UX.
+   */
+  reservedUntil?: string | null;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -393,6 +442,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'bookings';
         value: string | Booking;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: string | Order;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -563,6 +616,28 @@ export interface BookingsSelect<T extends boolean = true> {
         tenantSlug?: T;
         hourlyRate?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  status?: T;
+  user?: T;
+  tenant?: T;
+  slots?: T;
+  amount?: T;
+  currency?: T;
+  applicationFee?: T;
+  destination?: T;
+  checkoutSessionId?: T;
+  paymentIntentId?: T;
+  balanceTxId?: T;
+  receiptUrl?: T;
+  reservedUntil?: T;
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
