@@ -27,6 +27,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
 import { BOOKING_CH } from "@/constants";
@@ -172,6 +173,9 @@ export function CartDrawer() {
     }
   };
 
+  // Loading button:
+  const isBusy = bookSlots.isPending || createSession.isPending;
+
   // Close the drawer automatically when the cart becomes empty
   useEffect(() => {
     if (open && items.length === 0) {
@@ -271,20 +275,18 @@ export function CartDrawer() {
               </span>
             </div>
             <div className="flex gap-2">
-              <Button
+              <LoadingButton
                 className="flex-1"
                 onClick={handleCheckout}
-                disabled={
-                  items.length === 0 ||
-                  !allHaveService ||
-                  bookSlots.isPending ||
-                  createSession.isPending
-                }
+                isLoading={isBusy}
+                // loadingText="Redirecting…"
+                // if you want just a spinner with no text:
+                loadingText=""
+                reserveWidth={false}
+                disabled={items.length === 0 || !allHaveService || isBusy}
               >
-                {bookSlots.isPending || createSession.isPending
-                  ? "Redirecting…"
-                  : "Checkout"}
-              </Button>
+                Checkout
+              </LoadingButton>
               <Button
                 variant="outline"
                 className="flex-1"

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useTRPC } from "@/trpc/client";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useRouter, usePathname, useSearchParams } from "next/navigation"; // for navigation after chekout
+import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -39,6 +40,17 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
 
+  // redirect after checkout:
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const cancel = search.get("checkout") === "cancel";
+  const sessionId = search.get("session_id") || "";
+  const release = useMutation({
+    ...trpc.checkout.releaseOnCancel.mutationOptions(),
+    retry: false,
+  });
+  const isCancelling = cancel && !!sessionId; // canvelling paymente process
   const { isSignedIn, isLoaded } = useUser();
   const signedState = isLoaded ? !!isSignedIn : null;
 
@@ -75,6 +87,27 @@ export default function TenantContent({ slug }: { slug: string }) {
     prevOpenRef.current = cartOpen;
   }, [cartOpen]);
 
+  // reverting to available if the payment cancelled.
+  // fire once
+  const didReleaseRef = useRef(false);
+  useEffect(() => {
+    if (!didReleaseRef.current && cancel && sessionId) {
+      didReleaseRef.current = true;
+
+      release.mutate(
+        { sessionId },
+        {
+          onSettled: () => {
+            // Clean the URL so refreshes don't re-trigger the release
+            router.replace(pathname);
+          },
+        }
+      );
+    }
+    // deps intentionally kept to just the URL signal
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cancel, sessionId]);
+
   const handleToggleSelect = (id: string) => {
     setSelected((prev) => {
       // remove if already selected
@@ -97,7 +130,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const { data: cardTenant, isLoading: cardLoading } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug }),
-    enabled: !!bridge?.ok, // keep this
+    enabled: !!bridge?.ok && !isCancelling, // pause heavy data work while the cancel flow is in progress
     staleTime: 0, // ← was 60_000; must be 0
     gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
     refetchOnMount: "always", // ← force fresh fetch when page opens/navigates

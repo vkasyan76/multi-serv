@@ -24,6 +24,13 @@ const toCents = (amount: number) => Math.round(amount * 100);
 
 type DocWithId<T> = T & { id: string };
 
+function toAbsolute(urlOrPath: string) {
+  const base = (
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ).replace(/\/+$/, "");
+  return /^https?:\/\//i.test(urlOrPath) ? urlOrPath : `${base}${urlOrPath}`;
+}
+
 export const checkoutRouter = createTRPCRouter({
   ping: baseProcedure.query(() => "pong"), // ← TEMPORARY
 
@@ -191,75 +198,96 @@ export const checkoutRouter = createTRPCRouter({
         depth: 0,
       });
 
-      // Build URLs (prefer your helper if present)
-      let successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-      let cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`;
-      try {
-        // generateTenantUrl(slug) → https://<slug>.<root-domain>
-        let slug = tenant.slug;
-        if (!slug) {
-          // fallback from snapshot (when you have it)
-          const s = bookings[0]?.serviceSnapshot?.tenantSlug;
-          if (s) slug = s;
-        }
-        if (slug) {
-          const domain = generateTenantUrl(slug);
-          successUrl = `${domain}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-          cancelUrl = `${domain}/checkout/cancel`;
-        }
-      } catch {
-        // fall back silently to NEXT_PUBLIC_APP_URL
-      }
+      // Build absolute URLs (prefer tenant domain; fallback to NEXT_PUBLIC_APP_URL)
+
+      const slug =
+        tenant.slug || bookings[0]?.serviceSnapshot?.tenantSlug || "";
+      // Always build via your helper:
+      const tenantPage = toAbsolute(generateTenantUrl(slug)); // <- single source of truth
+
+      // Stripe will now bring the user straight back to that tenant’s page instead of separate “success/cancel” pages.
+
+      const successUrl = `${tenantPage}?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${tenantPage}?checkout=cancel&session_id={CHECKOUT_SESSION_ID}`;
 
       // Create Stripe Checkout Session on the PLATFORM
       // Money routes to the vendor via transfer_data; your fee via application_fee_amount
-      const session = await stripe.checkout.sessions.create({
-        mode: "payment",
-        customer_email: payloadUser.email ?? undefined,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        line_items: [
-          {
-            quantity: 1,
-            price_data: {
-              unit_amount: amountCents,
-              currency: "eur",
-              product_data: {
-                name: `${tenant.name ?? "Service"} – ${bookings.length} slot${bookings.length > 1 ? "s" : ""}`,
-                description: `Booking for ${tenant.name ?? "provider"}`,
+      const bookingIds = bookings.map((b) => b.id);
+
+      try {
+        // Create Stripe Checkout Session on the PLATFORM
+        const session = await stripe.checkout.sessions.create({
+          mode: "payment",
+          customer_email: payloadUser.email ?? undefined,
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          line_items: [
+            {
+              quantity: 1,
+              price_data: {
+                unit_amount: amountCents,
+                currency: "eur",
+                product_data: {
+                  name: `${tenant.name ?? "Service"} – ${bookings.length} slot${bookings.length > 1 ? "s" : ""}`,
+                  description: `Booking for ${tenant.name ?? "provider"}`,
+                },
               },
             },
+          ],
+          payment_intent_data: {
+            application_fee_amount: feeCents,
+            transfer_data: { destination: tenant.stripeAccountId as string },
           },
-        ],
-        payment_intent_data: {
-          application_fee_amount: feeCents,
-          transfer_data: { destination: tenant.stripeAccountId as string },
-        },
-        metadata: {
-          orderId: order.id,
-          userId: payloadUserId,
-          tenantId,
-          slotIdsCsv: bookings.map((b) => b.id).join(","),
-        } as CheckoutMetadata,
-        invoice_creation: { enabled: true },
-      });
+          metadata: {
+            orderId: order.id,
+            userId: payloadUserId,
+            tenantId,
+            slotIdsCsv: bookingIds.join(","),
+          } as CheckoutMetadata,
+          invoice_creation: { enabled: true },
+        });
 
-      if (!session.url) {
+        if (!session.url) {
+          throw new Error("No session URL from Stripe");
+        }
+
+        // Save session id to the order
+        await ctx.db.update({
+          collection: "orders",
+          id: order.id,
+          data: { checkoutSessionId: session.id },
+          overrideAccess: true,
+        });
+
+        return { url: session.url };
+      } catch (err) {
+        // Rollback: cancel the pending order and release the slots
+        console.error("Stripe Checkout createSession failed:", err);
+        await ctx.db.update({
+          collection: "orders",
+          id: order.id,
+          data: { status: "canceled" },
+          overrideAccess: true,
+        });
+
+        await ctx.db.update({
+          collection: "bookings",
+          where: {
+            and: [
+              { id: { in: bookingIds } },
+              { status: { equals: "booked" } },
+              { customer: { equals: payloadUserId } },
+            ],
+          },
+          data: { status: "available", customer: null },
+          overrideAccess: true,
+        });
+
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create checkout session",
+          code: "BAD_REQUEST",
+          message: "Could not start checkout. Please try again.",
         });
       }
-
-      // Save session id to the order
-      await ctx.db.update({
-        collection: "orders",
-        id: order.id,
-        data: { checkoutSessionId: session.id },
-        overrideAccess: true,
-      });
-
-      return { url: session.url };
     }),
 
   /**
@@ -275,5 +303,41 @@ export const checkoutRouter = createTRPCRouter({
         depth: 1,
       });
       return res.docs?.[0] ?? null;
+    }),
+
+  // --- allow instant release when user lands on ?checkout=cancel ---
+  releaseOnCancel: baseProcedure
+    .input(z.object({ sessionId: z.string().min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      const res = await ctx.db.find({
+        collection: "orders",
+        where: { checkoutSessionId: { equals: input.sessionId } },
+        limit: 1,
+        depth: 0,
+        overrideAccess: true,
+      });
+      const order = res.docs?.[0] as
+        | { id: string; status?: string; slots?: string[] }
+        | undefined;
+      if (!order || (order.status && order.status !== "pending")) return;
+
+      await ctx.db.update({
+        collection: "orders",
+        id: order.id,
+        data: { status: "canceled" },
+        overrideAccess: true,
+      });
+
+      await ctx.db.update({
+        collection: "bookings",
+        where: {
+          and: [
+            { id: { in: (order.slots ?? []) as string[] } },
+            { status: { equals: "booked" } },
+          ],
+        },
+        data: { status: "available", customer: null },
+        overrideAccess: true,
+      });
     }),
 });
