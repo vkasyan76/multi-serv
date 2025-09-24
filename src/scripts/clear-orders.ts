@@ -48,21 +48,24 @@ if (args.includes("--unpaid")) {
 }
 
 async function run() {
-  const client = new MongoClient(uri); // ✅ uri is string
-  await client.connect();
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
 
-  const col = client.db(dbName).collection("orders");
+    const col = client.db(dbName).collection("orders");
 
-  const before = await col.countDocuments({});
-  const target = await col.countDocuments(filter);
-  const res = await col.deleteMany(filter);
-  const after = await col.countDocuments({});
+    const before = await col.countDocuments({});
+    const target = await col.countDocuments(filter);
+    const res = await col.deleteMany(filter);
+    const after = await col.countDocuments({});
 
-  console.log(
-    `DB=${dbName} | Filter=${JSON.stringify(filter)} | Deleted=${res.deletedCount} (target=${target}) | before=${before} -> after=${after}`
-  );
-
-  await client.close();
+    console.log(
+      `DB=${dbName} | Filter=${JSON.stringify(filter)} | Deleted=${res.deletedCount} (target=${target}) | before=${before} -> after=${after}`
+    );
+  } finally {
+    // ensure the connection is closed even if something throws
+    await client.close().catch(() => {});
+  }
 }
 
 run().catch((e) => {

@@ -14,7 +14,8 @@
     "db:seed": "node --loader ts-node/esm ./src/seed.ts",
     "db:clear:bookings": "node --loader ts-node/esm ./src/scripts/clear-bookings.ts",
     "db:clear:orders:all": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --all",
-    "db:clear:orders:unpaid": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --unpaid"
+    "db:clear:orders:unpaid": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --unpaid",
+    "orders:cancel-stale": "node --loader ts-node/esm ./src/scripts/cancel-stale-orders.ts"
   },
   "dependencies": {
     "@clerk/backend": "^2.4.2",

@@ -18,6 +18,7 @@ export const Orders: CollectionConfig = {
       "currency",
       "tenant",
       "user",
+      "receiptUrl",
       "createdAt",
     ],
   },

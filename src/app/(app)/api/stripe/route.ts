@@ -139,6 +139,41 @@ export async function POST(req: Request) {
           overrideAccess: true,
         });
 
+        // 2) Non-blocking enrichment: try to fetch & store the receipt URL - saved in the order collection
+        try {
+          // For your flow (destination charges on the PLATFORM), the charge lives on the platform,
+          // so no stripeAccount header is needed here.
+          const expandedSession = await stripe.checkout.sessions.retrieve(
+            session.id,
+            { expand: ["payment_intent.latest_charge"] }
+          );
+
+          const latestCharge =
+            typeof expandedSession.payment_intent === "string"
+              ? null
+              : expandedSession.payment_intent?.latest_charge;
+
+          const receiptUrl =
+            latestCharge && typeof latestCharge !== "string"
+              ? (latestCharge.receipt_url ?? undefined)
+              : undefined;
+
+          if (receiptUrl) {
+            await payload.update({
+              collection: "orders",
+              id: orderId,
+              data: { receiptUrl },
+              overrideAccess: true,
+            });
+          }
+        } catch (e) {
+          // Keep this non-fatal so the webhook still returns 200
+          devLog(
+            "[webhook] could not enrich receiptUrl:",
+            (e as Error)?.message
+          );
+        }
+
         break;
       }
 

@@ -45,7 +45,12 @@ export default function TenantContent({ slug }: { slug: string }) {
   const pathname = usePathname();
   const search = useSearchParams();
   const cancel = search.get("checkout") === "cancel";
+  const success = search.get("checkout") === "success"; // NEW
   const sessionId = search.get("session_id") || "";
+
+  const clearCart = useCartStore((s) => s.clear); // NEW
+  const successHandledRef = useRef(false);
+
   const release = useMutation({
     ...trpc.checkout.releaseOnCancel.mutationOptions(),
     retry: false,
@@ -77,6 +82,21 @@ export default function TenantContent({ slug }: { slug: string }) {
   };
   const cartOpen = useCartStore((s) => s.open);
   const prevOpenRef = useRef(cartOpen);
+
+  // best-effort success handler — after redirect from Stripe Checkout
+  useEffect(() => {
+    if (!success || !sessionId || successHandledRef.current) return;
+    successHandledRef.current = true;
+
+    // UX: acknowledge and clean up immediately
+    toast.success("Payment received. Finalizing your booking…");
+
+    // clear local cart so user doesn’t see stale items
+    clearCart();
+
+    // remove the query params (?checkout=success&session_id=...)
+    router.replace(pathname);
+  }, [success, sessionId, clearCart, router, pathname]);
 
   // grey slots selection cleared when cart closes
   useEffect(() => {

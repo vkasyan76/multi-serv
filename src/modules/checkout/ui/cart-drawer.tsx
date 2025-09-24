@@ -187,6 +187,8 @@ export function CartDrawer() {
     <Sheet
       open={open}
       onOpenChange={(v) => {
+        // prevent closing while a session is being created / slots are being booked
+        if (!v && isBusy) return;
         setOpen(v);
         if (!v) clear(); // close = empty cart
       }}
@@ -229,6 +231,7 @@ export function CartDrawer() {
                             onValueChange={(val) =>
                               setService(it.id, val === NONE ? null : val)
                             }
+                            disabled={isBusy}
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select service" />
@@ -291,7 +294,7 @@ export function CartDrawer() {
                 variant="outline"
                 className="flex-1"
                 onClick={() => setOpen(false)} // closes drawer → will clear due to onOpenChange
-                disabled={bookSlots.isPending}
+                disabled={isBusy}
               >
                 Cancel
               </Button>
