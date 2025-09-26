@@ -95,12 +95,15 @@ export async function POST(req: Request) {
 
         // Idempotency guard: if we already processed this order, do nothing.
         // (Stripe may retry webhooks; we must be resilient.)
-        const order = (await payload.findByID({
+        const { docs } = await payload.find({
           collection: "orders",
-          id: orderId,
+          where: { id: { equals: orderId } },
+          limit: 1,
           depth: 0,
           overrideAccess: true,
-        })) as WebhookOrder | null;
+        });
+
+        const order = docs[0] as WebhookOrder | undefined;
         if (!order) return NextResponse.json({ ok: true }, { status: 200 });
         if (order.status && order.status !== "pending") {
           return NextResponse.json({ ok: true }, { status: 200 });
@@ -192,13 +195,16 @@ export async function POST(req: Request) {
           return NextResponse.json({ ok: true }, { status: 200 });
         }
 
-        // Only cancel if the order is still “pending”
-        const order = (await payload.findByID({
+        // Only cancel if the order is still “pending”  - use find instead of findByID otherwise payload.findByID throws when the doc doesn’t exist, so our if (!order) … never runs and the webhook returns 500.
+        const { docs } = await payload.find({
           collection: "orders",
-          id: orderId,
+          where: { id: { equals: orderId } },
+          limit: 1,
           depth: 0,
           overrideAccess: true,
-        })) as WebhookOrder | null;
+        });
+
+        const order = docs[0] as WebhookOrder | undefined;
         if (!order) return NextResponse.json({ ok: true }, { status: 200 });
         if (order.status && order.status !== "pending") {
           return NextResponse.json({ ok: true }, { status: 200 });
