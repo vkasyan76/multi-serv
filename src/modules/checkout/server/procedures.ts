@@ -124,7 +124,7 @@ export const checkoutRouter = createTRPCRouter({
       }
       const [tenantId] = [...tenantIds] as [string];
 
-      // Load tenant (for hourlyRate + stripeAccountId + slug)
+      // Load tenant (for hourlyRate + stripeAccountId + slug) depth: 0, as we don't need relations here
       const tenant = (await ctx.db.findByID({
         collection: "tenants",
         id: tenantId,

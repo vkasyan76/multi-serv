@@ -117,9 +117,18 @@ export default function TenantContent({ slug }: { slug: string }) {
       release.mutate(
         { sessionId },
         {
-          onSettled: () => {
-            // Clean the URL so refreshes don't re-trigger the release
+          onSuccess: () => {
+            // Only clear params once the release worked
             router.replace(pathname);
+          },
+          // explicit success/error handling. Don’t clear the URL on failure, and allow a retry.
+          onError: () => {
+            // Let the effect try again later (or user can refresh)
+            didReleaseRef.current = false;
+            toast.error(
+              "We couldn't release your checkout session. Please retry in a moment."
+            );
+            // Keep the URL params so the next run can retry
           },
         }
       );
