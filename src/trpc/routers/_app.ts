@@ -10,6 +10,7 @@ import { categoriesRouter } from "@/modules/categories/server/procedures";
 import { tagsRouter } from "@/modules/tags/server/procedures";
 import { tenantsRouter } from "@/modules/tenants/server/procedures";
 import { bookingRouter } from "@/modules/bookings/server/procedures";
+import { checkoutRouter } from "@/modules/checkout/server/procedures";
 
 export const appRouter = createTRPCRouter({
   // hello: baseProcedure
@@ -32,6 +33,7 @@ export const appRouter = createTRPCRouter({
   categories: categoriesRouter,
   // products: productsRouter,
   bookings: bookingRouter,
+  checkout: checkoutRouter,
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;

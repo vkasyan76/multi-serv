@@ -18,6 +18,7 @@ import { isSuperAdmin } from "./lib/access.ts";
 import { Tenants } from "./collections/Tenants.ts";
 import { Tags } from "./collections/Tags.ts";
 import { Bookings } from "./collections/Bookings.ts";
+import { Orders } from "./collections/Orders.ts";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -29,7 +30,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Categories, Tenants, Tags, Bookings],
+  collections: [Users, Media, Categories, Tenants, Tags, Bookings, Orders],
   // cookiePrefix: "funroad",  // optional: if we want to change the cookie prefix
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",

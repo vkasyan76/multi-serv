@@ -27,6 +27,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
 import { BOOKING_CH } from "@/constants";
@@ -120,6 +121,11 @@ export function CartDrawer() {
     },
   });
 
+  // create Stripe Checkout session for the reserved slots
+  const createSession = useMutation({
+    ...trpc.checkout.createSession.mutationOptions(),
+  });
+
   // called by the Checkout button
   const handleCheckout = async () => {
     if (!items.length) return;
@@ -131,6 +137,7 @@ export function CartDrawer() {
     }
 
     try {
+      // Step 1 — reserve the slots (available -> booked)
       await bookSlots.mutateAsync({
         // NOTE: server will require serviceId, so we send strings
         items: items.map((i) => ({
@@ -138,6 +145,20 @@ export function CartDrawer() {
           serviceId: i.serviceId as string,
         })),
       });
+
+      // Step 2 — create the Checkout session for these slot ids
+      const res = await createSession.mutateAsync({
+        slotIds: items.map((i) => i.id),
+      });
+
+      // Step 3 — send the user to Stripe
+      if (res?.url) {
+        // optional: close the drawer for a cleaner UX
+        setOpen(false);
+        window.location.assign(res.url);
+      } else {
+        toast.error("Could not start checkout. Please try again.");
+      }
     } catch (err) {
       let msg = "Checkout failed. Please try again.";
       if (err instanceof TRPCClientError) {
@@ -152,6 +173,9 @@ export function CartDrawer() {
     }
   };
 
+  // Loading button:
+  const isBusy = bookSlots.isPending || createSession.isPending;
+
   // Close the drawer automatically when the cart becomes empty
   useEffect(() => {
     if (open && items.length === 0) {
@@ -163,6 +187,8 @@ export function CartDrawer() {
     <Sheet
       open={open}
       onOpenChange={(v) => {
+        // prevent closing while a session is being created / slots are being booked
+        if (!v && isBusy) return;
         setOpen(v);
         if (!v) clear(); // close = empty cart
       }}
@@ -205,6 +231,7 @@ export function CartDrawer() {
                             onValueChange={(val) =>
                               setService(it.id, val === NONE ? null : val)
                             }
+                            disabled={isBusy}
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select service" />
@@ -251,20 +278,23 @@ export function CartDrawer() {
               </span>
             </div>
             <div className="flex gap-2">
-              <Button
+              <LoadingButton
                 className="flex-1"
                 onClick={handleCheckout}
-                disabled={
-                  items.length === 0 || !allHaveService || bookSlots.isPending
-                }
+                isLoading={isBusy}
+                // loadingText="Redirecting…"
+                // if you want just a spinner with no text:
+                loadingText=""
+                reserveWidth={false}
+                disabled={items.length === 0 || !allHaveService || isBusy}
               >
                 Checkout
-              </Button>
+              </LoadingButton>
               <Button
                 variant="outline"
                 className="flex-1"
                 onClick={() => setOpen(false)} // closes drawer → will clear due to onOpenChange
-                disabled={bookSlots.isPending}
+                disabled={isBusy}
               >
                 Cancel
               </Button>

@@ -262,14 +262,33 @@ export const authRouter = createTRPCRouter({
         subcategoryIds = subcategoryDocs.docs.map((doc) => doc.id);
       }
 
-      let account: { id?: string } | null = null;
+      let accountId: string | undefined; // <-- just the id, visible to catch
       let tenant: { id: string } | null = null;
 
       try {
-        // Create Stripe account for the vendor
-        account = await stripe.accounts.create();
+        // explicitly creating an Express connected account.
+        // Express gives you Stripe’s hosted onboarding UI and handles KYC/TOS. That keeps your compliance surface small and is the recommended fit for marketplaces/platforms.
+        // Idempotency key prevents duplicate connected accounts if the request is retried (network flap, user double-click, server restart).
+        // Metadata (e.g., your platform’s user/tenant IDs) makes debugging and reconciliation easier in the Stripe Dashboard.
+        if (!currentUser || typeof currentUser.id !== "string") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
 
-        if (!account.id) {
+        const platformUserId = String(currentUser.id);
+
+        ({ id: accountId } = await stripe.accounts.create(
+          {
+            type: "express",
+            capabilities: { transfers: { requested: true } }, // destination charges
+            metadata: {
+              platformUserId,
+              tenantName: input.name ?? "",
+            },
+          },
+          { idempotencyKey: `acct_create:${currentUser.id}:v1` }
+        ));
+
+        if (!accountId) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to create Stripe account",
@@ -282,7 +301,7 @@ export const authRouter = createTRPCRouter({
           data: {
             name: input.name || currentUser?.username || "",
             slug: input.name || currentUser?.username || "", // Use business name as slug for routing
-            stripeAccountId: account.id,
+            stripeAccountId: accountId,
             firstName: input.firstName,
             lastName: input.lastName,
             bio: input.bio,
@@ -311,30 +330,53 @@ export const authRouter = createTRPCRouter({
 
         return tenant;
       } catch (error) {
-        // Check if error is due to duplicate business name constraint
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        if (
-          errorMessage.includes("duplicate") ||
-          errorMessage.includes("unique") ||
-          errorMessage.includes("already exists")
-        ) {
-          // Cleanup Stripe account if it was created
-          if (account?.id) {
-            await stripe.accounts.del(account.id).catch(console.error);
-          }
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message:
-              "Business name is already taken. Please choose a different name.",
-          });
+        let tenantDeleted = false;
+
+        /**
+         * Failure handling playbook:
+         * 1) If we managed to create a tenant doc, try to roll it back.
+         *    Record whether that rollback actually succeeded.
+         * 2) If a Stripe account was created, delete it when:
+         *      - the tenant was never persisted, OR
+         *      - the tenant rollback succeeded.
+         *    If tenant rollback failed, we intentionally keep the Stripe account so
+         *    that external (Stripe) and internal (DB) state remain aligned for follow-up cleanup.
+         * 3) Rethrow the original error so the caller can handle it.
+         */
+
+        // 1) Try to roll back tenant if it was created
+        if (tenant?.id) {
+          await ctx.db
+            .delete({ collection: "tenants", id: tenant.id })
+            .then(() => {
+              tenantDeleted = true;
+            })
+            .catch(() => {
+              // swallow rollback failure; we don't want to mask the original error
+            });
         }
 
-        // Cleanup Stripe account if it was created but database operations failed
-        if (account?.id) {
-          await stripe.accounts.del(account.id).catch(console.error);
+        // Delete Stripe account if it was created and either:
+        //  - tenant was never persisted, or
+        //  - tenant rollback succeeded
+        if (accountId && (!tenant || tenantDeleted)) {
+          await stripe.accounts.del(accountId).catch(() => {
+            // ignore cleanup errors so we don't mask the original error
+          });
+        } else if (
+          accountId &&
+          tenant &&
+          !tenantDeleted &&
+          process.env.NODE_ENV !== "production"
+        ) {
+          // Heads-up: tenant rollback failed but Stripe account exists; state is intentionally left consistent.
+          console.warn(
+            "[createVendorProfile] Orphan risk: tenant rollback failed; keeping Stripe account",
+            { accountId: accountId.slice(0, 8) + "…", tenantId: tenant.id }
+          );
         }
-        throw error;
+
+        throw error; // rethrow original problem
       }
     }),
 
@@ -560,14 +602,15 @@ export const authRouter = createTRPCRouter({
             lat: currentUser.coordinates.lat,
             lng: currentUser.coordinates.lng,
             city: (currentUser.coordinates as UserCoordinates).city,
-                                                            countryISO: (currentUser.coordinates as UserCoordinates).countryISO,
-                        countryName: (currentUser.coordinates as UserCoordinates).countryName,
-                        region: (currentUser.coordinates as UserCoordinates).region,
-                        postalCode: (currentUser.coordinates as UserCoordinates).postalCode,
-                        street: (currentUser.coordinates as UserCoordinates).street,
-                        ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
-                        manuallySet: (currentUser.coordinates as UserCoordinates)
-                          .manuallySet,
+            countryISO: (currentUser.coordinates as UserCoordinates).countryISO,
+            countryName: (currentUser.coordinates as UserCoordinates)
+              .countryName,
+            region: (currentUser.coordinates as UserCoordinates).region,
+            postalCode: (currentUser.coordinates as UserCoordinates).postalCode,
+            street: (currentUser.coordinates as UserCoordinates).street,
+            ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
+            manuallySet: (currentUser.coordinates as UserCoordinates)
+              .manuallySet,
           }
         : undefined,
       onboardingCompleted: currentUser.onboardingCompleted || false,
@@ -701,7 +744,7 @@ export const authRouter = createTRPCRouter({
 
       // If user provides coordinates, mark them as manually set and preserve existing metadata
       let updatedCoordinates = input.coordinates;
-            if (hasValidCoordinates(input.coordinates) && input.coordinates) {
+      if (hasValidCoordinates(input.coordinates) && input.coordinates) {
         updatedCoordinates = replaceCoordinates(input.coordinates, true);
       }
 
@@ -740,9 +783,9 @@ export const authRouter = createTRPCRouter({
   updateUserCoordinates: clerkProcedure
     .input(
       z.object({
-                coordinates: z.object({
-          lat: z.number(),
-          lng: z.number(),
+        coordinates: z.object({
+          lat: z.number().finite(),
+          lng: z.number().finite(),
           city: z.string().nullable().optional(),
           countryISO: z.string().nullable().optional(),
           countryName: z.string().nullable().optional(),
@@ -751,7 +794,7 @@ export const authRouter = createTRPCRouter({
           street: z.string().nullable().optional(),
         }),
         // NEW: Optional top-level fields
-        country: z.string().optional(),  // top-level display name
+        country: z.string().optional(), // top-level display name
         language: z.string().optional(), // consider narrowing server-side
       })
     )
@@ -788,12 +831,15 @@ export const authRouter = createTRPCRouter({
       const hasManual = existing?.manuallySet === true;
       const doneOnboarding = currentUser.onboardingCompleted === true;
       // robust numeric check (null/undefined/NaN safe)
-      const haveCoords = Number.isFinite(existing?.lat) && Number.isFinite(existing?.lng);
+      const haveCoords =
+        Number.isFinite(existing?.lat) && Number.isFinite(existing?.lng);
 
       // freeze geo writes only when it's truly safe to do so
       if (hasManual || (doneOnboarding && haveCoords)) {
         if (process.env.NODE_ENV !== "production") {
-          console.log(`Geo update skipped for ${String(userId).slice(0,8)}… (manual or completed)`);
+          console.log(
+            `Geo update skipped for ${String(userId).slice(0, 8)}… (manual or completed)`
+          );
         }
         return { success: true, stored: false, coordinates: existing };
       }
@@ -801,48 +847,48 @@ export const authRouter = createTRPCRouter({
       // Round coordinates to 3 decimal places for privacy and consistency
       const round = (n: number, d = 3) => Math.round(n * 10 ** d) / 10 ** d;
 
-                      // Prepare incoming coordinates - completely replace, don't merge
-        const incoming = {
-          countryISO: input.coordinates.countryISO ?? null,
-          countryName: input.coordinates.countryName ?? null,
-          region: input.coordinates.region ?? null,
-          city: input.coordinates.city ?? null,
-          postalCode: input.coordinates.postalCode ?? null,
-          street: input.coordinates.street ?? null,
-          lat:
-            input.coordinates.lat != null
-              ? round(input.coordinates.lat, 3)
-              : undefined,
-          lng:
-            input.coordinates.lng != null
-              ? round(input.coordinates.lng, 3)
-              : undefined,
-        };
+      // Prepare incoming coordinates - completely replace, don't merge
+      const incoming = {
+        countryISO: input.coordinates.countryISO ?? null,
+        countryName: input.coordinates.countryName ?? null,
+        region: input.coordinates.region ?? null,
+        city: input.coordinates.city ?? null,
+        postalCode: input.coordinates.postalCode ?? null,
+        street: input.coordinates.street ?? null,
+        lat:
+          input.coordinates.lat != null
+            ? round(input.coordinates.lat, 3)
+            : undefined,
+        lng:
+          input.coordinates.lng != null
+            ? round(input.coordinates.lng, 3)
+            : undefined,
+      };
 
-        // Use incoming coordinates directly - no merging with existing data
-        const merged = {
-          countryISO: incoming.countryISO,
-          countryName: incoming.countryName,
-          region: incoming.region,
-          city: incoming.city,
-          postalCode: incoming.postalCode,
-          street: incoming.street,
-          lat: incoming.lat,
-          lng: incoming.lng,
-          ipDetected: true,
-          manuallySet: existing?.manuallySet ?? false, // Preserve existing manual flag
-        };
+      // Use incoming coordinates directly - no merging with existing data
+      const merged = {
+        countryISO: incoming.countryISO,
+        countryName: incoming.countryName,
+        region: incoming.region,
+        city: incoming.city,
+        postalCode: incoming.postalCode,
+        street: incoming.street,
+        lat: incoming.lat,
+        lng: incoming.lng,
+        ipDetected: true,
+        manuallySet: existing?.manuallySet ?? false, // Preserve existing manual flag
+      };
 
-              // Check if anything actually changed
-        const changed =
-          merged.countryISO !== existing?.countryISO ||
-          merged.countryName !== existing?.countryName ||
-          merged.region !== existing?.region ||
-          merged.city !== existing?.city ||
-          merged.postalCode !== existing?.postalCode ||
-          merged.street !== existing?.street ||
-          merged.lat !== existing?.lat ||
-          merged.lng !== existing?.lng;
+      // Check if anything actually changed
+      const changed =
+        merged.countryISO !== existing?.countryISO ||
+        merged.countryName !== existing?.countryName ||
+        merged.region !== existing?.region ||
+        merged.city !== existing?.city ||
+        merged.postalCode !== existing?.postalCode ||
+        merged.street !== existing?.street ||
+        merged.lat !== existing?.lat ||
+        merged.lng !== existing?.lng;
 
       // Prepare updates object
       const updates: Record<string, unknown> = {
@@ -864,8 +910,9 @@ export const authRouter = createTRPCRouter({
       });
 
       // Log high-level outcome (avoid PII)
-      const mask = (v?: string | null) => (v ? `${v.slice(0,4)}…${v.slice(-2)}` : "unknown");
-      
+      const mask = (v?: string | null) =>
+        v ? `${v.slice(0, 4)}…${v.slice(-2)}` : "unknown";
+
       if (process.env.NODE_ENV !== "production") {
         console.log(
           `Geo update for user ${mask(userId)}: stored=${changed}, countryISO=${merged.countryISO ?? "unknown"}`

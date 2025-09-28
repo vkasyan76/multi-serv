@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useTRPC } from "@/trpc/client";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useRouter, usePathname, useSearchParams } from "next/navigation"; // for navigation after chekout
+import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -39,6 +40,22 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
 
+  // redirect after checkout:
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const cancel = search.get("checkout") === "cancel";
+  const success = search.get("checkout") === "success"; // NEW
+  const sessionId = search.get("session_id") || "";
+
+  const clearCart = useCartStore((s) => s.clear); // NEW
+  const successHandledRef = useRef(false);
+
+  const release = useMutation({
+    ...trpc.checkout.releaseOnCancel.mutationOptions(),
+    retry: false,
+  });
+  const isCancelling = cancel && !!sessionId; // canvelling paymente process
   const { isSignedIn, isLoaded } = useUser();
   const signedState = isLoaded ? !!isSignedIn : null;
 
@@ -66,6 +83,21 @@ export default function TenantContent({ slug }: { slug: string }) {
   const cartOpen = useCartStore((s) => s.open);
   const prevOpenRef = useRef(cartOpen);
 
+  // best-effort success handler — after redirect from Stripe Checkout
+  useEffect(() => {
+    if (!success || !sessionId || successHandledRef.current) return;
+    successHandledRef.current = true;
+
+    // UX: acknowledge and clean up immediately
+    toast.success("Payment received. Finalizing your booking…");
+
+    // clear local cart so user doesn’t see stale items
+    clearCart();
+
+    // remove the query params (?checkout=success&session_id=...)
+    router.replace(pathname);
+  }, [success, sessionId, clearCart, router, pathname]);
+
   // grey slots selection cleared when cart closes
   useEffect(() => {
     // open -> closed
@@ -74,6 +106,36 @@ export default function TenantContent({ slug }: { slug: string }) {
     }
     prevOpenRef.current = cartOpen;
   }, [cartOpen]);
+
+  // reverting to available if the payment cancelled.
+  // fire once
+  const didReleaseRef = useRef(false);
+  useEffect(() => {
+    if (!didReleaseRef.current && cancel && sessionId) {
+      didReleaseRef.current = true;
+
+      release.mutate(
+        { sessionId },
+        {
+          onSuccess: () => {
+            // Only clear params once the release worked
+            router.replace(pathname);
+          },
+          // explicit success/error handling. Don’t clear the URL on failure, and allow a retry.
+          onError: () => {
+            // Let the effect try again later (or user can refresh)
+            didReleaseRef.current = false;
+            toast.error(
+              "We couldn't release your checkout session. Please retry in a moment."
+            );
+            // Keep the URL params so the next run can retry
+          },
+        }
+      );
+    }
+    // deps intentionally kept to just the URL signal
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cancel, sessionId]);
 
   const handleToggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -97,7 +159,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const { data: cardTenant, isLoading: cardLoading } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug }),
-    enabled: !!bridge?.ok, // keep this
+    enabled: !!bridge?.ok && !isCancelling, // pause heavy data work while the cancel flow is in progress
     staleTime: 0, // ← was 60_000; must be 0
     gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
     refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
