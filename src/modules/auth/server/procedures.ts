@@ -330,18 +330,50 @@ export const authRouter = createTRPCRouter({
 
         return tenant;
       } catch (error) {
-        // If Stripe account was created BUT tenant was NOT persisted, delete the account
-        if (accountId && !tenant) {
-          await stripe.accounts.del(accountId).catch(() => {
-            // ignore cleanup errors so we don't mask the original error
-          });
-        }
+        let tenantDeleted = false;
 
-        // it prevents external (Stripe) or internal (tenant) orphans depending on where the failure occurred.
+        /**
+         * Failure handling playbook:
+         * 1) If we managed to create a tenant doc, try to roll it back.
+         *    Record whether that rollback actually succeeded.
+         * 2) If a Stripe account was created, delete it when:
+         *      - the tenant was never persisted, OR
+         *      - the tenant rollback succeeded.
+         *    If tenant rollback failed, we intentionally keep the Stripe account so
+         *    that external (Stripe) and internal (DB) state remain aligned for follow-up cleanup.
+         * 3) Rethrow the original error so the caller can handle it.
+         */
+
+        // 1) Try to roll back tenant if it was created
         if (tenant?.id) {
           await ctx.db
             .delete({ collection: "tenants", id: tenant.id })
-            .catch(() => {});
+            .then(() => {
+              tenantDeleted = true;
+            })
+            .catch(() => {
+              // swallow rollback failure; we don't want to mask the original error
+            });
+        }
+
+        // Delete Stripe account if it was created and either:
+        //  - tenant was never persisted, or
+        //  - tenant rollback succeeded
+        if (accountId && (!tenant || tenantDeleted)) {
+          await stripe.accounts.del(accountId).catch(() => {
+            // ignore cleanup errors so we don't mask the original error
+          });
+        } else if (
+          accountId &&
+          tenant &&
+          !tenantDeleted &&
+          process.env.NODE_ENV !== "production"
+        ) {
+          // Heads-up: tenant rollback failed but Stripe account exists; state is intentionally left consistent.
+          console.warn(
+            "[createVendorProfile] Orphan risk: tenant rollback failed; keeping Stripe account",
+            { accountId: accountId.slice(0, 8) + "…", tenantId: tenant.id }
+          );
         }
 
         throw error; // rethrow original problem
