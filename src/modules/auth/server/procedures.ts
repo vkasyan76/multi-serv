@@ -330,12 +330,20 @@ export const authRouter = createTRPCRouter({
 
         return tenant;
       } catch (error) {
-        // Best-effort cleanup: if account was created but DB failed, delete it.
-        if (accountId) {
+        // If Stripe account was created BUT tenant was NOT persisted, delete the account
+        if (accountId && !tenant) {
           await stripe.accounts.del(accountId).catch(() => {
             // ignore cleanup errors so we don't mask the original error
           });
         }
+
+        // it prevents external (Stripe) or internal (tenant) orphans depending on where the failure occurred.
+        if (tenant?.id) {
+          await ctx.db
+            .delete({ collection: "tenants", id: tenant.id })
+            .catch(() => {});
+        }
+
         throw error; // rethrow original problem
       }
     }),
@@ -744,8 +752,8 @@ export const authRouter = createTRPCRouter({
     .input(
       z.object({
         coordinates: z.object({
-          lat: z.number(),
-          lng: z.number(),
+          lat: z.number().finite(),
+          lng: z.number().finite(),
           city: z.string().nullable().optional(),
           countryISO: z.string().nullable().optional(),
           countryName: z.string().nullable().optional(),
