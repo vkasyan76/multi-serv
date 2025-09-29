@@ -34,6 +34,7 @@ import type { Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { getCountryCodeFromName } from "../location-utils";
 import { Home, Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 
 // Create a Zod schema for the tenant/vendor
@@ -52,6 +53,11 @@ export function VendorProfileForm() {
   // Fetch user profile to get country for phone number default
   const { data: userProfile } = useQuery(
     trpc.auth.getUserProfile.queryOptions()
+  );
+
+  // read current Stripe snapshot to decide whether to show the banner
+  const { data: stripeStatus } = useQuery(
+    trpc.auth.getStripeStatus.queryOptions()
   );
 
   const [intlConfig] = useState(getLocaleAndCurrency()); // cache the locale/currency (do not run on every render)
@@ -259,6 +265,7 @@ export function VendorProfileForm() {
   const createVendorProfile = useMutation(
     trpc.auth.createVendorProfile.mutationOptions({
       onSuccess: () => {
+        toast.success("Vendor profile created successfully!");
         // ✅ Add invalidation to update the cache immediately
         queryClient.invalidateQueries({
           queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
@@ -278,7 +285,6 @@ export function VendorProfileForm() {
   const updateVendorProfile = useMutation(
     trpc.auth.updateVendorProfile.mutationOptions({
       onSuccess: () => {
-        toast.success("Vendor profile updated successfully!");
         // Invalidate the getVendorProfile query to update the cache
         queryClient.invalidateQueries({
           queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
@@ -300,6 +306,7 @@ export function VendorProfileForm() {
         queryClient.invalidateQueries({
           queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
         });
+        toast.success("Vendor profile created. Next: set up payouts.");
       },
       onError: (error) => {
         console.error("Error updating user profile:", error);
@@ -409,10 +416,7 @@ export function VendorProfileForm() {
               );
             } else {
               console.log("Image uploaded successfully");
-              toast.success("Vendor profile created with image successfully!");
             }
-          } else {
-            toast.success("Vendor profile created successfully!");
           }
 
           // Step 3: Mark onboarding as completed
@@ -433,8 +437,8 @@ export function VendorProfileForm() {
           await queryClient.invalidateQueries({
             queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
           });
-          // Stay on vendor without adding a history entry
-          router.replace("/profile?tab=vendor");
+          // Show vendor first, then ProfileTabs will auto-hop to payouts
+          router.replace("/profile?tab=vendor&autopayout=1");
         } catch (error) {
           console.error("Error creating profile:", error);
 
@@ -508,6 +512,24 @@ export function VendorProfileForm() {
             <span className="text-base font-medium">Home</span>
           </Link>
         </div>
+
+        {/* payments onboarding reminder */}
+        {vendorProfile &&
+          stripeStatus &&
+          stripeStatus.onboardingStatus !== "completed" && (
+            <Alert className="mb-4">
+              <AlertTitle>Complete payments onboarding</AlertTitle>
+              <AlertDescription>
+                To receive payouts, finish your Stripe onboarding.{" "}
+                <Link
+                  href="/profile?tab=payouts"
+                  className="underline font-medium"
+                >
+                  Go to Payments
+                </Link>
+              </AlertDescription>
+            </Alert>
+          )}
 
         {/* 2 column grid; for wider right column adjsut container - md:grid-cols-5, left: md:col-span-2, right:md:col-span-3  */}
         <div className="grid grid-cols-1 md:grid-cols-7 gap-8">

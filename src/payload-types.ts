@@ -247,6 +247,28 @@ export interface Tenant {
    */
   stripeDetailsSubmitted?: boolean | null;
   /**
+   * Stripe charges_enabled
+   */
+  chargesEnabled?: boolean | null;
+  /**
+   * Stripe payouts_enabled
+   */
+  payoutsEnabled?: boolean | null;
+  onboardingStatus?: ('not_started' | 'in_progress' | 'completed' | 'restricted') | null;
+  /**
+   * Stripe requirements.currently_due snapshot
+   */
+  stripeRequirements?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  lastStripeSyncAt?: string | null;
+  /**
    * Vendor's first name
    */
   firstName?: string | null;
@@ -571,6 +593,11 @@ export interface TenantsSelect<T extends boolean = true> {
   image?: T;
   stripeAccountId?: T;
   stripeDetailsSubmitted?: T;
+  chargesEnabled?: T;
+  payoutsEnabled?: T;
+  onboardingStatus?: T;
+  stripeRequirements?: T;
+  lastStripeSyncAt?: T;
   firstName?: T;
   lastName?: T;
   bio?: T;

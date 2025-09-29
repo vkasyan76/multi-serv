@@ -925,4 +925,187 @@ export const authRouter = createTRPCRouter({
         coordinates: merged,
       };
     }),
+
+  //
+  // -------- Stripe Onboarding & Status (NEW) --------
+  //
+  createOnboardingLink: clerkProcedure
+    .input(
+      z.object({
+        returnUrl: z.string().url(),
+        refreshUrl: z.string().url(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+
+      // 1) Find current user
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+      if (user.totalDocs === 0)
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      const currentUser = user.docs[0];
+
+      // 2) Resolve tenant id
+      if (!currentUser?.tenants?.length) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No tenant found for user",
+        });
+      }
+      const tenantRef = currentUser.tenants[0]?.tenant;
+      const tenantId = typeof tenantRef === "object" ? tenantRef.id : tenantRef;
+
+      // 3) Load tenant to get stripeAccountId
+      const tenant = await ctx.db.findByID({
+        collection: "tenants",
+        id: tenantId as string,
+      });
+      const accountId =
+        typeof tenant?.stripeAccountId === "string"
+          ? tenant.stripeAccountId
+          : undefined;
+      if (!accountId) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Stripe account id is missing on tenant",
+        });
+      }
+
+      // 4) Create ephemeral onboarding link
+      const link = await stripe.accountLinks.create({
+        account: accountId,
+        type: "account_onboarding",
+        return_url: input.returnUrl,
+        refresh_url: input.refreshUrl,
+      });
+
+      return { url: link.url };
+    }),
+
+  createDashboardLoginLink: clerkProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.userId;
+
+    const user = await ctx.db.find({
+      collection: "users",
+      where: { clerkUserId: { equals: userId } },
+      limit: 1,
+    });
+    if (user.totalDocs === 0)
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+    const currentUser = user.docs[0];
+
+    if (!currentUser?.tenants?.length) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "No tenant found for user",
+      });
+    }
+    const tenantRef = currentUser.tenants[0]?.tenant;
+    const tenantId = typeof tenantRef === "object" ? tenantRef.id : tenantRef;
+
+    const tenant = await ctx.db.findByID({
+      collection: "tenants",
+      id: tenantId as string,
+    });
+    const accountId =
+      typeof tenant?.stripeAccountId === "string"
+        ? tenant.stripeAccountId
+        : undefined;
+    if (!accountId) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Stripe account id is missing on tenant",
+      });
+    }
+
+    const ll = await stripe.accounts.createLoginLink(accountId);
+    return { url: ll.url };
+  }),
+
+  getStripeStatus: clerkProcedure.query(async ({ ctx }) => {
+    const userId = ctx.userId;
+
+    const user = await ctx.db.find({
+      collection: "users",
+      where: { clerkUserId: { equals: userId } },
+      limit: 1,
+    });
+    if (user.totalDocs === 0)
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+    const currentUser = user.docs[0];
+
+    // Not a vendor yet → minimal response
+    if (!currentUser?.tenants?.length) {
+      return {
+        hasTenant: false,
+        onboardingStatus: "not_started" as const,
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: [] as string[],
+      };
+    }
+
+    const tenantRef = currentUser.tenants[0]?.tenant;
+    const tenantId = typeof tenantRef === "object" ? tenantRef.id : tenantRef;
+
+    const tenant = await ctx.db.findByID({
+      collection: "tenants",
+      id: tenantId as string,
+    });
+    const accountId =
+      typeof tenant?.stripeAccountId === "string"
+        ? tenant.stripeAccountId
+        : undefined;
+
+    if (!accountId) {
+      // Tenant exists but has no Stripe id (shouldn’t happen with your flow)
+      return {
+        hasTenant: true,
+        onboardingStatus: "not_started" as const,
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: [] as string[],
+      };
+    }
+
+    // Pull fresh status from Stripe
+    const acct = await stripe.accounts.retrieve(accountId);
+    const chargesEnabled = !!acct.charges_enabled;
+    const payoutsEnabled = !!acct.payouts_enabled;
+    const requirementsDue = (acct.requirements?.currently_due ??
+      []) as string[];
+    const disabledReason = acct.requirements?.disabled_reason ?? null;
+
+    const onboardingStatus: "completed" | "in_progress" | "restricted" =
+      chargesEnabled && payoutsEnabled
+        ? "completed"
+        : disabledReason
+          ? "restricted"
+          : "in_progress";
+
+    // Persist snapshot (keeps DB in sync even without webhook)
+    await ctx.db.update({
+      collection: "tenants",
+      id: tenantId as string,
+      data: {
+        chargesEnabled,
+        payoutsEnabled,
+        stripeRequirements: requirementsDue,
+        onboardingStatus,
+        lastStripeSyncAt: new Date().toISOString(),
+      },
+    });
+
+    return {
+      hasTenant: true,
+      onboardingStatus,
+      chargesEnabled,
+      payoutsEnabled,
+      requirementsDue,
+    };
+  }),
 });
