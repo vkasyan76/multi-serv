@@ -987,10 +987,22 @@ export const authRouter = createTRPCRouter({
       collection: "tenants",
       id: tenantId as string,
     });
+
+    // If the tenant doc is missing (admin delete/migration), treat as no vendor yet
+    if (!tenant) {
+      return {
+        hasTenant: false,
+        onboardingStatus: "not_started" as const,
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: [] as string[],
+      };
+    }
+
     const accountId =
-      typeof tenant?.stripeAccountId === "string"
-        ? tenant.stripeAccountId
-        : undefined;
+      typeof tenant.stripeAccountId === "string"
+        ? tenant.stripeAccountId.trim()
+        : "";
 
     if (!accountId) {
       // Tenant exists but has no Stripe id (shouldn’t happen with your flow)

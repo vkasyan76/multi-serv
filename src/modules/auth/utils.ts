@@ -48,15 +48,29 @@ export async function resolveUserTenant(db: PayloadLike, userId: string) {
   const tenantRef = currentUser.tenants[0]?.tenant;
   const tenantId = typeof tenantRef === "object" ? tenantRef.id : tenantRef;
 
+  if (!tenantId) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "No tenant found for user",
+    });
+  }
+
   const tenant = await db.findByID({
     collection: "tenants",
     id: tenantId as string,
   });
 
+  if (!tenant) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Tenant not found",
+    });
+  }
+
   const stripeAccountId =
-    typeof tenant?.stripeAccountId === "string"
-      ? tenant.stripeAccountId
-      : undefined;
+    typeof tenant.stripeAccountId === "string"
+      ? tenant.stripeAccountId.trim()
+      : "";
 
   if (!stripeAccountId)
     throw new TRPCError({
