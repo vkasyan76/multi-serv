@@ -265,7 +265,7 @@ export function VendorProfileForm() {
   const createVendorProfile = useMutation(
     trpc.auth.createVendorProfile.mutationOptions({
       onSuccess: () => {
-        toast.success("Vendor profile created successfully!");
+        // toast.success("Vendor profile created successfully!");
         // ✅ Add invalidation to update the cache immediately
         queryClient.invalidateQueries({
           queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
@@ -285,6 +285,7 @@ export function VendorProfileForm() {
   const updateVendorProfile = useMutation(
     trpc.auth.updateVendorProfile.mutationOptions({
       onSuccess: () => {
+        toast.success("Vendor profile updated successfully!");
         // Invalidate the getVendorProfile query to update the cache
         queryClient.invalidateQueries({
           queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
@@ -306,7 +307,6 @@ export function VendorProfileForm() {
         queryClient.invalidateQueries({
           queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
         });
-        toast.success("Vendor profile created. Next: set up payouts.");
       },
       onError: (error) => {
         console.error("Error updating user profile:", error);
@@ -431,6 +431,8 @@ export function VendorProfileForm() {
           } catch (error) {
             console.warn("Failed to mark onboarding as completed:", error);
           }
+
+          toast.success("Vendor profile created. Next: set up payouts.");
 
           // Step 4: Hydrate cache and stay on vendor tab
           // Invalidate and refetch to get the complete profile data
@@ -815,7 +817,7 @@ export function VendorProfileForm() {
                       value={field.value || undefined}
                       onChange={(value) => {
                         // Ensure empty string is converted to undefined for proper clearing
-                        field.onChange(value || "");
+                        field.onChange(value ?? undefined);
                       }}
                       placeholder="+49 123 4567"
                       className="w-full border rounded px-2 py-2"

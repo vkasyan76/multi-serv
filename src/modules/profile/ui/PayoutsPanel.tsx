@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 export default function PayoutsPanel() {
   const trpc = useTRPC();
@@ -70,7 +71,14 @@ export default function PayoutsPanel() {
         returnUrl: urls.returnUrl,
         refreshUrl: urls.refreshUrl,
       });
-      if (res?.url) window.location.href = res.url;
+      if (res?.url) {
+        window.location.href = res.url;
+        return;
+      }
+      throw new Error("No URL returned from server");
+    } catch (error) {
+      console.error("Failed to open Stripe dashboard:", error);
+      toast.error("Couldn’t open Stripe onboarding. Please try again.");
     } finally {
       setOnboardingBusy(false);
     }
@@ -80,7 +88,14 @@ export default function PayoutsPanel() {
     try {
       setDashboardBusy(true);
       const res = await dashLogin.mutateAsync();
-      if (res?.url) window.location.href = res.url;
+      if (res?.url) {
+        window.location.href = res.url;
+        return;
+      }
+      throw new Error("No URL returned from server");
+    } catch (error) {
+      console.error("Failed to open Stripe dashboard:", error);
+      toast.error("Couldn’t open Stripe dashboard. Please try again.");
     } finally {
       setDashboardBusy(false);
     }

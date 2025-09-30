@@ -4,7 +4,7 @@ import { baseProcedure, createTRPCRouter, clerkProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { AUTH_COOKIE } from "../constants";
 import { registerSchema, loginSchema } from "../schemas";
-import { generateAuthCookie } from "../utils";
+import { generateAuthCookie, resolveUserTenant } from "../utils";
 import { stripe } from "@/lib/stripe";
 import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
@@ -937,47 +937,11 @@ export const authRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.userId;
-
-      // 1) Find current user
-      const user = await ctx.db.find({
-        collection: "users",
-        where: { clerkUserId: { equals: userId } },
-        limit: 1,
-      });
-      if (user.totalDocs === 0)
-        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
-      const currentUser = user.docs[0];
-
-      // 2) Resolve tenant id
-      if (!currentUser?.tenants?.length) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "No tenant found for user",
-        });
-      }
-      const tenantRef = currentUser.tenants[0]?.tenant;
-      const tenantId = typeof tenantRef === "object" ? tenantRef.id : tenantRef;
-
-      // 3) Load tenant to get stripeAccountId
-      const tenant = await ctx.db.findByID({
-        collection: "tenants",
-        id: tenantId as string,
-      });
-      const accountId =
-        typeof tenant?.stripeAccountId === "string"
-          ? tenant.stripeAccountId
-          : undefined;
-      if (!accountId) {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "Stripe account id is missing on tenant",
-        });
-      }
+      const { stripeAccountId } = await resolveUserTenant(ctx.db, ctx.userId);
 
       // 4) Create ephemeral onboarding link
       const link = await stripe.accountLinks.create({
-        account: accountId,
+        account: stripeAccountId,
         type: "account_onboarding",
         return_url: input.returnUrl,
         refresh_url: input.refreshUrl,
@@ -987,42 +951,9 @@ export const authRouter = createTRPCRouter({
     }),
 
   createDashboardLoginLink: clerkProcedure.mutation(async ({ ctx }) => {
-    const userId = ctx.userId;
+    const { stripeAccountId } = await resolveUserTenant(ctx.db, ctx.userId);
 
-    const user = await ctx.db.find({
-      collection: "users",
-      where: { clerkUserId: { equals: userId } },
-      limit: 1,
-    });
-    if (user.totalDocs === 0)
-      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
-    const currentUser = user.docs[0];
-
-    if (!currentUser?.tenants?.length) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "No tenant found for user",
-      });
-    }
-    const tenantRef = currentUser.tenants[0]?.tenant;
-    const tenantId = typeof tenantRef === "object" ? tenantRef.id : tenantRef;
-
-    const tenant = await ctx.db.findByID({
-      collection: "tenants",
-      id: tenantId as string,
-    });
-    const accountId =
-      typeof tenant?.stripeAccountId === "string"
-        ? tenant.stripeAccountId
-        : undefined;
-    if (!accountId) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "Stripe account id is missing on tenant",
-      });
-    }
-
-    const ll = await stripe.accounts.createLoginLink(accountId);
+    const ll = await stripe.accounts.createLoginLink(stripeAccountId);
     return { url: ll.url };
   }),
 
