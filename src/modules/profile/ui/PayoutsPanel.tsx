@@ -33,13 +33,23 @@ export default function PayoutsPanel() {
   const [dashboardBusy, setDashboardBusy] = useState(false);
 
   // refresh after returning from Stripe
+  const { refetch } = statusQ; // Destructure refetch from statusQ to avoid cascade of requests right after returning from Stripe.
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const u = new URL(window.location.href);
-    if (u.searchParams.get("onboarding") || u.searchParams.get("resume")) {
-      statusQ.refetch();
+    const shouldRefresh =
+      u.searchParams.has("onboarding") || u.searchParams.has("resume");
+
+    if (shouldRefresh) {
+      refetch();
+
+      // optional but nice: strip the flags so it can’t trigger again
+      u.searchParams.delete("onboarding");
+      u.searchParams.delete("resume");
+      window.history.replaceState({}, "", `${u.pathname}${u.search}`);
     }
-  }, [statusQ]);
+  }, [refetch]);
 
   const s = statusQ.data;
 
