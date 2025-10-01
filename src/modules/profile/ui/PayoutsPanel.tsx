@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
@@ -32,14 +32,6 @@ export default function PayoutsPanel() {
   const [onboardingBusy, setOnboardingBusy] = useState(false);
   const [dashboardBusy, setDashboardBusy] = useState(false);
 
-  const urls = useMemo(() => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return {
-      returnUrl: `${origin}/profile?tab=payouts&onboarding=done`,
-      refreshUrl: `${origin}/profile?tab=payouts&resume=1`,
-    };
-  }, []);
-
   // refresh after returning from Stripe
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -67,17 +59,17 @@ export default function PayoutsPanel() {
   const onStartOrResume = async () => {
     try {
       setOnboardingBusy(true);
-      const res = await onboarding.mutateAsync({
-        returnUrl: urls.returnUrl,
-        refreshUrl: urls.refreshUrl,
-      });
+      const res = await onboarding.mutateAsync(undefined);
+
       if (res?.url) {
         window.location.href = res.url;
         return;
       }
       throw new Error("No URL returned from server");
     } catch (error) {
-      console.error("Failed to open Stripe dashboard:", error);
+      if (process.env.NODE_ENV !== "production") {
+        console.error("Failed to open Stripe onboarding:", error);
+      }
       toast.error("Couldn’t open Stripe onboarding. Please try again.");
     } finally {
       setOnboardingBusy(false);
@@ -94,7 +86,9 @@ export default function PayoutsPanel() {
       }
       throw new Error("No URL returned from server");
     } catch (error) {
-      console.error("Failed to open Stripe dashboard:", error);
+      if (process.env.NODE_ENV !== "production") {
+        console.error("Failed to open Stripe dashboard:", error);
+      }
       toast.error("Couldn’t open Stripe dashboard. Please try again.");
     } finally {
       setDashboardBusy(false);

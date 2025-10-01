@@ -930,21 +930,38 @@ export const authRouter = createTRPCRouter({
   // -------- Stripe Onboarding & Status (NEW) --------
   //
   createOnboardingLink: clerkProcedure
-    .input(
-      z.object({
-        returnUrl: z.string().url(),
-        refreshUrl: z.string().url(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
+    .input(z.void()) // no client-provided URLs
+    .mutation(async ({ ctx }) => {
       const { stripeAccountId } = await resolveUserTenant(ctx.db, ctx.userId);
 
-      // 4) Create ephemeral onboarding link
+      const base =
+        process.env.NEXT_PUBLIC_APP_URL ??
+        (process.env.NEXT_PUBLIC_ROOT_DOMAIN
+          ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`
+          : null);
+
+      if (!base) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Missing NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_ROOT_DOMAIN for return URLs",
+        });
+      }
+
+      const returnUrl = new URL(
+        "/profile?tab=payouts&onboarding=done",
+        base
+      ).toString();
+      const refreshUrl = new URL(
+        "/profile?tab=payouts&resume=1",
+        base
+      ).toString();
+
       const link = await stripe.accountLinks.create({
         account: stripeAccountId,
         type: "account_onboarding",
-        return_url: input.returnUrl,
-        refresh_url: input.refreshUrl,
+        return_url: returnUrl,
+        refresh_url: refreshUrl,
       });
 
       return { url: link.url };
