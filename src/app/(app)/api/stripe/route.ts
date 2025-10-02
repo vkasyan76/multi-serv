@@ -249,10 +249,33 @@ export async function POST(req: Request) {
        */
       case "account.updated": {
         const acct = event.data.object as Stripe.Account;
+        // Derive a tiny snapshot we can show in the UI without hitting Stripe every time
+        const chargesEnabled = !!acct.charges_enabled;
+        const payoutsEnabled = !!acct.payouts_enabled;
+        const requirementsDue = (acct.requirements?.currently_due ??
+          []) as string[];
+        const disabledReason = acct.requirements?.disabled_reason ?? null;
+
+        // Define onboardingStatus
+        const onboardingStatus: "completed" | "in_progress" | "restricted" =
+          chargesEnabled && payoutsEnabled
+            ? "completed"
+            : disabledReason
+              ? "restricted"
+              : "in_progress";
+
         await payload.update({
           collection: "tenants",
           where: { stripeAccountId: { equals: acct.id } },
-          data: { stripeDetailsSubmitted: acct.details_submitted },
+          data: {
+            stripeDetailsSubmitted: acct.details_submitted,
+            // NEW snapshot fields
+            chargesEnabled,
+            payoutsEnabled,
+            stripeRequirements: requirementsDue,
+            onboardingStatus,
+            lastStripeSyncAt: new Date().toISOString(),
+          },
           overrideAccess: true,
         });
         break;

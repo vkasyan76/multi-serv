@@ -4,7 +4,7 @@ import { baseProcedure, createTRPCRouter, clerkProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { AUTH_COOKIE } from "../constants";
 import { registerSchema, loginSchema } from "../schemas";
-import { generateAuthCookie } from "../utils";
+import { generateAuthCookie, resolveUserTenant } from "../utils";
 import { stripe } from "@/lib/stripe";
 import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
@@ -925,4 +925,147 @@ export const authRouter = createTRPCRouter({
         coordinates: merged,
       };
     }),
+
+  //
+  // -------- Stripe Onboarding & Status (NEW) --------
+  //
+  createOnboardingLink: clerkProcedure
+    .input(z.void()) // no client-provided URLs
+    .mutation(async ({ ctx }) => {
+      const { stripeAccountId } = await resolveUserTenant(ctx.db, ctx.userId);
+
+      const base =
+        process.env.NEXT_PUBLIC_APP_URL ??
+        (process.env.NEXT_PUBLIC_ROOT_DOMAIN
+          ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`
+          : null);
+
+      if (!base) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Missing NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_ROOT_DOMAIN for return URLs",
+        });
+      }
+
+      const returnUrl = new URL(
+        "/profile?tab=payouts&onboarding=done",
+        base
+      ).toString();
+      const refreshUrl = new URL(
+        "/profile?tab=payouts&resume=1",
+        base
+      ).toString();
+
+      const link = await stripe.accountLinks.create({
+        account: stripeAccountId,
+        type: "account_onboarding",
+        return_url: returnUrl,
+        refresh_url: refreshUrl,
+      });
+
+      return { url: link.url };
+    }),
+
+  createDashboardLoginLink: clerkProcedure.mutation(async ({ ctx }) => {
+    const { stripeAccountId } = await resolveUserTenant(ctx.db, ctx.userId);
+
+    const ll = await stripe.accounts.createLoginLink(stripeAccountId);
+    return { url: ll.url };
+  }),
+
+  getStripeStatus: clerkProcedure.query(async ({ ctx }) => {
+    const userId = ctx.userId;
+
+    const user = await ctx.db.find({
+      collection: "users",
+      where: { clerkUserId: { equals: userId } },
+      limit: 1,
+    });
+    if (user.totalDocs === 0)
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+    const currentUser = user.docs[0];
+
+    // Not a vendor yet → minimal response
+    if (!currentUser?.tenants?.length) {
+      return {
+        hasTenant: false,
+        onboardingStatus: "not_started" as const,
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: [] as string[],
+      };
+    }
+
+    const tenantRef = currentUser.tenants[0]?.tenant;
+    const tenantId = typeof tenantRef === "object" ? tenantRef.id : tenantRef;
+
+    const tenant = await ctx.db.findByID({
+      collection: "tenants",
+      id: tenantId as string,
+    });
+
+    // If the tenant doc is missing (admin delete/migration), treat as no vendor yet
+    if (!tenant) {
+      return {
+        hasTenant: false,
+        onboardingStatus: "not_started" as const,
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: [] as string[],
+      };
+    }
+
+    const accountId =
+      typeof tenant.stripeAccountId === "string"
+        ? tenant.stripeAccountId.trim()
+        : "";
+
+    if (!accountId) {
+      // Tenant exists but has no Stripe id (shouldn’t happen with your flow)
+      return {
+        hasTenant: true,
+        onboardingStatus: "not_started" as const,
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: [] as string[],
+      };
+    }
+
+    // Pull fresh status from Stripe
+    const acct = await stripe.accounts.retrieve(accountId);
+    const chargesEnabled = !!acct.charges_enabled;
+    const payoutsEnabled = !!acct.payouts_enabled;
+    const requirementsDue = (acct.requirements?.currently_due ??
+      []) as string[];
+    const disabledReason = acct.requirements?.disabled_reason ?? null;
+
+    const onboardingStatus: "completed" | "in_progress" | "restricted" =
+      chargesEnabled && payoutsEnabled
+        ? "completed"
+        : disabledReason
+          ? "restricted"
+          : "in_progress";
+
+    // Persist snapshot (keeps DB in sync even without webhook)
+    await ctx.db.update({
+      collection: "tenants",
+      id: tenantId as string,
+      data: {
+        chargesEnabled,
+        payoutsEnabled,
+        stripeRequirements: requirementsDue,
+        onboardingStatus,
+        lastStripeSyncAt: new Date().toISOString(),
+      },
+    });
+
+    return {
+      hasTenant: true,
+      onboardingStatus,
+      chargesEnabled,
+      payoutsEnabled,
+      requirementsDue,
+    };
+  }),
 });

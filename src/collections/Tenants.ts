@@ -47,6 +47,8 @@ export const Tenants: CollectionConfig = {
       name: "stripeAccountId",
       type: "text",
       required: true,
+      index: true, // NEW: speed up lookups
+      unique: true, // NEW: enforce one-to-one mapping to Stripe
       admin: {
         // readOnly: true,
         description: "Stripe account ID associated with your shop.",
@@ -67,6 +69,46 @@ export const Tenants: CollectionConfig = {
           "You cannot create products until you submit your stripe details.",
       },
     },
+
+    // --- NEW: Stripe status snapshot (read-only in Admin) ---
+    {
+      name: "chargesEnabled",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { readOnly: true, description: "Stripe charges_enabled" },
+    },
+    {
+      name: "payoutsEnabled",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { readOnly: true, description: "Stripe payouts_enabled" },
+    },
+    {
+      name: "onboardingStatus",
+      type: "select",
+      options: [
+        { label: "Not started", value: "not_started" },
+        { label: "In progress", value: "in_progress" },
+        { label: "Completed", value: "completed" },
+        { label: "Restricted", value: "restricted" },
+      ],
+      defaultValue: "not_started", // avoids undefined before first sync
+      admin: { readOnly: true },
+    },
+    {
+      name: "stripeRequirements",
+      type: "json",
+      admin: {
+        readOnly: true,
+        description: "Stripe requirements.currently_due snapshot",
+      },
+    },
+    {
+      name: "lastStripeSyncAt",
+      type: "date",
+      admin: { readOnly: true },
+    },
+
     // Vendor profile fields
     {
       name: "firstName",
