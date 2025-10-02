@@ -246,7 +246,6 @@ export const checkoutRouter = createTRPCRouter({
             payment_intent_data: {
               application_fee_amount: feeCents,
               // transfer_data: { destination: tenant.stripeAccountId as string },  // this was for destination charges - wrong we use direct charges to the tenant
-              on_behalf_of: tenant.stripeAccountId as string, // optional but recommended
               // ensure PI also carries metadata (fallback webhook path)
               metadata,
             },
