@@ -224,34 +224,38 @@ export const checkoutRouter = createTRPCRouter({
 
       try {
         // Create Stripe Checkout Session on the PLATFORM
-        const session = await stripe.checkout.sessions.create({
-          mode: "payment",
-          customer_email: payloadUser.email ?? undefined,
-          success_url: successUrl,
-          cancel_url: cancelUrl,
-          line_items: [
-            {
-              quantity: 1,
-              price_data: {
-                unit_amount: amountCents,
-                currency: "eur",
-                product_data: {
-                  name: `${tenant.name ?? "Service"} – ${bookings.length} slot${bookings.length > 1 ? "s" : ""}`,
-                  description: `Booking for ${tenant.name ?? "provider"}`,
+        const session = await stripe.checkout.sessions.create(
+          {
+            mode: "payment",
+            customer_email: payloadUser.email ?? undefined,
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            line_items: [
+              {
+                quantity: 1,
+                price_data: {
+                  unit_amount: amountCents,
+                  currency: "eur",
+                  product_data: {
+                    name: `${tenant.name ?? "Service"} – ${bookings.length} slot${bookings.length > 1 ? "s" : ""}`,
+                    description: `Booking for ${tenant.name ?? "provider"}`,
+                  },
                 },
               },
+            ],
+            payment_intent_data: {
+              application_fee_amount: feeCents,
+              // transfer_data: { destination: tenant.stripeAccountId as string },  // this was for destination charges - wrong we use direct charges to the tenant
+              on_behalf_of: tenant.stripeAccountId as string, // optional but recommended
+              // ensure PI also carries metadata (fallback webhook path)
+              metadata,
             },
-          ],
-          payment_intent_data: {
-            application_fee_amount: feeCents,
-            transfer_data: { destination: tenant.stripeAccountId as string },
-            // ensure PI also carries metadata (fallback webhook path)
+            // still keep metadata on the Checkout Session
             metadata,
+            invoice_creation: { enabled: true },
           },
-          // still keep metadata on the Checkout Session
-          metadata,
-          invoice_creation: { enabled: true },
-        });
+          { stripeAccount: tenant.stripeAccountId as string } // <-- makes it a *direct* charge
+        );
 
         if (!session.url) {
           throw new Error("No session URL from Stripe");
