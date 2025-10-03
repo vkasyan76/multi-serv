@@ -5,7 +5,9 @@ import { TRPCError } from "@trpc/server";
 import { AUTH_COOKIE } from "../constants";
 import { registerSchema, loginSchema } from "../schemas";
 import {
+  clean,
   generateAuthCookie,
+  normalizeUrl,
   resolveUserTenant,
   servicesToDescription,
 } from "../utils";
@@ -290,12 +292,13 @@ export const authRouter = createTRPCRouter({
             business_profile: {
               name: input.name ?? currentUser.username ?? undefined,
               url:
-                input.website ||
+                normalizeUrl(input.website) ??
                 `https://infinisimo.com/${encodeURIComponent(input.name ?? currentUser.username ?? "")}`,
               product_description: servicesToDescription(input.services),
-              support_email: currentUser.email ?? undefined,
-              support_phone: input.phone ?? undefined,
-              support_url: input.website || undefined,
+              support_email: clean(currentUser.email),
+              support_phone: clean(input.phone),
+              support_url: normalizeUrl(input.website),
+              // (handles whitespace + “www.” URLs
             },
             metadata: {
               platformUserId,
@@ -325,7 +328,7 @@ export const authRouter = createTRPCRouter({
             services: input.services,
             categories: categoryIds,
             subcategories: subcategoryIds,
-            website: input.website,
+            website: normalizeUrl(input.website),
             image: input.image,
             phone: input.phone,
             hourlyRate: input.hourlyRate,
@@ -517,11 +520,11 @@ export const authRouter = createTRPCRouter({
             business_profile: {
               name: input.name || undefined,
               url:
-                input.website ||
+                normalizeUrl(input.website) ||
                 `https://infinisimo.com/${encodeURIComponent(input.name)}`,
               product_description: servicesToDescription(input.services),
-              support_phone: input.phone || undefined,
-              support_url: input.website || undefined,
+              support_phone: clean(input.phone),
+              support_url: normalizeUrl(input.website) || undefined,
             },
           });
         }

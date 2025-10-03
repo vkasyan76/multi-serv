@@ -94,3 +94,13 @@ export const servicesToDescription = (svcs?: unknown) =>
     .filter(Boolean)
     .join(", ")
     .slice(0, 255) || "Services sold via Infinisimo";
+
+// avoid passing "" to Stripe for the url in business profile.
+export const clean = (s?: string | null) =>
+  s && s.trim().length ? s.trim() : undefined;
+
+export const normalizeUrl = (u?: string | null) => {
+  const v = clean(u);
+  if (!v) return undefined;
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+};
