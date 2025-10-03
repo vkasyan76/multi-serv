@@ -145,10 +145,22 @@ export async function POST(req: Request) {
         // 2) Non-blocking enrichment: try to fetch & store the receipt URL - saved in the order collection
         try {
           // For your flow (destination charges on the PLATFORM), the charge lives on the platform,
-          // so no stripeAccount header is needed here.
+          // With direct charges, the header is needed
+          // event is already Stripe.Event
+          const accountId: string | undefined = event.account ?? undefined; // When you retrieve Stripe objects, include the connected account
+
+          const retrieveParams: Stripe.Checkout.SessionRetrieveParams = {
+            expand: ["payment_intent.latest_charge"],
+          };
+
+          const requestOptions: Stripe.RequestOptions | undefined = accountId
+            ? { stripeAccount: accountId }
+            : undefined;
+
           const expandedSession = await stripe.checkout.sessions.retrieve(
             session.id,
-            { expand: ["payment_intent.latest_charge"] }
+            retrieveParams,
+            requestOptions
           );
 
           const latestCharge =

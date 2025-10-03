@@ -279,7 +279,7 @@ export const authRouter = createTRPCRouter({
         ({ id: accountId } = await stripe.accounts.create(
           {
             type: "express",
-            capabilities: { transfers: { requested: true } }, // destination charges
+            capabilities: { card_payments: { requested: true } }, // direct charges
             metadata: {
               platformUserId,
               tenantName: input.name ?? "",
