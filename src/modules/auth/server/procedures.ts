@@ -279,7 +279,11 @@ export const authRouter = createTRPCRouter({
         ({ id: accountId } = await stripe.accounts.create(
           {
             type: "express",
-            capabilities: { card_payments: { requested: true } }, // direct charges
+            capabilities: {
+              card_payments: { requested: true },
+              transfers: { requested: true },
+            }, // direct charges
+
             metadata: {
               platformUserId,
               tenantName: input.name ?? "",
@@ -314,6 +318,7 @@ export const authRouter = createTRPCRouter({
             hourlyRate: input.hourlyRate,
             user: currentUser!.id,
           },
+          overrideAccess: true, // Bypass access control to ensure creation
         });
 
         // Link tenant to user
@@ -326,6 +331,7 @@ export const authRouter = createTRPCRouter({
           data: {
             tenants: [{ tenant: tenant.id }],
           },
+          overrideAccess: true, // Bypass access control to ensure tenant creation
         });
 
         return tenant;
