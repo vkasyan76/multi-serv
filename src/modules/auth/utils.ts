@@ -85,3 +85,12 @@ export async function resolveUserTenant(db: PayloadLike, userId: string) {
     stripeAccountId,
   };
 }
+
+// for formating tenant business profile to avoid TS error is because input.services is a string array (e.g. "on-site" | "on-line"), not objects with .name.
+
+export const servicesToDescription = (svcs?: unknown) =>
+  (Array.isArray(svcs) ? svcs : [])
+    .map((s) => (typeof s === "string" ? s : ""))
+    .filter(Boolean)
+    .join(", ")
+    .slice(0, 255) || "Services sold via Infinisimo";

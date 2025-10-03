@@ -4,7 +4,11 @@ import { baseProcedure, createTRPCRouter, clerkProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { AUTH_COOKIE } from "../constants";
 import { registerSchema, loginSchema } from "../schemas";
-import { generateAuthCookie, resolveUserTenant } from "../utils";
+import {
+  generateAuthCookie,
+  resolveUserTenant,
+  servicesToDescription,
+} from "../utils";
 import { stripe } from "@/lib/stripe";
 import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
@@ -283,13 +287,22 @@ export const authRouter = createTRPCRouter({
               card_payments: { requested: true },
               transfers: { requested: true },
             }, // direct charges
-
+            business_profile: {
+              name: input.name ?? currentUser.username ?? undefined,
+              url:
+                input.website ||
+                `https://infinisimo.com/${encodeURIComponent(input.name ?? currentUser.username ?? "")}`,
+              product_description: servicesToDescription(input.services),
+              support_email: currentUser.email ?? undefined,
+              support_phone: input.phone ?? undefined,
+              support_url: input.website || undefined,
+            },
             metadata: {
               platformUserId,
               tenantName: input.name ?? "",
             },
           },
-          { idempotencyKey: `acct_create:${currentUser.id}:v1` }
+          { idempotencyKey: `acct_create:${currentUser.id}:card+transfers:v2` }
         ));
 
         if (!accountId) {
@@ -486,6 +499,32 @@ export const authRouter = createTRPCRouter({
             hourlyRate: input.hourlyRate, // This will be a number after schema transformation
           },
         });
+
+        // fetch the tenant (depth:0) to get its stripeAccountId  - update business profile in Stripe:
+        const tenantDoc = await ctx.db.findByID({
+          collection: "tenants",
+          id: actualTenantId as string,
+          depth: 0,
+        });
+
+        const acctId =
+          typeof tenantDoc?.stripeAccountId === "string"
+            ? tenantDoc.stripeAccountId
+            : undefined;
+
+        if (acctId) {
+          await stripe.accounts.update(acctId, {
+            business_profile: {
+              name: input.name || undefined,
+              url:
+                input.website ||
+                `https://infinisimo.com/${encodeURIComponent(input.name)}`,
+              product_description: servicesToDescription(input.services),
+              support_phone: input.phone || undefined,
+              support_url: input.website || undefined,
+            },
+          });
+        }
 
         return updatedTenant;
       } catch (error) {
