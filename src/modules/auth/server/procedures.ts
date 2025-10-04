@@ -4,7 +4,13 @@ import { baseProcedure, createTRPCRouter, clerkProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { AUTH_COOKIE } from "../constants";
 import { registerSchema, loginSchema } from "../schemas";
-import { generateAuthCookie, resolveUserTenant } from "../utils";
+import {
+  clean,
+  generateAuthCookie,
+  normalizeUrl,
+  resolveUserTenant,
+  servicesToDescription,
+} from "../utils";
 import { stripe } from "@/lib/stripe";
 import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
@@ -279,13 +285,27 @@ export const authRouter = createTRPCRouter({
         ({ id: accountId } = await stripe.accounts.create(
           {
             type: "express",
-            capabilities: { card_payments: { requested: true } }, // direct charges
+            capabilities: {
+              card_payments: { requested: true },
+              transfers: { requested: true },
+            }, // direct charges
+            business_profile: {
+              name: input.name ?? currentUser.username ?? undefined,
+              url:
+                normalizeUrl(input.website) ??
+                `https://infinisimo.com/${encodeURIComponent(input.name ?? currentUser.username ?? "")}`,
+              product_description: servicesToDescription(input.services),
+              support_email: clean(currentUser.email),
+              support_phone: clean(input.phone),
+              support_url: normalizeUrl(input.website),
+              // (handles whitespace + “www.” URLs
+            },
             metadata: {
               platformUserId,
               tenantName: input.name ?? "",
             },
           },
-          { idempotencyKey: `acct_create:${currentUser.id}:v1` }
+          { idempotencyKey: `acct_create:${currentUser.id}:card+transfers:v2` }
         ));
 
         if (!accountId) {
@@ -308,12 +328,13 @@ export const authRouter = createTRPCRouter({
             services: input.services,
             categories: categoryIds,
             subcategories: subcategoryIds,
-            website: input.website,
+            website: normalizeUrl(input.website),
             image: input.image,
             phone: input.phone,
             hourlyRate: input.hourlyRate,
             user: currentUser!.id,
           },
+          overrideAccess: true, // Bypass access control to ensure creation
         });
 
         // Link tenant to user
@@ -326,6 +347,7 @@ export const authRouter = createTRPCRouter({
           data: {
             tenants: [{ tenant: tenant.id }],
           },
+          overrideAccess: true, // Bypass access control to ensure tenant creation
         });
 
         return tenant;
@@ -480,6 +502,32 @@ export const authRouter = createTRPCRouter({
             hourlyRate: input.hourlyRate, // This will be a number after schema transformation
           },
         });
+
+        // fetch the tenant (depth:0) to get its stripeAccountId  - update business profile in Stripe:
+        const tenantDoc = await ctx.db.findByID({
+          collection: "tenants",
+          id: actualTenantId as string,
+          depth: 0,
+        });
+
+        const acctId =
+          typeof tenantDoc?.stripeAccountId === "string"
+            ? tenantDoc.stripeAccountId
+            : undefined;
+
+        if (acctId) {
+          await stripe.accounts.update(acctId, {
+            business_profile: {
+              name: input.name || undefined,
+              url:
+                normalizeUrl(input.website) ||
+                `https://infinisimo.com/${encodeURIComponent(input.name)}`,
+              product_description: servicesToDescription(input.services),
+              support_phone: clean(input.phone),
+              support_url: normalizeUrl(input.website) || undefined,
+            },
+          });
+        }
 
         return updatedTenant;
       } catch (error) {
