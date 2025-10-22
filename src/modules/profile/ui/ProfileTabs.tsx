@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { GeneralProfileForm } from "./GeneralProfileForm";
@@ -15,6 +15,7 @@ type TabKey = "general" | "vendor" | "payouts";
 
 // Main Tabs Component
 export function ProfileTabs() {
+  const searchParams = useSearchParams();
   const router = useRouter();
   const trpc = useTRPC();
 
@@ -59,18 +60,17 @@ export function ProfileTabs() {
 
   // Read tab from query params on mount safely without useSearchParams
   useEffect(() => {
-    // Only run on client side to avoid SSR issues
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
+    const t = (searchParams.get("tab") as TabKey) ?? "general";
 
-      const t = urlParams.get("tab") as TabKey | null;
-      if (t && ["general", "vendor", "payouts"].includes(t)) {
-        if (t === "vendor" && !isProvider) setShowProviderConfirmation(true);
-        // If non-vendor tries to hit payouts, keep them on general.
-        setTab(isProvider ? t : t === "payouts" ? "general" : t);
-      }
+    if (t === "vendor" && !isProvider) {
+      setShowProviderConfirmation(true);
     }
-  }, [isProvider, hasCompletedOnboarding]);
+
+    // Block payouts if not a provider; otherwise respect URL
+    const nextTab: TabKey = !isProvider && t === "payouts" ? "general" : t;
+
+    setTab(nextTab);
+  }, [searchParams, isProvider]);
 
   // ✅ Auto-hide confirmation when user becomes a provider
   useEffect(() => {
@@ -80,20 +80,17 @@ export function ProfileTabs() {
   }, [isProvider, showProviderConfirmation]);
 
   // Auto-redirect to payouts if "autopayout=1" is in URL and user is a provider
+  // Only auto-redirect after vendor exists (isProvider) and we are on vendor tab
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    const auto = url.searchParams.get("autopayout");
+    const auto = searchParams.get("autopayout");
 
-    // Only auto-redirect after vendor exists (isProvider) and we are on vendor tab
     if (tab === "vendor" && auto === "1" && isProvider) {
-      // brief pause so the user sees their vendor info, then continue to payouts
       const t = setTimeout(() => {
         router.replace("/profile?tab=payouts");
-      }, 600); // 0.6s feels snappy but visible
+      }, 600);
       return () => clearTimeout(t);
     }
-  }, [tab, isProvider, router]);
+  }, [tab, isProvider, router, searchParams]);
 
   // Handle profile completion - only redirect when user becomes a provider for the first time
   const handleProfileCompletion = (isProvider: boolean) => {
@@ -115,8 +112,18 @@ export function ProfileTabs() {
   // Handle tab change to vendor - show confirmation for non-providers - vendors see payouts tab
   const handleTabChange = (value: string) => {
     if (value === "payouts" && !isProvider) return;
-    if (value === "vendor" && !isProvider) setShowProviderConfirmation(true);
+
+    if (value === "vendor" && !isProvider) {
+      setShowProviderConfirmation(true);
+    }
+
     setTab(value as TabKey);
+
+    // push URL so other links (and reloads) reflect current tab
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", value);
+    url.searchParams.delete("autopayout"); // don’t carry autopayout around
+    router.push(url.pathname + "?" + url.searchParams.toString());
   };
 
   // Handle navigation to general settings

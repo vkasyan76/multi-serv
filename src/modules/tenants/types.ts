@@ -40,8 +40,8 @@ export type UserCoordinates = {
   lat: number;
   lng: number;
   city: string | null;
-  countryISO: string | null;   // ISO code (e.g., "DE")
-  countryName: string | null;  // Full country name (e.g., "Germany")
+  countryISO: string | null; // ISO code (e.g., "DE")
+  countryName: string | null; // Full country name (e.g., "Germany")
   region: string | null;
   postalCode: string | null;
   street: string | null;
@@ -58,8 +58,8 @@ export type SelectedLocation = {
   region?: string | null;
   postalCode?: string | null;
   street?: string | null;
-  countryISO?: string | null;    // Store as ISO
-  countryName?: string | null;   // Display only
+  countryISO?: string | null; // Store as ISO
+  countryName?: string | null; // Display only
 };
 
 // Type for autocomplete predictions (client-side only)
@@ -94,4 +94,14 @@ export type TenantsGetManyOutput = {
   hasNextPage: boolean;
   prevPage: number | null;
   nextPage: number | null;
+};
+
+// If helpful, you can intersect this into TenantWithRelations
+// export type TenantWithVat = TenantWithRelations & VatFlags;
+
+export type VatFlags = {
+  country: string; // ISO-2
+  vatRegistered: boolean;
+  vatId?: string | null;
+  vatIdValid?: boolean;
 };

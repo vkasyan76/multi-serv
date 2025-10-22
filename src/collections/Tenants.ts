@@ -200,6 +200,53 @@ export const Tenants: CollectionConfig = {
         description: "Vendor's hourly rate in EUR",
       },
     },
+
+    // VAT + Country fields
+
+    {
+      name: "country",
+      type: "text",
+      required: true,
+      label: "Country (ISO-2)",
+      admin: { description: "Two-letter ISO country code (e.g., DE)" },
+      validate: (val: unknown): true | string =>
+        typeof val === "string" && val.length === 2
+          ? true
+          : "ISO-2 code required",
+    },
+    {
+      type: "row",
+      fields: [
+        {
+          name: "vatRegistered",
+          type: "checkbox",
+          label: "VAT registered",
+          defaultValue: false,
+          admin: { width: "33%" },
+        },
+        {
+          name: "vatId",
+          type: "text",
+          label: "VAT number (USt-IdNr / EU VAT)",
+          admin: {
+            width: "67%",
+            condition: (data) => Boolean(data?.vatRegistered),
+            description: "Required if VAT-registered",
+          },
+        },
+        {
+          name: "vatIdValid",
+          type: "checkbox",
+          label: "VAT ID validated (VIES)",
+          defaultValue: false,
+          admin: {
+            description: "Set true after VIES check",
+            condition: (data) => Boolean(data?.vatRegistered),
+          },
+        },
+      ],
+    },
+
     {
       name: "user",
       type: "relationship",

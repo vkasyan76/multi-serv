@@ -1,6 +1,11 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import {
+  useForm,
+  type SubmitHandler,
+  type SubmitErrorHandler,
+  type Resolver,
+} from "react-hook-form"; // Adding fields made the schema type wider; TypeScript’s automatic inference fell out of sync between the schema, the form, and the fields.
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,19 +17,28 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
-import { vendorSchema, VENDOR_FIELD_LABELS, SERVICE_OPTIONS } from "../schemas";
+import {
+  vendorSchema,
+  type VendorFormValues,
+  VENDOR_FIELD_LABELS,
+  SERVICE_OPTIONS,
+} from "../schemas";
 import { toast } from "sonner";
-import type { FieldErrors } from "react-hook-form";
+// import type { FieldErrors } from "react-hook-form";
+import { isEU } from "../vat-validation-utils";
 
 import { useTRPC } from "@/trpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
-import { getLocaleAndCurrency } from "../location-utils";
+import {
+  getLocaleAndCurrency,
+  getCountryCodeFromName,
+  countryNameFromCode,
+} from "../location-utils";
 import LoadingPage from "@/components/shared/loading";
 import { useRouter } from "next/navigation";
 
@@ -32,12 +46,13 @@ import { NumericFormat, NumberFormatValues } from "react-number-format";
 import PhoneInput from "react-phone-number-input";
 import type { Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { getCountryCodeFromName } from "../location-utils";
 import { Home, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 import Link from "next/link";
 
-// Create a Zod schema for the tenant/vendor
+// Single source-of-truth form type
+// type VendorFormValues = z.infer<typeof vendorSchema>;
 
 export function VendorProfileForm() {
   const trpc = useTRPC();
@@ -51,9 +66,19 @@ export function VendorProfileForm() {
   );
 
   // Fetch user profile to get country for phone number default
-  const { data: userProfile } = useQuery(
-    trpc.auth.getUserProfile.queryOptions()
-  );
+  // Fetch user profile fresh when mounting this tab (no stale DE)
+  const { data: userProfile } = useQuery({
+    ...trpc.auth.getUserProfile.queryOptions(),
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+
+  // country from the user profile for default selection
+  const profileISO =
+    userProfile?.coordinates?.countryISO ??
+    (userProfile?.country
+      ? getCountryCodeFromName(userProfile.country)
+      : undefined);
 
   // read current Stripe snapshot to decide whether to show the banner
   const { data: stripeStatus } = useQuery(
@@ -62,23 +87,58 @@ export function VendorProfileForm() {
 
   const [intlConfig] = useState(getLocaleAndCurrency()); // cache the locale/currency (do not run on every render)
 
-  const form = useForm<z.infer<typeof vendorSchema>>({
+  // ✅ add a mutation for the VIES check (matches your trpc client pattern)
+  const validateVat = useMutation(trpc.vat.validate.mutationOptions());
+
+  // NEW: mirror VIES behavior — strip country code & separators
+  const normalizeVat = (countryISO: string, raw: string) => {
+    const iso = (countryISO || "").toUpperCase().slice(0, 2);
+    let n = (raw || "").toUpperCase().replace(/[\s.\-]/g, "");
+    if (n.startsWith(iso)) n = n.slice(iso.length);
+    return { iso, vat: n };
+  };
+
+  const [vatChecked, setVatChecked] = useState(false);
+
+  const form = useForm<VendorFormValues>({
     mode: "onSubmit",
-    resolver: zodResolver(vendorSchema),
+    resolver: zodResolver(vendorSchema) as Resolver<VendorFormValues>,
     defaultValues: {
       name: "",
       firstName: "",
       lastName: "",
       bio: "",
       services: [],
+      categories: [],
+      subcategories: [],
       website: "",
       phone: undefined,
       hourlyRate: 1,
+      // NEW - VAT fields
+      country: "DE", // prefill, will be overridden below
+      vatRegistered: false, // keep simple
+      vatId: "", // required only when vatRegistered = true
+      // optional but useful so the status chip can render immediately
+      vatIdValid: false,
     },
   });
 
+  // always sets the form country to the user’s country whenever userProfile changes:
+  useEffect(() => {
+    if (profileISO && form.getValues("country") !== profileISO) {
+      form.setValue("country", profileISO);
+    }
+  }, [profileISO, form]);
+
   // Update form values when vendor profile data is available
   useEffect(() => {
+    // derive ISO-2 from user profile if vendor profile does not have it
+    // const userISO =
+    //   userProfile?.coordinates?.countryISO ??
+    //   (userProfile?.country
+    //     ? getCountryCodeFromName(userProfile.country)
+    //     : undefined);
+
     if (vendorProfile) {
       form.reset({
         name: vendorProfile.name || "",
@@ -97,9 +157,18 @@ export function VendorProfileForm() {
         website: vendorProfile.website || "",
         phone: vendorProfile.phone || undefined,
         hourlyRate: vendorProfile.hourlyRate || 1,
+        // NEW - VAT fields
+        country: profileISO || vendorProfile.country || "DE", // ISO-2, matches schema default/transform
+        vatRegistered: vendorProfile.vatRegistered ?? false, // keep simple
+        vatId: vendorProfile.vatId || "", // only required when vatRegistered = true
+        // if you persist it on the model, use vendorProfile.vatIdValid ?? false
+        vatIdValid: vendorProfile.vatIdValid ?? false,
       });
+    } else if (profileISO) {
+      // If creating new vendor profile, seed country from user
+      form.setValue("country", profileISO);
     }
-  }, [vendorProfile, form]);
+  }, [vendorProfile, userProfile, profileISO, form]);
 
   // Watch selected categories
   const watchedCategories = form.watch("categories");
@@ -107,6 +176,11 @@ export function VendorProfileForm() {
     () => watchedCategories || [],
     [watchedCategories]
   );
+
+  // watch VAT registered
+  const watchedVatRegistered = form.watch("vatRegistered");
+  const watchedCountry = form.watch("country");
+  const isEUCountry = isEU(watchedCountry);
 
   // Helper functions to generate placeholder text for MultiSelect components
   const getServicesPlaceholder = () => {
@@ -317,13 +391,15 @@ export function VendorProfileForm() {
     })
   );
 
-  const onSubmit = async (values: z.infer<typeof vendorSchema>) => {
+  const onSubmit: SubmitHandler<VendorFormValues> = async (values) => {
     try {
       // Prevent double submits
       if (createVendorProfile.isPending || updateVendorProfile.isPending) {
         console.log("Submit already in progress, ignoring");
         return;
       }
+
+      const finalCountry = profileISO || values.country || "DE";
 
       if (vendorProfile) {
         // EXISTING PROFILE: Upload image first, then update
@@ -355,6 +431,7 @@ export function VendorProfileForm() {
         const updatedValues = {
           ...values,
           image: imageData,
+          country: finalCountry,
         };
 
         // Await to avoid races
@@ -382,7 +459,10 @@ export function VendorProfileForm() {
         try {
           // Step 1: Create profile without image
           console.log("Creating vendor profile without image...");
-          const createdProfile = await createVendorProfile.mutateAsync(values);
+          const createdProfile = await createVendorProfile.mutateAsync({
+            ...values,
+            country: finalCountry,
+          });
 
           if (!createdProfile || !createdProfile.id) {
             throw new Error("Profile created but no ID returned");
@@ -462,7 +542,7 @@ export function VendorProfileForm() {
     }
   };
 
-  const onError = (errors: FieldErrors<z.infer<typeof vendorSchema>>) => {
+  const onError: SubmitErrorHandler<VendorFormValues> = (errors) => {
     const messages = Object.entries(errors)
       .map(([field, err]) => {
         const label =
@@ -667,7 +747,9 @@ export function VendorProfileForm() {
                           ? "text-foreground font-medium"
                           : ""
                       }
-                      maxCount={2}
+                      // aligns badges to the top and gives a touch more breathing room
+                      className="items-start py-2.5"
+                      maxCount={4}
                     />
                   </FormControl>
                 </FormItem>
@@ -708,7 +790,8 @@ export function VendorProfileForm() {
               name="subcategories"
               control={form.control}
               render={({ field }) => (
-                <FormItem>
+                // extra bottom space so the border that follows the grid never visually “cuts” chips
+                <FormItem className="mb-4">
                   <FormLabel>Subcategories</FormLabel>
                   <FormControl>
                     <MultiSelect
@@ -725,6 +808,10 @@ export function VendorProfileForm() {
                           ? "text-foreground font-medium"
                           : ""
                       }
+                      // let the badges wrap comfortably; override Button’s default vertical centering
+                      className="items-start py-2"
+                      // show a few before “+N more” to reduce height jumps
+                      maxCount={4}
                     />
                   </FormControl>
                 </FormItem>
@@ -874,13 +961,193 @@ export function VendorProfileForm() {
             />
           </div>
         </div>
+        {/* ===== Business details (used for invoices & tax where applicable) ===== */}
+        <div className="mt-4 border-t pt-6">
+          {/* Business country — display only (ISO-2 kept in form state). */}
+          <FormField
+            name="country"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                {/* keep ISO-2 in the form state */}
+                <input type="hidden" {...field} value={field.value} />
+
+                {/* Label row with inline helper copy */}
+                <div className="flex items-center justify-between gap-3">
+                  <FormLabel className="m-0">Business country</FormLabel>
+                  <span className="text-xs text-muted-foreground">
+                    Prepopulated from your user profile. To change it, edit{" "}
+                    <Link
+                      href="/profile?tab=general"
+                      className="underline font-medium"
+                    >
+                      General settings
+                    </Link>
+                    .
+                  </span>
+                </div>
+
+                <FormControl>
+                  <Input
+                    value={countryNameFromCode(field.value, intlConfig.locale)}
+                    readOnly
+                    disabled
+                  />
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* VAT UI — compact two-column row */}
+          {isEUCountry && (
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              {/* left: checkbox unchanged */}
+              <FormField
+                name="vatRegistered"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-3">
+                      <input
+                        id="vat-registered"
+                        type="checkbox"
+                        className="h-4 w-4 accent-black"
+                        checked={!!field.value}
+                        onChange={(e) => {
+                          field.onChange(e.target.checked);
+                          setVatChecked(false); // reset chip visibility when toggling
+                        }}
+                      />
+                      <FormLabel htmlFor="vat-registered" className="m-0">
+                        Do you have VAT ID? (optional)
+                      </FormLabel>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* right: VAT input + Validate button + status chip */}
+              {watchedVatRegistered ? (
+                <FormField
+                  name="vatId"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3">
+                        <FormLabel className="m-0 shrink-0 w-16">
+                          Valid VAT ID:
+                        </FormLabel>
+
+                        <div className="flex-1">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              autoComplete="off"
+                              placeholder="e.g., DE123456789"
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setVatChecked(false); // editing invalidates previous check
+                              }}
+                              onBlur={async () => {
+                                const raw = field.value?.trim();
+                                if (!raw) return;
+                                try {
+                                  const { iso, vat } = normalizeVat(
+                                    form.getValues("country"),
+                                    raw
+                                  );
+                                  const res = await validateVat.mutateAsync({
+                                    countryCode: iso,
+                                    vat,
+                                  });
+                                  form.setValue("vatIdValid", !!res.valid);
+                                  setVatChecked(true);
+                                } catch (e: unknown) {
+                                  form.setValue("vatIdValid", false);
+                                  setVatChecked(true);
+                                  const msg =
+                                    e instanceof Error ? e.message : String(e);
+                                  toast.error(`VAT validation failed: ${msg}`);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          disabled={
+                            validateVat.isPending || !form.getValues("vatId")
+                          }
+                          onClick={async () => {
+                            try {
+                              const { iso, vat } = normalizeVat(
+                                form.getValues("country"),
+                                form.getValues("vatId")!
+                              );
+                              const res = await validateVat.mutateAsync({
+                                countryCode: iso,
+                                vat,
+                              });
+                              form.setValue("vatIdValid", !!res.valid);
+                              setVatChecked(true);
+                              toast[res.valid ? "success" : "error"](
+                                res.valid
+                                  ? "VAT number is valid via VIES."
+                                  : "VAT number is NOT valid."
+                              );
+                            } catch (e: unknown) {
+                              form.setValue("vatIdValid", false);
+                              setVatChecked(true);
+                              const msg =
+                                e instanceof Error ? e.message : String(e);
+                              toast.error(`VAT validation failed: ${msg}`);
+                            }
+                          }}
+                        >
+                          {validateVat.isPending ? "Validating..." : "Validate"}
+                        </Button>
+                      </div>
+
+                      {/* tiny status chip */}
+                      <div className="text-xs mt-1">
+                        {vatChecked ? (
+                          form.watch("vatIdValid") ? (
+                            <span className="text-green-600">Valid VAT ID</span>
+                          ) : (
+                            <span className="text-red-600">Invalid VAT ID</span>
+                          )
+                        ) : null}
+                      </div>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <div className="hidden md:block" />
+              )}
+            </div>
+          )}
+        </div>
 
         <Button
           type="submit"
           size="lg"
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
           disabled={
-            createVendorProfile.isPending || updateVendorProfile.isPending
+            createVendorProfile.isPending ||
+            updateVendorProfile.isPending ||
+            // block only if user says they have a VAT ID and we've checked it as invalid
+            (isEUCountry &&
+              form.getValues("vatRegistered") &&
+              !!form.getValues("vatId") &&
+              form.getValues("vatIdValid") === false)
           }
         >
           {createVendorProfile.isPending || updateVendorProfile.isPending ? (

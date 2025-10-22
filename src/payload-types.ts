@@ -303,6 +303,19 @@ export interface Tenant {
    */
   hourlyRate?: number | null;
   /**
+   * Two-letter ISO country code (e.g., DE)
+   */
+  country: string;
+  vatRegistered?: boolean | null;
+  /**
+   * Required if VAT-registered
+   */
+  vatId?: string | null;
+  /**
+   * Set true after VIES check
+   */
+  vatIdValid?: boolean | null;
+  /**
    * The user account associated with this tenant
    */
   user: string | User;
@@ -608,6 +621,10 @@ export interface TenantsSelect<T extends boolean = true> {
   website?: T;
   phone?: T;
   hourlyRate?: T;
+  country?: T;
+  vatRegistered?: T;
+  vatId?: T;
+  vatIdValid?: T;
   user?: T;
   updatedAt?: T;
   createdAt?: T;
