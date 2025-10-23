@@ -27,11 +27,16 @@ import {
 } from "../schemas";
 import { toast } from "sonner";
 // import type { FieldErrors } from "react-hook-form";
-import { isEU } from "../vat-validation-utils";
+import {
+  isEU,
+  normalizeVat,
+  composeVatWithIso,
+  fullNormalize,
+} from "../vat-validation-utils";
 
 import { useTRPC } from "@/trpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -75,10 +80,9 @@ export function VendorProfileForm() {
 
   // country from the user profile for default selection
   const profileISO =
-    userProfile?.coordinates?.countryISO ??
     (userProfile?.country
       ? getCountryCodeFromName(userProfile.country)
-      : undefined);
+      : undefined) ?? userProfile?.coordinates?.countryISO;
 
   // read current Stripe snapshot to decide whether to show the banner
   const { data: stripeStatus } = useQuery(
@@ -91,18 +95,16 @@ export function VendorProfileForm() {
   const validateVat = useMutation(trpc.vat.validate.mutationOptions());
 
   // NEW: mirror VIES behavior — strip country code & separators
-  const normalizeVat = (countryISO: string, raw: string) => {
-    const iso = (countryISO || "").toUpperCase().slice(0, 2);
-    let n = (raw || "").toUpperCase().replace(/[\s.\-]/g, "");
-    if (n.startsWith(iso)) n = n.slice(iso.length);
-    return { iso, vat: n };
-  };
+
+  // what we loaded from DB (treated as already valid)
+  const initialVatRef = useRef<string>("");
 
   const [vatChecked, setVatChecked] = useState(false);
 
   const form = useForm<VendorFormValues>({
     mode: "onSubmit",
     resolver: zodResolver(vendorSchema) as Resolver<VendorFormValues>,
+    shouldUnregister: true, // ✅ ensures hidden/unmounted fields (e.g., vatId) are removed from the payload
     defaultValues: {
       name: "",
       firstName: "",
@@ -132,14 +134,13 @@ export function VendorProfileForm() {
 
   // Update form values when vendor profile data is available
   useEffect(() => {
-    // derive ISO-2 from user profile if vendor profile does not have it
-    // const userISO =
-    //   userProfile?.coordinates?.countryISO ??
-    //   (userProfile?.country
-    //     ? getCountryCodeFromName(userProfile.country)
-    //     : undefined);
-
     if (vendorProfile) {
+      if (!vendorProfile) {
+        // brand new vendor profile – seed from General once
+        if (profileISO) form.setValue("country", profileISO);
+        return;
+      }
+
       form.reset({
         name: vendorProfile.name || "",
         firstName: vendorProfile.firstName || "",
@@ -158,17 +159,27 @@ export function VendorProfileForm() {
         phone: vendorProfile.phone || undefined,
         hourlyRate: vendorProfile.hourlyRate || 1,
         // NEW - VAT fields
-        country: profileISO || vendorProfile.country || "DE", // ISO-2, matches schema default/transform
+        // ISO-2, matches schema default/transform
+        country: profileISO || vendorProfile.country || "DE",
         vatRegistered: vendorProfile.vatRegistered ?? false, // keep simple
         vatId: vendorProfile.vatId || "", // only required when vatRegistered = true
         // if you persist it on the model, use vendorProfile.vatIdValid ?? false
-        vatIdValid: vendorProfile.vatIdValid ?? false,
+        // vatIdValid: vendorProfile.vatIdValid ?? false,
+        // treat value from DB as already validated
+        vatIdValid: !!vendorProfile.vatId && (vendorProfile.vatIdValid ?? true),
       });
+      const initCountry = vendorProfile.country || "DE";
+      initialVatRef.current =
+        vendorProfile.vatRegistered && vendorProfile.vatId
+          ? fullNormalize(initCountry, vendorProfile.vatId)
+          : "";
+
+      setVatChecked(false); // chip isn’t needed anymore
     } else if (profileISO) {
-      // If creating new vendor profile, seed country from user
+      // brand new vendor: seed from General
       form.setValue("country", profileISO);
     }
-  }, [vendorProfile, userProfile, profileISO, form]);
+  }, [vendorProfile, profileISO, form]);
 
   // Watch selected categories
   const watchedCategories = form.watch("categories");
@@ -181,6 +192,19 @@ export function VendorProfileForm() {
   const watchedVatRegistered = form.watch("vatRegistered");
   const watchedCountry = form.watch("country");
   const isEUCountry = isEU(watchedCountry);
+
+  // ✅ If country or the "have VAT" toggle changes, require a fresh check
+  useEffect(() => {
+    setVatChecked(false);
+  }, [watchedCountry]);
+
+  // useEffect(() => {
+  //   if (!watchedVatRegistered) {
+  //     setVatChecked(false);
+  //     form.setValue("vatId", "");
+  //     form.setValue("vatIdValid", false);
+  //   }
+  // }, [watchedVatRegistered, form]);
 
   // Helper functions to generate placeholder text for MultiSelect components
   const getServicesPlaceholder = () => {
@@ -324,6 +348,8 @@ export function VendorProfileForm() {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // track image upload progress to prevent double-submits
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -394,48 +420,74 @@ export function VendorProfileForm() {
   const onSubmit: SubmitHandler<VendorFormValues> = async (values) => {
     try {
       // Prevent double submits
-      if (createVendorProfile.isPending || updateVendorProfile.isPending) {
-        console.log("Submit already in progress, ignoring");
+      if (
+        createVendorProfile.isPending ||
+        updateVendorProfile.isPending ||
+        isUploading
+      ) {
+        console.log("Submit already in progress (or uploading), ignoring");
         return;
       }
 
-      const finalCountry = profileISO || values.country || "DE";
+      const finalCountry = values.country || "DE";
+
+      // ✅ normalize for submit (ensure non-empty when vatRegistered is true)
+      let submitVat = "";
+      if (values.vatRegistered) {
+        const { iso, vat } = normalizeVat(finalCountry, values.vatId ?? "");
+        submitVat = composeVatWithIso(iso, vat); // e.g., "DE123456789"
+      }
+
+      // Build one payload so vatId is always explicit (on -> normalized, off -> empty)
+      const payload = {
+        ...values,
+        country: finalCountry,
+        vatId: values.vatRegistered ? submitVat : "", // off => send empty; server will store null
+      };
 
       if (vendorProfile) {
         // EXISTING PROFILE: Upload image first, then update
         let imageData = values.image;
 
         if (selectedFile) {
-          const formData = new FormData();
-          formData.append("file", selectedFile);
+          setIsUploading(true);
+          try {
+            const formData = new FormData();
+            formData.append("file", selectedFile);
 
-          // ✅ ADD THIS: Pass tenantId for existing profiles
-          if (vendorProfile?.id) {
-            formData.append("tenantId", vendorProfile.id);
+            if (vendorProfile?.id) {
+              formData.append("tenantId", vendorProfile.id);
+            }
+
+            const uploadResponse = await fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!uploadResponse.ok) {
+              throw new Error("Failed to upload image");
+            }
+
+            const uploadResult = await uploadResponse.json();
+            imageData = uploadResult.file.id;
+          } finally {
+            setIsUploading(false);
           }
-
-          const uploadResponse = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!uploadResponse.ok) {
-            throw new Error("Failed to upload image");
-          }
-
-          const uploadResult = await uploadResponse.json();
-          imageData = uploadResult.file.id;
         }
 
         // Update existing vendor profile
-        const updatedValues = {
-          ...values,
-          image: imageData,
-          country: finalCountry,
-        };
+        // const updatedValues = {
+        //   ...values,
+        //   image: imageData,
+        //   country: finalCountry,
+        // };
 
         // Await to avoid races
-        await updateVendorProfile.mutateAsync(updatedValues);
+        // await updateVendorProfile.mutateAsync(updatedValues);
+        await updateVendorProfile.mutateAsync({
+          ...payload,
+          image: imageData,
+        });
 
         // Mark onboarding as completed after successful update
         try {
@@ -459,10 +511,7 @@ export function VendorProfileForm() {
         try {
           // Step 1: Create profile without image
           console.log("Creating vendor profile without image...");
-          const createdProfile = await createVendorProfile.mutateAsync({
-            ...values,
-            country: finalCountry,
-          });
+          const createdProfile = await createVendorProfile.mutateAsync(payload);
 
           if (!createdProfile || !createdProfile.id) {
             throw new Error("Profile created but no ID returned");
@@ -473,29 +522,33 @@ export function VendorProfileForm() {
           // Step 2: Upload image if selected
           if (selectedFile) {
             console.log("Uploading image for new profile...");
+            setIsUploading(true);
+            try {
+              const formData = new FormData();
+              formData.append("file", selectedFile);
+              formData.append("tenantId", createdProfile.id);
 
-            const formData = new FormData();
-            formData.append("file", selectedFile);
-            formData.append("tenantId", createdProfile.id);
+              const uploadResponse = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+              });
 
-            const uploadResponse = await fetch("/api/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!uploadResponse.ok) {
-              const errorData = await uploadResponse.json();
-              console.warn(
-                "Profile created but image upload failed:",
-                errorData
-              );
-
-              // Don't fail the whole operation - show warning
-              toast.warning(
-                "Profile created successfully, but image upload failed. You can add the image later from the profile editor."
-              );
-            } else {
-              console.log("Image uploaded successfully");
+              if (!uploadResponse.ok) {
+                const errorData = await uploadResponse.json();
+                console.warn(
+                  "Profile created but image upload failed:",
+                  errorData
+                );
+                toast.warning(
+                  "Profile created successfully, but image upload failed. You can add the image later from the profile editor."
+                );
+              } else {
+                console.log("Image uploaded successfully");
+                setSelectedFile(null);
+                setPreviewUrl(null);
+              }
+            } finally {
+              setIsUploading(false);
             }
           }
 
@@ -566,6 +619,23 @@ export function VendorProfileForm() {
   if (isLoading) {
     return <LoadingPage />;
   }
+
+  const vatRegistered = form.watch("vatRegistered");
+  const vatId = form.watch("vatId");
+  const country = form.watch("country");
+  // do we need a validation? Only if user has VAT + entered something + it differs from DB
+  const requiresVatValidation =
+    isEUCountry &&
+    vatRegistered &&
+    !!vatId &&
+    fullNormalize(country, vatId) !== initialVatRef.current;
+
+  // Submit is disabled until validation has been run and marked valid
+  const submitDisabled =
+    isUploading ||
+    createVendorProfile.isPending ||
+    updateVendorProfile.isPending ||
+    (requiresVatValidation && !(vatChecked && form.getValues("vatIdValid")));
 
   return (
     <Form {...form}>
@@ -738,7 +808,6 @@ export function VendorProfileForm() {
                   <FormControl>
                     <MultiSelect
                       options={SERVICE_OPTIONS}
-                      defaultValue={field.value || []}
                       value={field.value || []}
                       onValueChange={field.onChange}
                       placeholder={getServicesPlaceholder()}
@@ -772,7 +841,7 @@ export function VendorProfileForm() {
                             }))
                           : []
                       }
-                      defaultValue={field.value || []}
+                      value={field.value || []}
                       onValueChange={field.onChange}
                       placeholder={getCategoriesPlaceholder()}
                       placeholderClassName={
@@ -839,7 +908,16 @@ export function VendorProfileForm() {
                   priority
                 />
               </div>
-              <label className="cursor-pointer px-4 py-2 bg-gray-100 rounded-lg border text-sm font-medium hover:bg-gray-200 transition-colors">
+              <label
+                className={
+                  "cursor-pointer px-4 py-2 bg-gray-100 rounded-lg border text-sm font-medium transition-colors " +
+                  (isUploading ||
+                  createVendorProfile.isPending ||
+                  updateVendorProfile.isPending
+                    ? "opacity-60 cursor-not-allowed pointer-events-none"
+                    : "hover:bg-gray-200")
+                }
+              >
                 {selectedFile
                   ? selectedFile.name
                   : "Select Image for upload (max 5MB)"}
@@ -848,6 +926,11 @@ export function VendorProfileForm() {
                   accept="image/*"
                   onChange={handleFileChange}
                   className="hidden"
+                  disabled={
+                    isUploading ||
+                    createVendorProfile.isPending ||
+                    updateVendorProfile.isPending
+                  }
                 />
               </label>
             </div>
@@ -1016,8 +1099,13 @@ export function VendorProfileForm() {
                         className="h-4 w-4 accent-black"
                         checked={!!field.value}
                         onChange={(e) => {
-                          field.onChange(e.target.checked);
-                          setVatChecked(false); // reset chip visibility when toggling
+                          const checked = e.target.checked;
+                          field.onChange(checked);
+                          setVatChecked(false);
+                          if (!checked) {
+                            form.setValue("vatId", "");
+                            form.setValue("vatIdValid", false);
+                          }
                         }}
                       />
                       <FormLabel htmlFor="vat-registered" className="m-0">
@@ -1046,10 +1134,12 @@ export function VendorProfileForm() {
                             <Input
                               {...field}
                               autoComplete="off"
+                              value={field.value ?? ""} // <- keep controlled so DB value renders immediately
                               placeholder="e.g., DE123456789"
                               onChange={(e) => {
                                 field.onChange(e);
                                 setVatChecked(false); // editing invalidates previous check
+                                form.setValue("vatIdValid", false);
                               }}
                               onBlur={async () => {
                                 const raw = field.value?.trim();
@@ -1063,6 +1153,15 @@ export function VendorProfileForm() {
                                     countryCode: iso,
                                     vat,
                                   });
+                                  // ✅ write normalized value back into the field (e.g., "DE123456789")
+                                  form.setValue(
+                                    "vatId",
+                                    composeVatWithIso(iso, vat),
+                                    {
+                                      shouldDirty: true,
+                                      shouldValidate: true,
+                                    }
+                                  );
                                   form.setValue("vatIdValid", !!res.valid);
                                   setVatChecked(true);
                                 } catch (e: unknown) {
@@ -1095,6 +1194,15 @@ export function VendorProfileForm() {
                                 vat,
                               });
                               form.setValue("vatIdValid", !!res.valid);
+                              // ✅ normalize & write back to ensure a non-empty value is submitted
+                              form.setValue(
+                                "vatId",
+                                composeVatWithIso(iso, vat),
+                                {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                }
+                              );
                               setVatChecked(true);
                               toast[res.valid ? "success" : "error"](
                                 res.valid
@@ -1140,20 +1248,18 @@ export function VendorProfileForm() {
           type="submit"
           size="lg"
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
-          disabled={
-            createVendorProfile.isPending ||
-            updateVendorProfile.isPending ||
-            // block only if user says they have a VAT ID and we've checked it as invalid
-            (isEUCountry &&
-              form.getValues("vatRegistered") &&
-              !!form.getValues("vatId") &&
-              form.getValues("vatIdValid") === false)
-          }
+          disabled={submitDisabled}
         >
-          {createVendorProfile.isPending || updateVendorProfile.isPending ? (
+          {isUploading ||
+          createVendorProfile.isPending ||
+          updateVendorProfile.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {vendorProfile ? "Updating..." : "Creating..."}
+              {isUploading
+                ? "Uploading…"
+                : vendorProfile
+                  ? "Updating..."
+                  : "Creating..."}
             </>
           ) : vendorProfile &&
             (vendorProfile.name ||

@@ -327,9 +327,9 @@ export const authRouter = createTRPCRouter({
 
         // Authoritative country: prefer user's profile ISO, then input, then DE
         const countryForTenant = (
+          input.country ||
           (currentUser.coordinates as UserCoordinates | undefined)
             ?.countryISO ||
-          input.country ||
           "DE"
         ).toUpperCase();
 
@@ -368,7 +368,9 @@ export const authRouter = createTRPCRouter({
             // ⬇️ VAT + country
             country: countryForTenant,
             vatRegistered: !!input.vatRegistered,
-            vatId: input.vatId?.trim() || undefined,
+            vatId: input.vatRegistered
+              ? input.vatId?.trim() || null // persist null if somehow empty
+              : null, // toggle off => clear explicitly
             vatIdValid, // ⬅️ authoritative server flag
 
             user: currentUser!.id,
@@ -556,15 +558,15 @@ export const authRouter = createTRPCRouter({
             services: input.services,
             categories: categoryIds, // Array of category ObjectIds
             subcategories: subcategoryIds, // Array of subcategory ObjectIds
-            website: input.website,
+            website: normalizeUrl(input.website),
             image: input.image || undefined, // Pass the file ID for the relationship
             phone: input.phone,
             hourlyRate: input.hourlyRate, // This will be a number after schema transformation
             // ⬇️ VAT + country
             country: countryForTenant,
             vatRegistered: !!input.vatRegistered,
-            vatId: input.vatId?.trim() || undefined,
-            vatIdValid,
+            vatId: input.vatRegistered ? input.vatId?.trim() || null : null, // toggle off => clear
+            vatIdValid: input.vatRegistered ? vatIdValid : false, // keep DB consistent
           },
         });
 

@@ -38,7 +38,7 @@ import { PROFILE_FIELD_LABELS } from "@/modules/profile/schemas";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
-import { Home } from "lucide-react";
+import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface GeneralProfileFormProps {
@@ -50,9 +50,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const queryClient = useQueryClient();
 
   // Fetch user profile data from database
-  const { data: userProfile, isLoading } = useQuery(
-    trpc.auth.getUserProfile.queryOptions()
-  );
+  const {
+    data: userProfile,
+    isLoading,
+    isFetching,
+  } = useQuery(trpc.auth.getUserProfile.queryOptions());
 
   const updateUserProfile = useMutation(
     trpc.auth.updateUserProfile.mutationOptions({
@@ -215,10 +217,14 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
     // Sanitize coordinates to ensure no old data is sent
     const sanitizeCoordinates = (location: SelectedLocation | null) => {
-      if (!location || !Number.isFinite(location.lat ?? NaN) || !Number.isFinite(location.lng ?? NaN)) {
+      if (
+        !location ||
+        !Number.isFinite(location.lat ?? NaN) ||
+        !Number.isFinite(location.lng ?? NaN)
+      ) {
         return undefined;
       }
-      
+
       // CRITICAL FIX: Always send explicit nulls to clear fields in MongoDB
       // MongoDB/Payload treats undefined as "leave as-is", null as "clear this field"
       return {
@@ -233,15 +239,15 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         ipDetected: false,
         manuallySet: true,
       };
-      
+
       // Return statement is now inline above
     };
 
     const coordinates = sanitizeCoordinates(selectedLocation);
 
     // Dev log to verify coordinates before submission
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Submitting coordinates:', coordinates);
+    if (process.env.NODE_ENV === "development") {
+      console.log("Submitting coordinates:", coordinates);
     }
 
     const submission = {
@@ -336,18 +342,22 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                     <Input
                       {...field}
                       value={locationInput}
-                                  onChange={(e) => {
-              setLocationInput(e.target.value);
-              field.onChange(e);
-              form.setValue("country", "");
-              
-              // NUCLEAR OPTION: Completely clear ALL coordinate data when user types
-              // This ensures we never have stale coordinate data
-              if (e.target.value !== selectedLocation?.formattedAddress) {
-                console.log("Location input changed - clearing ALL coordinate data");
-                setSelectedLocation(null);
-              }
-            }}
+                      onChange={(e) => {
+                        setLocationInput(e.target.value);
+                        field.onChange(e);
+                        form.setValue("country", "");
+
+                        // NUCLEAR OPTION: Completely clear ALL coordinate data when user types
+                        // This ensures we never have stale coordinate data
+                        if (
+                          e.target.value !== selectedLocation?.formattedAddress
+                        ) {
+                          console.log(
+                            "Location input changed - clearing ALL coordinate data"
+                          );
+                          setSelectedLocation(null);
+                        }
+                      }}
                       autoComplete="off"
                       placeholder="Search for your address…"
                     />
@@ -423,36 +433,31 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
           <FormField
             name="language"
             control={form.control}
-            render={({ field }) => {
-              // Use the watched value to ensure proper synchronization
-              const currentValue =
-                selectedLanguage ||
-                field.value ||
-                userProfile?.language ||
-                getInitialLanguage();
-
-              return (
-                <FormItem>
-                  <FormLabel>Language</FormLabel>
-                  <FormControl>
-                    <Select value={currentValue} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full">
-                        {SUPPORTED_LANGUAGES.find(
-                          (l) => l.code === currentValue
-                        )?.label || "English"}
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SUPPORTED_LANGUAGES.map(({ code, label }) => (
-                          <SelectItem key={code} value={code}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              );
-            }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Language</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value ?? getInitialLanguage()}
+                    onValueChange={field.onChange}
+                    disabled={updateUserProfile.isPending || isFetching}
+                  >
+                    <SelectTrigger className="w-full">
+                      {SUPPORTED_LANGUAGES.find(
+                        (l) => l.code === (field.value ?? "en")
+                      )?.label ?? "English"}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_LANGUAGES.map(({ code, label }) => (
+                        <SelectItem key={code} value={code}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+              </FormItem>
+            )}
           />
         </div>
 
@@ -460,9 +465,18 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
           type="submit"
           size="lg"
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
-          disabled={form.formState.isSubmitting}
+          disabled={updateUserProfile.isPending || form.formState.isSubmitting} // ✅ block during mutation too
         >
-          {isProfileCompleted ? "Update Profile" : "Save Profile"}
+          {updateUserProfile.isPending || form.formState.isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {isProfileCompleted ? "Updating..." : "Saving..."}
+            </>
+          ) : isProfileCompleted ? (
+            "Update Profile"
+          ) : (
+            "Save Profile"
+          )}
         </Button>
       </form>
     </Form>

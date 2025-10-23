@@ -35,3 +35,20 @@ export function isEU(code?: string): code is EuIso2 {
   if (!code) return false;
   return EU_ISO2.includes(code.toUpperCase() as EuIso2);
 }
+
+// NEW: mirror VIES behavior — strip country code & separators
+export const normalizeVat = (countryISO: string, raw: string) => {
+  const iso = (countryISO || "").toUpperCase().slice(0, 2);
+  let n = (raw || "").toUpperCase().replace(/[\s.\-]/g, "");
+  if (n.startsWith(iso)) n = n.slice(iso.length);
+  return { iso, vat: n };
+};
+
+export const composeVatWithIso = (iso: string, vat: string) =>
+  `${iso}${vat}`.toUpperCase();
+
+// one-liner for equality checks
+export const fullNormalize = (countryISO: string, raw?: string) => {
+  const { iso, vat } = normalizeVat(countryISO, raw || "");
+  return composeVatWithIso(iso, vat);
+};
