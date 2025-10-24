@@ -1,4 +1,5 @@
-// import { ProfileForm } from "@/modules/profile/ui/ProfileForm";
+export const dynamic = "force-dynamic"; // prevent static prerender of /profile
+
 import { ProfileTabs } from "@/modules/profile/ui/ProfileTabs";
 
 const ProfilePage = () => {

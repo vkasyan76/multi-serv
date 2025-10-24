@@ -209,13 +209,18 @@ export const MultiSelect = React.forwardRef<
             {...props}
             onClick={handleTogglePopover}
             className={cn(
-              "flex w-full p-1 rounded-md border min-h-10 h-auto items-center justify-between bg-inherit hover:bg-inherit [&_svg]:pointer-events-auto",
+              // key changes: remove fixed h-10 → use h-auto; keep min-h-10 for base height
+              // also align to top so wrapped chips aren’t vertically centered
+              // "flex w-full p-1 rounded-md border min-h-10 h-auto items-center justify-between bg-inherit hover:bg-inherit [&_svg]:pointer-events-auto",
+              "flex w-full !h-auto min-h-10 p-1 !py-2 !items-start !whitespace-normal text-left rounded-md border bg-inherit hover:bg-inherit [&_svg]:pointer-events-auto",
               className
             )}
           >
             {selectedValues.length > 0 ? (
               <div className="flex justify-between items-center w-full">
-                <div className="flex flex-wrap items-center">
+                {/* allow chips to wrap with a little gap */}
+                {/* <div className="flex flex-wrap items-center"> */}
+                <div className="flex flex-wrap items-center gap-1">
                   {selectedValues.slice(0, maxCount).map((value) => {
                     const option = options.find((o) => o.value === value);
                     const IconComponent = option?.icon;
@@ -279,7 +284,12 @@ export const MultiSelect = React.forwardRef<
               </div>
             ) : (
               <div className="flex items-center justify-between w-full mx-auto">
-                <span className={cn("text-sm text-muted-foreground mx-3", placeholderClassName)}>
+                <span
+                  className={cn(
+                    "text-sm text-muted-foreground mx-3",
+                    placeholderClassName
+                  )}
+                >
                   {placeholder}
                 </span>
                 <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />

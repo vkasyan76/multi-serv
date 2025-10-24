@@ -20,9 +20,13 @@ import {
   hasValidCoordinates,
   replaceCoordinates,
 } from "@/modules/profile/location-utils";
+import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
+import { normalizeVat } from "@/modules/profile/vat-validation-utils";
 
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
+
+// strip ISO prefix and separators from VAT for VIES check
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
@@ -315,6 +319,26 @@ export const authRouter = createTRPCRouter({
           });
         }
 
+        // Authoritative country: prefer user's profile ISO, then input, then DE
+        const countryForTenant = (
+          input.country ||
+          (currentUser.coordinates as UserCoordinates | undefined)
+            ?.countryISO ||
+          "DE"
+        ).toUpperCase();
+
+        // ⬇️ VIES re-check before writing
+        let vatIdValid = false;
+        if (input.vatRegistered && input.vatId) {
+          try {
+            const { iso, vat } = normalizeVat(countryForTenant, input.vatId);
+            const res = await checkVatWithTimeout(iso, vat);
+            vatIdValid = !!res.valid;
+          } catch {
+            // keep false on failures/timeouts
+          }
+        }
+
         // Create tenant with vendor profile data
         tenant = await ctx.db.create({
           collection: "tenants",
@@ -332,6 +356,14 @@ export const authRouter = createTRPCRouter({
             image: input.image,
             phone: input.phone,
             hourlyRate: input.hourlyRate,
+            // ⬇️ VAT + country
+            country: countryForTenant,
+            vatRegistered: !!input.vatRegistered,
+            vatId: input.vatRegistered
+              ? input.vatId?.trim() || null // persist null if somehow empty
+              : null, // toggle off => clear explicitly
+            vatIdValid, // ⬅️ authoritative server flag
+
             user: currentUser!.id,
           },
           overrideAccess: true, // Bypass access control to ensure creation
@@ -482,6 +514,24 @@ export const authRouter = createTRPCRouter({
         subcategoryIds = subcategoryDocs.docs.map((doc) => doc.id);
       }
 
+      // Authoritative country: prefer user's profile ISO, then input, then DE
+      const countryForTenant = (
+        (currentUser.coordinates as UserCoordinates | undefined)?.countryISO ||
+        input.country ||
+        "DE"
+      ).toUpperCase();
+
+      let vatIdValid = false;
+      if (input.vatRegistered && input.vatId) {
+        try {
+          const { iso, vat } = normalizeVat(countryForTenant, input.vatId);
+          const res = await checkVatWithTimeout(iso, vat);
+          vatIdValid = !!res.valid;
+        } catch {
+          // keep false on failures/timeouts
+        }
+      }
+
       try {
         // Update the tenant with vendor profile data
         const updatedTenant = await ctx.db.update({
@@ -496,10 +546,15 @@ export const authRouter = createTRPCRouter({
             services: input.services,
             categories: categoryIds, // Array of category ObjectIds
             subcategories: subcategoryIds, // Array of subcategory ObjectIds
-            website: input.website,
+            website: normalizeUrl(input.website),
             image: input.image || undefined, // Pass the file ID for the relationship
             phone: input.phone,
             hourlyRate: input.hourlyRate, // This will be a number after schema transformation
+            // ⬇️ VAT + country
+            country: countryForTenant,
+            vatRegistered: !!input.vatRegistered,
+            vatId: input.vatRegistered ? input.vatId?.trim() || null : null, // toggle off => clear
+            vatIdValid: input.vatRegistered ? vatIdValid : false, // keep DB consistent
           },
         });
 
@@ -759,6 +814,11 @@ export const authRouter = createTRPCRouter({
         image: tenant.image, // This will now be the populated image object or null
         phone: tenant.phone || "",
         hourlyRate: tenant.hourlyRate || 1,
+        // ⬇️ VAT + country
+        country: (tenant.country as string) || "DE",
+        vatRegistered: !!tenant.vatRegistered,
+        vatId: (tenant.vatId as string) || "",
+        vatIdValid: !!tenant.vatIdValid,
       };
 
       return result;
