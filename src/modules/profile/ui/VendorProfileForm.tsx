@@ -138,12 +138,6 @@ export function VendorProfileForm() {
   // Update form values when vendor profile data is available
   useEffect(() => {
     if (vendorProfile) {
-      if (!vendorProfile) {
-        // brand new vendor profile – seed from General once
-        if (profileISO) form.setValue("country", profileISO);
-        return;
-      }
-
       form.reset({
         name: vendorProfile.name || "",
         firstName: vendorProfile.firstName || "",
