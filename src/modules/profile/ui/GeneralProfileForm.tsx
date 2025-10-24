@@ -50,11 +50,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const queryClient = useQueryClient();
 
   // Fetch user profile data from database
-  const {
-    data: userProfile,
-    isLoading,
-    isFetching,
-  } = useQuery(trpc.auth.getUserProfile.queryOptions());
+  const { data: userProfile, isLoading } = useQuery(
+    trpc.auth.getUserProfile.queryOptions()
+  );
 
   const updateUserProfile = useMutation(
     trpc.auth.updateUserProfile.mutationOptions({
@@ -440,7 +438,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                   <Select
                     value={field.value ?? getInitialLanguage()}
                     onValueChange={field.onChange}
-                    disabled={updateUserProfile.isPending || isFetching}
+                    disabled={
+                      updateUserProfile.isPending ||
+                      form.formState.isSubmitting ||
+                      isLoading
+                    }
                   >
                     <SelectTrigger className="w-full">
                       {SUPPORTED_LANGUAGES.find(

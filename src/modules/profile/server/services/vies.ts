@@ -40,7 +40,8 @@ export async function checkVat(
   vat: string,
   signal?: AbortSignal
 ): Promise<ViesResult> {
-  const cc = countryCode.toUpperCase();
+  const raw = countryCode.toUpperCase();
+  const cc = raw === "GR" ? "EL" : raw; // VIES quirk: EL, not GR
   const id = normalize(vat);
 
   // NOTE: fixed extra spaces you had before “countryCode=”

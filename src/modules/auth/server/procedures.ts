@@ -21,18 +21,12 @@ import {
   replaceCoordinates,
 } from "@/modules/profile/location-utils";
 import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
+import { normalizeVat } from "@/modules/profile/vat-validation-utils";
 
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
 
 // strip ISO prefix and separators from VAT for VIES check
-
-const normalizeVatForVies = (countryISO: string, raw: string) => {
-  const iso = (countryISO || "").toUpperCase().slice(0, 2);
-  let n = (raw || "").toUpperCase().replace(/[\s.\-]/g, "");
-  if (n.startsWith(iso)) n = n.slice(iso.length);
-  return { iso, vat: n };
-};
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
@@ -337,10 +331,7 @@ export const authRouter = createTRPCRouter({
         let vatIdValid = false;
         if (input.vatRegistered && input.vatId) {
           try {
-            const { iso, vat } = normalizeVatForVies(
-              countryForTenant,
-              input.vatId
-            );
+            const { iso, vat } = normalizeVat(countryForTenant, input.vatId);
             const res = await checkVatWithTimeout(iso, vat);
             vatIdValid = !!res.valid;
           } catch {
@@ -533,10 +524,7 @@ export const authRouter = createTRPCRouter({
       let vatIdValid = false;
       if (input.vatRegistered && input.vatId) {
         try {
-          const { iso, vat } = normalizeVatForVies(
-            countryForTenant,
-            input.vatId
-          );
+          const { iso, vat } = normalizeVat(countryForTenant, input.vatId);
           const res = await checkVatWithTimeout(iso, vat);
           vatIdValid = !!res.valid;
         } catch {

@@ -38,7 +38,8 @@ export function isEU(code?: string): code is EuIso2 {
 
 // NEW: mirror VIES behavior — strip country code & separators
 export const normalizeVat = (countryISO: string, raw: string) => {
-  const iso = (countryISO || "").toUpperCase().slice(0, 2);
+  const iso0 = (countryISO || "").toUpperCase().slice(0, 2);
+  const iso = iso0 === "GR" ? "EL" : iso0;
   let n = (raw || "").toUpperCase().replace(/[\s.\-]/g, "");
   if (n.startsWith(iso)) n = n.slice(iso.length);
   return { iso, vat: n };

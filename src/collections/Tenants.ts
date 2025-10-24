@@ -228,6 +228,7 @@ export const Tenants: CollectionConfig = {
           name: "vatId",
           type: "text",
           label: "VAT number (USt-IdNr / EU VAT)",
+          index: true,
           admin: {
             width: "67%",
             condition: (data) => Boolean(data?.vatRegistered),
@@ -240,8 +241,12 @@ export const Tenants: CollectionConfig = {
           label: "VAT ID validated (VIES)",
           defaultValue: false,
           admin: {
-            description: "Set true after VIES check",
+            readOnly: true,
+            description: "Set by server after VIES check",
             condition: (data) => Boolean(data?.vatRegistered),
+          },
+          access: {
+            update: ({ req }) => isSuperAdmin(req.user),
           },
         },
       ],

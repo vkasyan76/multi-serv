@@ -312,7 +312,7 @@ export interface Tenant {
    */
   vatId?: string | null;
   /**
-   * Set true after VIES check
+   * Set by server after VIES check
    */
   vatIdValid?: boolean | null;
   /**

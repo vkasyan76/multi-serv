@@ -127,10 +127,13 @@ export function VendorProfileForm() {
 
   // always sets the form country to the user’s country whenever userProfile changes:
   useEffect(() => {
-    if (profileISO && form.getValues("country") !== profileISO) {
-      form.setValue("country", profileISO);
+    if (!vendorProfile && profileISO) {
+      const st = form.getFieldState("country");
+      if (!st.isDirty && form.getValues("country") !== profileISO) {
+        form.setValue("country", profileISO);
+      }
     }
-  }, [profileISO, form]);
+  }, [vendorProfile, profileISO, form]);
 
   // Update form values when vendor profile data is available
   useEffect(() => {
