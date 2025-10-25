@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, keepPreviousData } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,7 +33,11 @@ export default function PayoutsPanel() {
 
   // Queries
   const statusQ = useQuery(trpc.auth.getStripeStatus.queryOptions());
-  const balanceQ = useQuery(trpc.auth.getStripeBalance.queryOptions());
+  // Prevent flicker on refetches: keepPreviousData
+  const balanceQ = useQuery({
+    ...trpc.auth.getStripeBalance.queryOptions(),
+    placeholderData: keepPreviousData,
+  });
 
   // Mutations
   const onboarding = useMutation(
@@ -117,15 +121,39 @@ export default function PayoutsPanel() {
     );
   }
 
-  // ---- helpers for table display
-  const ModeCell = () => (
-    <div className="inline-flex items-center gap-2">
-      <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/60" />
-      <span className="uppercase tracking-wide text-xs font-medium text-muted-foreground">
-        {process.env.NODE_ENV === "production" ? "LIVE" : "TEST"}
-      </span>
-    </div>
-  );
+  // ---- helpers for table display  - displays actual live / test mode from the tenant account status
+  const ModeCell = ({
+    live,
+    loading,
+  }: {
+    live?: boolean | null;
+    loading?: boolean;
+  }) => {
+    if (loading) {
+      return (
+        <div className="inline-flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" aria-label="Loading" />
+        </div>
+      );
+    }
+
+    const label = live === true ? "LIVE" : live === false ? "TEST" : "—";
+    const dotClass =
+      live === true
+        ? "bg-emerald-500"
+        : live === false
+          ? "bg-muted-foreground/60"
+          : "bg-muted-foreground/30";
+
+    return (
+      <div className="inline-flex items-center gap-2">
+        <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
+        <span className="uppercase tracking-wide text-xs font-medium text-muted-foreground">
+          {label}
+        </span>
+      </div>
+    );
+  };
 
   const BoolCell = ({ ok }: { ok: boolean }) => (
     <div className="flex items-center gap-2">
@@ -297,12 +325,17 @@ export default function PayoutsPanel() {
                         <BoolCell ok={!!s?.payoutsEnabled} />
                       </TableCell>
                     </TableRow>
-                    <TableRow>
-                      <TableCell>Mode</TableCell>
-                      <TableCell>
-                        <ModeCell />
-                      </TableCell>
-                    </TableRow>
+                    {s?.onboardingStatus === "completed" && (
+                      <TableRow>
+                        <TableCell>Mode</TableCell>
+                        <TableCell>
+                          <ModeCell
+                            live={balanceQ.data?.livemode}
+                            loading={balanceQ.isLoading && !balanceQ.data}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -329,28 +362,34 @@ export default function PayoutsPanel() {
                 <TableBody>
                   {balanceQ.isError ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        className="text-center text-red-600"
-                      >
-                        Couldn’t load balances.&nbsp;
-                        <button
-                          onClick={() => balanceQ.refetch()}
-                          className="underline font-medium"
-                          disabled={balanceQ.isFetching}
-                        >
-                          {balanceQ.isFetching ? "Retrying…" : "Retry"}
-                        </button>
+                      <TableCell colSpan={4} className="text-center">
+                        <div className="flex items-center justify-center gap-3 py-3">
+                          <AlertCircle className="h-5 w-5 text-red-600" />
+                          <span className="text-sm font-medium">
+                            Failed to load balances.
+                          </span>
+                          <Button size="sm" onClick={() => balanceQ.refetch()}>
+                            Retry
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (balanceQ.data?.balances ?? []).length === 0 ? (
                     <TableRow>
-                      {/* keep colSpan=4; hidden cells don’t render but table stays valid */}
                       <TableCell
                         colSpan={4}
                         className="text-center text-muted-foreground"
                       >
-                        {balanceQ.isLoading ? "Loading…" : "No balance yet"}
+                        {balanceQ.isLoading ? (
+                          <div className="flex items-center justify-center py-3">
+                            <Loader2
+                              className="h-4 w-4 animate-spin"
+                              aria-label="Loading"
+                            />
+                          </div>
+                        ) : (
+                          "No balance yet"
+                        )}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -359,15 +398,12 @@ export default function PayoutsPanel() {
                         <TableCell className="uppercase">
                           {row.currency}
                         </TableCell>
-
-                        {/* hidden on xs */}
                         <TableCell className="text-right hidden sm:table-cell">
                           {fmt(row.available, row.currency)}
                         </TableCell>
                         <TableCell className="text-right hidden sm:table-cell">
                           {fmt(row.pending, row.currency)}
                         </TableCell>
-
                         <TableCell className="text-right">
                           {fmt(row.total, row.currency)}
                         </TableCell>
@@ -377,7 +413,6 @@ export default function PayoutsPanel() {
 
                   <TableRow className="bg-muted/20">
                     <TableCell className="font-medium">Next Payout:</TableCell>
-                    {/* spans over the numeric columns; fine even when two are hidden */}
                     <TableCell colSpan={3} className="text-right">
                       {fmtDate(balanceQ.data?.estimatedNextPayoutAt)}
                     </TableCell>

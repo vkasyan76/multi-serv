@@ -1269,6 +1269,8 @@ export const authRouter = createTRPCRouter({
     })();
 
     return {
+      // NEW: per-account truth from Stripe
+      livemode: !!balance.livemode,
       balances, // [{ currency, available, pending, total }]
       schedule: s
         ? {
