@@ -5,10 +5,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
 import Link from "next/link";
 import {
-  Home,
   ExternalLink,
   Loader2,
   ShieldCheck,
@@ -27,12 +25,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getLocaleAndCurrency } from "@/modules/profile/location-utils";
+import SettingsHeader from "./SettingsHeader";
 
 export default function PayoutsPanel() {
   const trpc = useTRPC();
 
   // Queries
   const statusQ = useQuery(trpc.auth.getStripeStatus.queryOptions());
+  const balanceQ = useQuery(trpc.auth.getStripeBalance.queryOptions());
 
   // Mutations
   const onboarding = useMutation(
@@ -104,6 +105,18 @@ export default function PayoutsPanel() {
 
   if (statusQ.isLoading) return <LoadingPage />;
 
+  if (statusQ.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[320px] gap-4 px-4">
+        <AlertCircle className="h-12 w-12 text-red-600" />
+        <p className="text-lg font-medium">Failed to load payout status.</p>
+        <Button variant="elevated" onClick={() => statusQ.refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   // ---- helpers for table display
   const ModeCell = () => (
     <div className="inline-flex items-center gap-2">
@@ -159,52 +172,63 @@ export default function PayoutsPanel() {
     );
   };
 
+  // currency + date formatters for the Balance table
+  const { locale } = getLocaleAndCurrency();
+
+  const fmt = (cents: number, currency: string) => {
+    const amount = (cents ?? 0) / 100;
+
+    try {
+      // Use the user's locale + the row's currency
+      return new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        // reasonable defaults; Stripe balances are in minor units
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    } catch {
+      // Fallback in case of an unknown/unsupported currency code
+      return `${amount.toFixed(2)} ${currency.toUpperCase()}`;
+    }
+  };
+
+  const fmtDate = (iso?: string | null) =>
+    iso
+      ? new Intl.DateTimeFormat(locale, {
+          day: "numeric",
+          month: "long", // Month in words, localized
+          year: "numeric",
+        }).format(new Date(iso))
+      : "—";
+
   // ---- UI
   return (
-    <div className="flex flex-col gap-2 px-4 py-4 sm:px-6 md:px-8 overflow-y-auto max-h-[calc(100vh-7rem)] md:max-h-none">
+    <div className="flex flex-col gap-2 px-3 sm:px-6 md:px-8 py-4 pb-24 overflow-auto">
       {/* Responsive header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <div className="flex items-center gap-4">
-          <Image
-            src="/images/infinisimo_logo_illustrator.png"
-            alt="Infinisimo Logo"
-            width={44}
-            height={44}
-            className="rounded-full bg-white"
-            priority
-          />
-          <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
-            Payments &amp; Payouts
-          </h1>
-        </div>
-
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 self-start sm:self-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-        >
-          <Home className="w-5 h-5 text-muted-foreground" />
-          <span className="text-sm sm:text-base font-medium">Home</span>
-        </Link>
-      </div>
+      <SettingsHeader title="Payments & Payouts" />
 
       <Card className="overflow-hidden">
         {/* Stripe accent */}
-        <div className="h-1 w-full bg-gradient-to-r from-[#635BFF] via-[#635BFF] to-[#24B47E]" />
+        {/* <div className="h-1 w-full bg-gradient-to-r from-[#635BFF] via-[#635BFF] to-[#24B47E]" /> */}
 
-        <CardContent className="space-y-6 p-4 sm:p-6">
+        <CardContent className="space-y-4 sm:space-y-6 px-3 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-1">
           {/* Stripe-themed banner */}
           <div className="rounded-lg border border-[#E6EBF1] bg-[#F6F9FC] p-4 text-[#0A2540]">
             <div className="flex items-start gap-3">
               <ShieldCheck className="mt-0.5 h-5 w-5 text-muted-foreground" />
-              <p className="font-medium">{banner}</p>
+              <p className="font-medium text-sm leading-5 sm:text-base sm:leading-6">
+                {banner}
+              </p>
             </div>
           </div>
 
-          {/* Actions + Status in two columns (stack on small screens) */}
+          {/* Actions + tables in two columns (stack on small screens) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            {/* Left column: vertical buttons */}
+            {/* LEFT: buttons + Status table */}
             <div className="flex flex-col gap-3">
               <Button
+                variant="elevated"
                 onClick={onStartOrResume}
                 disabled={onboardingBusy || !s?.hasTenant}
                 className="justify-between bg-black text-white hover:bg-pink-400 hover:text-primary"
@@ -223,7 +247,7 @@ export default function PayoutsPanel() {
               </Button>
 
               <Button
-                variant="secondary"
+                variant="elevated"
                 onClick={onOpenDashboard}
                 disabled={dashboardBusy || !s?.hasTenant}
                 className="justify-between"
@@ -244,40 +268,118 @@ export default function PayoutsPanel() {
                   </Button>
                 </Link>
               )}
+
+              {/* Status table UNDER the buttons */}
+              <div className="rounded-lg border bg-background overflow-hidden mt-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40">
+                      <TableHead className="w-1/3">Field</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>Onboarding</TableCell>
+                      <TableCell>
+                        <OnboardingCell status={s?.onboardingStatus} />
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Charges</TableCell>
+                      <TableCell>
+                        <BoolCell ok={!!s?.chargesEnabled} />
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Payouts</TableCell>
+                      <TableCell>
+                        <BoolCell ok={!!s?.payoutsEnabled} />
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Mode</TableCell>
+                      <TableCell>
+                        <ModeCell />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
             </div>
 
-            {/* Right column: shadcn Table with icons */}
+            {/* RIGHT: Balance & Payouts table */}
             <div className="rounded-lg border bg-background overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/40">
-                    <TableHead className="w-1/3">Field</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="w-1/3">Currency</TableHead>
+
+                    {/* hidden on xs */}
+                    <TableHead className="text-right hidden sm:table-cell">
+                      Available
+                    </TableHead>
+                    <TableHead className="text-right hidden sm:table-cell">
+                      Pending
+                    </TableHead>
+
+                    <TableHead className="text-right">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell>Onboarding</TableCell>
-                    <TableCell>
-                      <OnboardingCell status={s?.onboardingStatus} />
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Charges</TableCell>
-                    <TableCell>
-                      <BoolCell ok={!!s?.chargesEnabled} />
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Payouts</TableCell>
-                    <TableCell>
-                      <BoolCell ok={!!s?.payoutsEnabled} />
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Mode</TableCell>
-                    <TableCell>
-                      <ModeCell />
+                  {balanceQ.isError ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="text-center text-red-600"
+                      >
+                        Couldn’t load balances.&nbsp;
+                        <button
+                          onClick={() => balanceQ.refetch()}
+                          className="underline font-medium"
+                          disabled={balanceQ.isFetching}
+                        >
+                          {balanceQ.isFetching ? "Retrying…" : "Retry"}
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ) : (balanceQ.data?.balances ?? []).length === 0 ? (
+                    <TableRow>
+                      {/* keep colSpan=4; hidden cells don’t render but table stays valid */}
+                      <TableCell
+                        colSpan={4}
+                        className="text-center text-muted-foreground"
+                      >
+                        {balanceQ.isLoading ? "Loading…" : "No balance yet"}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    balanceQ.data!.balances.map((row) => (
+                      <TableRow key={row.currency}>
+                        <TableCell className="uppercase">
+                          {row.currency}
+                        </TableCell>
+
+                        {/* hidden on xs */}
+                        <TableCell className="text-right hidden sm:table-cell">
+                          {fmt(row.available, row.currency)}
+                        </TableCell>
+                        <TableCell className="text-right hidden sm:table-cell">
+                          {fmt(row.pending, row.currency)}
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          {fmt(row.total, row.currency)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+
+                  <TableRow className="bg-muted/20">
+                    <TableCell className="font-medium">Next Payout:</TableCell>
+                    {/* spans over the numeric columns; fine even when two are hidden */}
+                    <TableCell colSpan={3} className="text-right">
+                      {fmtDate(balanceQ.data?.estimatedNextPayoutAt)}
                     </TableCell>
                   </TableRow>
                 </TableBody>

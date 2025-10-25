@@ -51,8 +51,9 @@ import { NumericFormat, NumberFormatValues } from "react-number-format";
 import PhoneInput from "react-phone-number-input";
 import type { Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { Home, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import SettingsHeader from "./SettingsHeader"; // responsive reusable profile tabs header
 
 import Link from "next/link";
 
@@ -471,16 +472,7 @@ export function VendorProfileForm() {
             setIsUploading(false);
           }
         }
-
-        // Update existing vendor profile
-        // const updatedValues = {
-        //   ...values,
-        //   image: imageData,
-        //   country: finalCountry,
-        // };
-
         // Await to avoid races
-        // await updateVendorProfile.mutateAsync(updatedValues);
         await updateVendorProfile.mutateAsync({
           ...payload,
           image: imageData,
@@ -641,26 +633,7 @@ export function VendorProfileForm() {
         className="flex flex-col gap-2 p-4 lg:p-7 overflow-y-auto max-h-[80vh]"
         autoComplete="off"
       >
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Image
-              src="/images/infinisimo_logo_illustrator.png"
-              alt="Infinisimo Logo"
-              width={48}
-              height={48}
-              className="rounded-full bg-white"
-              priority
-            />
-            <h1 className="text-3xl font-bold">Service Provider Settings</h1>
-          </div>
-          <Link
-            href="/"
-            className="flex items-center gap-3 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            <Home className="w-6 h-6" />
-            <span className="text-base font-medium">Home</span>
-          </Link>
-        </div>
+        <SettingsHeader title="Service Provider Settings" />
 
         {/* payments onboarding reminder */}
         {vendorProfile &&

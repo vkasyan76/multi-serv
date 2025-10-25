@@ -31,15 +31,15 @@ import type {
   PlacePrediction,
   SelectedLocation,
 } from "@/modules/tenants/types";
-import Image from "next/image";
+
 import { toast } from "sonner";
 import { FieldErrors } from "react-hook-form";
 import { PROFILE_FIELD_LABELS } from "@/modules/profile/schemas";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
-import { Home, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import SettingsHeader from "./SettingsHeader"; // responsive reusable profile tabs header
 
 interface GeneralProfileFormProps {
   onSuccess?: () => void;
@@ -290,26 +290,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         autoComplete="off"
         // Remove the key prop that was causing form re-renders
       >
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Image
-              src="/images/infinisimo_logo_illustrator.png"
-              alt="Infinisimo Logo"
-              width={48}
-              height={48}
-              className="rounded-full bg-white"
-              priority
-            />
-            <h1 className="text-3xl font-bold">Profile settings</h1>
-          </div>
-          <Link
-            href="/"
-            className="flex items-center gap-3 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            <Home className="w-6 h-6" />
-            <span className="text-base font-medium">Home</span>
-          </Link>
-        </div>
+        <SettingsHeader title="Profile settings" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <FormField
