@@ -22,6 +22,7 @@ import {
 } from "@/modules/profile/location-utils";
 import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
 import { normalizeVat } from "@/modules/profile/vat-validation-utils";
+import Stripe from "stripe";
 
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
@@ -1174,6 +1175,112 @@ export const authRouter = createTRPCRouter({
       chargesEnabled,
       payoutsEnabled,
       requirementsDue,
+    };
+  }),
+
+  // --- Balance + payout schedule snapshot for the connected account ---
+
+  getStripeBalance: clerkProcedure.query(async ({ ctx }) => {
+    const { stripeAccountId } = await resolveUserTenant(ctx.db, ctx.userId);
+
+    // Fetch balance + account concurrently
+    const [balance, account] = await Promise.all([
+      stripe.balance.retrieve(undefined, { stripeAccount: stripeAccountId }), // connected acct
+      stripe.accounts.retrieve(stripeAccountId) as Promise<Stripe.Account>,
+    ]);
+
+    // --- Aggregate available + pending by currency (amounts in smallest unit) ---
+    type Totals = { available: number; pending: number };
+    const totals: Record<string, Totals> = {};
+
+    const bump = (
+      rows: Stripe.Balance.Available[] | Stripe.Balance.Pending[],
+      key: keyof Totals
+    ) => {
+      for (const { amount, currency } of rows) {
+        const k = currency.toLowerCase();
+        (totals[k] ??= { available: 0, pending: 0 })[key] += amount;
+      }
+    };
+
+    bump(balance.available, "available");
+    bump(balance.pending, "pending");
+
+    const balances = Object.entries(totals).map(([currency, t]) => ({
+      currency,
+      available: t.available,
+      pending: t.pending,
+      total: t.available + t.pending,
+    }));
+
+    // --- Payout schedule + best-effort next payout date (no i18n strings) ---
+    type Schedule = NonNullable<
+      NonNullable<Stripe.Account["settings"]>["payouts"]
+    >["schedule"];
+    const s: Schedule | null = account.settings?.payouts?.schedule ?? null;
+
+    const addDays = (d: Date, n: number) => {
+      const x = new Date(d);
+      x.setDate(x.getDate() + n);
+      return x;
+    };
+
+    const estimatedNextPayoutAt = (() => {
+      if (!s || s.interval === "manual") return null;
+      const delay =
+        typeof s.delay_days === "number" ? Math.max(0, s.delay_days) : 0;
+      const now = new Date();
+
+      if (s.interval === "daily") {
+        return addDays(now, delay + 1).toISOString();
+      }
+
+      if (s.interval === "weekly" && s.weekly_anchor) {
+        const WEEKDAY: Record<
+          NonNullable<Schedule["weekly_anchor"]>,
+          number
+        > = {
+          monday: 0,
+          tuesday: 1,
+          wednesday: 2,
+          thursday: 3,
+          friday: 4,
+          saturday: 5,
+          sunday: 6,
+        };
+        const target = WEEKDAY[s.weekly_anchor];
+        if (typeof target !== "number") return null;
+        const today = (now.getDay() + 6) % 7; // Mon=0..Sun=6
+        const delta = (target - today + 7) % 7 || 7; // >= 1 day ahead
+        return addDays(now, delay + delta).toISOString();
+      }
+
+      if (s.interval === "monthly" && typeof s.monthly_anchor === "number") {
+        const day = Math.min(Math.max(1, s.monthly_anchor), 28); // avoid end-of-month traps
+        const candidate = new Date(now.getFullYear(), now.getMonth(), day);
+        const base =
+          now < candidate
+            ? candidate
+            : new Date(now.getFullYear(), now.getMonth() + 1, day);
+        return addDays(base, delay).toISOString();
+      }
+
+      return null;
+    })();
+
+    return {
+      // NEW: per-account truth from Stripe
+      livemode: !!balance.livemode,
+      balances, // [{ currency, available, pending, total }]
+      schedule: s
+        ? {
+            interval: s.interval, // "daily" | "weekly" | "monthly" | "manual"
+            weekly_anchor: s.weekly_anchor ?? null,
+            monthly_anchor: s.monthly_anchor ?? null,
+            delay_days: typeof s.delay_days === "number" ? s.delay_days : null,
+          }
+        : null,
+      estimatedNextPayoutAt, // ISO string or null
     };
   }),
 });
