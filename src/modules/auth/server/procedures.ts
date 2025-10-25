@@ -1185,7 +1185,7 @@ export const authRouter = createTRPCRouter({
 
     // Fetch balance + account concurrently
     const [balance, account] = await Promise.all([
-      stripe.balance.retrieve({ stripeAccount: stripeAccountId }),
+      stripe.balance.retrieve(undefined, { stripeAccount: stripeAccountId }), // connected acct
       stripe.accounts.retrieve(stripeAccountId) as Promise<Stripe.Account>,
     ]);
 

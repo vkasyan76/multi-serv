@@ -265,7 +265,7 @@ export default function PayoutsPanel() {
                 <span>
                   {s?.onboardingStatus === "completed"
                     ? "Update Stripe Details"
-                    : "Start / Resume Onboarding"}
+                    : "Onboarding"}
                 </span>
                 {onboardingBusy ? (
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
