@@ -22,3 +22,14 @@ export function generateTenantUrl(tenantSlug: string) {
   // In production, use subdomain routing
   return `${protocol}://${tenantSlug}.${domain}`;
 }
+
+// used in tenant dashboard navbar
+export const tenantPublicHref = (slug: string) =>
+  process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true"
+    ? "/"
+    : `/tenants/${slug}`;
+
+export const platformHomeHref = () =>
+  process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true"
+    ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}` // e.g. https://infinisimo.com
+    : `/`;

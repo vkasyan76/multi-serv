@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { Home, UserCog } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, tenantPublicHref, platformHomeHref } from "@/lib/utils";
 import { Poppins } from "next/font/google";
 import DashboardSubnav from "./dashboard-subnav";
 import {
@@ -28,7 +28,8 @@ export default function DashboardNavbar({ slug }: Props) {
   );
 
   const avatarUrl = tenant?.image?.url ?? null;
-
+  const publicHref = tenantPublicHref(slug); // avatar/name (tenant public)
+  const homeHref = platformHomeHref(); // home icon (platform root)
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
       <div className="mx-auto max-w-[var(--breakpoint-xl)] px-3 sm:px-4 lg:px-12">
@@ -39,7 +40,7 @@ export default function DashboardNavbar({ slug }: Props) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href={`/tenants/${slug}`}
+                  href={publicHref}
                   className="flex items-center gap-2 min-w-0"
                   aria-label="View my Page"
                 >
@@ -88,7 +89,7 @@ export default function DashboardNavbar({ slug }: Props) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
-                    href="/"
+                    href={homeHref} // due to domain re-write in production, this goes to home
                     className="p-2 rounded-full hover:bg-muted"
                     aria-label="Home"
                   >
@@ -106,7 +107,7 @@ export default function DashboardNavbar({ slug }: Props) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
-                    href={`/tenants/${slug}`}
+                    href={publicHref}
                     className="flex items-center gap-2 min-w-0"
                     aria-label="Open public page"
                   >
@@ -141,7 +142,7 @@ export default function DashboardNavbar({ slug }: Props) {
                   <UserCog className="h-7 w-7" />
                 </Link>
                 <Link
-                  href="/"
+                  href={homeHref} // due to domain re-write in production, this goes to home
                   className="p-2 rounded-full hover:bg-muted"
                   aria-label="Home"
                 >
