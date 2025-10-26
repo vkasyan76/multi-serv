@@ -32,10 +32,10 @@ export default function DashboardNavbar({ slug }: Props) {
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
       <div className="mx-auto max-w-[var(--breakpoint-xl)] px-3 sm:px-4 lg:px-12">
-        {/* lg+: one row */}
-        <div className="hidden lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-4 lg:h-16">
-          {/* Left: avatar+name → link to public page (no globe) */}
-          <TooltipProvider>
+        <TooltipProvider>
+          {/* lg+: one row */}
+          <div className="hidden lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-4 lg:h-16">
+            {/* Left: avatar+name → public page */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
@@ -64,16 +64,14 @@ export default function DashboardNavbar({ slug }: Props) {
               </TooltipTrigger>
               <TooltipContent>View my Page</TooltipContent>
             </Tooltip>
-          </TooltipProvider>
 
-          {/* Center: perfectly centered subnav */}
-          <div className="justify-self-center">
-            <DashboardSubnav />
-          </div>
+            {/* Center: subnav */}
+            <div className="justify-self-center">
+              <DashboardSubnav />
+            </div>
 
-          {/* Right: icon-only actions (bigger) */}
-          <div className="flex items-center justify-end gap-4">
-            <TooltipProvider>
+            {/* Right: icons */}
+            <div className="flex items-center justify-end gap-4">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
@@ -86,9 +84,7 @@ export default function DashboardNavbar({ slug }: Props) {
                 </TooltipTrigger>
                 <TooltipContent>My Profile</TooltipContent>
               </Tooltip>
-            </TooltipProvider>
 
-            <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
@@ -101,14 +97,12 @@ export default function DashboardNavbar({ slug }: Props) {
                 </TooltipTrigger>
                 <TooltipContent>Home</TooltipContent>
               </Tooltip>
-            </TooltipProvider>
+            </div>
           </div>
-        </div>
 
-        {/* <lg: two rows (info then subnav) */}
-        <div className="lg:hidden">
-          <div className="h-14 sm:h-16 flex items-center justify-between gap-3">
-            <TooltipProvider>
+          {/* <lg: two rows */}
+          <div className="lg:hidden">
+            <div className="h-14 sm:h-16 flex items-center justify-between gap-3">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
@@ -137,32 +131,32 @@ export default function DashboardNavbar({ slug }: Props) {
                 </TooltipTrigger>
                 <TooltipContent>Open public page</TooltipContent>
               </Tooltip>
-            </TooltipProvider>
 
-            <div className="flex items-center gap-3">
-              <Link
-                href="/profile?tab=vendor"
-                className="p-2 rounded-full hover:bg-muted"
-                aria-label="Vendor profile"
-              >
-                <UserCog className="h-7 w-7" />
-              </Link>
-              <Link
-                href="/"
-                className="p-2 rounded-full hover:bg-muted"
-                aria-label="Home"
-              >
-                <Home className="h-7 w-7" />
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/profile?tab=vendor"
+                  className="p-2 rounded-full hover:bg-muted"
+                  aria-label="Vendor profile"
+                >
+                  <UserCog className="h-7 w-7" />
+                </Link>
+                <Link
+                  href="/"
+                  className="p-2 rounded-full hover:bg-muted"
+                  aria-label="Home"
+                >
+                  <Home className="h-7 w-7" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="border-t bg-white/90 backdrop-blur">
+              <div className="h-12 sm:h-14 flex items-center justify-center px-3">
+                <DashboardSubnav />
+              </div>
             </div>
           </div>
-
-          <div className="border-t bg-white/90 backdrop-blur">
-            <div className="h-12 sm:h-14 flex items-center justify-center px-3">
-              <DashboardSubnav />
-            </div>
-          </div>
-        </div>
+        </TooltipProvider>
       </div>
     </nav>
   );
