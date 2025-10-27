@@ -5,6 +5,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 import { getQueryClient, trpc } from "@/trpc/server";
 import { loadTenantFilters } from "@/modules/tenants/hooks/search-params";
+import { notFound } from "next/navigation";
 
 interface Props {
   // Next.js asynchronously provides params
@@ -15,18 +16,29 @@ interface Props {
 const Page = async ({ params, searchParams }: Props) => {
   const { category } = await params;
 
+  // validate category against your backend list (allow "all")
+  const queryClient = getQueryClient();
+  const categories = await queryClient.fetchQuery(
+    trpc.categories.getMany.queryOptions()
+  );
+
+  const isValid =
+    category === "all" || categories.some((c) => c.slug === category);
+
+  if (!isValid) notFound(); // <- guard unknown slugs
+
+  // filters
+
   const filters = await loadTenantFilters(searchParams);
 
-  const queryClient = getQueryClient();
-  
   // Note: getUserProfile is fetched conditionally in TenantList component
   // No need to prefetch here for anonymous users
 
   // Prefetch tenants with infinite query options
   void queryClient.prefetchInfiniteQuery(
     trpc.tenants.getMany.infiniteQueryOptions(
-      { 
-        category, 
+      {
+        category,
         subcategory: null,
         ...filters,
         userLat: null, // Will be filled by client

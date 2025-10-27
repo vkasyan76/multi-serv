@@ -28,6 +28,15 @@ export const SearchInput = ({
   const trpc = useTRPC();
   const session = useQuery(trpc.auth.session.queryOptions());
 
+  // show Orders button only for users with paid/refunded orders
+  const hasOrdersQ = useQuery({
+    ...trpc.orders.hasAnyPaidMine.queryOptions(),
+    enabled: !!session.data?.user?.id, // only when signed in
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const showOrders = !!hasOrdersQ.data?.hasAny;
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [searchValue, setSearchValue] = useState(defaultValue || "");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -59,15 +68,15 @@ export const SearchInput = ({
         <ListFilterIcon className="size-4" />
       </Button>
       {/* library button */}
-      {session.data?.user && (
+      {showOrders && (
         <Button
           asChild
           variant="elevated"
           className="h-12" // to match the input height
         >
-          <Link href="/library">
+          <Link href="/orders">
             <BookmarkCheckIcon />
-            Library
+            My Orders
           </Link>
         </Button>
       )}
