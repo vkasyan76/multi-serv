@@ -1,10 +1,15 @@
 import { Language } from "@googlemaps/google-maps-services-js";
-import type { UserCoordinates, SelectedLocation } from "@/modules/tenants/types";
+import type {
+  UserCoordinates,
+  SelectedLocation,
+} from "@/modules/tenants/types";
 
 // IP Geolocation helper function using ipapi.co service
 // This provides accurate, production-ready IP geolocation with EU country detection
 // Free tier available: https://ipapi.co/
-export async function getLocationFromIP(ip: string): Promise<UserCoordinates | undefined> {
+export async function getLocationFromIP(
+  ip: string
+): Promise<UserCoordinates | undefined> {
   try {
     const isProd = process.env.NODE_ENV === "production";
     if (!isProd) console.log("IP Geolocation - fetching location");
@@ -12,7 +17,9 @@ export async function getLocationFromIP(ip: string): Promise<UserCoordinates | u
     // Timeout-hardened fetch
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
-    const response = await fetch(`https://ipapi.co/${ip}/json/`, { signal: controller.signal });
+    const response = await fetch(`https://ipapi.co/${ip}/json/`, {
+      signal: controller.signal,
+    });
     clearTimeout(timeout);
 
     if (!response.ok) {
@@ -27,13 +34,42 @@ export async function getLocationFromIP(ip: string): Promise<UserCoordinates | u
     }
 
     // Check if it's an EU country
-    const euCountries = ['DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'PL', 'CZ', 'SK', 'HU', 'RO', 'BG', 'HR', 'SI', 'GR', 'PT', 'DK', 'SE', 'FI', 'LU', 'MT', 'CY', 'EE', 'LV', 'LT', 'IE'];
+    const euCountries = [
+      "DE",
+      "FR",
+      "IT",
+      "ES",
+      "NL",
+      "BE",
+      "AT",
+      "PL",
+      "CZ",
+      "SK",
+      "HU",
+      "RO",
+      "BG",
+      "HR",
+      "SI",
+      "GR",
+      "PT",
+      "DK",
+      "SE",
+      "FI",
+      "LU",
+      "MT",
+      "CY",
+      "EE",
+      "LV",
+      "LT",
+      "IE",
+    ];
 
     if (data.country_code && euCountries.includes(data.country_code)) {
       const lat = Number(data.latitude);
       const lng = Number(data.longitude);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        if (!isProd) console.error("IP geolocation missing/invalid lat/lng:", data);
+        if (!isProd)
+          console.error("IP geolocation missing/invalid lat/lng:", data);
         return undefined;
       }
       const result = {
@@ -46,15 +82,18 @@ export async function getLocationFromIP(ip: string): Promise<UserCoordinates | u
         postalCode: null,
         street: null,
         ipDetected: true,
-        manuallySet: false
+        manuallySet: false,
       };
       if (!isProd) console.log("IP Geolocation - extracted EU location");
       return result;
     }
 
-    if (!isProd) console.log("IP Geolocation - IP not from EU country:", data.country_code);
+    if (!isProd)
+      console.log(
+        "IP Geolocation - IP not from EU country:",
+        data.country_code
+      );
     return undefined;
-
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       console.log("IP geolocation failed:", error);
@@ -67,8 +106,8 @@ export async function getLocationFromIP(ip: string): Promise<UserCoordinates | u
 export function extractCityFromAddress(address: string): string {
   // Try to extract city from Google Places formatted address
   // Common patterns: "City Name, Region, Country" or "Street, City, Country"
-  const parts = address.split(',').map(part => part.trim());
-  
+  const parts = address.split(",").map((part) => part.trim());
+
   // If we have at least 2 parts, the city is usually the second part
   // (first part is often street address, last part is country)
   if (parts.length >= 2) {
@@ -78,7 +117,7 @@ export function extractCityFromAddress(address: string): string {
       return cityPart;
     }
   }
-  
+
   // Fallback: use first part if it looks like a city name
   if (parts.length > 0) {
     const firstPart = parts[0];
@@ -87,13 +126,13 @@ export function extractCityFromAddress(address: string): string {
       return firstPart;
     }
   }
-  
-  return '';
+
+  return "";
 }
 
 export function extractRegionFromAddress(address: string): string {
-  const parts = address.split(',').map(part => part.trim());
-  
+  const parts = address.split(",").map((part) => part.trim());
+
   // Region is usually the third part in "City, Region, Country" format
   if (parts.length >= 3) {
     const regionPart = parts[2];
@@ -101,35 +140,42 @@ export function extractRegionFromAddress(address: string): string {
       return regionPart;
     }
   }
-  
+
   // Fallback: try to find a part that looks like a region/state
   for (let i = 1; i < parts.length - 1; i++) {
     const part = parts[i];
-    if (part && part.length > 0 && !part.includes('Street') && !part.includes('Road')) {
+    if (
+      part &&
+      part.length > 0 &&
+      !part.includes("Street") &&
+      !part.includes("Road")
+    ) {
       return part;
     }
   }
-  
-  return '';
+
+  return "";
 }
 
 // Helper function to extract IP from request headers (handles proxy scenarios)
 export function extractIPFromHeaders(headers: Headers): string {
   // Try multiple IP headers in order of preference
   const possibleIPs = [
-    headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-    headers.get('x-real-ip'),
-    headers.get('x-client-ip'),
-    headers.get('cf-connecting-ip'), // Cloudflare
-    headers.get('x-forwarded'),
-    headers.get('forwarded')?.split(',')[0]?.split('=')[1]?.trim(),
+    headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+    headers.get("x-real-ip"),
+    headers.get("x-client-ip"),
+    headers.get("cf-connecting-ip"), // Cloudflare
+    headers.get("x-forwarded"),
+    headers.get("forwarded")?.split(",")[0]?.split("=")[1]?.trim(),
   ].filter(Boolean);
 
-  return possibleIPs[0] || '127.0.0.1';
+  return possibleIPs[0] || "127.0.0.1";
 }
 
 // Helper function to check if coordinates are valid (zero-friendly)
-export function hasValidCoordinates(coordinates: unknown): coordinates is UserCoordinates {
+export function hasValidCoordinates(
+  coordinates: unknown
+): coordinates is UserCoordinates {
   if (!coordinates || typeof coordinates !== "object") return false;
   const coords = coordinates as Record<string, unknown>;
   return Number.isFinite(coords.lat) && Number.isFinite(coords.lng);
@@ -159,9 +205,16 @@ export function replaceCoordinates(
 }
 
 // Extract structured address components from Google Place Details
-export function extractAddressComponents(components: Array<{ types: string[]; long_name?: string; short_name?: string }>): Partial<SelectedLocation> {
-  const get = (type: string) => components.find(comp => comp.types.includes(type));
-  
+export function extractAddressComponents(
+  components: Array<{
+    types: string[];
+    long_name?: string;
+    short_name?: string;
+  }>
+): Partial<SelectedLocation> {
+  const get = (type: string) =>
+    components.find((comp) => comp.types.includes(type));
+
   const city =
     get("locality")?.long_name ||
     get("postal_town")?.long_name ||
@@ -174,7 +227,8 @@ export function extractAddressComponents(components: Array<{ types: string[]; lo
   // Enhanced street extraction - properly concatenate route and street number
   const route = get("route")?.long_name;
   const streetNumber = get("street_number")?.long_name;
-  const street = route && streetNumber ? `${route} ${streetNumber}` : route || undefined;
+  const street =
+    route && streetNumber ? `${route} ${streetNumber}` : route || undefined;
 
   return {
     city,
@@ -201,91 +255,93 @@ export function extractCountry(address: string): string {
 export function getCountryCodeFromName(countryName: string): string {
   const countryMap: Record<string, string> = {
     // EU Member States
-    "Germany": "DE",
-    "Deutschland": "DE",
-    "France": "FR",
-    "Italy": "IT",
-    "Italia": "IT",
-    "Spain": "ES",
-    "España": "ES",
-    "Netherlands": "NL",
-    "Nederland": "NL",
-    "Belgium": "BE",
-    "België": "BE",
-    "Austria": "AT",
-    "Österreich": "AT",
-    "Poland": "PL",
-    "Polska": "PL",
+    Germany: "DE",
+    Deutschland: "DE",
+    France: "FR",
+    Italy: "IT",
+    Italia: "IT",
+    Spain: "ES",
+    España: "ES",
+    Netherlands: "NL",
+    Nederland: "NL",
+    Belgium: "BE",
+    België: "BE",
+    Austria: "AT",
+    Österreich: "AT",
+    Poland: "PL",
+    Polska: "PL",
     "Czech Republic": "CZ",
-    "Czechia": "CZ",
-    "Slovakia": "SK",
-    "Slovensko": "SK",
-    "Hungary": "HU",
-    "Magyarország": "HU",
-    "Romania": "RO",
-    "România": "RO",
-    "Bulgaria": "BG",
-    "България": "BG",
-    "Croatia": "HR",
-    "Hrvatska": "HR",
-    "Slovenia": "SI",
-    "Slovenija": "SI",
-    "Greece": "GR",
-    "Ελλάδα": "GR",
-    "Portugal": "PT",
-    "Denmark": "DK",
-    "Danmark": "DK",
-    "Sweden": "SE",
-    "Sverige": "SE",
-    "Finland": "FI",
-    "Suomi": "FI",
-    "Luxembourg": "LU",
-    "Lëtzebuerg": "LU",
-    "Malta": "MT",
-    "Cyprus": "CY",
-    "Κύπρος": "CY",
-    "Estonia": "EE",
-    "Eesti": "EE",
-    "Latvia": "LV",
-    "Latvija": "LV",
-    "Lithuania": "LT",
-    "Lietuva": "LT",
-    "Ireland": "IE",
-    "Éire": "IE",
-    
+    Czechia: "CZ",
+    Slovakia: "SK",
+    Slovensko: "SK",
+    Hungary: "HU",
+    Magyarország: "HU",
+    Romania: "RO",
+    România: "RO",
+    Bulgaria: "BG",
+    България: "BG",
+    Croatia: "HR",
+    Hrvatska: "HR",
+    Slovenia: "SI",
+    Slovenija: "SI",
+    Greece: "GR",
+    Ελλάδα: "GR",
+    Portugal: "PT",
+    Denmark: "DK",
+    Danmark: "DK",
+    Sweden: "SE",
+    Sverige: "SE",
+    Finland: "FI",
+    Suomi: "FI",
+    Luxembourg: "LU",
+    Lëtzebuerg: "LU",
+    Malta: "MT",
+    Cyprus: "CY",
+    Κύπρος: "CY",
+    Estonia: "EE",
+    Eesti: "EE",
+    Latvia: "LV",
+    Latvija: "LV",
+    Lithuania: "LT",
+    Lietuva: "LT",
+    Ireland: "IE",
+    Éire: "IE",
+
     // Non-EU European countries
     "United Kingdom": "GB",
-    "UK": "GB",
+    UK: "GB",
     "Great Britain": "GB",
-    "England": "GB",
-    "Scotland": "GB",
-    "Wales": "GB",
+    England: "GB",
+    Scotland: "GB",
+    Wales: "GB",
     "Northern Ireland": "GB",
-    "Switzerland": "CH",
-    "Schweiz": "CH",
-    "Suisse": "CH",
-    "Ukraine": "UA",
-    "Україна": "UA",
+    Switzerland: "CH",
+    Schweiz: "CH",
+    Suisse: "CH",
+    Ukraine: "UA",
+    Україна: "UA",
   };
 
   // Normalize country name for matching
   const normalizedCountry = countryName.trim().toLowerCase();
-  
+
   // Try exact match first
   for (const [country, code] of Object.entries(countryMap)) {
     if (country.toLowerCase() === normalizedCountry) {
       return code;
     }
   }
-  
+
   // Try partial match for common variations
   for (const [country, code] of Object.entries(countryMap)) {
-    if (country.toLowerCase().includes(normalizedCountry) || 
-        normalizedCountry.includes(country.toLowerCase())) {
+    if (
+      country.toLowerCase().includes(normalizedCountry) ||
+      normalizedCountry.includes(country.toLowerCase())
+    ) {
       return code;
     }
   }
-  
+
   // Default to Germany if no match found
   return "DE";
 }
@@ -333,13 +389,19 @@ export function getLocaleAndCurrency() {
 }
 
 // Add this new helper function
-export function normalizeToSupported(code?: string): "en" | "es" | "fr" | "de" | "it" | "pt" {
+export function normalizeToSupported(
+  code?: string
+): "en" | "es" | "fr" | "de" | "it" | "pt" {
   const fallback = getInitialLanguage();
   if (!code) return fallback;
-  
-  const short = code.split(',')[0]?.split('-')[0] ?? code;
+
+  const short = code.split(",")[0]?.split("-")[0] ?? code;
   const supportedCodes = ["en", "es", "fr", "de", "it", "pt"] as const;
-  return supportedCodes.includes(short as "en" | "es" | "fr" | "de" | "it" | "pt") ? short as "en" | "es" | "fr" | "de" | "it" | "pt" : fallback;
+  return supportedCodes.includes(
+    short as "en" | "es" | "fr" | "de" | "it" | "pt"
+  )
+    ? (short as "en" | "es" | "fr" | "de" | "it" | "pt")
+    : fallback;
 }
 
 // New helper functions for consistent location display formatting
@@ -355,7 +417,7 @@ export function countryNameFromCode(code?: string, locale = "en"): string {
 
 export function formatLocationFromCoords(
   coords?: { city?: string; region?: string; countryISO?: string },
-  locale = "en",
+  locale = "en"
 ): string {
   if (!coords) return "";
   const country = countryNameFromCode(coords.countryISO, locale);
@@ -364,15 +426,18 @@ export function formatLocationFromCoords(
   return country;
 }
 
-export function formatDateForLocale(date: Date | string, options?: Intl.DateTimeFormatOptions) {
+export function formatDateForLocale(
+  date: Date | string,
+  options?: Intl.DateTimeFormatOptions
+) {
   const { locale } = getLocaleAndCurrency();
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+
   return dateObj.toLocaleDateString(locale, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    ...options
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    ...options,
   });
 }
 
@@ -420,10 +485,16 @@ export function formatNumberForLocale(
 
 // Convenience wrappers for common formatting patterns
 export const formatIntegerForLocale = (n: number) =>
-  formatNumberForLocale(n, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  formatNumberForLocale(n, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 
 export const formatOneDecimalForLocale = (n: number) =>
-  formatNumberForLocale(n, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  formatNumberForLocale(n, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
 
 export function formatMonthYearForLocale(
   date: Date | string,
@@ -432,4 +503,19 @@ export function formatMonthYearForLocale(
   const { locale } = getLocaleAndCurrency();
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleDateString(locale, { month: monthStyle, year: "numeric" });
+}
+
+// Currency formatter that uses the user's locale from getLocaleAndCurrency()
+export function formatCurrency(amountMajor: number, currency?: string) {
+  const { locale } = getLocaleAndCurrency();
+  const cur = (currency ?? "EUR").toUpperCase();
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: cur,
+    }).format(amountMajor);
+  } catch {
+    return `${amountMajor.toFixed(2)} ${cur}`;
+  }
 }
