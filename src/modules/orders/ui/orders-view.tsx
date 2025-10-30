@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
-import { ArrowLeftIcon, ExternalLink } from "lucide-react";
+import { ArrowLeftIcon, ExternalLink, MoreHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
 
 import {
   Table,
@@ -43,7 +52,7 @@ export function OrdersView() {
 
   const q = useQuery({
     ...trpc.orders.listMine.queryOptions(),
-    enabled: !!session.data?.user?.id, // don't call for guests
+    enabled: !!session.data?.user?.id, // <— only after mount
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -90,9 +99,9 @@ export function OrdersView() {
       <header className="bg-[#F4F4F0] py-8 border-b">
         <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex flex-col gap-y-2">
           <h1 className="text-[40px] font-medium">My Orders</h1>
-          <p className="font-medium text-muted-foreground">
+          {/* <p className="font-medium text-muted-foreground">
             Paid / refunded orders
-          </p>
+          </p> */}
         </div>
       </header>
 
@@ -122,6 +131,7 @@ function OrdersTable({ rows }: { rows: SlotRow[] }) {
       month: "short",
       year: "numeric",
     });
+
     const start = new Date(startISO).toLocaleTimeString(undefined, {
       hour: "2-digit",
       minute: "2-digit",
@@ -129,23 +139,102 @@ function OrdersTable({ rows }: { rows: SlotRow[] }) {
     return `${date} ${start}`;
   };
 
+  // date on small screens
+  const whenLabelShort = (startISO: string) => {
+    const d = new Date(startISO);
+    const date = d.toLocaleDateString(undefined, {
+      year: "2-digit",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const time = d.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${date} ${time}`;
+  };
+
+  function RowActions({ r }: { r: SlotRow }) {
+    const router = useRouter();
+
+    const goWriteReview = () => {
+      // You said: one review per tenant (not per slot). Route path is up to you.
+      // For now, push to a tenant-scoped review page. You can change later.
+      if (!r.tenantSlug) return;
+      router.push(`/tenants/${r.tenantSlug}/reviews/new`);
+    };
+
+    const requestRefund = () => {
+      // TODO: wire to a protected TRPC mutation (orders.requestRefund)
+      // Right now just navigate to a “request” UI or toast.
+      console.log("Request refund for order:", r.orderId);
+    };
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={goWriteReview}>
+            Write a review
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild disabled={!r.tenantSlug}>
+            <Link href={r.tenantSlug ? generateTenantUrl(r.tenantSlug) : "#"}>
+              Contact provider
+            </Link>
+          </DropdownMenuItem>
+
+          {/* Mobile-only: keep receipt accessible when the column is hidden */}
+          <DropdownMenuItem
+            asChild
+            className="md:hidden"
+            disabled={!r.receiptUrl}
+          >
+            <Link
+              href={r.receiptUrl ?? "#"}
+              target={r.receiptUrl ? "_blank" : undefined}
+            >
+              View receipt
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            onClick={requestRefund}
+            disabled={r.status !== "paid"}
+          >
+            Request refund
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   return (
     <div className="rounded-lg border bg-card">
-      <Table>
+      <Table className="w-full">
         <TableHeader>
           <TableRow>
-            <TableHead>Vendor</TableHead>
-            <TableHead>Service(s)</TableHead>
-            <TableHead className="w-[240px]">When</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead className="text-right">Receipt</TableHead>
+            <TableHead>Provider</TableHead>
+            <TableHead className="hidden md:table-cell">Service(s)</TableHead>
+            <TableHead>When</TableHead>
+            <TableHead className="text-center">Status</TableHead>
+            <TableHead className="text-right">Amount</TableHead>
+            <TableHead className="hidden md:table-cell text-right">
+              Receipt
+            </TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((r) => (
             <TableRow key={`${r.orderId}-${r.whenStart}`}>
-              <TableCell>
+              <TableCell className="truncate">
                 {r.tenantSlug ? (
                   <Link
                     href={generateTenantUrl(r.tenantSlug)}
@@ -156,11 +245,25 @@ function OrdersTable({ rows }: { rows: SlotRow[] }) {
                 ) : (
                   r.vendorName || "—"
                 )}
+
+                {/* mobile-only secondary line */}
+                <div className="md:hidden text-[12px] text-muted-foreground line-clamp-1">
+                  {r.serviceName || "—"}
+                </div>
               </TableCell>
-              {/* link to tenant public page */}
-              <TableCell>{r.serviceName || "—"}</TableCell>
-              <TableCell>{whenLabel(r.whenStart)}</TableCell>
-              <TableCell>
+
+              <TableCell className="hidden md:table-cell truncate">
+                {r.serviceName || "—"}
+              </TableCell>
+              <TableCell suppressHydrationWarning className="whitespace-nowrap">
+                <span className="hidden md:inline">
+                  {whenLabel(r.whenStart)}
+                </span>
+                <span className="md:hidden text-sm">
+                  {whenLabelShort(r.whenStart)}
+                </span>
+              </TableCell>
+              <TableCell className="text-center">
                 <Badge
                   variant={
                     r.status === "paid"
@@ -173,10 +276,15 @@ function OrdersTable({ rows }: { rows: SlotRow[] }) {
                   {r.status}
                 </Badge>
               </TableCell>
-              <TableCell>
+
+              <TableCell
+                className="text-right tabular-nums whitespace-nowrap shrink-0"
+                suppressHydrationWarning
+              >
                 {formatCurrency(r.amount / 100, r.currency)}
               </TableCell>
-              <TableCell className="text-right">
+
+              <TableCell className="hidden md:table-cell text-right whitespace-nowrap">
                 {r.receiptUrl ? (
                   <Link
                     href={r.receiptUrl}
@@ -188,6 +296,10 @@ function OrdersTable({ rows }: { rows: SlotRow[] }) {
                 ) : (
                   <span className="text-muted-foreground text-sm">—</span>
                 )}
+              </TableCell>
+              {/* Actions menu */}
+              <TableCell className="text-right">
+                <RowActions r={r} />
               </TableCell>
             </TableRow>
           ))}

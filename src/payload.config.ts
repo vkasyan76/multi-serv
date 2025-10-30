@@ -19,6 +19,7 @@ import { Tenants } from "./collections/Tenants.ts";
 import { Tags } from "./collections/Tags.ts";
 import { Bookings } from "./collections/Bookings.ts";
 import { Orders } from "./collections/Orders.ts";
+import { Reviews } from "./collections/Reviews.ts";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -30,7 +31,16 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Categories, Tenants, Tags, Bookings, Orders],
+  collections: [
+    Users,
+    Media,
+    Categories,
+    Tenants,
+    Tags,
+    Bookings,
+    Orders,
+    Reviews,
+  ],
   // cookiePrefix: "funroad",  // optional: if we want to change the cookie prefix
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",

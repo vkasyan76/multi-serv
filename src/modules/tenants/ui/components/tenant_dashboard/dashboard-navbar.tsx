@@ -137,7 +137,7 @@ export default function DashboardNavbar({ slug }: Props) {
 
               <div className="flex items-center gap-3">
                 <Link
-                  href="/profile?tab=vendor"
+                  href={profileUrl}
                   className="p-2 rounded-full hover:bg-muted"
                   aria-label="Vendor profile"
                 >
