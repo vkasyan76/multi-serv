@@ -30,6 +30,8 @@ export default function DashboardNavbar({ slug }: Props) {
   const avatarUrl = tenant?.image?.url ?? null;
   const publicHref = tenantPublicHref(slug); // avatar/name (tenant public)
   const homeHref = platformHomeHref(); // home icon (platform root)
+  const profileUrl = `${homeHref}${homeHref.endsWith("/") ? "" : "/"}profile?tab=vendor`; // profile icon (platform root + profile)
+
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
       <div className="mx-auto max-w-[var(--breakpoint-xl)] px-3 sm:px-4 lg:px-12">
@@ -76,7 +78,7 @@ export default function DashboardNavbar({ slug }: Props) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
-                    href="/profile?tab=vendor"
+                    href={profileUrl}
                     className="p-2 rounded-full hover:bg-muted"
                     aria-label="My Profile"
                   >

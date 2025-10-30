@@ -17,15 +17,21 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Order, Booking } from "@/payload-types";
 
-import { formatCurrency } from "@/modules/profile/location-utils";
+import {
+  formatCurrency,
+  formatDateForLocale,
+} from "@/modules/profile/location-utils";
+import { generateTenantUrl } from "@/lib/utils";
 
-type Row = {
-  id: string;
+type SlotRow = {
+  orderId: string;
+  vendorName: string; // from first slot's serviceSnapshot.tenantName
+  tenantSlug?: string; // used to build public URL
+  serviceName: string; // slot subcategory name
+  whenStart: string; // ISO
   status: Order["status"];
-  amount: Order["amount"]; // cents
-  currency: Order["currency"]; // e.g. "eur"
-  createdAt: Order["createdAt"];
-  slots: (string | Booking)[];
+  amount: Order["amount"]; // cents (total order amount; repeated per slot)
+  currency: Order["currency"];
   receiptUrl: Order["receiptUrl"];
 };
 
@@ -40,6 +46,34 @@ export function OrdersView() {
     enabled: !!session.data?.user?.id, // don't call for guests
     staleTime: 60_000,
     refetchOnWindowFocus: false,
+  });
+
+  // Flatten orders → slot rows
+  const slotRows: SlotRow[] = (q.data ?? []).flatMap((o) => {
+    const slots = (o.slots ?? [])
+      .map((s) => (typeof s === "string" ? null : (s as Booking)))
+      .filter(Boolean) as Booking[];
+
+    const first = slots[0];
+    const vendorName = first?.serviceSnapshot?.tenantName ?? ""; // one tenant per order (your assumption)
+
+    const tenantSlug =
+      first?.serviceSnapshot?.tenantSlug ??
+      (typeof first?.tenant !== "string" ? (first?.tenant?.slug ?? "") : "");
+
+    return slots.map((s) => ({
+      orderId: o.id,
+      vendorName,
+      tenantSlug,
+      serviceName:
+        s.serviceSnapshot?.serviceName ||
+        (typeof s.service !== "string" ? (s.service?.name ?? "") : ""),
+      whenStart: s.start,
+      status: o.status,
+      amount: o.amount,
+      currency: o.currency,
+      receiptUrl: o.receiptUrl ?? null,
+    }));
   });
 
   return (
@@ -68,10 +102,10 @@ export function OrdersView() {
           <OrdersTableSkeleton />
         ) : q.isError ? (
           <p className="text-sm text-destructive">Couldn’t load orders.</p>
-        ) : !q.data || q.data.length === 0 ? (
+        ) : slotRows.length === 0 ? (
           <EmptyState />
         ) : (
-          <OrdersTable rows={q.data as Row[]} />
+          <OrdersTable rows={slotRows} />
         )}
       </section>
     </div>
@@ -80,47 +114,72 @@ export function OrdersView() {
 
 /* ---------- Presentational pieces ---------- */
 
-function OrdersTable({ rows }: { rows: Row[] }) {
+function OrdersTable({ rows }: { rows: SlotRow[] }) {
+  const whenLabel = (startISO: string) => {
+    const date = formatDateForLocale(startISO, {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const start = new Date(startISO).toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${date} ${start}`;
+  };
+
   return (
     <div className="rounded-lg border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[160px]">Date</TableHead>
+            <TableHead>Vendor</TableHead>
+            <TableHead>Service(s)</TableHead>
+            <TableHead className="w-[240px]">When</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Amount</TableHead>
-            <TableHead>Slots</TableHead>
             <TableHead className="text-right">Receipt</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((o) => (
-            <TableRow key={o.id}>
-              <TableCell>{new Date(o.createdAt).toLocaleString()}</TableCell>
+          {rows.map((r) => (
+            <TableRow key={`${r.orderId}-${r.whenStart}`}>
+              <TableCell>
+                {r.tenantSlug ? (
+                  <Link
+                    href={generateTenantUrl(r.tenantSlug)}
+                    className="underline underline-offset-2"
+                  >
+                    {r.vendorName || r.tenantSlug}
+                  </Link>
+                ) : (
+                  r.vendorName || "—"
+                )}
+              </TableCell>
+              {/* link to tenant public page */}
+              <TableCell>{r.serviceName || "—"}</TableCell>
+              <TableCell>{whenLabel(r.whenStart)}</TableCell>
               <TableCell>
                 <Badge
                   variant={
-                    o.status === "paid"
+                    r.status === "paid"
                       ? "default"
-                      : o.status === "refunded"
+                      : r.status === "refunded"
                         ? "secondary"
                         : "outline"
                   }
                 >
-                  {o.status}
+                  {r.status}
                 </Badge>
               </TableCell>
               <TableCell>
-                {/* 2) Consistent formatter (expects major units) */}
-                {formatCurrency(o.amount / 100, o.currency)}
-              </TableCell>
-              <TableCell>
-                {Array.isArray(o.slots) ? o.slots.length : 0}
+                {formatCurrency(r.amount / 100, r.currency)}
               </TableCell>
               <TableCell className="text-right">
-                {o.receiptUrl ? (
+                {r.receiptUrl ? (
                   <Link
-                    href={o.receiptUrl}
+                    href={r.receiptUrl}
                     target="_blank"
                     className="inline-flex items-center gap-1 text-sm underline underline-offset-2"
                   >
