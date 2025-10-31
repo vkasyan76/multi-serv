@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { StarIcon } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Star as StarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StarPickerProps {
@@ -18,12 +18,14 @@ export const StarPicker = ({
   className,
 }: StarPickerProps) => {
   const [hoverValue, setHoverValue] = useState(0);
+  const active = (n: number) => (hoverValue || value) >= n;
 
-  // debuging:
-  const handleChange = (newValue: number) => {
-    // console.log("Star selected:", newValue);
-    onChange?.(newValue);
-  };
+  const select = useCallback(
+    (n: number) => {
+      if (!disabled) onChange?.(n);
+    },
+    [disabled, onChange]
+  );
 
   return (
     <div
@@ -32,28 +34,30 @@ export const StarPicker = ({
         disabled && "opacity-50 cursor-not-allowed",
         className
       )}
+      onMouseLeave={() => setHoverValue(0)} // reset when leaving the group
+      role="radiogroup"
+      aria-label="Rating"
     >
-      {[1, 2, 3, 4, 5].map((star) => (
+      {[1, 2, 3, 4, 5].map((n) => (
         <button
-          key={star}
+          key={n}
           type="button"
+          role="radio"
+          aria-checked={value >= n}
           disabled={disabled}
           className={cn(
-            "p-0.5 hover:scale-110 transition",
-            !disabled && "cursor-pointer hover:scale-100"
+            "p-0.5 transition",
+            !disabled && "cursor-pointer hover:scale-110"
           )}
-          // onClick={() => onChange?.(star)}
-          onClick={() => handleChange(star)}
-          onMouseEnter={() => setHoverValue(star)}
-          onMouseLeave={() => setHoverValue(0)}
+          onMouseEnter={() => setHoverValue(n)}
+          onClick={() => select(n)}
         >
-          {/* TO DO: check why the forst star stays if hover is removed*/}
           <StarIcon
             className={cn(
               "size-5",
-              (hoverValue || value) >= star
-                ? "fill-black stroke-black"
-                : "stroke-black"
+              active(n)
+                ? "text-yellow-400 fill-yellow-400 stroke-yellow-400"
+                : "text-gray-300 stroke-gray-400"
             )}
           />
         </button>

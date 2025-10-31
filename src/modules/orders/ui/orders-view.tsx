@@ -98,7 +98,7 @@ export function OrdersView() {
       {/* Header */}
       <header className="bg-[#F4F4F0] py-8 border-b">
         <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex flex-col gap-y-2">
-          <h1 className="text-[40px] font-medium">My Orders</h1>
+          <h1 className="text-[32px] font-medium">My Orders</h1>
           {/* <p className="font-medium text-muted-foreground">
             Paid / refunded orders
           </p> */}
