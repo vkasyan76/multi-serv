@@ -74,6 +74,7 @@ export interface Config {
     tags: Tag;
     bookings: Booking;
     orders: Order;
+    reviews: Review;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -91,6 +92,7 @@ export interface Config {
     tags: TagsSelect<false> | TagsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -449,6 +451,21 @@ export interface Order {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews".
+ */
+export interface Review {
+  id: string;
+  tenant: string | Tenant;
+  tenantSlug: string;
+  author: string | User;
+  rating: number;
+  title: string;
+  body: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -481,6 +498,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: string | Order;
+      } | null)
+    | ({
+        relationTo: 'reviews';
+        value: string | Review;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -682,6 +703,20 @@ export interface OrdersSelect<T extends boolean = true> {
   receiptUrl?: T;
   reservedUntil?: T;
   notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews_select".
+ */
+export interface ReviewsSelect<T extends boolean = true> {
+  tenant?: T;
+  tenantSlug?: T;
+  author?: T;
+  rating?: T;
+  title?: T;
+  body?: T;
   updatedAt?: T;
   createdAt?: T;
 }

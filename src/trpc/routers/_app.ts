@@ -12,6 +12,8 @@ import { tenantsRouter } from "@/modules/tenants/server/procedures";
 import { bookingRouter } from "@/modules/bookings/server/procedures";
 import { checkoutRouter } from "@/modules/checkout/server/procedures";
 import { vatRouter } from "@/modules/profile/server/routers/vat";
+import { ordersRouter } from "@/modules/orders/server/procedures";
+import { reviewsRouter } from "@/modules/reviews/server/procedures";
 
 export const appRouter = createTRPCRouter({
   // hello: baseProcedure
@@ -28,13 +30,12 @@ export const appRouter = createTRPCRouter({
   auth: authRouter,
   tags: tagsRouter,
   tenants: tenantsRouter,
-  // library: libraryRouter,
   // reviews: reviewsRouter,
-  // checkout: checkoutRouter,
   categories: categoriesRouter,
-  // products: productsRouter,
   bookings: bookingRouter,
   checkout: checkoutRouter,
+  orders: ordersRouter,
+  reviews: reviewsRouter,
   vat: vatRouter,
 });
 // export type definition of API

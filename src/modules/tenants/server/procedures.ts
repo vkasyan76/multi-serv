@@ -1,5 +1,5 @@
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
-import { Category, Media, Tenant } from "@payload-types";
+import { Category, Media, Tenant, User } from "@payload-types";
 import type { Sort, Where } from "payload";
 import { z } from "zod";
 import type { TenantsGetManyOutput } from "../types";
@@ -430,4 +430,52 @@ export const tenantsRouter = createTRPCRouter({
     });
     return t.docs[0] ?? null;
   }),
+
+  getRadarPoints: baseProcedure
+    .input(z.object({ limit: z.number().min(1).max(2000).default(400) }))
+    .query(async ({ ctx, input }) => {
+      const res = await ctx.db.find({
+        collection: "tenants",
+        limit: input.limit,
+        depth: 1, // populate 'user' so coordinates are available
+        select: {
+          // keep it light; no deep selects inside relation
+          id: true,
+          name: true,
+          slug: true,
+          user: true, // string | User after population
+        } as const,
+        where: { user: { exists: true } },
+      });
+
+      return res.docs.flatMap((t) => {
+        const tenant = t as Tenant;
+
+        // user can be string | User | null
+        const u: User | null =
+          typeof tenant.user === "object" && tenant.user !== null
+            ? (tenant.user as User)
+            : null;
+
+        const uc = u?.coordinates;
+        const lat = typeof uc?.lat === "number" ? uc.lat : null;
+        const lng = typeof uc?.lng === "number" ? uc.lng : null;
+
+        if (lat == null || lng == null) return []; // skip if missing
+
+        // keep city if you want it for tooltips; else remove from object
+        const city = uc?.city ?? null;
+
+        return [
+          {
+            id: tenant.id,
+            name: tenant.name,
+            slug: tenant.slug,
+            lat,
+            lng,
+            city,
+          },
+        ];
+      });
+    }),
 });

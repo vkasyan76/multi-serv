@@ -26,6 +26,7 @@ A modern multi-tenant service marketplace built with Next.js, Payload CMS, and C
 ## 📋 Current Tasks & TODOs
 
 ### 🔥 High Priority
+
 - [ ] **Fix Clerk Middleware Issues**
   - Resolve `clerkMiddleware()` detection errors
   - Update middleware configuration for proper auth handling
@@ -42,6 +43,7 @@ A modern multi-tenant service marketplace built with Next.js, Payload CMS, and C
   - Implement proper URL state management
 
 ### 🔧 Medium Priority
+
 - [ ] **Code Quality**
   - Modularize large procedures into smaller functions
   - Add JSDoc documentation for complex procedures
@@ -58,6 +60,7 @@ A modern multi-tenant service marketplace built with Next.js, Payload CMS, and C
   - Add form validation feedback
 
 ### 📚 Low Priority
+
 - [ ] **Documentation**
   - Add API documentation
   - Create deployment guide
@@ -72,7 +75,7 @@ A modern multi-tenant service marketplace built with Next.js, Payload CMS, and C
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - MongoDB instance
 - Clerk account
 - Stripe account
@@ -81,48 +84,54 @@ A modern multi-tenant service marketplace built with Next.js, Payload CMS, and C
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/vkasyan76/multi-serv.git
    cd multi-serv
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install --legacy-peer-deps
    ```
 
 3. **Environment Setup**
+
    ```bash
    cp .env.example .env.local
    ```
-   
+
    Fill in your environment variables:
+
    ```env
    # Database
    DATABASE_URI=your_mongodb_connection_string
-   
+
    # Clerk
    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
    CLERK_SECRET_KEY=your_clerk_secret_key
-   
+
    # Payload
    PAYLOAD_SECRET=your_payload_secret
-   
+
    # Stripe
    STRIPE_SECRET_KEY=your_stripe_secret_key
    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-   
+
    # Vercel Blob
    BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
    ```
 
 4. **Database Setup**
+
    ```bash
    npm run db:fresh
    npm run db:seed
    ```
 
 5. **Generate Types**
+
    ```bash
    npm run generate:types
    ```
@@ -215,3 +224,7 @@ For support, email support@multi-serv.com or create an issue in this repository.
 ---
 
 **Note**: This project is actively under development. Some features may be incomplete or subject to change.
+
+<!-- stripe web-hook call: -->
+
+stripe listen --forward-to http://localhost:3000/api/stripe
