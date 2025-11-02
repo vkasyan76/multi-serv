@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
-import { ArrowLeftIcon, ExternalLink, MoreHorizontal } from "lucide-react";
+import { Home, ExternalLink, MoreHorizontal } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { generateTenantUrl } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,7 +38,6 @@ import {
   formatCurrency,
   formatDateForLocale,
 } from "@/modules/profile/location-utils";
-import { generateTenantUrl } from "@/lib/utils";
 
 type SlotRow = {
   orderId: string;
@@ -63,6 +70,7 @@ export function OrdersView() {
       .map((s) => (typeof s === "string" ? null : (s as Booking)))
       .filter(Boolean) as Booking[];
 
+    // Use the first row (latest order) just to power the “public page” icon in the top bar.
     const first = slots[0];
     const vendorName = first?.serviceSnapshot?.tenantName ?? ""; // one tenant per order (your assumption)
 
@@ -87,12 +95,24 @@ export function OrdersView() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Top bar */}
-      <nav className="p-4 bg-[#F4F4F0] w-full border-b">
-        <Link prefetch href="/" className="flex items-center gap-2">
-          <ArrowLeftIcon className="size-4" />
-          <span className="text font-medium">Continue browsing</span>
-        </Link>
+      {/* Top bar — icons left, white bg for consistency */}
+      <nav className="bg-white w-full border-b">
+        <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 h-14 sm:h-16 flex items-center justify-end gap-3">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/"
+                  className="p-2 rounded-full hover:bg-muted"
+                  aria-label="Home"
+                >
+                  <Home className="h-7 w-7" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Home</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </nav>
 
       {/* Header */}

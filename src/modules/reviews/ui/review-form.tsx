@@ -10,6 +10,8 @@ import { StarPicker } from "./star-picker";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const schema = z.object({
   rating: z.number().min(1).max(5),
@@ -26,9 +28,12 @@ export default function ReviewForm({ slug }: { slug: string }) {
   const create = useMutation(
     trpc.reviews.create.mutationOptions({
       onSuccess: async () => {
-        // invalidate anything you show on the tenant page
         await qc.invalidateQueries();
         router.replace(`/tenants/${slug}`);
+      },
+      onError: (err) => {
+        console.error("reviews.create failed:", err);
+        toast.error(err.message || "Could not submit your review.");
       },
     })
   );
@@ -39,24 +44,33 @@ export default function ReviewForm({ slug }: { slug: string }) {
     defaultValues: { rating: 0, title: "", body: "" },
   });
 
+  const bodyValue = form.watch("body");
+
   const submit = (values: FormValues) => create.mutate({ slug, ...values });
 
   return (
     <form className="max-w-xl space-y-4" onSubmit={form.handleSubmit(submit)}>
       <div>
-        <label className="block mb-2 font-medium">Your rating</label>
-        <StarPicker
-          value={form.watch("rating")}
-          onChange={(v) => form.setValue("rating", v, { shouldValidate: true })}
-        />
+        <div className="flex items-center justify-center gap-3">
+          <span className="font-medium">Your rating</span>
+          <StarPicker
+            value={form.watch("rating")}
+            onChange={(v) =>
+              form.setValue("rating", v, { shouldValidate: true })
+            }
+          />
+        </div>
         {form.formState.errors.rating && (
-          <p className="text-sm text-destructive mt-1">Pick 1–5 stars.</p>
+          <p className="text-sm text-destructive mt-1 text-center">
+            Pick 1–5 stars.
+          </p>
         )}
       </div>
 
       <div>
         <label className="block mb-2 font-medium">Title</label>
         <Input
+          maxLength={120}
           {...form.register("title")}
           placeholder="What’s most important to know?"
         />
@@ -68,10 +82,15 @@ export default function ReviewForm({ slug }: { slug: string }) {
       <div>
         <label className="block mb-2 font-medium">Write a review</label>
         <Textarea
-          rows={6}
+          rows={10}
+          className="min-h-[12rem]" // ~192px; comfortable default on desktop
+          maxLength={5000} // matches schema
           {...form.register("body")}
           placeholder="What should other customers know?"
         />
+        <div className="mt-1 text-right text-xs text-muted-foreground">
+          {bodyValue?.length ?? 0}/5000
+        </div>
         {form.formState.errors.body && (
           <p className="text-sm text-destructive mt-1">
             At least 10 characters.
@@ -79,12 +98,28 @@ export default function ReviewForm({ slug }: { slug: string }) {
         )}
       </div>
 
-      <Button
-        type="submit"
-        disabled={create.isPending || !form.formState.isValid}
-      >
-        {create.isPending ? "Submitting…" : "Submit"}
-      </Button>
+      <div className="pt-2 flex justify-center">
+        <Button
+          type="submit"
+          size="lg"
+          className="bg-black text-white hover:bg-pink-400 hover:text-primary"
+          variant="elevated"
+          disabled={
+            create.isPending ||
+            form.formState.isSubmitting ||
+            !form.formState.isValid
+          }
+        >
+          {create.isPending || form.formState.isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Submitting…
+            </>
+          ) : (
+            "Submit"
+          )}
+        </Button>
+      </div>
     </form>
   );
 }

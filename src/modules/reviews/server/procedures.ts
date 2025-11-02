@@ -121,6 +121,12 @@ export const reviewsRouter = createTRPCRouter({
         input: z.infer<typeof createInput>;
       }) => {
         const { db, userId } = ctx;
+        if (!userId) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Sign in to write a review.",
+          });
+        }
 
         const tRes = await db.find({
           collection: "tenants",
@@ -134,23 +140,44 @@ export const reviewsRouter = createTRPCRouter({
             message: "Tenant not found",
           });
 
+        // Optional guard: require at least one PAID order for this (user, tenant)
+        // Comment this block out if you want to allow reviews without purchases.
+        const orderCheck = await db.find({
+          collection: "orders",
+          where: {
+            and: [
+              { status: { equals: "paid" } },
+              { user: { equals: userId } },
+              { tenant: { equals: tenant.id } },
+            ],
+          },
+          limit: 1,
+        });
+        const hasPaidOrder = orderCheck.totalDocs > 0;
+        if (!hasPaidOrder) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You can only review providers you have purchased from.",
+          });
+        }
+
         // 1 review per (user, tenant): update if exists, else create
         const existing = await db.find({
           collection: "reviews",
-          where: { tenant: { equals: tenant.id }, author: { equals: userId! } },
+          where: { tenant: { equals: tenant.id }, author: { equals: userId } },
           limit: 1,
         });
 
         if (existing.totalDocs > 0) {
-          const id = (existing.docs[0] as Review).id;
+          const current = existing.docs[0] as Review;
           return db.update({
             collection: "reviews",
-            id,
+            id: current.id,
             data: {
               rating: input.rating,
               title: input.title,
               body: input.body,
-              tenantSlug: tenant.slug,
+              tenantSlug: tenant.slug, // keep slug synced if your schema has it
             },
             overrideAccess: true,
           });
@@ -160,8 +187,8 @@ export const reviewsRouter = createTRPCRouter({
           collection: "reviews",
           data: {
             tenant: tenant.id,
-            tenantSlug: tenant.slug, // <- REQUIRED by your Review type
-            author: userId!,
+            tenantSlug: tenant.slug, // if present in schema
+            author: userId,
             rating: input.rating,
             title: input.title,
             body: input.body,
