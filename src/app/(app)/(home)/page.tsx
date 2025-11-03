@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import TenantOrbit from "@/modules/tenants/ui/components/visiuals/TenantOrbit";
-import Billboard from "@/modules/home/ui/billboard/billboard";
-import { Poppins } from "next/font/google";
+// import Billboard from "@/modules/home/ui/billboard/billboard";
+// import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
 import LoadingPage from "@/components/shared/loading";
+import TenantsCarousel from "@/modules/tenants/ui/components/visiuals/TenatCarrousel";
 
-const poppins = Poppins({ subsets: ["latin"], weight: ["600", "700"] });
+// const poppins = Poppins({ subsets: ["latin"], weight: ["600", "700"] });
 
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
@@ -22,7 +23,7 @@ export default function Home() {
     const ro = new ResizeObserver(([entry]) => {
       if (!entry) return;
       const w = entry.contentRect.width;
-      setSize(clamp(Math.round(w - 24), 280, 720));
+      setSize(clamp(Math.round(w - 24), 280, 900));
     });
     ro.observe(radarRef.current);
     return () => ro.disconnect();
@@ -42,7 +43,7 @@ export default function Home() {
         {/* your original grid — kept mounted; just hidden until ready */}
         <div
           className={cn(
-            "grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-center transition-opacity duration-200",
+            "grid grid-cols-1 lg:grid-cols-[5fr_2fr] gap-10 items-center transition-opacity duration-200",
             !orbitReady && "opacity-0 pointer-events-none"
           )}
         >
@@ -61,29 +62,7 @@ export default function Home() {
           {/* Billboard (right) */}
           <div className="w-full lg:h-full flex justify-end">
             <div className="w-full lg:max-w-[min(38vw,680px)] h-full flex items-center">
-              <Billboard
-                imageSrc="/images/billboard/Plumber.png"
-                alt="Smiling plumber fixing a sink"
-                ratio="portrait"
-                overlayColor="rgba(0,0,0,0.30)"
-                slogan="We connect clients with professionals"
-                cta={"Your solution is only\na click away..."}
-                sloganPos={{ x: 24, y: 72 }}
-                ctaPos={{ x: 8, y: 96 }}
-                sloganAlign="left"
-                sloganAnchorY="middle"
-                ctaAlign="left"
-                ctaAnchorY="bottom"
-                sloganClassName={cn(
-                  "font-bold",
-                  "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
-                )}
-                ctaClassName={cn(
-                  "font-semibold",
-                  "text-lg sm:text-xl md:text-2xl lg:text-3xl"
-                )}
-                fontClassName={poppins.className}
-              />
+              <TenantsCarousel />
             </div>
           </div>
         </div>
