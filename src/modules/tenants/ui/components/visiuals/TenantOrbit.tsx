@@ -32,6 +32,7 @@ export type TenantOrbitProps = {
   maxDistanceKm?: number; // distance clamp
   baseSeconds?: number; // min rotate duration
   parallax?: number; // +seconds per radius fraction
+  onReady?: (count: number) => void; // notifies parent when tenant data has finished loading.
 };
 
 type Viewer = { lat: number; lng: number; city?: string | null };
@@ -122,6 +123,7 @@ export default function TenantOrbit({
   maxDistanceKm = 80,
   baseSeconds = 18,
   parallax = 20,
+  onReady,
 }: TenantOrbitProps) {
   const R = size / 2;
 
@@ -178,7 +180,7 @@ export default function TenantOrbit({
   }, [userProfile?.coordinates]);
 
   // tenants (distance is computed server-side; pass viewer for anon users)
-  const { data: list } = useQuery({
+  const { data: list, isLoading: tenantsLoading } = useQuery({
     ...trpc.tenants.getMany.queryOptions({
       sort: "distance",
       limit,
@@ -188,6 +190,19 @@ export default function TenantOrbit({
     }),
     enabled: ready,
   });
+
+  // Tell parent when the orbit can be shown (data finished loading).
+  const firedRef = useRef(false);
+  useEffect(() => {
+    // Wait until geo/profile gate is open and the query has settled
+    if (!ready) return;
+    if (firedRef.current) return;
+    if (!tenantsLoading) {
+      firedRef.current = true;
+      const count = list?.docs?.length ?? 0;
+      onReady?.(count); // parent decides what to do with 0 vs >0
+    }
+  }, [ready, tenantsLoading, list?.docs?.length, onReady]);
 
   // ---------- layout constants (controls overlap) ----------
   const minFrac = 0.18,
