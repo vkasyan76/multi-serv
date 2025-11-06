@@ -8,11 +8,14 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import TenantBillboard from "./TenantBillboard";
+import Link from "next/link";
+import { generateTenantUrl } from "@/lib/utils";
 
 // ✅ items is optional; fallback to demo data
 type Item = {
   id: string;
   name: string;
+  slug: string;
   city: string;
   country?: string;
   imageSrc: string;
@@ -24,56 +27,30 @@ type Item = {
   blurb: string;
 };
 
-const FALLBACK_ITEMS: Item[] = [
-  {
-    id: "1",
-    name: "Valentyn Kasyan",
-    city: "Frankfurt am Main",
-    country: "DE",
-    imageSrc: "/images/billboard/Plumber.png",
-    pricePerHour: 1,
-    rating: 5.0,
-    ratingCount: 626,
-    since: "Oct 2025",
-    orders: 12,
-    blurb: "Friendly professional. On-site & online.",
-  },
-  {
-    id: "2",
-    name: "Super Tenant",
-    city: "Hanau",
-    country: "DE",
-    imageSrc: "/images/billboard/Plumber.png",
-    pricePerHour: 10,
-    rating: 4.8,
-    ratingCount: 143,
-    since: "Sep 2025",
-    orders: 22,
-    blurb: "Fast response, fair pricing.",
-  },
-];
-
-export default function TenantsCarousel({ items }: { items?: Item[] }) {
-  const data = items ?? FALLBACK_ITEMS;
-
+export default function TenantsCarousel({ items }: { items: Item[] }) {
   return (
-    <Carousel opts={{ align: "start", loop: true }} className="w-full">
-      <CarouselContent className="-ml-4">
-        {data.map((t) => (
-          <CarouselItem key={t.id} className="pl-4 basis-full">
-            <TenantBillboard
-              className="w-full"
-              imageSrc={t.imageSrc}
-              name={t.name}
-              city={t.city}
-              country={t.country}
-              pricePerHour={t.pricePerHour}
-              rating={t.rating}
-              ratingCount={t.ratingCount}
-              since={t.since}
-              orders={t.orders}
-              blurb={t.blurb}
-            />
+    <Carousel opts={{ align: "center", loop: true }} className="w-full">
+      {/* No negative margin/gutters; we want a single, full-width slide */}
+      {/* small inner padding prevents clipping of rounded corners */}
+      {/* show a tiny, symmetric peek of prev/next; keep corners un-clipped. */}
+      <CarouselContent className="!ml-0">
+        {items.map((t) => (
+          <CarouselItem key={t.id} className="basis-auto lg:basis-full px-2">
+            <Link href={generateTenantUrl(t.slug)} className="block group">
+              <TenantBillboard
+                className="w-full transition-transform duration-200 group-hover:scale-[1.02] group-hover:shadow-xl"
+                imageSrc={t.imageSrc}
+                name={t.name}
+                city={t.city}
+                country={t.country}
+                pricePerHour={t.pricePerHour}
+                rating={t.rating}
+                ratingCount={t.ratingCount}
+                since={t.since}
+                orders={t.orders}
+                blurb={t.blurb}
+              />
+            </Link>
           </CarouselItem>
         ))}
       </CarouselContent>

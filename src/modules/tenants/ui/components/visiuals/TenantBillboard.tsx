@@ -34,17 +34,22 @@ export default function TenantBillboard({
   blurb = "Friendly professional. On-site & online.",
 }: Props) {
   return (
-    <Card className={cn("overflow-hidden rounded-2xl", className)}>
+    <Card
+      className={cn(
+        "overflow-hidden rounded-2xl",
+        "transition-transform duration-200 group-hover:scale-[1.02] group-hover:shadow-xl",
+        className
+      )}
+    >
       <div className="flex flex-col">
         {/* image block with fixed aspect ratio */}
-        <div className="relative w-full aspect-[4/3]">
+        <div className="relative w-full aspect-[4/3] overflow-hidden">
           <Image
             src={imageSrc}
             alt={name}
             fill
             sizes="(min-width:1024px) 34vw, 100vw"
-            // keep cover, but bias crop toward the top (≈ 20–25%)
-            className="object-cover object-[50%_22%]"
+            className="object-cover [object-position:center_18%]" // 🔹 keep heads in frame on portrait
             priority
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />

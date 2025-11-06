@@ -7,8 +7,7 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
+
 import type { TenantWithRelations } from "@/modules/tenants/types";
 import { gsap } from "gsap";
 import {
@@ -27,12 +26,12 @@ import {
 
 /** props */
 export type TenantOrbitProps = {
-  size?: number; // px
-  limit?: number; // requested tenants
-  maxDistanceKm?: number; // distance clamp
-  baseSeconds?: number; // min rotate duration
-  parallax?: number; // +seconds per radius fraction
-  onReady?: (count: number) => void; // notifies parent when tenant data has finished loading.
+  size?: number;
+  maxDistanceKm?: number;
+  baseSeconds?: number;
+  parallax?: number;
+  tenants: TenantWithRelations[]; // 🔹 data comes from parent
+  onReady?: (count: number) => void;
 };
 
 type Viewer = { lat: number; lng: number; city?: string | null };
@@ -77,7 +76,9 @@ function CircleBadge({
     <Button
       asChild
       variant="secondary"
-      className="rounded-full grid place-items-center text-center shadow-sm hover:shadow-md"
+      className="rounded-full grid place-items-center text-center shadow-sm hover:shadow-md
+             transition-transform duration-200 will-change-transform
+             hover:scale-150 focus-visible:scale-110"
       style={{
         width: size,
         height: size,
@@ -119,45 +120,34 @@ function CircleBadge({
 
 export default function TenantOrbit({
   size = 640,
-  limit = 24,
   maxDistanceKm = 80,
   baseSeconds = 18,
   parallax = 20,
+  tenants: inputTenants, // <- get tenants from parent
   onReady,
 }: TenantOrbitProps) {
   const R = size / 2;
+
+  // ring radii range (keeps your original overlap behavior)
+  const minFrac = 0.18,
+    maxFrac = 0.84;
+  const minR = minFrac * R,
+    maxR = maxFrac * R;
 
   // scale badge & spacing with overall radar size
   BADGE_D = Math.round(Math.max(56, Math.min(96, size * 0.12))); // ~12% of radar; 56–96 clamp
   RING_GAP = Math.max(40, Math.round(BADGE_D * 0.6));
 
-  const trpc = useTRPC();
-
-  // session + profile (for saved coordinates)
-  const { data: session } = useQuery(trpc.auth.session.queryOptions());
-  const { data: userProfile } = useQuery({
-    ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: !!session?.user,
-  });
-
+  // UI bits we still use below
   const { currency } = getLocaleAndCurrency();
   const mode: "compact" | "normal" | "full" =
     size < 420 ? "compact" : size < 600 ? "normal" : "full";
 
-  // viewer: profile coords → /api/geo fallback
+  // viewer: keep only IP fallback (bearing/center dot), no profile dependency
   const [viewer, setViewer] = useState<Viewer | null>(null);
-  const [ready, setReady] = useState(false);
-
   useEffect(() => {
     let cancel = false;
     (async () => {
-      const c = userProfile?.coordinates;
-      if (typeof c?.lat === "number" && typeof c?.lng === "number") {
-        if (!cancel)
-          setViewer({ lat: c.lat, lng: c.lng, city: c.city ?? null });
-        setReady(true);
-        return;
-      }
       try {
         const res = await fetch("/api/geo", { cache: "no-store" });
         const json = (await res.json()) as {
@@ -170,50 +160,20 @@ export default function TenantOrbit({
         }
       } catch {
         /* ignore */
-      } finally {
-        if (!cancel) setReady(true);
       }
     })();
     return () => {
       cancel = true;
     };
-  }, [userProfile?.coordinates]);
+  }, []);
 
-  // tenants (distance is computed server-side; pass viewer for anon users)
-  const { data: list, isLoading: tenantsLoading } = useQuery({
-    ...trpc.tenants.getMany.queryOptions({
-      sort: "distance",
-      limit,
-      distanceFilterEnabled: false,
-      userLat: viewer?.lat ?? null,
-      userLng: viewer?.lng ?? null,
-    }),
-    enabled: ready,
-  });
+  // tenants are provided by parent
+  const tenants = useMemo(() => inputTenants ?? [], [inputTenants]);
 
-  // Tell parent when the orbit can be shown (data finished loading).
-  const firedRef = useRef(false);
+  // optional notify parent
   useEffect(() => {
-    // Wait until geo/profile gate is open and the query has settled
-    if (!ready) return;
-    if (firedRef.current) return;
-    if (!tenantsLoading) {
-      firedRef.current = true;
-      const count = list?.docs?.length ?? 0;
-      onReady?.(count); // parent decides what to do with 0 vs >0
-    }
-  }, [ready, tenantsLoading, list?.docs?.length, onReady]);
-
-  // ---------- layout constants (controls overlap) ----------
-  const minFrac = 0.18,
-    maxFrac = 0.84;
-  const minR = minFrac * R,
-    maxR = maxFrac * R;
-
-  const tenants = useMemo(
-    () => (list?.docs ?? []) as TenantWithRelations[],
-    [list]
-  );
+    onReady?.(tenants.length);
+  }, [tenants.length, onReady]);
 
   // distance -> continuous radius
   const radiusFromDistance = useCallback(
@@ -283,7 +243,6 @@ export default function TenantOrbit({
     });
 
     // Enforce radial spacing from inner to outer
-    // enforce radial spacing from inner to outer
     prelim.sort((a, b) => a.r0 - b.r0);
     let last = minR - RING_GAP;
     const out: Ring[] = [];
@@ -355,7 +314,7 @@ export default function TenantOrbit({
     ["--radius"]?: string;
   };
 
-  const viewerCity = viewer?.city ?? userProfile?.coordinates?.city ?? null;
+  const viewerCity = viewer?.city ?? null;
 
   return (
     <div
@@ -438,7 +397,10 @@ export default function TenantOrbit({
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
               aria-label={viewerCity ? `You · ${viewerCity}` : "You"}
             >
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              <span className="relative block w-4 h-4">
+                <span className="absolute inset-0 rounded-full bg-red-500 opacity-30 animate-ping" />
+                <span className="absolute inset-[2px] rounded-full bg-red-500" />
+              </span>
             </div>
           </TooltipTrigger>
           <TooltipContent side="top">
