@@ -18,7 +18,7 @@ type Item = {
   slug: string;
   city: string;
   country?: string;
-  imageSrc: string;
+  imageSrc?: string;
   pricePerHour: number;
   rating: number;
   ratingCount: number;

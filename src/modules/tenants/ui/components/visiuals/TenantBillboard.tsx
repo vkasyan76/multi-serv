@@ -6,6 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
+// handle broken <Image>, show fallback tile
+const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  const img = e.currentTarget;
+  img.style.display = "none";
+  const fallback = img.nextElementSibling as HTMLElement | null;
+  if (fallback) fallback.style.display = "flex";
+};
+
 type Props = {
   className?: string;
   imageSrc?: string;
@@ -22,7 +30,7 @@ type Props = {
 
 export default function TenantBillboard({
   className,
-  imageSrc = "/images/billboard/Plumber.png",
+  imageSrc,
   name = "Valentyn Kasyan",
   city = "Frankfurt am Main",
   country = "DE",
@@ -33,6 +41,8 @@ export default function TenantBillboard({
   orders = 12,
   blurb = "Friendly professional. On-site & online.",
 }: Props) {
+  const initial = name?.trim()?.[0]?.toUpperCase() ?? "—"; // user initals fallback if image fails
+
   return (
     <Card
       className={cn(
@@ -44,14 +54,35 @@ export default function TenantBillboard({
       <div className="flex flex-col">
         {/* image block with fixed aspect ratio */}
         <div className="relative w-full aspect-[4/3] overflow-hidden">
-          <Image
-            src={imageSrc}
-            alt={name}
-            fill
-            sizes="(min-width:1024px) 34vw, 100vw"
-            className="object-cover [object-position:center_18%]" // 🔹 keep heads in frame on portrait
-            priority
-          />
+          {imageSrc ? (
+            <>
+              <Image
+                src={imageSrc}
+                alt={name}
+                fill
+                sizes="(min-width:1024px) 34vw, 100vw"
+                className="object-cover [object-position:center_18%]"
+                priority
+                onError={handleImageError}
+              />
+              {/* hidden fallback shown if image errors */}
+              <div
+                className="absolute inset-0 hidden items-center justify-center bg-blue-100"
+                aria-hidden
+              >
+                <span className="text-blue-600 font-semibold text-4xl">
+                  {initial}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="w-full h-full bg-blue-100 flex items-center justify-center">
+              <span className="text-blue-600 font-semibold text-4xl">
+                {initial}
+              </span>
+            </div>
+          )}
+
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
           {/* rating top-left */}

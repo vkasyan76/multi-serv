@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import TenantOrbit from "@/modules/tenants/ui/components/visiuals/TenantOrbit";
 import LoadingPage from "@/components/shared/loading";
-import TenantsCarousel from "@/modules/tenants/ui/components/visiuals/TenatCarrousel";
+import TenantsCarousel from "@/modules/tenants/ui/components/visiuals/TenantsCarousel";
 
 import type { TenantWithRelations } from "@/modules/tenants/types";
 import { formatMonthYearForLocale } from "@/modules/profile/location-utils";
@@ -33,6 +33,23 @@ export default function Home() {
     refetchOnWindowFocus: false,
   });
 
+  // fetching the user location for viewer coordinates:
+  const { data: session } = useQuery(trpc.auth.session.queryOptions());
+  const profileQ = useQuery({
+    ...trpc.auth.getUserProfile.queryOptions(),
+    enabled: !!session?.user,
+  });
+
+  const viewer =
+    typeof profileQ.data?.coordinates?.lat === "number" &&
+    typeof profileQ.data?.coordinates?.lng === "number"
+      ? {
+          lat: profileQ.data.coordinates.lat,
+          lng: profileQ.data.coordinates.lng,
+          city: profileQ.data.coordinates.city ?? null,
+        }
+      : undefined;
+
   // measure radar box
   useLayoutEffect(() => {
     const el = radarRef.current;
@@ -49,6 +66,8 @@ export default function Home() {
     return () => ro.disconnect();
   }, [isLoading]);
 
+  // [isLoading] dependency is a workaround so the effect runs again after loading flips to false, because while isLoading is true you early-return <LoadingPage />
+
   const tenants = (data?.docs ?? []) as TenantWithRelations[];
 
   // map to carousel items (placeholders for rating/orders for now)
@@ -58,8 +77,7 @@ export default function Home() {
     name: t.name,
     city: t.user?.coordinates?.city ?? "",
     country: t.user?.coordinates?.countryISO ?? undefined,
-    imageSrc:
-      t.image?.url || t.user?.clerkImageUrl || "/images/billboard/Plumber.png",
+    imageSrc: t.image?.url ?? t.user?.clerkImageUrl ?? undefined,
     pricePerHour: typeof t.hourlyRate === "number" ? t.hourlyRate : 0,
     rating: 5.0,
     ratingCount: 0,
@@ -92,6 +110,7 @@ export default function Home() {
               baseSeconds={16}
               parallax={18}
               tenants={tenants}
+              viewer={viewer}
             />
           )}
         </div>

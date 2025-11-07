@@ -1,42 +1,62 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import TenantOrbit from "@/modules/tenants/ui/components/visiuals/TenantOrbit";
+import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
+import type { TenantWithRelations } from "@/modules/tenants/types";
 
-// clamp helper
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
 
-const Page = () => {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState(720); // desktop default
+export default function Page() {
+  const trpc = useTRPC();
 
-  useEffect(() => {
-    if (!ref.current) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const w = entry!.contentRect.width;
-      // leave some breathing room; cap to desktop value
-      const next = clamp(Math.round(w - 24), 280, 720);
-      setSize(next);
-    });
-    ro.observe(ref.current);
+  // fetch tenants
+  const { data } = useQuery({
+    ...trpc.tenants.getMany.queryOptions({
+      sort: "distance",
+      limit: 36,
+      distanceFilterEnabled: false,
+      userLat: null,
+      userLng: null,
+    }),
+    refetchOnWindowFocus: false,
+  });
+  const tenants = (data?.docs ?? []) as TenantWithRelations[];
+
+  // responsive square for the orbit
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const w = el.getBoundingClientRect().width || 0;
+      // small padding to avoid clipping rounded badges
+      setSize(clamp(Math.round(w - 24), 280, 720));
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
   return (
-    <div
-      ref={ref}
-      className="container mx-auto px-4 py-8 flex justify-center border-0 outline-0 shadow-none bg-transparent"
-    >
-      <TenantOrbit
-        size={size}
-        limit={36}
-        maxDistanceKm={80}
-        baseSeconds={16}
-        parallax={18}
-      />
+    <div className="container mx-auto px-4 py-8 overflow-x-hidden">
+      <div ref={boxRef} className="w-full min-h-[280px] flex justify-center">
+        {size !== null && (
+          <TenantOrbit
+            size={size}
+            maxDistanceKm={80}
+            baseSeconds={16}
+            parallax={18}
+            tenants={tenants}
+          />
+        )}
+      </div>
     </div>
   );
-};
-
-export default Page;
+}

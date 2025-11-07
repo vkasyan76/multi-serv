@@ -32,6 +32,7 @@ export type TenantOrbitProps = {
   parallax?: number;
   tenants: TenantWithRelations[]; // 🔹 data comes from parent
   onReady?: (count: number) => void;
+  viewer?: { lat: number; lng: number; city?: string | null }; // to detrmine coordinates of the viewer
 };
 
 type Viewer = { lat: number; lng: number; city?: string | null };
@@ -125,6 +126,7 @@ export default function TenantOrbit({
   parallax = 20,
   tenants: inputTenants, // <- get tenants from parent
   onReady,
+  viewer: viewerProp, // viewer coordinates
 }: TenantOrbitProps) {
   const R = size / 2;
 
@@ -145,8 +147,20 @@ export default function TenantOrbit({
 
   // viewer: keep only IP fallback (bearing/center dot), no profile dependency
   const [viewer, setViewer] = useState<Viewer | null>(null);
+
   useEffect(() => {
     let cancel = false;
+    // Prefer the prop (DB coords from page)
+    if (viewerProp) {
+      setViewer({
+        lat: viewerProp.lat,
+        lng: viewerProp.lng,
+        city: viewerProp.city ?? null,
+      });
+      return () => {
+        cancel = true;
+      };
+    }
     (async () => {
       try {
         const res = await fetch("/api/geo", { cache: "no-store" });
@@ -165,7 +179,7 @@ export default function TenantOrbit({
     return () => {
       cancel = true;
     };
-  }, []);
+  }, [viewerProp]);
 
   // tenants are provided by parent
   const tenants = useMemo(() => inputTenants ?? [], [inputTenants]);
@@ -314,7 +328,7 @@ export default function TenantOrbit({
     ["--radius"]?: string;
   };
 
-  const viewerCity = viewer?.city ?? null;
+  const viewerCity = viewerProp?.city ?? viewer?.city ?? null;
 
   return (
     <div
