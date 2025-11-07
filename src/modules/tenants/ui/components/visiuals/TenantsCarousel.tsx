@@ -6,10 +6,12 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import TenantBillboard from "./TenantBillboard";
 import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
 
 // ✅ items is optional; fallback to demo data
 type Item = {
@@ -27,9 +29,49 @@ type Item = {
   blurb: string;
 };
 
-export default function TenantsCarousel({ items }: { items: Item[] }) {
+export default function TenantsCarousel({
+  items,
+  activeSlug,
+  onActiveChange,
+}: {
+  items: Item[];
+  activeSlug?: string;
+  onActiveChange?: (slug: string) => void;
+}) {
+  const [api, setApi] = useState<CarouselApi | undefined>(undefined);
+  const slugToIndex = useMemo(() => {
+    const m = new Map<string, number>();
+    items.forEach((it, i) => m.set(it.slug, i));
+    return m;
+  }, [items]);
+
+  // External → Carousel
+  useEffect(() => {
+    if (!api || !activeSlug) return;
+    const idx = slugToIndex.get(activeSlug);
+    if (idx != null) api.scrollTo(idx, true);
+  }, [api, activeSlug, slugToIndex]);
+
+  // Carousel → External
+  useEffect(() => {
+    if (!api || !onActiveChange) return;
+    const handler = () => {
+      const i = api.selectedScrollSnap();
+      const slug = items[i]?.slug;
+      if (slug) onActiveChange(slug);
+    };
+    api.on("select", handler);
+    return () => {
+      api.off("select", handler);
+    };
+  }, [api, onActiveChange, items]);
+
   return (
-    <Carousel opts={{ align: "center", loop: true }} className="w-full">
+    <Carousel
+      setApi={setApi}
+      opts={{ align: "center", loop: true }}
+      className="w-full"
+    >
       {/* No negative margin/gutters; we want a single, full-width slide */}
       {/* small inner padding prevents clipping of rounded corners */}
       {/* show a tiny, symmetric peek of prev/next; keep corners un-clipped. */}

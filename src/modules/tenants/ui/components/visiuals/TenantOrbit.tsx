@@ -17,8 +17,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { generateTenantUrl } from "@/lib/utils";
-import Link from "next/link";
 import {
   formatCurrency,
   getLocaleAndCurrency,
@@ -33,6 +31,8 @@ export type TenantOrbitProps = {
   tenants: TenantWithRelations[]; // 🔹 data comes from parent
   onReady?: (count: number) => void;
   viewer?: { lat: number; lng: number; city?: string | null }; // to detrmine coordinates of the viewer
+  selectedSlug?: string;
+  onSelect?: (slug: string) => void;
 };
 
 type Viewer = { lat: number; lng: number; city?: string | null };
@@ -45,18 +45,20 @@ type BadgeMode = "compact" | "normal" | "full";
 
 function CircleBadge({
   t,
-  href,
   size = 96,
   color,
   mode,
   currency,
+  selected,
+  onSelect,
 }: {
   t: TenantWithRelations;
-  href: string;
   size?: number;
   color?: string;
   mode: BadgeMode;
   currency: string;
+  selected?: boolean;
+  onSelect?: (slug: string) => void;
 }) {
   const city = t.user?.coordinates?.city ?? "—";
   const category = t.categories?.[0]?.name ?? "—";
@@ -75,11 +77,12 @@ function CircleBadge({
 
   return (
     <Button
-      asChild
       variant="secondary"
-      className="rounded-full grid place-items-center text-center shadow-sm hover:shadow-md
+      className={`rounded-full grid place-items-center text-center shadow-sm hover:shadow-md
              transition-transform duration-200 will-change-transform
-             hover:scale-150 focus-visible:scale-110"
+             hover:scale-150 focus-visible:scale-110 ${
+               selected ? "ring-2 ring-red-500 scale-[1.06]" : ""
+             }`}
       style={{
         width: size,
         height: size,
@@ -89,32 +92,25 @@ function CircleBadge({
           : {}),
       }}
       title={`${t.name} • ${category}${city ? ` • ${city}` : ""}${price ? ` • ${price}` : ""}`}
+      onClick={onSelect ? () => onSelect(t.slug) : undefined}
     >
-      <Link
-        href={href}
-        prefetch={false}
-        className="block h-full w-full rounded-full"
-      >
-        <div className="leading-tight">
-          <div className={`${nameCls} font-semibold line-clamp-1`}>
-            {t.name}
+      <div className="leading-tight">
+        <div className={`${nameCls} font-semibold line-clamp-1`}>{t.name}</div>
+
+        {/* Category: always visible (also on compact) */}
+        <div className={`${metaCls} opacity-80 line-clamp-1`}>{category}</div>
+
+        {mode === "full" && (
+          <div className={`${metaCls} opacity-80 line-clamp-1`}>{city}</div>
+        )}
+
+        {/* Price always last; shows on all modes if available */}
+        {price && (
+          <div className={`${metaCls} font-semibold opacity-90 mt-0.5`}>
+            {price}
           </div>
-
-          {/* Category: always visible (also on compact) */}
-          <div className={`${metaCls} opacity-80 line-clamp-1`}>{category}</div>
-
-          {mode === "full" && (
-            <div className={`${metaCls} opacity-80 line-clamp-1`}>{city}</div>
-          )}
-
-          {/* Price always last; shows on all modes if available */}
-          {price && (
-            <div className={`${metaCls} font-semibold opacity-90 mt-0.5`}>
-              {price}
-            </div>
-          )}
-        </div>
-      </Link>
+        )}
+      </div>
     </Button>
   );
 }
@@ -127,6 +123,8 @@ export default function TenantOrbit({
   tenants: inputTenants, // <- get tenants from parent
   onReady,
   viewer: viewerProp, // viewer coordinates
+  selectedSlug,
+  onSelect,
 }: TenantOrbitProps) {
   const R = size / 2;
 
@@ -430,7 +428,6 @@ export default function TenantOrbit({
           "--radius": `${Math.round(r)}px`,
         };
 
-        const href = generateTenantUrl(tenant.slug);
         const color = tenant.categories?.[0]?.color as string | undefined;
 
         return (
@@ -440,10 +437,11 @@ export default function TenantOrbit({
                 <CircleBadge
                   t={tenant}
                   size={BADGE_D}
-                  href={href}
                   color={color}
                   mode={mode}
                   currency={currency}
+                  selected={tenant.slug === selectedSlug}
+                  onSelect={onSelect}
                 />
               </div>
             </div>

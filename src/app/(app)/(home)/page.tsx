@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useEffect, useMemo } from "react";
 import TenantOrbit from "@/modules/tenants/ui/components/visiuals/TenantOrbit";
 import LoadingPage from "@/components/shared/loading";
 import TenantsCarousel from "@/modules/tenants/ui/components/visiuals/TenantsCarousel";
@@ -18,7 +18,7 @@ const clamp = (n: number, min: number, max: number) =>
 export default function Home() {
   const trpc = useTRPC();
   const radarRef = useRef<HTMLDivElement | null>(null);
-  // const [size, setSize] = useState(320);
+  const [activeSlug, setActiveSlug] = useState<string | null>(null); // sync orbit <> carousel
   const [size, setSize] = useState<number | null>(null); // no wrong first paint
 
   // 🔹 Single fetch for both Orbit & Carousel
@@ -68,7 +68,20 @@ export default function Home() {
 
   // [isLoading] dependency is a workaround so the effect runs again after loading flips to false, because while isLoading is true you early-return <LoadingPage />
 
-  const tenants = (data?.docs ?? []) as TenantWithRelations[];
+  // Stabilize tenants and guard the first slug.
+  const tenants = useMemo(
+    () => (data?.docs ?? []) as TenantWithRelations[],
+    [data?.docs]
+  );
+  const firstSlug = tenants[0]?.slug;
+
+  // Initialize active slide once data arrives
+  useEffect(() => {
+    if (!activeSlug && firstSlug) setActiveSlug(firstSlug);
+  }, [activeSlug, firstSlug]);
+
+  const handleOrbitSelect = (slug: string) => setActiveSlug(slug);
+  const handleCarouselChange = (slug: string) => setActiveSlug(slug);
 
   // map to carousel items (placeholders for rating/orders for now)
   const items = tenants.map((t) => ({
@@ -111,6 +124,8 @@ export default function Home() {
               parallax={18}
               tenants={tenants}
               viewer={viewer}
+              selectedSlug={activeSlug ?? undefined}
+              onSelect={handleOrbitSelect}
             />
           )}
         </div>
@@ -121,7 +136,9 @@ export default function Home() {
           {/* <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center"> */}
           <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
             <TenantsCarousel
-              items={items} // drop slug & silence lint
+              items={items}
+              activeSlug={activeSlug ?? undefined}
+              onActiveChange={handleCarouselChange}
             />
           </div>
         </div>
