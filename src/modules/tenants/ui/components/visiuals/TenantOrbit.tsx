@@ -81,7 +81,9 @@ function CircleBadge({
       className={`rounded-full grid place-items-center text-center shadow-sm hover:shadow-md
              transition-transform duration-200 will-change-transform
              hover:scale-150 focus-visible:scale-110 ${
-               selected ? "ring-2 ring-red-500 scale-[1.06]" : ""
+               selected
+                 ? "ring-2 ring-red-500 scale-[1.03] before:content-[''] before:absolute before:-inset-1 before:rounded-full before:ring-2 before:ring-red-500/40 before:animate-pulse before:pointer-events-none"
+                 : ""
              }`}
       style={{
         width: size,
@@ -409,9 +411,9 @@ export default function TenantOrbit({
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
               aria-label={viewerCity ? `You · ${viewerCity}` : "You"}
             >
-              <span className="relative block w-4 h-4">
+              <span className="relative block w-6 h-6">
                 <span className="absolute inset-0 rounded-full bg-red-500 opacity-30 animate-ping" />
-                <span className="absolute inset-[2px] rounded-full bg-red-500" />
+                <span className="absolute inset-1.5 rounded-full bg-red-500" />
               </span>
             </div>
           </TooltipTrigger>
