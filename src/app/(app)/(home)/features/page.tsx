@@ -4,6 +4,7 @@ import TenantOrbit from "@/modules/tenants/ui/components/visiuals/TenantOrbit";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import type { TenantWithRelations } from "@/modules/tenants/types";
+import Headline from "@/modules/home/ui/billboard/headline";
 
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
@@ -46,6 +47,7 @@ export default function Page() {
 
   return (
     <div className="container mx-auto px-4 py-8 overflow-x-hidden">
+      <Headline />
       <div ref={boxRef} className="w-full min-h-[280px] flex justify-center">
         {size !== null && (
           <TenantOrbit

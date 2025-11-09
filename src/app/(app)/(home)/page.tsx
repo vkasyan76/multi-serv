@@ -9,6 +9,7 @@ import type { TenantWithRelations } from "@/modules/tenants/types";
 import { formatMonthYearForLocale } from "@/modules/profile/location-utils";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import Headline from "@/modules/home/ui/billboard/headline";
 
 // const poppins = Poppins({ subsets: ["latin"], weight: ["600", "700"] });
 
@@ -109,6 +110,12 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-4 pt-6 pb-4 overflow-x-hidden">
+      <Headline
+      // optional overrides:
+      // line1="We connect clients with professionals."
+      // line2="Your solution is only a click away."
+      // hideOnMobile={true}
+      />
       <div className="grid grid-cols-1 lg:grid-cols-[5fr_2fr] gap-6 items-center">
         {/* Orbit (left) now receives data */}
         <div

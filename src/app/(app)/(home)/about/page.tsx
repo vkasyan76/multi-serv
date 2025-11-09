@@ -1,5 +1,7 @@
 "use client";
 
+import Headline from "@/modules/home/ui/billboard/headline";
+
 // import { useEffect } from "react";
 // import { useTRPC } from "@/trpc/client";
 // import { useMutation } from "@tanstack/react-query";
@@ -20,6 +22,7 @@ export default function Page() {
 
   return (
     <div style={{ padding: 16 }}>
+      <Headline />
       <h1>About</h1>
       <p>Quick VIES sanity check via tRPC mutation.</p>
 
