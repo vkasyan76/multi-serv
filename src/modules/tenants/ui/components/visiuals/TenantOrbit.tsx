@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
   useCallback,
+  useId,
 } from "react";
 
 import type { TenantWithRelations } from "@/modules/tenants/types";
@@ -139,6 +140,13 @@ export default function TenantOrbit({
   // scale badge & spacing with overall radar size
   BADGE_D = Math.round(Math.max(56, Math.min(96, size * 0.12))); // ~12% of radar; 56–96 clamp
   RING_GAP = Math.max(40, Math.round(BADGE_D * 0.6));
+
+  const BG_PAD = Math.min(24, Math.max(8, Math.round(size * 0.035))); // white rim beyond the last dashed ring (px)
+  const gradId = useId();
+  const bgRadius = Math.min(maxR + BG_PAD, R);
+  // const bgRadius = R; // to be 100% sure the tint always reaches the edge
+  const outerHex = "#e8f5e9"; // warmer option: "#f3f4f0"; stronger: "#e6e9ee"
+  // or "#ecfdf5" (teal-green 50), "#e8f5e9" (greenish), "hsl(142 70% 95%)", "#eaf9f0" minty, "#eceff3" greyish
 
   // UI bits we still use below
   const { currency } = getLocaleAndCurrency();
@@ -385,6 +393,30 @@ export default function TenantOrbit({
         height={size}
         viewBox={`0 0 ${size} ${size}`}
       >
+        <defs>
+          <radialGradient
+            id={gradId}
+            gradientUnits="userSpaceOnUse"
+            cx={R}
+            cy={R}
+            r={bgRadius}
+          >
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="65%" stopColor="#ffffff" />
+            <stop offset="100%" stopColor={outerHex} />
+          </radialGradient>
+        </defs>
+        {/* White background disk behind the orbit */}
+        <circle
+          cx={R}
+          cy={R}
+          r={bgRadius}
+          fill={`url(#${gradId})`}
+          stroke="#e5e7eb"
+          strokeOpacity="0.7"
+          strokeWidth="1"
+        />
+
         {Array.from({ length: 6 }).map((_, i) => {
           const f = (i + 1) / (size < 420 ? 4 : 6);
           const r = minR + (maxR - minR) * f;
@@ -395,10 +427,10 @@ export default function TenantOrbit({
               cy={R}
               r={r}
               fill="none"
-              stroke="#d1d5db"
-              strokeOpacity="0.9"
-              strokeWidth="1.5"
-              strokeDasharray="3 7"
+              stroke="#cfd4da"
+              strokeOpacity="1"
+              strokeWidth="1.4"
+              strokeDasharray="2 6"
             />
           );
         })}
