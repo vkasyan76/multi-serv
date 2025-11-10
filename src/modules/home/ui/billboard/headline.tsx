@@ -10,6 +10,9 @@ type Props = {
   hideOnMobile?: boolean;
   gapAfterLine1?: number; // pause between sentences (sec)
   lineDuration?: number; // duration per line (sec)
+  /** NEW: optional font classes per line */
+  line1FontClass?: string;
+  line2FontClass?: string;
 };
 
 type CSSVars = React.CSSProperties & {
@@ -24,6 +27,9 @@ export default function Headline({
   hideOnMobile = true,
   gapAfterLine1 = 0.1,
   lineDuration = 2.2,
+  // Fonts
+  line1FontClass,
+  line2FontClass,
 }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [reveal, setReveal] = useState(false);
@@ -61,14 +67,26 @@ export default function Headline({
         className
       )}
     >
-      <h1 className="leading-[1.05] tracking-tight text-3xl md:text-5xl lg:text-6xl font-semibold text-foreground/90">
+      <h1
+        className={cn(
+          "leading-[1.05] tracking-tight text-3xl md:text-5xl lg:text-6xl",
+          "font-semibold text-foreground/90",
+          line1FontClass // NEW
+        )}
+      >
         <span className="infin-reveal-wrap" style={line1Vars}>
           {line1}
         </span>
       </h1>
 
       {line2 && (
-        <p className="mt-3 md:mt-4 leading-tight tracking-tight text-xl md:text-3xl lg:text-4xl text-foreground/80 text-center">
+        <p
+          className={cn(
+            "mt-3 md:mt-4 leading-tight tracking-tight text-xl md:text-3xl lg:text-4xl",
+            "text-foreground/80 text-center",
+            line2FontClass // NEW
+          )}
+        >
           <span className="infin-reveal-wrap" style={line2Vars}>
             {line2}
           </span>

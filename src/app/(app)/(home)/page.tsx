@@ -10,8 +10,13 @@ import { formatMonthYearForLocale } from "@/modules/profile/location-utils";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import Headline from "@/modules/home/ui/billboard/headline";
+import CallToAction from "@/modules/home/ui/cta/call-to-action";
+
+import { Poppins } from "next/font/google";
 
 // const poppins = Poppins({ subsets: ["latin"], weight: ["600", "700"] });
+const poppins = Poppins({ subsets: ["latin"], weight: ["600"] }); // sans
+// const playfair = Playfair_Display({ subsets: ["latin"], weight: ["700"] }); // serif (visibly different)
 
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
@@ -34,8 +39,10 @@ export default function Home() {
     refetchOnWindowFocus: false,
   });
 
-  // fetching the user location for viewer coordinates:
-  const { data: session } = useQuery(trpc.auth.session.queryOptions());
+  // fetching the user location for viewer coordinates || loading state for call to action:
+  const { data: session, isLoading: sessionLoading } = useQuery(
+    trpc.auth.session.queryOptions()
+  );
   const profileQ = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
     enabled: !!session?.user,
@@ -100,6 +107,12 @@ export default function Home() {
     blurb: "Professional services.",
   }));
 
+  // Call to action constants
+  const isAuthed = !!session?.user;
+  const isOnboarded = !!profileQ.data?.onboardingCompleted || !!viewer;
+  const hasTenant = !!session?.user?.tenants?.length;
+  const ctaLoading = sessionLoading || profileQ.isLoading;
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 pt-6 pb-4 min-h-[60vh] flex items-center justify-center">
@@ -111,10 +124,13 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 pt-6 pb-4 overflow-x-hidden">
       <Headline
-      // optional overrides:
-      // line1="We connect clients with professionals."
-      // line2="Your solution is only a click away."
-      // hideOnMobile={true}
+        // optional overrides:
+        // line1="We connect clients with professionals."
+        // line2="Your solution is only a click away."
+        // hideOnMobile={true}
+        className="md:max-w-6xl lg:max-w-7xl" // give the heading more room on desktop
+        line1FontClass={poppins.className} // first line = Playfair
+        line2FontClass={poppins.className} // second line = Poppins
       />
       <div className="grid grid-cols-1 lg:grid-cols-[5fr_2fr] gap-6 items-center">
         {/* Orbit (left) now receives data */}
@@ -150,6 +166,12 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <CallToAction
+        isAuthed={isAuthed}
+        isOnboarded={isOnboarded}
+        hasTenant={hasTenant}
+        loading={ctaLoading}
+      />
     </div>
   );
 }
