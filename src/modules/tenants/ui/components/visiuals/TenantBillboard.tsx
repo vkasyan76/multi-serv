@@ -53,7 +53,7 @@ export default function TenantBillboard({
     >
       <div className="flex flex-col">
         {/* image block with fixed aspect ratio */}
-        <div className="relative w-full aspect-[4/3] overflow-hidden">
+        <div className="relative w-full aspect-[4/3] lg:aspect-square overflow-hidden">
           {imageSrc ? (
             <>
               <Image
