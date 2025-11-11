@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type CSSProperties,
+} from "react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
@@ -13,10 +19,12 @@ type Props = {
   loading?: boolean; // pass session/profile loading to avoid flicker
   className?: string;
   line1FontClass?: string;
+  sentinelId?: string;
 };
 
 // CSS var typing for style prop
-type VarStyle = React.CSSProperties & { ["--du"]?: string };
+// type VarStyle = React.CSSProperties & { ["--du"]?: string };
+type VarStyle = CSSProperties & { ["--du"]?: string };
 
 export default function CallToAction({
   isAuthed,
@@ -25,49 +33,54 @@ export default function CallToAction({
   loading,
   className,
   line1FontClass,
+  sentinelId,
 }: Props) {
   // Hooks FIRST (fixes rules-of-hooks warning)
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [reveal, setReveal] = useState(false);
 
   useEffect(() => {
-    const el = hostRef.current;
-    if (!el) return;
+    const target =
+      (sentinelId && document.getElementById(sentinelId)) || hostRef.current;
+    if (!target) return;
 
-    // 1) If already on screen at mount (common after refresh), reveal immediately.
-    const alreadyInView =
-      el.getBoundingClientRect().top < window.innerHeight * 0.95;
-    if (alreadyInView) setReveal(true);
+    const initialY = window.scrollY;
 
-    // 2) Keep an observer for normal scroll-in cases.
+    const maybeReveal = (obs?: IntersectionObserver) => {
+      const rect = target.getBoundingClientRect();
+      const inView = rect.top <= window.innerHeight && rect.bottom >= 0;
+      const userScrolled = window.scrollY > initialY + 1;
+      if (inView && userScrolled) {
+        setReveal(true);
+        if (obs) obs.disconnect();
+        window.removeEventListener("scroll", onScroll);
+      }
+    };
+
+    const onScroll: EventListener = () => {
+      if (window.scrollY > initialY + 1) maybeReveal();
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
     const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setReveal(true);
-          io.disconnect();
+      (entries: IntersectionObserverEntry[], obs: IntersectionObserver) => {
+        const entry = entries[0];
+        if (entry && entry.isIntersecting) {
+          // still require some user scroll to have happened
+          maybeReveal(obs);
         }
       },
-      { rootMargin: "0px 0px -5% 0px", threshold: 0 }
+      { rootMargin: "0px 0px -1% 0px", threshold: 0 }
     );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  //   previous use effect
-  //   useEffect(() => {
-  //     const el = hostRef.current;
-  //     if (!el) return;
-  //     const io = new IntersectionObserver(
-  //       ([entry]) => {
-  //         if (entry?.isIntersecting) {
-  //           setReveal(true);
-  //           io.disconnect();
-  //         }
-  //       },
-  //       { rootMargin: "0px 0px 5% 0px", threshold: 0 }
-  //     );
-  //     io.observe(el);
-  //     return () => io.disconnect();
-  //   }, []);
+
+    io.observe(target);
+
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [sentinelId]);
 
   // If still loading auth/profile, don’t render CTA
   if (loading) return null;
@@ -78,10 +91,13 @@ export default function CallToAction({
 
   if (!isAuthed) {
     // Case 1: guest
-    text = "Register for free to connect to these professionals.";
+    text = "Register to localize your search:";
     cta = (
       <SignInButton>
-        <Button className="mt-6 w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg">
+        <Button
+          variant="elevated"
+          className="mt-6 w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
+        >
           Register
         </Button>
       </SignInButton>
@@ -121,21 +137,25 @@ export default function CallToAction({
       className={cn("py-14 md:py-20 text-center", className)}
       aria-label="Call to action"
     >
-      <h2
-        className={cn(
-          "infin-cta-reveal leading-[1.08] tracking-tight",
-          "text-3xl md:text-4xl lg:text-5xl font-semibold text-foreground/90",
-          line1FontClass
-        )}
-        style={{ "--du": "1.9s" } as VarStyle}
-      >
-        {text}
-      </h2>
-      {cta}
+      {/* ✅ wrap text + button so they reveal together */}
+      <div className="infin-cta-reveal" style={{ "--du": "1.9s" } as VarStyle}>
+        <h2
+          className={cn(
+            "leading-[1.08] tracking-tight",
+            "text-3xl md:text-4xl lg:text-5xl font-semibold text-foreground/90",
+            line1FontClass
+          )}
+          style={{ "--du": "1.9s" } as VarStyle}
+        >
+          {text}
+        </h2>
+        <div className="mt-6 flex justify-center">{cta}</div>
+      </div>
 
       {/* Co-located tiny CSS for the wipe-in effect */}
       <style jsx global>{`
         .infin-cta-reveal {
+          --cpad: 2px;
           display: block;
           position: relative;
           clip-path: inset(0 100% 0 0);

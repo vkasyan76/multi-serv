@@ -109,7 +109,7 @@ export default function Home() {
 
   // Call to action constants
   const isAuthed = !!session?.user;
-  const isOnboarded = !!profileQ.data?.onboardingCompleted || !!viewer;
+  const isOnboarded = profileQ.data?.onboardingCompleted === true;
   const hasTenant = !!session?.user?.tenants?.length;
   const ctaLoading = sessionLoading || profileQ.isLoading;
 
@@ -166,11 +166,15 @@ export default function Home() {
           </div>
         </div>
       </div>
+      {/* 👇 sentinel that marks “below the orbit” */}
+      <div id="cta-sentinel" className="h-px w-full" aria-hidden="true" />
       <CallToAction
+        key={`${isAuthed}-${isOnboarded}-${hasTenant}`}
         isAuthed={isAuthed}
         isOnboarded={isOnboarded}
         hasTenant={hasTenant}
         loading={ctaLoading}
+        sentinelId="cta-sentinel" // ← observe this marker
       />
     </div>
   );
