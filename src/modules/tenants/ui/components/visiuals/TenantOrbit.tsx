@@ -6,9 +6,9 @@ import React, {
   useRef,
   useState,
   useCallback,
+  useId,
 } from "react";
-import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
+
 import type { TenantWithRelations } from "@/modules/tenants/types";
 import { gsap } from "gsap";
 import {
@@ -18,8 +18,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { generateTenantUrl } from "@/lib/utils";
-import Link from "next/link";
 import {
   formatCurrency,
   getLocaleAndCurrency,
@@ -27,11 +25,15 @@ import {
 
 /** props */
 export type TenantOrbitProps = {
-  size?: number; // px
-  limit?: number; // requested tenants
-  maxDistanceKm?: number; // distance clamp
-  baseSeconds?: number; // min rotate duration
-  parallax?: number; // +seconds per radius fraction
+  size?: number;
+  maxDistanceKm?: number;
+  baseSeconds?: number;
+  parallax?: number;
+  tenants: TenantWithRelations[]; // 🔹 data comes from parent
+  onReady?: (count: number) => void;
+  viewer?: { lat: number; lng: number; city?: string | null }; // to detrmine coordinates of the viewer
+  selectedSlug?: string;
+  onSelect?: (slug: string) => void;
 };
 
 type Viewer = { lat: number; lng: number; city?: string | null };
@@ -44,18 +46,20 @@ type BadgeMode = "compact" | "normal" | "full";
 
 function CircleBadge({
   t,
-  href,
   size = 96,
   color,
   mode,
   currency,
+  selected,
+  onSelect,
 }: {
   t: TenantWithRelations;
-  href: string;
   size?: number;
   color?: string;
   mode: BadgeMode;
   currency: string;
+  selected?: boolean;
+  onSelect?: (slug: string) => void;
 }) {
   const city = t.user?.coordinates?.city ?? "—";
   const category = t.categories?.[0]?.name ?? "—";
@@ -74,9 +78,14 @@ function CircleBadge({
 
   return (
     <Button
-      asChild
       variant="secondary"
-      className="rounded-full grid place-items-center text-center shadow-sm hover:shadow-md"
+      className={`rounded-full grid place-items-center text-center shadow-sm hover:shadow-md
+             transition-transform duration-200 will-change-transform
+             hover:scale-150 focus-visible:scale-110 ${
+               selected
+                 ? "ring-2 ring-red-500 scale-[1.03] before:content-[''] before:absolute before:-inset-1 before:rounded-full before:ring-2 before:ring-red-500/40 before:animate-pulse before:pointer-events-none"
+                 : ""
+             }`}
       style={{
         width: size,
         height: size,
@@ -86,76 +95,81 @@ function CircleBadge({
           : {}),
       }}
       title={`${t.name} • ${category}${city ? ` • ${city}` : ""}${price ? ` • ${price}` : ""}`}
+      onClick={onSelect ? () => onSelect(t.slug) : undefined}
     >
-      <Link
-        href={href}
-        prefetch={false}
-        className="block h-full w-full rounded-full"
-      >
-        <div className="leading-tight">
-          <div className={`${nameCls} font-semibold line-clamp-1`}>
-            {t.name}
+      <div className="leading-tight">
+        <div className={`${nameCls} font-semibold line-clamp-1`}>{t.name}</div>
+
+        {/* Category: always visible (also on compact) */}
+        <div className={`${metaCls} opacity-80 line-clamp-1`}>{category}</div>
+
+        {mode === "full" && (
+          <div className={`${metaCls} opacity-80 line-clamp-1`}>{city}</div>
+        )}
+
+        {/* Price always last; shows on all modes if available */}
+        {price && (
+          <div className={`${metaCls} font-semibold opacity-90 mt-0.5`}>
+            {price}
           </div>
-
-          {/* Category: always visible (also on compact) */}
-          <div className={`${metaCls} opacity-80 line-clamp-1`}>{category}</div>
-
-          {mode === "full" && (
-            <div className={`${metaCls} opacity-80 line-clamp-1`}>{city}</div>
-          )}
-
-          {/* Price always last; shows on all modes if available */}
-          {price && (
-            <div className={`${metaCls} font-semibold opacity-90 mt-0.5`}>
-              {price}
-            </div>
-          )}
-        </div>
-      </Link>
+        )}
+      </div>
     </Button>
   );
 }
 
 export default function TenantOrbit({
   size = 640,
-  limit = 24,
   maxDistanceKm = 80,
   baseSeconds = 18,
   parallax = 20,
+  tenants: inputTenants, // <- get tenants from parent
+  onReady,
+  viewer: viewerProp, // viewer coordinates
+  selectedSlug,
+  onSelect,
 }: TenantOrbitProps) {
   const R = size / 2;
+
+  // ring radii range (keeps your original overlap behavior)
+  const minFrac = 0.18,
+    maxFrac = 0.84;
+  const minR = minFrac * R,
+    maxR = maxFrac * R;
 
   // scale badge & spacing with overall radar size
   BADGE_D = Math.round(Math.max(56, Math.min(96, size * 0.12))); // ~12% of radar; 56–96 clamp
   RING_GAP = Math.max(40, Math.round(BADGE_D * 0.6));
 
-  const trpc = useTRPC();
+  const BG_PAD = Math.min(24, Math.max(8, Math.round(size * 0.035))); // white rim beyond the last dashed ring (px)
+  const gradId = useId();
+  const bgRadius = Math.min(maxR + BG_PAD, R);
+  // const bgRadius = R; // to be 100% sure the tint always reaches the edge
+  const outerHex = "#e8f5e9"; // warmer option: "#f3f4f0"; stronger: "#e6e9ee"
+  // or "#ecfdf5" (teal-green 50), "#e8f5e9" (greenish), "hsl(142 70% 95%)", "#eaf9f0" minty, "#eceff3" greyish
 
-  // session + profile (for saved coordinates)
-  const { data: session } = useQuery(trpc.auth.session.queryOptions());
-  const { data: userProfile } = useQuery({
-    ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: !!session?.user,
-  });
-
+  // UI bits we still use below
   const { currency } = getLocaleAndCurrency();
   const mode: "compact" | "normal" | "full" =
     size < 420 ? "compact" : size < 600 ? "normal" : "full";
 
-  // viewer: profile coords → /api/geo fallback
+  // viewer: keep only IP fallback (bearing/center dot), no profile dependency
   const [viewer, setViewer] = useState<Viewer | null>(null);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancel = false;
+    // Prefer the prop (DB coords from page)
+    if (viewerProp) {
+      setViewer({
+        lat: viewerProp.lat,
+        lng: viewerProp.lng,
+        city: viewerProp.city ?? null,
+      });
+      return () => {
+        cancel = true;
+      };
+    }
     (async () => {
-      const c = userProfile?.coordinates;
-      if (typeof c?.lat === "number" && typeof c?.lng === "number") {
-        if (!cancel)
-          setViewer({ lat: c.lat, lng: c.lng, city: c.city ?? null });
-        setReady(true);
-        return;
-      }
       try {
         const res = await fetch("/api/geo", { cache: "no-store" });
         const json = (await res.json()) as {
@@ -168,37 +182,20 @@ export default function TenantOrbit({
         }
       } catch {
         /* ignore */
-      } finally {
-        if (!cancel) setReady(true);
       }
     })();
     return () => {
       cancel = true;
     };
-  }, [userProfile?.coordinates]);
+  }, [viewerProp]);
 
-  // tenants (distance is computed server-side; pass viewer for anon users)
-  const { data: list } = useQuery({
-    ...trpc.tenants.getMany.queryOptions({
-      sort: "distance",
-      limit,
-      distanceFilterEnabled: false,
-      userLat: viewer?.lat ?? null,
-      userLng: viewer?.lng ?? null,
-    }),
-    enabled: ready,
-  });
+  // tenants are provided by parent
+  const tenants = useMemo(() => inputTenants ?? [], [inputTenants]);
 
-  // ---------- layout constants (controls overlap) ----------
-  const minFrac = 0.18,
-    maxFrac = 0.84;
-  const minR = minFrac * R,
-    maxR = maxFrac * R;
-
-  const tenants = useMemo(
-    () => (list?.docs ?? []) as TenantWithRelations[],
-    [list]
-  );
+  // optional notify parent
+  useEffect(() => {
+    onReady?.(tenants.length);
+  }, [tenants.length, onReady]);
 
   // distance -> continuous radius
   const radiusFromDistance = useCallback(
@@ -268,7 +265,6 @@ export default function TenantOrbit({
     });
 
     // Enforce radial spacing from inner to outer
-    // enforce radial spacing from inner to outer
     prelim.sort((a, b) => a.r0 - b.r0);
     let last = minR - RING_GAP;
     const out: Ring[] = [];
@@ -340,7 +336,7 @@ export default function TenantOrbit({
     ["--radius"]?: string;
   };
 
-  const viewerCity = viewer?.city ?? userProfile?.coordinates?.city ?? null;
+  const viewerCity = viewerProp?.city ?? viewer?.city ?? null;
 
   return (
     <div
@@ -397,6 +393,30 @@ export default function TenantOrbit({
         height={size}
         viewBox={`0 0 ${size} ${size}`}
       >
+        <defs>
+          <radialGradient
+            id={gradId}
+            gradientUnits="userSpaceOnUse"
+            cx={R}
+            cy={R}
+            r={bgRadius}
+          >
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="65%" stopColor="#ffffff" />
+            <stop offset="100%" stopColor={outerHex} />
+          </radialGradient>
+        </defs>
+        {/* White background disk behind the orbit */}
+        <circle
+          cx={R}
+          cy={R}
+          r={bgRadius}
+          fill={`url(#${gradId})`}
+          stroke="#e5e7eb"
+          strokeOpacity="0.7"
+          strokeWidth="1"
+        />
+
         {Array.from({ length: 6 }).map((_, i) => {
           const f = (i + 1) / (size < 420 ? 4 : 6);
           const r = minR + (maxR - minR) * f;
@@ -407,10 +427,10 @@ export default function TenantOrbit({
               cy={R}
               r={r}
               fill="none"
-              stroke="#d1d5db"
-              strokeOpacity="0.9"
-              strokeWidth="1.5"
-              strokeDasharray="3 7"
+              stroke="#cfd4da"
+              strokeOpacity="1"
+              strokeWidth="1.4"
+              strokeDasharray="2 6"
             />
           );
         })}
@@ -423,7 +443,10 @@ export default function TenantOrbit({
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
               aria-label={viewerCity ? `You · ${viewerCity}` : "You"}
             >
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              <span className="relative block w-6 h-6">
+                <span className="absolute inset-0 rounded-full bg-red-500 opacity-30 animate-ping" />
+                <span className="absolute inset-1.5 rounded-full bg-red-500" />
+              </span>
             </div>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -439,7 +462,6 @@ export default function TenantOrbit({
           "--radius": `${Math.round(r)}px`,
         };
 
-        const href = generateTenantUrl(tenant.slug);
         const color = tenant.categories?.[0]?.color as string | undefined;
 
         return (
@@ -449,10 +471,11 @@ export default function TenantOrbit({
                 <CircleBadge
                   t={tenant}
                   size={BADGE_D}
-                  href={href}
                   color={color}
                   mode={mode}
                   currency={currency}
+                  selected={tenant.slug === selectedSlug}
+                  onSelect={onSelect}
                 />
               </div>
             </div>

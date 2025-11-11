@@ -62,10 +62,7 @@ export const Navbar = () => {
   const session = useQuery(trpc.auth.session.queryOptions());
 
   // Get info for user's tenant:
-  const {
-    data: myTenant,
-    isLoading: isMineLoading,
-  } = useQuery({
+  const { data: myTenant, isLoading: isMineLoading } = useQuery({
     ...trpc.tenants.getMine.queryOptions({}),
     enabled: !!session.data?.user?.id,
     staleTime: 30_000,
@@ -84,7 +81,8 @@ export const Navbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <nav className="h-16 flex border-b justify-between font-medium bg-white">
+    //  <na className="h-16 flex border-b justify-between font-medium bg-white">
+    <nav className="sticky top-0 z-50 h-16 flex border-b justify-between font-medium bg-white">
       <Link href="/" className="pl-6 flex items-center">
         <span className={cn("text-5xl font-semibold", poppins.className)}>
           Infinisimo
@@ -156,7 +154,9 @@ export const Navbar = () => {
               >
                 <Link
                   href={dashHref}
-                  onClick={isDashLoading ? (e) => e.preventDefault() : undefined}
+                  onClick={
+                    isDashLoading ? (e) => e.preventDefault() : undefined
+                  }
                   className={cn(isDashLoading && "opacity-60")}
                   aria-disabled={isDashLoading}
                   aria-busy={isDashLoading}
