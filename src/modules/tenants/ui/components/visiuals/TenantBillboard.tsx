@@ -62,7 +62,6 @@ export default function TenantBillboard({
                 fill
                 sizes="(min-width:1024px) 34vw, 100vw"
                 className="object-cover [object-position:center_18%]"
-                priority
                 onError={handleImageError}
               />
               {/* hidden fallback shown if image errors */}

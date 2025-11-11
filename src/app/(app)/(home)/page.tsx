@@ -1,6 +1,13 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, useEffect, useMemo } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import TenantOrbit from "@/modules/tenants/ui/components/visiuals/TenantOrbit";
 import LoadingPage from "@/components/shared/loading";
 import TenantsCarousel from "@/modules/tenants/ui/components/visiuals/TenantsCarousel";
@@ -88,24 +95,34 @@ export default function Home() {
     if (!activeSlug && firstSlug) setActiveSlug(firstSlug);
   }, [activeSlug, firstSlug]);
 
-  const handleOrbitSelect = (slug: string) => setActiveSlug(slug);
-  const handleCarouselChange = (slug: string) => setActiveSlug(slug);
+  const handleOrbitSelect = useCallback(
+    (slug: string) => setActiveSlug(slug),
+    []
+  );
+  const handleCarouselChange = useCallback(
+    (slug: string) => setActiveSlug(slug),
+    []
+  );
 
   // map to carousel items (placeholders for rating/orders for now)
-  const items = tenants.map((t) => ({
-    id: t.id!,
-    slug: t.slug,
-    name: t.name,
-    city: t.user?.coordinates?.city ?? "",
-    country: t.user?.coordinates?.countryISO ?? undefined,
-    imageSrc: t.image?.url ?? t.user?.clerkImageUrl ?? undefined,
-    pricePerHour: typeof t.hourlyRate === "number" ? t.hourlyRate : 0,
-    rating: 5.0,
-    ratingCount: 0,
-    since: t.createdAt ? formatMonthYearForLocale(t.createdAt) : "",
-    orders: 0,
-    blurb: "Professional services.",
-  }));
+  const items = useMemo(
+    () =>
+      tenants.map((t) => ({
+        id: t.id!,
+        slug: t.slug,
+        name: t.name,
+        city: t.user?.coordinates?.city ?? "",
+        country: t.user?.coordinates?.countryISO ?? undefined,
+        imageSrc: t.image?.url ?? t.user?.clerkImageUrl ?? undefined,
+        pricePerHour: typeof t.hourlyRate === "number" ? t.hourlyRate : 0,
+        rating: 5.0,
+        ratingCount: 0,
+        since: t.createdAt ? formatMonthYearForLocale(t.createdAt) : "",
+        orders: 0,
+        blurb: "Professional services.",
+      })),
+    [tenants]
+  );
 
   // Call to action constants
   const isAuthed = !!session?.user;
@@ -140,7 +157,6 @@ export default function Home() {
         >
           {size !== null && (
             <TenantOrbit
-              key={size as number} // helps GSAP/rings re-init on first real measure
               size={size}
               maxDistanceKm={80}
               baseSeconds={16}
@@ -169,7 +185,7 @@ export default function Home() {
       {/* 👇 sentinel that marks “below the orbit” */}
       <div id="cta-sentinel" className="h-px w-full" aria-hidden="true" />
       <CallToAction
-        key={`${isAuthed}-${isOnboarded}-${hasTenant}`}
+        // key={`${isAuthed}-${isOnboarded}-${hasTenant}`}
         isAuthed={isAuthed}
         isOnboarded={isOnboarded}
         hasTenant={hasTenant}

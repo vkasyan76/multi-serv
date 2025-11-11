@@ -104,9 +104,10 @@ export default function CallToAction({
     );
   } else if (!isOnboarded) {
     // Case 2: authed, profile not completed (no coords)
-    text = "Complete your profile to better locate professionals around you!";
+    text = "Complete your profile to better locate professionals around you:";
     cta = (
       <Button
+        variant="elevated"
         asChild
         className="mt-6 w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
       >
@@ -116,9 +117,10 @@ export default function CallToAction({
   } else if (!hasTenant) {
     // Case 3: authed + coords, not a tenant yet
     text =
-      "Have a business idea? Register as a service provider to appear on this radar!";
+      "Have a business idea? Register yourservice to appear on this radar!";
     cta = (
       <Button
+        variant="elevated"
         asChild
         className="mt-6 w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
       >

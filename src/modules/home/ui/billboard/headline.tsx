@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -15,10 +15,7 @@ type Props = {
   line2FontClass?: string;
 };
 
-type CSSVars = React.CSSProperties & {
-  "--dl"?: string; // delay
-  "--du"?: string; // duration
-};
+type CSSVars = CSSProperties & { "--dl"?: string; "--du"?: string };
 
 export default function Headline({
   line1 = "We connect clients with professionals.",

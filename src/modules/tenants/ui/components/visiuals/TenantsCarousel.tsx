@@ -80,7 +80,7 @@ export default function TenantsCarousel({
           <CarouselItem key={t.id} className="basis-auto lg:basis-full px-2">
             <Link href={generateTenantUrl(t.slug)} className="block group">
               <TenantBillboard
-                className="w-full transition-transform duration-200 group-hover:scale-[1.02] group-hover:shadow-xl"
+                className="w-full" // hover classes (they’re already inside TenantBillboard
                 imageSrc={t.imageSrc}
                 name={t.name}
                 city={t.city}
