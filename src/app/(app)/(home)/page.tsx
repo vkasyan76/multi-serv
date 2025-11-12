@@ -18,6 +18,8 @@ import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import Headline from "@/modules/home/ui/billboard/headline";
 import CallToAction from "@/modules/home/ui/cta/call-to-action";
+import { TenantFilters } from "@/modules/tenants/ui/components/tenant-filters";
+import { useTenantFilters } from "@/modules/tenants/hooks/use-tenant-filters";
 
 import { Poppins } from "next/font/google";
 
@@ -34,17 +36,19 @@ export default function Home() {
   const [activeSlug, setActiveSlug] = useState<string | null>(null); // sync orbit <> carousel
   const [size, setSize] = useState<number | null>(null); // no wrong first paint
 
+  const [filters] = useTenantFilters();
+
   // 🔹 Single fetch for both Orbit & Carousel
-  const { data, isLoading } = useQuery({
-    ...trpc.tenants.getMany.queryOptions({
-      sort: "distance",
-      limit: 24,
-      distanceFilterEnabled: false,
-      userLat: null, // (no filters yet; orbit will still render)
-      userLng: null,
-    }),
-    refetchOnWindowFocus: false,
-  });
+  // const { data, isLoading } = useQuery({
+  //   ...trpc.tenants.getMany.queryOptions({
+  //     sort: "distance",
+  //     limit: 24,
+  //     distanceFilterEnabled: false,
+  //     userLat: null, // (no filters yet; orbit will still render)
+  //     userLng: null,
+  //   }),
+  //   refetchOnWindowFocus: false,
+  // });
 
   // fetching the user location for viewer coordinates || loading state for call to action:
   const { data: session, isLoading: sessionLoading } = useQuery(
@@ -64,6 +68,28 @@ export default function Home() {
           city: profileQ.data.coordinates.city ?? null,
         }
       : undefined;
+
+  const queryInput = {
+    ...filters,
+    // Guests cannot use distance filter (mirror category page behavior)
+    ...(session?.user
+      ? {}
+      : {
+          distanceFilterEnabled: false,
+          maxDistance: null as number | null,
+        }),
+    userLat: viewer?.lat ?? null,
+    userLng: viewer?.lng ?? null,
+    limit: 24,
+  };
+
+  // 🔹 Single fetch for both Orbit & Carousel, driven by filters  coords
+  const { data, isLoading } = useQuery({
+    ...trpc.tenants.getMany.queryOptions(queryInput),
+    refetchOnWindowFocus: false,
+    // Optional: keepPreviousData avoids flicker on quick filter tweaks
+    // keepPreviousData: true,
+  });
 
   // measure radar box
   useLayoutEffect(() => {
@@ -149,11 +175,20 @@ export default function Home() {
         line1FontClass={poppins.className} // first line = Playfair
         line2FontClass={poppins.className} // second line = Poppins
       />
-      <div className="grid grid-cols-1 lg:grid-cols-[5fr_2fr] gap-6 items-center">
+      {/* 3-column row: Filters | Orbit | Carousel */}
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-[250px_1fr_minmax(360px,520px)] gap-10 items-start">
+        {/* Filters (left). Sticky so they stay visible while orbit/carousel update. */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-28 space-y-4">
+            <TenantFilters isSignedIn={!!session?.user} />
+          </div>
+        </aside>
+
         {/* Orbit (left) now receives data */}
         <div
           ref={radarRef}
-          className="flex w-full min-w-0 justify-center min-h-[280px]"
+          // className="flex w-full min-w-0 justify-center min-h-[280px]"
+          className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]"
         >
           {size !== null && (
             <TenantOrbit

@@ -117,7 +117,7 @@ export default function CallToAction({
   } else if (!hasTenant) {
     // Case 3: authed + coords, not a tenant yet
     text =
-      "Have a business idea? Register yourservice to appear on this radar!";
+      "Have a business idea? Register your service to appear on this radar!";
     cta = (
       <Button
         variant="elevated"
