@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useMemo } from "react";
+import type { FallbackProps } from "react-error-boundary";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTRPC } from "@/trpc/client";
@@ -16,18 +17,20 @@ import { OrbitAndCarousel } from "./OrbitAndCarousel";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
 
-function RadarError({
-  error,
-  resetErrorBoundary,
-}: {
-  error?: Error;
-  resetErrorBoundary?: () => void;
-}) {
+function RadarError({ resetErrorBoundary }: FallbackProps) {
   return (
     <>
       <div className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]">
         <div className="rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-          Couldn't load providers. Please adjust filters or retry.
+          Couldn&apos;t load providers. Please adjust filters or retry.
+          <div className="mt-3">
+            <button
+              onClick={resetErrorBoundary}
+              className="px-3 py-1 rounded-md border text-xs"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       </div>
       <div className="w-full lg:h-full flex justify-end lg:px-12" />
@@ -117,4 +120,3 @@ export default function HomeView() {
     </div>
   );
 }
-

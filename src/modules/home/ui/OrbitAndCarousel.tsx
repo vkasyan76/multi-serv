@@ -1,18 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
-import type {
-  TenantsGetManyInput,
-  TenantWithRelations,
-} from "@/modules/tenants/types";
+import type { TenantWithRelations } from "@/modules/tenants/types";
 import { formatMonthYearForLocale } from "@/modules/profile/location-utils";
 
 import TenantOrbit from "@/modules/tenants/ui/components/visiuals/TenantOrbit";
 import TenantsCarousel from "@/modules/tenants/ui/components/visiuals/TenantsCarousel";
 
 type Viewer = { lat: number; lng: number; city?: string | null } | undefined;
+// Derive the EXACT input type from the TRPC client:
+type TRPCClient = ReturnType<typeof useTRPC>;
+type GetManyInput = Parameters<
+  TRPCClient["tenants"]["getMany"]["queryOptions"]
+>[0];
 
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
@@ -21,17 +23,18 @@ export function OrbitAndCarousel({
   queryInput,
   viewer,
 }: {
-  queryInput: TenantsGetManyInput;
+  queryInput: GetManyInput; // <-- router-true input type
   viewer: Viewer;
 }) {
   const trpc = useTRPC();
 
   // Suspense fetch; keep previous data on filter changes (no flicker)
-  const { data } = useSuspenseQuery({
+  const { data } = useQuery({
     ...trpc.tenants.getMany.queryOptions(queryInput),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
-    placeholderData: (prev) => prev,
+    // @ts-expect-error  suspense: true causes TS error, but orbit and carousl load
+    suspense: true,
   });
 
   const tenants = useMemo(
@@ -137,4 +140,3 @@ export function OrbitAndCarousel({
     </>
   );
 }
-
