@@ -63,11 +63,6 @@ export default function HomeView() {
   const [filters] = useTenantFilters();
 
   // Distance mode needs viewer coords; otherwise first mount would re-suspend when viewer arrives.
-  const wantsDistance =
-    !!filters.distanceFilterEnabled && filters.maxDistance != null;
-  const hasViewer =
-    typeof viewer?.lat === "number" && typeof viewer?.lng === "number";
-  const canMountTenants = !wantsDistance || hasViewer;
 
   const queryInput = useMemo(
     () => ({
@@ -108,15 +103,11 @@ export default function HomeView() {
         </aside>
 
         {/* Orbit + Carousel are suspended together with a combined skeleton */}
-        {canMountTenants ? (
-          <Suspense fallback={<HomeRadarSkeleton />}>
-            <ErrorBoundary FallbackComponent={RadarError}>
-              <OrbitAndCarousel queryInput={queryInput} viewer={viewer} />
-            </ErrorBoundary>
-          </Suspense>
-        ) : (
-          <HomeRadarSkeleton />
-        )}
+        <Suspense fallback={<HomeRadarSkeleton />}>
+          <ErrorBoundary FallbackComponent={RadarError}>
+            <OrbitAndCarousel queryInput={queryInput} viewer={viewer} />
+          </ErrorBoundary>
+        </Suspense>
       </div>
 
       {/* CTA sentinel */}

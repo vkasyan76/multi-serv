@@ -76,7 +76,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  
+
   /* Header height variables for sticky positioning */
   --hdr: 120px;
 }
@@ -194,7 +194,7 @@
 .rbc-time-gutter,
 .rbc-time-header-gutter {
   width: 52px;
-  flex: 0 0 52px;     /* lock the flex-basis so it can't shrink */
+  flex: 0 0 52px; /* lock the flex-basis so it can't shrink */
   box-sizing: border-box;
 }
 
@@ -236,7 +236,7 @@
   .rbc-time-content {
     font-size: 12px;
   }
-  
+
   .rbc-time-gutter,
   .rbc-time-header-gutter,
   .rbc-time-header .rbc-time-gutter {
@@ -244,38 +244,64 @@
     flex: 0 0 70px !important;
     font-size: 11px;
   }
-  
+
   .rbc-time-gutter .rbc-time-slot {
     padding: 0 6px !important; /* More padding for mobile */
     font-size: 11px;
   }
-  
+
   /* Hide all-day row in time views on mobile */
   .rbc-time-view .rbc-allday-cell {
     display: none;
   }
-  
+
   /* Enhanced touch targets for mobile */
   .rbc-time-slot {
     min-height: 44px; /* iOS HIG minimum touch target */
   }
-  
+
   .rbc-event {
     min-height: 36px;
     border-radius: 4px;
     font-size: 11px;
   }
-  
+
   /* Better spacing for day headers on mobile */
   .rbc-header {
     padding: 8px 4px;
     font-size: 12px;
     font-weight: 600;
   }
-  
+
   /* Improve touch behavior inside the time grid */
   .rbc-time-view,
   .rbc-time-content {
     touch-action: manipulation; /* prefer taps; no double-tap zoom */
+  }
+}
+
+/* Skeleton shimmer (global, first-paint) */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.shimmer {
+  background-image: linear-gradient(
+    90deg,
+    #f6f8fa 0%,
+    #ebeef3 20%,
+    #f6f8fa 40%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.1s ease-in-out infinite;
+  will-change: background-position;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
   }
 }
