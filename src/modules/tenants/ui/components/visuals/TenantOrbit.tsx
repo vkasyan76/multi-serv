@@ -487,15 +487,15 @@ export default function TenantOrbit({
 }
 
 // Lightweight placeholder used during Suspense
-export function TenantOrbitSkeleton({ size = 560 }: { size?: number }) {
-  return (
-    <div
-      style={{ width: size, height: size }}
-      className="relative rounded-full bg-muted/30 animate-pulse"
-    >
-      <div className="absolute inset-6 rounded-full border border-dashed border-muted-foreground/30" />
-      <div className="absolute inset-12 rounded-full border border-dashed border-muted-foreground/25" />
-      <div className="absolute inset-20 rounded-full border border-dashed border-muted-foreground/20" />
-    </div>
-  );
-}
+// export function TenantOrbitSkeleton({ size = 560 }: { size?: number }) {
+//   return (
+//     <div
+//       style={{ width: size, height: size }}
+//       className="relative rounded-full bg-muted/30 animate-pulse"
+//     >
+//       <div className="absolute inset-6 rounded-full border border-dashed border-muted-foreground/30" />
+//       <div className="absolute inset-12 rounded-full border border-dashed border-muted-foreground/25" />
+//       <div className="absolute inset-20 rounded-full border border-dashed border-muted-foreground/20" />
+//     </div>
+//   );
+// }

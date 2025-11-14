@@ -12,7 +12,7 @@ import { TenantFilters } from "@/modules/tenants/ui/components/tenant-filters";
 import { useTenantFilters } from "@/modules/tenants/hooks/use-tenant-filters";
 
 import { Poppins } from "next/font/google";
-import { HomeRadarSkeleton } from "@/modules/tenants/ui/components/visuals/HomeRadarSkeleton";
+import { HomeRadarSkeleton } from "@/modules/home/ui/HomeRadarSkeleton";
 import { OrbitAndCarousel } from "./OrbitAndCarousel";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
@@ -62,6 +62,13 @@ export default function HomeView() {
 
   const [filters] = useTenantFilters();
 
+  // Distance mode needs viewer coords; otherwise first mount would re-suspend when viewer arrives.
+  const wantsDistance =
+    !!filters.distanceFilterEnabled && filters.maxDistance != null;
+  const hasViewer =
+    typeof viewer?.lat === "number" && typeof viewer?.lng === "number";
+  const canMountTenants = !wantsDistance || hasViewer;
+
   const queryInput = useMemo(
     () => ({
       ...filters,
@@ -101,11 +108,15 @@ export default function HomeView() {
         </aside>
 
         {/* Orbit + Carousel are suspended together with a combined skeleton */}
-        <Suspense fallback={<HomeRadarSkeleton />}>
-          <ErrorBoundary FallbackComponent={RadarError}>
-            <OrbitAndCarousel queryInput={queryInput} viewer={viewer} />
-          </ErrorBoundary>
-        </Suspense>
+        {canMountTenants ? (
+          <Suspense fallback={<HomeRadarSkeleton />}>
+            <ErrorBoundary FallbackComponent={RadarError}>
+              <OrbitAndCarousel queryInput={queryInput} viewer={viewer} />
+            </ErrorBoundary>
+          </Suspense>
+        ) : (
+          <HomeRadarSkeleton />
+        )}
       </div>
 
       {/* CTA sentinel */}

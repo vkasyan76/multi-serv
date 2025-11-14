@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useLayoutEffect,
+} from "react";
 import { useSuspenseQuery, skipToken } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import type { TenantWithRelations } from "@/modules/tenants/types";
@@ -85,7 +92,7 @@ export function OrbitAndCarousel({
   // Measure orbit size (mount + resize)
   const radarRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState<number | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = radarRef.current;
     if (!el) return;
 
@@ -99,12 +106,6 @@ export function OrbitAndCarousel({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-
-  // if (size === null) {
-  //   // Use the same skeleton as the Suspense fallback so the user sees one
-  //   // continuous placeholder while both data and layout are getting ready.
-  //   return <HomeRadarSkeleton />;
-  // }
 
   // Empty state (not skeleton)
   if (tenants.length === 0) {
@@ -142,7 +143,11 @@ export function OrbitAndCarousel({
       </div>
 
       {/* Carousel (right column) */}
-      <div className="w-full lg:h-full flex justify-end">
+      <div
+        className="w-full lg:h-full flex justify-end"
+        style={{ visibility: size !== null ? "visible" : "hidden" }} // prevents showing carrousel before orbit measures
+        aria-hidden={size === null}
+      >
         <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
           <TenantsCarousel
             items={items}

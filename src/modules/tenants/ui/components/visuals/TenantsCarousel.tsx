@@ -103,15 +103,15 @@ export default function TenantsCarousel({
 }
 
 // Billboard-style skeleton for Suspense fallback
-export function TenantsCarouselSkeleton() {
-  return (
-    <div className="w-full">
-      <div className="aspect-[4/3] lg:aspect-square rounded-2xl bg-muted/30 animate-pulse" />
-      <div className="mt-3 space-y-2">
-        <div className="h-5 w-40 rounded bg-muted/30 animate-pulse" />
-        <div className="h-4 w-28 rounded bg-muted/30 animate-pulse" />
-        <div className="h-4 w-24 rounded bg-muted/30 animate-pulse" />
-      </div>
-    </div>
-  );
-}
+// export function TenantsCarouselSkeleton() {
+//   return (
+//     <div className="w-full">
+//       <div className="aspect-[4/3] lg:aspect-square rounded-2xl bg-muted/30 animate-pulse" />
+//       <div className="mt-3 space-y-2">
+//         <div className="h-5 w-40 rounded bg-muted/30 animate-pulse" />
+//         <div className="h-4 w-28 rounded bg-muted/30 animate-pulse" />
+//         <div className="h-4 w-24 rounded bg-muted/30 animate-pulse" />
+//       </div>
+//     </div>
+//   );
+// }
