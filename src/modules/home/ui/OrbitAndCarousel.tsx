@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, skipToken } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import type { TenantWithRelations } from "@/modules/tenants/types";
 import { formatMonthYearForLocale } from "@/modules/profile/location-utils";
 
-import TenantOrbit from "@/modules/tenants/ui/components/visiuals/TenantOrbit";
-import TenantsCarousel from "@/modules/tenants/ui/components/visiuals/TenantsCarousel";
+import TenantOrbit from "@/modules/tenants/ui/components/visuals/TenantOrbit";
+import TenantsCarousel from "@/modules/tenants/ui/components/visuals/TenantsCarousel";
 
 type Viewer = { lat: number; lng: number; city?: string | null } | undefined;
 // Derive the EXACT input type from the TRPC client:
@@ -28,15 +28,23 @@ export function OrbitAndCarousel({
 }) {
   const trpc = useTRPC();
 
+  const base = trpc.tenants.getMany.queryOptions(queryInput);
+
+  // ✅ Narrow away the `skipToken` branch so TS knows queryFn is a real function
+  if (base.queryFn === skipToken) {
+    // With your inputs this shouldn't happen; if it does, throw so we notice in dev
+    throw new Error(
+      "tenants.getMany query was unexpectedly skipped (skipToken)."
+    );
+  }
+
   // Suspense fetch; keep previous data on filter changes (no flicker)
-  const { data } = useQuery({
-    ...trpc.tenants.getMany.queryOptions(queryInput),
+  const { data } = useSuspenseQuery({
+    queryKey: base.queryKey, // from tRPC
+    queryFn: base.queryFn!, // assert non-skip (we know we’re not skipping)
     staleTime: 30_000,
     refetchOnWindowFocus: false,
-    // @ts-expect-error  suspense: true causes TS error, but orbit and carousl load
-    suspense: true,
   });
-
   const tenants = useMemo(
     () => (data?.docs ?? []) as TenantWithRelations[],
     [data?.docs]
@@ -91,6 +99,12 @@ export function OrbitAndCarousel({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // if (size === null) {
+  //   // Use the same skeleton as the Suspense fallback so the user sees one
+  //   // continuous placeholder while both data and layout are getting ready.
+  //   return <HomeRadarSkeleton />;
+  // }
 
   // Empty state (not skeleton)
   if (tenants.length === 0) {

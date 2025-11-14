@@ -12,7 +12,7 @@ import { TenantFilters } from "@/modules/tenants/ui/components/tenant-filters";
 import { useTenantFilters } from "@/modules/tenants/hooks/use-tenant-filters";
 
 import { Poppins } from "next/font/google";
-import { HomeRadarSkeleton } from "@/modules/tenants/ui/components/visiuals/HomeRadarSkeleton";
+import { HomeRadarSkeleton } from "@/modules/tenants/ui/components/visuals/HomeRadarSkeleton";
 import { OrbitAndCarousel } from "./OrbitAndCarousel";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
