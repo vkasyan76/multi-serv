@@ -79,8 +79,27 @@ export function OrbitAndCarousel({
 
   // Sync selection
   const [activeSlug, setActiveSlug] = useState<string | undefined>(undefined);
+  // useEffect(() => {
+  //   if (!activeSlug && tenants[0]?.slug) setActiveSlug(tenants[0].slug);
+  // }, [activeSlug, tenants]);
+  // fall back to the first available tenant (or clear the selection) whenever the dataset changes and the current slug disappears:
   useEffect(() => {
-    if (!activeSlug && tenants[0]?.slug) setActiveSlug(tenants[0].slug);
+    if (tenants.length === 0) {
+      if (activeSlug !== undefined) {
+        setActiveSlug(undefined);
+      }
+      return;
+    }
+
+    const hasActive =
+      !!activeSlug && tenants.some((tenant) => tenant.slug === activeSlug);
+
+    if (!hasActive) {
+      const next = tenants.find((tenant) => tenant.slug)?.slug;
+      if (next && next !== activeSlug) {
+        setActiveSlug(next);
+      }
+    }
   }, [activeSlug, tenants]);
 
   const onOrbitSelect = useCallback((slug: string) => setActiveSlug(slug), []);
@@ -135,9 +154,9 @@ export function OrbitAndCarousel({
             baseSeconds={16}
             parallax={18}
             tenants={tenants}
-            viewer={viewer}
             selectedSlug={activeSlug}
             onSelect={onOrbitSelect}
+            {...(viewer ? { viewer } : {})} // Omit the prop entirely when viewer is undefined to avoid type error.
           />
         )}
       </div>

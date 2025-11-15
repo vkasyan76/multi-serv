@@ -41,6 +41,8 @@ type Viewer = { lat: number; lng: number; city?: string | null };
 // computed later from `size`, keep placeholders to satisfy TS at top-level -for mobile
 let BADGE_D = 96;
 let RING_GAP = Math.max(56, Math.round(BADGE_D * 0.6));
+// Show more tenants on the orbit (visual tweak):
+// let RING_GAP = Math.max(28, Math.round(BADGE_D * 0.45));
 
 type BadgeMode = "compact" | "normal" | "full";
 
@@ -485,17 +487,3 @@ export default function TenantOrbit({
     </div>
   );
 }
-
-// Lightweight placeholder used during Suspense
-// export function TenantOrbitSkeleton({ size = 560 }: { size?: number }) {
-//   return (
-//     <div
-//       style={{ width: size, height: size }}
-//       className="relative rounded-full bg-muted/30 animate-pulse"
-//     >
-//       <div className="absolute inset-6 rounded-full border border-dashed border-muted-foreground/30" />
-//       <div className="absolute inset-12 rounded-full border border-dashed border-muted-foreground/25" />
-//       <div className="absolute inset-20 rounded-full border border-dashed border-muted-foreground/20" />
-//     </div>
-//   );
-// }

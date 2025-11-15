@@ -48,34 +48,6 @@ export function HomeRadarSkeleton({ size = 560 }: Props) {
           </div>
         </div>
       </div>
-
-      {/* Local shimmer (rendered on first paint) */}
-      <style jsx>{`
-        @keyframes shimmer {
-          0% {
-            background-position: -200% 0;
-          }
-          100% {
-            background-position: 200% 0;
-          }
-        }
-        .shimmer {
-          background-image: linear-gradient(
-            90deg,
-            rgba(246, 248, 250, 1) 0%,
-            rgba(235, 238, 243, 1) 20%,
-            rgba(246, 248, 250, 1) 40%
-          );
-          background-size: 200% 100%;
-          animation: shimmer 1.1s ease-in-out infinite;
-          will-change: background-position;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .shimmer {
-            animation: none;
-          }
-        }
-      `}</style>
     </>
   );
 }

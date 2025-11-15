@@ -8,7 +8,6 @@ import { useTenantFilters } from "../../hooks/use-tenant-filters";
 import { ServicesFilter } from "./services-filter";
 import { DistanceFilter } from "./distance-filter";
 
-
 interface TenantFilterProps {
   title: string;
   className?: string;
@@ -46,7 +45,7 @@ export const TenantFilters = ({ isSignedIn }: TenantFiltersProps) => {
 
   // Helper functions for distance filter state management
   const handleDistanceChange = (value: number | null) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       distanceFilterEnabled: value != null && value > 0,
       maxDistance: value,
@@ -54,7 +53,7 @@ export const TenantFilters = ({ isSignedIn }: TenantFiltersProps) => {
   };
 
   const handleDistanceToggle = (enabled: boolean) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       distanceFilterEnabled: enabled,
       maxDistance: enabled ? (prev.maxDistance ?? 50) : null,
@@ -69,7 +68,9 @@ export const TenantFilters = ({ isSignedIn }: TenantFiltersProps) => {
     if (key === "sort") return false;
     if (key === "maxDistance") {
       // Only count maxDistance as a filter if distanceFilterEnabled is true
-      return filters.distanceFilterEnabled && value !== null && value !== undefined;
+      return (
+        filters.distanceFilterEnabled && value !== null && value !== undefined
+      );
     }
     if (key === "distanceFilterEnabled") return false;
     if (typeof value === "string") {
@@ -85,7 +86,7 @@ export const TenantFilters = ({ isSignedIn }: TenantFiltersProps) => {
     setFilters({
       maxPrice: "",
       services: [],
-      maxDistance: null,
+      maxDistance: 0,
       distanceFilterEnabled: false,
     });
   };
@@ -116,7 +117,6 @@ export const TenantFilters = ({ isSignedIn }: TenantFiltersProps) => {
           hasOnlineServices={filters.services?.includes("on-line") || false}
           isSignedIn={isSignedIn}
         />
-
       </TenantFilter>
 
       <TenantFilter title="Service Delivery" className="border-b-0">
