@@ -85,13 +85,15 @@ export default function TenantBillboard({
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
           {/* rating top-left */}
-          <Badge className="absolute top-3 left-3 bg-black/70 text-white hover:bg-black/70 backdrop-blur px-2.5 py-1.5 text-xs">
-            <span className="inline-flex items-center gap-1">
-              <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-              {rating.toFixed(1)}{" "}
-              <span className="opacity-80">({ratingCount})</span>
-            </span>
-          </Badge>
+          {ratingCount && ratingCount > 0 && (
+            <Badge className="absolute top-3 left-3 bg-black/70 text-white hover:bg-black/70 backdrop-blur px-2.5 py-1.5 text-xs">
+              <span className="inline-flex items-center gap-1">
+                <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                {rating.toFixed(1)}{" "}
+                <span className="opacity-80">({ratingCount})</span>
+              </span>
+            </Badge>
+          )}
 
           {/* name + location bottom-left */}
           <div className="absolute left-4 bottom-4 text-white drop-shadow">
@@ -113,7 +115,16 @@ export default function TenantBillboard({
               <div className="text-blue-700 font-bold text-xl">
                 €{pricePerHour}/h
               </div>
-              <div className="text-sm text-gray-600 truncate">{blurb}</div>
+              {/* <div className="text-sm text-gray-600 truncate">{blurb}</div> */}
+              {/* description */}
+              {blurb && (
+                <p
+                  className="text-sm text-muted-foreground line-clamp-1"
+                  title={blurb}
+                >
+                  {blurb}
+                </p>
+              )}
             </div>
             <div className="text-right">
               <div className="text-sm text-gray-700 font-medium">

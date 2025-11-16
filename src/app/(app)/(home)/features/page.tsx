@@ -1,6 +1,6 @@
 "use client";
 import { useLayoutEffect, useRef, useState } from "react";
-import TenantOrbit from "@/modules/tenants/ui/components/visiuals/TenantOrbit";
+import TenantOrbit from "@/modules/tenants/ui/components/visuals/TenantOrbit";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import type { TenantWithRelations } from "@/modules/tenants/types";

@@ -1,0 +1,192 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useLayoutEffect,
+} from "react";
+import { useSuspenseQuery, skipToken } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
+import type { TenantWithRelations } from "@/modules/tenants/types";
+import { formatMonthYearForLocale } from "@/modules/profile/location-utils";
+
+import TenantOrbit from "@/modules/tenants/ui/components/visuals/TenantOrbit";
+import TenantsCarousel from "@/modules/tenants/ui/components/visuals/TenantsCarousel";
+
+type Viewer = { lat: number; lng: number; city?: string | null } | undefined;
+// Derive the EXACT input type from the TRPC client:
+type TRPCClient = ReturnType<typeof useTRPC>;
+type GetManyInput = Parameters<
+  TRPCClient["tenants"]["getMany"]["queryOptions"]
+>[0];
+
+const clamp = (n: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, n));
+
+export function OrbitAndCarousel({
+  queryInput,
+  viewer,
+}: {
+  queryInput: GetManyInput; // <-- router-true input type
+  viewer: Viewer;
+}) {
+  const trpc = useTRPC();
+
+  const base = trpc.tenants.getMany.queryOptions(queryInput);
+
+  // ✅ Narrow away the `skipToken` branch so TS knows queryFn is a real function
+  if (base.queryFn === skipToken) {
+    // With your inputs this shouldn't happen; if it does, throw so we notice in dev
+    throw new Error(
+      "tenants.getMany query was unexpectedly skipped (skipToken)."
+    );
+  }
+
+  // Suspense fetch; keep previous data on filter changes (no flicker)
+  const { data } = useSuspenseQuery({
+    queryKey: base.queryKey, // from tRPC
+    queryFn: base.queryFn!, // assert non-skip (we know we’re not skipping)
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+  const tenants = useMemo(
+    () => (data?.docs ?? []) as TenantWithRelations[],
+    [data?.docs]
+  );
+
+  // small helper: strip HTML and collapse whitespace: for tenant blurbs (descriptions)
+  const toPlain = (s: string | null | undefined): string =>
+    typeof s === "string"
+      ? s
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+      : "";
+
+  // Map to carousel items
+  // The non-null assertion assumes all tenants have an id, but if the type allows undefined this will cause a runtime error.
+  const items = useMemo(
+    () =>
+      tenants
+        .filter((t) => Boolean(t.id) && Boolean(t.slug))
+        .map((t) => ({
+          id: t.id,
+          slug: t.slug,
+          name: t.name,
+          city: t.user?.coordinates?.city ?? "",
+          country: t.user?.coordinates?.countryISO ?? undefined,
+          imageSrc: t.image?.url ?? t.user?.clerkImageUrl ?? undefined,
+          pricePerHour: typeof t.hourlyRate === "number" ? t.hourlyRate : 0,
+          rating: 5.0,
+          ratingCount: 0,
+          since: t.createdAt ? formatMonthYearForLocale(t.createdAt) : "",
+          orders: 0,
+          blurb: toPlain(t.bio) || "Professional services.", // ← use bio
+        })),
+    [tenants]
+  );
+
+  // Sync selection
+  const [activeSlug, setActiveSlug] = useState<string | undefined>(undefined);
+  // useEffect(() => {
+  //   if (!activeSlug && tenants[0]?.slug) setActiveSlug(tenants[0].slug);
+  // }, [activeSlug, tenants]);
+  // fall back to the first available tenant (or clear the selection) whenever the dataset changes and the current slug disappears:
+  useEffect(() => {
+    if (tenants.length === 0) {
+      if (activeSlug !== undefined) {
+        setActiveSlug(undefined);
+      }
+      return;
+    }
+
+    const hasActive =
+      !!activeSlug && tenants.some((tenant) => tenant.slug === activeSlug);
+
+    if (!hasActive) {
+      const next = tenants.find((tenant) => tenant.slug)?.slug;
+      if (next && next !== activeSlug) {
+        setActiveSlug(next);
+      }
+    }
+  }, [activeSlug, tenants]);
+
+  const onOrbitSelect = useCallback((slug: string) => setActiveSlug(slug), []);
+  const onCarouselChange = useCallback(
+    (slug: string) => setActiveSlug(slug),
+    []
+  );
+
+  // Measure orbit size (mount + resize)
+  const radarRef = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = radarRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const w = el.getBoundingClientRect().width || 0;
+      setSize(clamp(Math.round(w - 24), 280, 720));
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Empty state (not skeleton)
+  if (tenants.length === 0) {
+    return (
+      <>
+        <div className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]">
+          <div className="rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+            No providers match your filters.
+          </div>
+        </div>
+        <div className="w-full lg:h-full flex justify-end lg:px-12" />
+      </>
+    );
+  }
+
+  return (
+    <>
+      {/* Orbit (middle column) */}
+      <div
+        ref={radarRef}
+        className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]"
+      >
+        {size !== null && (
+          <TenantOrbit
+            size={size}
+            maxDistanceKm={80}
+            baseSeconds={16}
+            parallax={18}
+            tenants={tenants}
+            selectedSlug={activeSlug}
+            onSelect={onOrbitSelect}
+            {...(viewer ? { viewer } : {})} // Omit the prop entirely when viewer is undefined to avoid type error.
+          />
+        )}
+      </div>
+
+      {/* Carousel (right column) */}
+      <div
+        className="w-full lg:h-full flex justify-end"
+        style={{ visibility: size !== null ? "visible" : "hidden" }} // prevents showing carrousel before orbit measures
+        aria-hidden={size === null}
+      >
+        <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
+          <TenantsCarousel
+            items={items}
+            activeSlug={activeSlug}
+            onActiveChange={onCarouselChange}
+          />
+        </div>
+      </div>
+    </>
+  );
+}

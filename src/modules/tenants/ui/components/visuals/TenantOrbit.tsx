@@ -41,6 +41,8 @@ type Viewer = { lat: number; lng: number; city?: string | null };
 // computed later from `size`, keep placeholders to satisfy TS at top-level -for mobile
 let BADGE_D = 96;
 let RING_GAP = Math.max(56, Math.round(BADGE_D * 0.6));
+// Show more tenants on the orbit (visual tweak):
+// let RING_GAP = Math.max(28, Math.round(BADGE_D * 0.45));
 
 type BadgeMode = "compact" | "normal" | "full";
 

@@ -6,8 +6,6 @@ interface Props {
   onMaxPriceChange: (value: string) => void;
 }
 
-
-
 export const PriceFilter = ({ maxPrice, onMaxPriceChange }: Props) => {
   const { locale, currency } = getLocaleAndCurrency();
 
@@ -34,8 +32,10 @@ export const PriceFilter = ({ maxPrice, onMaxPriceChange }: Props) => {
           allowLeadingZeros={false}
           prefix={currency === "EUR" ? "€ " : ""}
           placeholder={`${currencySymbol}0.00`}
-          value={maxPrice ? parseFloat(maxPrice) : undefined}
-          valueIsNumericString={false}
+          // value={maxPrice ? parseFloat(maxPrice) : undefined}
+          // valueIsNumericString={false}
+          value={maxPrice ?? ""} // was: parseFloat(...) or undefined
+          valueIsNumericString // was: false
           onValueChange={(values: NumberFormatValues) => {
             // Handle empty value case
             if (values.floatValue === undefined || values.floatValue === null) {
