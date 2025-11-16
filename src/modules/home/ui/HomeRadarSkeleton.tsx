@@ -35,7 +35,9 @@ export function HomeRadarSkeleton({ size = 560 }: Props) {
       <div className="w-full lg:h-full flex justify-end">
         <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
           <div className="w-full">
-            <div className="rounded-2xl border border-border/70 bg-white shadow-sm overflow-hidden">
+            {/* <div className="rounded-2xl border border-border/70 bg-white dark:bg-gray-900 shadow-sm overflow-hidden"> */}
+            {/* (If you prefer design tokens: use bg-card instead of bg-white dark:bg-gray-900.) */}
+            <div className="rounded-2xl border border-border/70 bg-card shadow-sm overflow-hidden">
               {/* image area with the same shimmer */}
               <div className="w-full aspect-[4/3] lg:aspect-square shimmer" />
               {/* text lines */}

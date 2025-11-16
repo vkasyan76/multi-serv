@@ -57,23 +57,35 @@ export function OrbitAndCarousel({
     [data?.docs]
   );
 
+  // small helper: strip HTML and collapse whitespace: for tenant blurbs (descriptions)
+  const toPlain = (s: string | null | undefined): string =>
+    typeof s === "string"
+      ? s
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+      : "";
+
   // Map to carousel items
+  // The non-null assertion assumes all tenants have an id, but if the type allows undefined this will cause a runtime error.
   const items = useMemo(
     () =>
-      tenants.map((t) => ({
-        id: t.id!,
-        slug: t.slug,
-        name: t.name,
-        city: t.user?.coordinates?.city ?? "",
-        country: t.user?.coordinates?.countryISO ?? undefined,
-        imageSrc: t.image?.url ?? t.user?.clerkImageUrl ?? undefined,
-        pricePerHour: typeof t.hourlyRate === "number" ? t.hourlyRate : 0,
-        rating: 5.0,
-        ratingCount: 0,
-        since: t.createdAt ? formatMonthYearForLocale(t.createdAt) : "",
-        orders: 0,
-        blurb: "Professional services.",
-      })),
+      tenants
+        .filter((t) => Boolean(t.id) && Boolean(t.slug))
+        .map((t) => ({
+          id: t.id,
+          slug: t.slug,
+          name: t.name,
+          city: t.user?.coordinates?.city ?? "",
+          country: t.user?.coordinates?.countryISO ?? undefined,
+          imageSrc: t.image?.url ?? t.user?.clerkImageUrl ?? undefined,
+          pricePerHour: typeof t.hourlyRate === "number" ? t.hourlyRate : 0,
+          rating: 5.0,
+          ratingCount: 0,
+          since: t.createdAt ? formatMonthYearForLocale(t.createdAt) : "",
+          orders: 0,
+          blurb: toPlain(t.bio) || "Professional services.", // ← use bio
+        })),
     [tenants]
   );
 
