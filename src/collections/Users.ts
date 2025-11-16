@@ -1,7 +1,8 @@
 import type { CollectionConfig } from "payload";
 import { tenantsArrayField } from "@payloadcms/plugin-multi-tenant/fields";
 import { isSuperAdmin } from "../lib/access.ts";
-import { ClerkAuthStrategy } from "@/lib/auth/clerk-strategy.ts";
+// import { ClerkAuthStrategy } from "@/lib/auth/clerk-strategy.ts";
+import { ClerkAuthStrategy } from "../lib/auth/clerk-strategy.ts";
 
 const defaultTenantArrayField = tenantsArrayField({
   tenantsArrayFieldName: "tenants",
@@ -71,7 +72,10 @@ export const Users: CollectionConfig = {
       type: "select",
       required: false,
       defaultValue: "app",
-      options: [{ label: "App", value: "app" }, { label: "Clerk", value: "clerk" }],
+      options: [
+        { label: "App", value: "app" },
+        { label: "Clerk", value: "clerk" },
+      ],
       admin: { position: "sidebar" },
     },
     {
