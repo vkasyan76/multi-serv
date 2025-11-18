@@ -98,7 +98,7 @@ export default function HomeView() {
         {/* Filters stay mounted; we don't touch their internals */}
         <aside className="hidden lg:block">
           <div className="sticky top-28 space-y-4">
-            <TenantFilters isSignedIn={!!session?.user} />
+            <TenantFilters isSignedIn={!!session?.user} showCategory />
           </div>
         </aside>
 

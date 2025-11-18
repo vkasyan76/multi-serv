@@ -16,8 +16,16 @@ const params = {
   services: parseAsArrayOf(parseAsString)
     .withOptions({ clearOnDefault: true })
     .withDefault([]),
-  maxDistance: parseAsInteger.withOptions({ clearOnDefault: true }).withDefault(0),
-  distanceFilterEnabled: parseAsBoolean.withDefault(false).withOptions({ clearOnDefault: false }),
+  maxDistance: parseAsInteger
+    .withOptions({ clearOnDefault: true })
+    .withDefault(0),
+  distanceFilterEnabled: parseAsBoolean
+    .withDefault(false)
+    .withOptions({ clearOnDefault: false }),
+  category: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
+  subcategory: parseAsString
+    .withOptions({ clearOnDefault: true })
+    .withDefault(""),
 };
 
 export const loadTenantFilters = createLoader(params);
