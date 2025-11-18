@@ -112,6 +112,7 @@ export const TenantFilters = ({
       distanceFilterEnabled: false,
       category: "",
       subcategory: "",
+      categories: [],
     });
   };
 
@@ -143,7 +144,7 @@ export const TenantFilters = ({
         />
       </TenantFilter>
 
-      <TenantFilter title="Service Delivery" className="border-b-0">
+      <TenantFilter title="Service Delivery">
         <ServicesFilter
           value={filters.services}
           onChange={(value) => onChange("services", value)}

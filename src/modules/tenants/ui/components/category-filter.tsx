@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { MultiSelect } from "@/components/ui/multi-select";
+import { MultiSelect } from "@/components/ui/multi-select-category";
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
 
 export type CategoryOption = {
@@ -27,10 +27,11 @@ export function CategoryFilter({
 }: Props) {
   const [filters, setFilters] = useTenantFilters();
 
-  // seed multi 'categories' from route 'category' once (so [category] pages prefill the chip)
+  // seed multi 'categories' from route 'category' once (so [category] pages prefill the chip) || Seed from route only if it's not "all"
   useEffect(() => {
     if (
       filters.category &&
+      filters.category !== "all" &&
       (!filters.categories || filters.categories.length === 0)
     ) {
       setFilters((prev) => ({ ...prev, categories: [filters.category] }));
@@ -39,17 +40,26 @@ export function CategoryFilter({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.category]);
 
-  // single-select behavior using MultiSelect UI
-  const value = filters.category ? [filters.category] : [];
+  // display value: prefer multi 'categories', fall back to route 'category'
+  const value =
+    filters.categories && filters.categories.length > 0
+      ? filters.categories
+      : filters.category
+        ? [filters.category]
+        : [];
 
   const msOptions = useMemo(
-    () => options.map((o) => ({ label: o.name, value: o.slug })),
+    () =>
+      options
+        .filter((o) => o.slug !== "all")
+        .map((o) => ({ label: o.name, value: o.slug })),
     [options]
   );
 
-  const placeholder = filters.category
-    ? (options.find((o) => o.slug === filters.category)?.name ?? "Category")
-    : "All categories";
+  const placeholder =
+    value.length > 0
+      ? (options.find((o) => o.slug === value[0])?.name ?? "Category")
+      : "All categories";
 
   const onChange = (vals: string[]) => {
     setFilters((prev) => ({
@@ -74,10 +84,12 @@ export function CategoryFilter({
         placeholderClassName={value.length ? "text-foreground font-medium" : ""}
         className="items-start py-2.5"
         // allow many chips now
-        maxCount={4}
+        maxCount={msOptions.length} // or Number.MAX_SAFE_INTEGER
         // force dropdown to open DOWN and never flip up
         popoverSide="bottom"
         popoverAvoidCollisions={false}
+        // forces remount when selection changes externally
+        // key={value.join("|")}
       />
     </div>
   );
