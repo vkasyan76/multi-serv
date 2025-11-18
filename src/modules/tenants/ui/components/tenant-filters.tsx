@@ -3,10 +3,15 @@
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
+
+import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
+
 import { PriceFilter } from "./price-filter";
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
 import { ServicesFilter } from "./services-filter";
 import { DistanceFilter } from "./distance-filter";
+import { CategoryFilter } from "./category-filter";
 
 interface TenantFilterProps {
   title: string;
@@ -35,13 +40,30 @@ const TenantFilter = ({ title, className, children }: TenantFilterProps) => {
 
 interface TenantFiltersProps {
   isSignedIn: boolean;
+  showCategory?: boolean;
 }
 
-export const TenantFilters = ({ isSignedIn }: TenantFiltersProps) => {
+export const TenantFilters = ({
+  isSignedIn,
+  showCategory = false,
+}: TenantFiltersProps) => {
   const [filters, setFilters] = useTenantFilters();
   const onChange = (key: keyof typeof filters, value: unknown) => {
     setFilters({ ...filters, [key]: value });
   };
+
+  // Read categories from React Query cache (prefetched in (home)/layout);
+  // if not prefetched, this will fetch once.
+  const trpc = useTRPC();
+  const categoriesQ = useQuery({
+    ...trpc.categories.getMany.queryOptions(),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+  const categoryOptions = (categoriesQ.data ?? []).map((c) => ({
+    slug: c.slug,
+    name: c.name,
+  }));
 
   // Helper functions for distance filter state management
   const handleDistanceChange = (value: number | null) => {
@@ -88,6 +110,9 @@ export const TenantFilters = ({ isSignedIn }: TenantFiltersProps) => {
       services: [],
       maxDistance: 0,
       distanceFilterEnabled: false,
+      category: "",
+      subcategory: "",
+      categories: [],
     });
   };
 
@@ -119,12 +144,20 @@ export const TenantFilters = ({ isSignedIn }: TenantFiltersProps) => {
         />
       </TenantFilter>
 
-      <TenantFilter title="Service Delivery" className="border-b-0">
+      <TenantFilter title="Service Delivery">
         <ServicesFilter
           value={filters.services}
           onChange={(value) => onChange("services", value)}
         />
       </TenantFilter>
+      {showCategory && (
+        <TenantFilter title="Category" className="border-b-0">
+          <CategoryFilter
+            options={categoryOptions}
+            disabled={categoriesQ.isLoading || categoriesQ.isError}
+          />
+        </TenantFilter>
+      )}
     </div>
   );
 };

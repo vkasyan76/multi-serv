@@ -22,6 +22,19 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   const trpc = useTRPC();
   const [filters] = useTenantFilters();
 
+  // Prefer route params; strip them out of filters to avoid duplicate keys:
+  // You were sending duplicate keys for category (and sometimes subcategory) in your query: once from route params and once from filters. Depending on spread order, the filter value ("") could overwrite the route slug, leading to no category filtering. The TenantList merge below removes the duplication and prefers the route param.
+  // strip out to avoid duplicates in spread
+  const { categories: _cats = [], subcategory: _s, ...rest } = filters;
+
+  // route-based category (except "all")
+  const normalizedCategory = category && category !== "all" ? category : null;
+
+  // final OR-list (route param + chips)
+  const categories = Array.from(
+    new Set([...(normalizedCategory ? [normalizedCategory] : []), ..._cats])
+  );
+
   // Use conditional query for user profile - only fetch if authenticated
   const { data: userProfile } = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
@@ -31,9 +44,11 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   // Use infinite query for tenants with Load More functionality
   const base = trpc.tenants.getMany.infiniteQueryOptions(
     {
-      category: category || null,
-      subcategory: subcategory || null,
-      ...filters,
+      ...rest,
+      // category: normalizedCategory ?? (_c || null),
+      // ⬇️ send array instead of single
+      categories: categories.length ? categories : null,
+      subcategory: subcategory ?? (_s || null),
       ...(isSignedIn
         ? {}
         : { distanceFilterEnabled: false, maxDistance: null }),

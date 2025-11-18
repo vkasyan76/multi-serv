@@ -24,6 +24,8 @@ export const tenantsRouter = createTRPCRouter({
     .input(
       z.object({
         category: z.string().nullable().optional(),
+        // NEW: multi from the MultiSelect
+        categories: z.array(z.string()).nullable().optional(),
         subcategory: z.string().nullable().optional(),
         maxPrice: z.string().nullable().optional(),
         services: z.array(z.string()).nullable().optional(),
@@ -93,58 +95,36 @@ export const tenantsRouter = createTRPCRouter({
         }
       }
 
-      if (input.category) {
-        // Fetch category data to validate the category exists and get its subcategories
-        const categoriesData = await ctx.db.find({
+      // Unify single route category + multi-select categories
+      const selectedCats = Array.from(
+        new Set([
+          ...(input.category ? [input.category] : []),
+          ...((input.categories ?? []) as string[]),
+        ])
+      ).filter(Boolean) as string[];
+
+      // If any category is selected, expand them to include their subcategories
+      if (selectedCats.length) {
+        // Load all selected parent categories with their subcategories
+        const cats = await ctx.db.find({
           collection: "categories",
-          limit: 1,
-          depth: 1, // Populate subcategories, subcategories.[0] is type "Category"
+          where: { slug: { in: selectedCats } },
+          depth: 1, // populate subcategories
+          limit: selectedCats.length,
           pagination: false,
-          where: {
-            slug: {
-              equals: input.category,
-            },
-          },
         });
 
-        // console.log(JSON.stringify(categoriesData, null, 2));
+        const parentSlugs = cats.docs.map((c) => c.slug);
+        const subSlugs = cats.docs.flatMap((c) =>
+          (c.subcategories?.docs ?? []).map((s) => (s as Category).slug)
+        );
 
-        const formattedData = categoriesData.docs.map((doc) => ({
-          ...doc,
-          subcategories: (doc.subcategories?.docs ?? []).map((doc) => ({
-            // Populate subcategories, subcategories.[0] will be a type of "Category"
-            ...(doc as Category),
-            subcategories: undefined,
-          })),
-        }));
-
-        // prepare subcategories:
-        const subcategoriesSlugs = [];
-
-        // 1st in the array:
-        const parentCategory = formattedData[0];
-
-        // NESTED LOGIC: Only apply filtering if the category exists
-        // This prevents crashes when invalid categories (like "favicon.ico") are passed
-        if (parentCategory) {
-          subcategoriesSlugs.push(
-            ...parentCategory.subcategories.map(
-              (subcategory) => subcategory.slug
-            )
-          );
-
-          // SUB-CATEGORY FILTERING: Check if we're filtering by a specific subcategory
-          if (input.subcategory) {
-            // Filter tenants that belong to this specific subcategory
-            where["subcategories.slug"] = {
-              equals: input.subcategory,
-            };
-          } else {
-            // CATEGORY FILTERING: Filter tenants that belong to this category OR any of its subcategories
-            where["categories.slug"] = {
-              in: [parentCategory.slug, ...subcategoriesSlugs],
-            };
-          }
+        if (input.subcategory) {
+          // If a specific subcategory is requested, it wins
+          where["subcategories.slug"] = { equals: input.subcategory };
+        } else {
+          // Otherwise, include tenants tagged with any selected parent or its subs
+          where["categories.slug"] = { in: [...parentSlugs, ...subSlugs] };
         }
       }
 
