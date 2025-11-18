@@ -26,6 +26,10 @@ const params = {
   subcategory: parseAsString
     .withOptions({ clearOnDefault: true })
     .withDefault(""),
+  // NEW: real multi-select source of truth
+  categories: parseAsArrayOf(parseAsString)
+    .withOptions({ clearOnDefault: true })
+    .withDefault([]),
 };
 
 export const loadTenantFilters = createLoader(params);

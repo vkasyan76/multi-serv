@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
@@ -27,6 +27,18 @@ export function CategoryFilter({
 }: Props) {
   const [filters, setFilters] = useTenantFilters();
 
+  // seed multi 'categories' from route 'category' once (so [category] pages prefill the chip)
+  useEffect(() => {
+    if (
+      filters.category &&
+      (!filters.categories || filters.categories.length === 0)
+    ) {
+      setFilters((prev) => ({ ...prev, categories: [filters.category] }));
+    }
+    // do not add setFilters to deps to avoid loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.category]);
+
   // single-select behavior using MultiSelect UI
   const value = filters.category ? [filters.category] : [];
 
@@ -40,12 +52,11 @@ export function CategoryFilter({
     : "All categories";
 
   const onChange = (vals: string[]) => {
-    // enforce single selection: last picked wins; empty = “All”
-    const next = vals.length ? vals[vals.length - 1] : "";
     setFilters((prev) => ({
       ...prev,
-      category: next,
-      subcategory: "", // reset when category changes
+      categories: vals, // real multi-select
+      category: "", // avoid dup with the single route param
+      subcategory: vals.length ? "" : prev.subcategory, // reset when category scope changes
     }));
   };
 
@@ -60,11 +71,13 @@ export function CategoryFilter({
         value={value}
         onValueChange={onChange}
         placeholder={placeholder}
-        placeholderClassName={
-          filters.category ? "text-foreground font-medium" : ""
-        }
+        placeholderClassName={value.length ? "text-foreground font-medium" : ""}
         className="items-start py-2.5"
-        maxCount={1}
+        // allow many chips now
+        maxCount={4}
+        // force dropdown to open DOWN and never flip up
+        popoverSide="bottom"
+        popoverAvoidCollisions={false}
       />
     </div>
   );

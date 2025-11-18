@@ -30,10 +30,15 @@ export const params = {
   distanceFilterEnabled: parseAsBoolean
     .withDefault(false)
     .withOptions({ clearOnDefault: false }),
+  // keep the old single 'category' for route/back-compat
   category: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
   subcategory: parseAsString
     .withOptions({ clearOnDefault: true })
     .withDefault(""),
+  // NEW: real multi-select source of truth
+  categories: parseAsArrayOf(parseAsString)
+    .withOptions({ clearOnDefault: true })
+    .withDefault([]),
 };
 
 // passing to the client tenant-filters.tsx:

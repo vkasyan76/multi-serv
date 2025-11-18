@@ -123,6 +123,10 @@ interface MultiSelectProps
    * Optional, can be used to customize placeholder text styling.
    */
   placeholderClassName?: string;
+
+  /** Optional popover positioning settings for the option - manual addition. */
+  popoverSide?: "top" | "right" | "bottom" | "left";
+  popoverAvoidCollisions?: boolean;
 }
 
 export const MultiSelect = React.forwardRef<
@@ -142,6 +146,9 @@ export const MultiSelect = React.forwardRef<
       //   asChild = false,
       className,
       placeholderClassName,
+      popoverSide,
+      popoverAvoidCollisions,
+
       ...props
     },
     ref
@@ -301,6 +308,9 @@ export const MultiSelect = React.forwardRef<
           className="w-auto p-0"
           align="start"
           onEscapeKeyDown={() => setIsPopoverOpen(false)}
+          // added props:
+          side={popoverSide ?? "bottom"}
+          avoidCollisions={popoverAvoidCollisions ?? true}
         >
           <Command>
             <CommandInput
