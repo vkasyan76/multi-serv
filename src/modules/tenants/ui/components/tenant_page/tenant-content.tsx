@@ -22,6 +22,7 @@ import { BookSlotsButton } from "@/modules/checkout/ui/book-slots-button";
 import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
+import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary";
 
 // import TenantCalendar from "@/modules/bookings/ui/TenantCalendar";
 
@@ -334,13 +335,7 @@ export default function TenantContent({ slug }: { slug: string }) {
             id="reviews"
             className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
           >
-            <h2 className="text-2xl font-bold mb-4">Reviews</h2>
-            <div className="bg-gray-50 p-6 rounded-lg text-center">
-              <p className="text-gray-600">Review system coming soon</p>
-              <p className="text-sm text-gray-500 mt-2">
-                Customer feedback and ratings will be displayed here.
-              </p>
-            </div>
+            <TenantReviewSummary slug={slug} />
           </section>
         </div>
 

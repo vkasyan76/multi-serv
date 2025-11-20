@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { Review } from "@payload-types";
 
 const schema = z.object({
   rating: z.number().min(1).max(5),
@@ -20,16 +21,22 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
-export default function ReviewForm({ slug }: { slug: string }) {
+type ReviewFormProps = {
+  slug: string;
+  existingReview?: Review | null;
+};
+
+export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
   const trpc = useTRPC();
-  const router = useRouter();
   const qc = useQueryClient();
+  const router = useRouter();
 
   const create = useMutation(
     trpc.reviews.create.mutationOptions({
       onSuccess: async () => {
         await qc.invalidateQueries();
-        router.replace(`/tenants/${slug}`);
+        toast.success("Your review has been submitted.");
+        router.refresh(); //  show review data on this page
       },
       onError: (err) => {
         console.error("reviews.create failed:", err);
@@ -41,8 +48,14 @@ export default function ReviewForm({ slug }: { slug: string }) {
   const form = useForm<FormValues>({
     mode: "onChange",
     resolver: zodResolver(schema),
-    defaultValues: { rating: 0, title: "", body: "" },
+    defaultValues: {
+      rating: existingReview?.rating ?? 0,
+      title: existingReview?.title ?? "",
+      body: existingReview?.body ?? "",
+    },
   });
+
+  const isUpdate = !!existingReview; // flag to indicate if this is an update
 
   const bodyValue = form.watch("body");
 
@@ -113,8 +126,10 @@ export default function ReviewForm({ slug }: { slug: string }) {
           {create.isPending || form.formState.isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting…
+              {isUpdate ? "Updating…" : "Submitting…"}
             </>
+          ) : isUpdate ? (
+            "Update review"
           ) : (
             "Submit"
           )}

@@ -1,4 +1,4 @@
-import { createTRPCRouter, clerkProcedure } from "@/trpc/init";
+import { createTRPCRouter, clerkProcedure, baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -34,9 +34,22 @@ export const reviewsRouter = createTRPCRouter({
         const tenant = tRes.docs[0] as Tenant | undefined;
         if (!tenant) return null;
 
+        // identify payloaduser based on userId from clerk:
+        const me = await db.find({
+          collection: "users",
+          where: { clerkUserId: { equals: userId } },
+          limit: 1,
+          depth: 0,
+        });
+        const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+        if (!payloadUserId) return null;
+
         const rRes = await db.find({
           collection: "reviews",
-          where: { tenant: { equals: tenant.id }, author: { equals: userId! } },
+          where: {
+            tenant: { equals: tenant.id },
+            author: { equals: payloadUserId },
+          },
           limit: 1,
         });
 
@@ -57,6 +70,15 @@ export const reviewsRouter = createTRPCRouter({
       }) => {
         const { db, userId } = ctx;
 
+        // identify payloaduser based on userId from clerk:
+        const me = await db.find({
+          collection: "users",
+          where: { clerkUserId: { equals: userId } },
+          limit: 1,
+          depth: 0,
+        });
+        const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+
         const tRes = await db.find({
           collection: "tenants",
           where: { slug: { equals: input.slug } },
@@ -66,21 +88,26 @@ export const reviewsRouter = createTRPCRouter({
         if (!tenant) throw new TRPCError({ code: "NOT_FOUND" });
 
         // Load last PAID order for this user+tenant; depth resolves slots → Booking with serviceSnapshot
-        const orderRes = await db.find({
-          collection: "orders",
-          where: {
-            and: [
-              { status: { equals: "paid" } },
-              { user: { equals: userId! } },
-              { tenant: { equals: tenant.id } },
-            ],
-          },
-          sort: "-createdAt",
-          limit: 1,
-          depth: 2,
-        });
+        // order query to use payloadUserId and only run it if we actually found one:
+        let last: Order | undefined = undefined;
 
-        const last = orderRes.docs[0] as Order | undefined;
+        if (payloadUserId) {
+          const orderRes = await db.find({
+            collection: "orders",
+            where: {
+              and: [
+                { status: { equals: "paid" } },
+                { user: { equals: payloadUserId } }, // <- here
+                { tenant: { equals: tenant.id } },
+              ],
+            },
+            sort: "-createdAt",
+            limit: 1,
+            depth: 2,
+          });
+
+          last = orderRes.docs[0] as Order | undefined;
+        }
 
         // slots are (string | Booking)[]
         const firstSlot: Booking | string | undefined = Array.isArray(
@@ -128,6 +155,21 @@ export const reviewsRouter = createTRPCRouter({
           });
         }
 
+        // map clerk user to payload userId:
+        const me = await db.find({
+          collection: "users",
+          where: { clerkUserId: { equals: userId } },
+          limit: 1,
+          depth: 0,
+        });
+        const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+        if (!payloadUserId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "User account not found.",
+          });
+        }
+
         const tRes = await db.find({
           collection: "tenants",
           where: { slug: { equals: input.slug } },
@@ -147,7 +189,7 @@ export const reviewsRouter = createTRPCRouter({
           where: {
             and: [
               { status: { equals: "paid" } },
-              { user: { equals: userId } },
+              { user: { equals: payloadUserId } }, // dabase userId
               { tenant: { equals: tenant.id } },
             ],
           },
@@ -164,7 +206,10 @@ export const reviewsRouter = createTRPCRouter({
         // 1 review per (user, tenant): update if exists, else create
         const existing = await db.find({
           collection: "reviews",
-          where: { tenant: { equals: tenant.id }, author: { equals: userId } },
+          where: {
+            tenant: { equals: tenant.id },
+            author: { equals: payloadUserId },
+          },
           limit: 1,
         });
 
@@ -188,13 +233,65 @@ export const reviewsRouter = createTRPCRouter({
           data: {
             tenant: tenant.id,
             tenantSlug: tenant.slug, // if present in schema
-            author: userId,
+            author: payloadUserId, // use mapped payload userId
             rating: input.rating,
             title: input.title,
             body: input.body,
           },
           overrideAccess: true,
         });
+      }
+    ),
+
+  // aggregated summary for public reviews display:
+
+  summaryForTenant: baseProcedure
+    .input(getBySlugInput)
+    .query(
+      async ({
+        ctx,
+        input,
+      }: {
+        ctx: TRPCContext;
+        input: z.infer<typeof getBySlugInput>;
+      }) => {
+        const { db } = ctx;
+
+        // We keyed reviews by tenantSlug, so this is simple
+        const res = await db.find({
+          collection: "reviews",
+          where: { tenantSlug: { equals: input.slug } },
+          limit: 1000, // plenty for now; adjust if you expect huge volumes
+        });
+
+        const docs = res.docs as Review[];
+
+        const breakdown: Record<1 | 2 | 3 | 4 | 5, number> = {
+          1: 0,
+          2: 0,
+          3: 0,
+          4: 0,
+          5: 0,
+        };
+
+        let sum = 0;
+
+        for (const r of docs) {
+          const rating = Math.round(r.rating ?? 0);
+          if (rating >= 1 && rating <= 5) {
+            breakdown[rating as 1 | 2 | 3 | 4 | 5]++;
+            sum += rating;
+          }
+        }
+
+        const totalReviews = docs.length;
+        const avgRating = totalReviews > 0 ? sum / totalReviews : 0;
+
+        return {
+          avgRating, // e.g. 4.4
+          totalReviews,
+          breakdown,
+        };
       }
     ),
 });
