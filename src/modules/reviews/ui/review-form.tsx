@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
+import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,28 +13,49 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { Review } from "@payload-types";
 
 const schema = z.object({
   rating: z.number().min(1).max(5),
-  title: z.string().min(3).max(120),
-  body: z.string().min(10).max(5000),
+  title: z.string().trim().min(3).max(120),
+  body: z.string().trim().min(10).max(5000),
 });
 type FormValues = z.infer<typeof schema>;
 
-export default function ReviewForm({ slug }: { slug: string }) {
+type ReviewFormProps = {
+  slug: string;
+  existingReview?: Review | null;
+};
+
+export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
   const trpc = useTRPC();
-  const router = useRouter();
   const qc = useQueryClient();
+  const router = useRouter();
 
   const create = useMutation(
     trpc.reviews.create.mutationOptions({
       onSuccess: async () => {
         await qc.invalidateQueries();
-        router.replace(`/tenants/${slug}`);
+        toast.success("Your review has been submitted.");
+        router.refresh(); //  show review data on this page
       },
       onError: (err) => {
         console.error("reviews.create failed:", err);
-        toast.error(err.message || "Could not submit your review.");
+
+        const rawMessage =
+          err instanceof TRPCClientError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : undefined;
+
+        const message =
+          rawMessage ===
+          "You can only review providers you have purchased from."
+            ? "You can only review providers you have booked and paid."
+            : "Something went wrong while saving your review. Please try again.";
+
+        toast.error(message);
       },
     })
   );
@@ -41,8 +63,14 @@ export default function ReviewForm({ slug }: { slug: string }) {
   const form = useForm<FormValues>({
     mode: "onChange",
     resolver: zodResolver(schema),
-    defaultValues: { rating: 0, title: "", body: "" },
+    defaultValues: {
+      rating: existingReview?.rating ?? 0,
+      title: existingReview?.title ?? "",
+      body: existingReview?.body ?? "",
+    },
   });
+
+  const isUpdate = !!existingReview; // flag to indicate if this is an update
 
   const bodyValue = form.watch("body");
 
@@ -113,8 +141,10 @@ export default function ReviewForm({ slug }: { slug: string }) {
           {create.isPending || form.formState.isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting…
+              {isUpdate ? "Updating…" : "Submitting…"}
             </>
+          ) : isUpdate ? (
+            "Update review"
           ) : (
             "Submit"
           )}
