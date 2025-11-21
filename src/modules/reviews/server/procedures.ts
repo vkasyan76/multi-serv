@@ -3,6 +3,7 @@ import type { TRPCContext } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { Tenant, Order, Review, Booking, Category } from "@payload-types";
+import { getPayloadUserIdOrNull } from "./utils";
 
 /** Zod schemas so we can reuse the inferred types in the resolver signatures */
 const getBySlugInput = z.object({ slug: z.string() });
@@ -35,13 +36,7 @@ export const reviewsRouter = createTRPCRouter({
         if (!tenant) return null;
 
         // identify payloaduser based on userId from clerk:
-        const me = await db.find({
-          collection: "users",
-          where: { clerkUserId: { equals: userId } },
-          limit: 1,
-          depth: 0,
-        });
-        const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+        const payloadUserId = await getPayloadUserIdOrNull(db, userId);
         if (!payloadUserId) return null;
 
         const rRes = await db.find({
@@ -71,13 +66,7 @@ export const reviewsRouter = createTRPCRouter({
         const { db, userId } = ctx;
 
         // identify payloaduser based on userId from clerk:
-        const me = await db.find({
-          collection: "users",
-          where: { clerkUserId: { equals: userId } },
-          limit: 1,
-          depth: 0,
-        });
-        const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+        const payloadUserId = await getPayloadUserIdOrNull(db, userId);
 
         const tRes = await db.find({
           collection: "tenants",
@@ -156,13 +145,7 @@ export const reviewsRouter = createTRPCRouter({
         }
 
         // map clerk user to payload userId:
-        const me = await db.find({
-          collection: "users",
-          where: { clerkUserId: { equals: userId } },
-          limit: 1,
-          depth: 0,
-        });
-        const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+        const payloadUserId = await getPayloadUserIdOrNull(db, userId);
         if (!payloadUserId) {
           throw new TRPCError({
             code: "FORBIDDEN",

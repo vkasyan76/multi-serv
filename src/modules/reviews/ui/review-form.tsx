@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
+import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,8 +17,8 @@ import type { Review } from "@payload-types";
 
 const schema = z.object({
   rating: z.number().min(1).max(5),
-  title: z.string().min(3).max(120),
-  body: z.string().min(10).max(5000),
+  title: z.string().trim().min(3).max(120),
+  body: z.string().trim().min(10).max(5000),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -40,7 +41,21 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
       },
       onError: (err) => {
         console.error("reviews.create failed:", err);
-        toast.error(err.message || "Could not submit your review.");
+
+        const rawMessage =
+          err instanceof TRPCClientError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : undefined;
+
+        const message =
+          rawMessage ===
+          "You can only review providers you have purchased from."
+            ? "You can only review providers you have booked and paid."
+            : "Something went wrong while saving your review. Please try again.";
+
+        toast.error(message);
       },
     })
   );

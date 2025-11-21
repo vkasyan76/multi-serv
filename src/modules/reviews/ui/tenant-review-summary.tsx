@@ -30,7 +30,17 @@ export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
   }
 
   // Error or no reviews yet
-  if (summaryQ.isError || !summaryQ.data || summaryQ.data.totalReviews === 0) {
+  if (summaryQ.isError) {
+    return (
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-4">Reviews</h2>
+        <p className="text-sm text-muted-foreground">
+          We couldn’t load reviews right now. Please try again later.
+        </p>
+      </section>
+    );
+  }
+  if (!summaryQ.data || summaryQ.data.totalReviews === 0) {
     return (
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4">Reviews</h2>
@@ -81,8 +91,8 @@ export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
-                <span className="w-12 text-right tabular-nums">
-                  {percentage}%
+                <span className="w-20 text-right tabular-nums">
+                  {count} ({percentage}%)
                 </span>
               </div>
             );
