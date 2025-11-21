@@ -70,6 +70,9 @@ export const TenantCard = ({
       : "w-full lg:w-[320px] lg:max-w-[320px] lg:flex-shrink-0"
   );
 
+  // order count logic
+  const hasOrders = typeof ordersCount === "number" && ordersCount > 0;
+
   return (
     <div className={wrapperClass}>
       {/* Image Section with aspect ratio instead of fixed height */}
@@ -275,15 +278,16 @@ export const TenantCard = ({
         {/* Orders fulfilled + Active since (one row) */}
         {(typeof ordersCount === "number" || tenant.createdAt) && (
           <div className="flex items-center justify-between text-sm text-gray-500 pt-2">
-            {/* Left: fulfilled orders (placeholder-ready) */}
-            <div className="flex items-center gap-1">
-              <BadgeCheck className="h-4 w-4 text-emerald-600" />
-              <span suppressHydrationWarning>
-                {typeof ordersCount === "number"
-                  ? `${formatIntegerForLocale(ordersCount)} orders`
-                  : "—"}
-              </span>
-            </div>
+            {/* Left: fulfilled orders – only show when > 0 */}
+            {hasOrders && (
+              <div className="flex items-center gap-1">
+                <BadgeCheck className="h-4 w-4 text-emerald-600" />
+                <span suppressHydrationWarning>
+                  {formatIntegerForLocale(ordersCount ?? 0)}{" "}
+                  {(ordersCount ?? 0) === 1 ? "order" : "orders"}
+                </span>
+              </div>
+            )}
 
             {/* Right: Active since (Month + Year) */}
             <div className="flex items-center gap-1">

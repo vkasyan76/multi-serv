@@ -177,6 +177,19 @@ export default function TenantContent({ slug }: { slug: string }) {
     placeholderData: keepPreviousData,
   });
 
+  // Aggregated orders count for this tenant
+  const { data: tenantOrderStats } = useQuery({
+    ...trpc.orders.statsForTenants.queryOptions({
+      tenantIds: cardTenant?.id ? [cardTenant.id] : [],
+    }),
+    enabled: !!cardTenant?.id,
+  });
+
+  const ordersCount =
+    cardTenant?.id && tenantOrderStats
+      ? (tenantOrderStats[cardTenant.id]?.ordersCount ?? undefined)
+      : undefined;
+
   if (waitingForBridge || cardLoading || !cardTenant) {
     return <LoadingPage />; // full-screen overlay while we warm up
   }
@@ -192,7 +205,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           isSignedIn={signedState} // ← tri-state: true | false | null
           variant="detail"
           showActions
-          ordersCount={12} // placeholder; wire real value later
+          ordersCount={ordersCount}
           onBook={scrollToCalendar}
         />
       </section>
@@ -358,7 +371,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               isSignedIn={signedState}
               variant="detail"
               showActions
-              ordersCount={12} // placeholder; wire real value later
+              ordersCount={ordersCount}
               onBook={scrollToCalendar}
             />
             {/* REMOVED: Contact and Pricing sections - now redundant */}
