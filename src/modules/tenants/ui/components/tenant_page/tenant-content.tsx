@@ -41,6 +41,14 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
 
+  // Reviews & Ratings:
+  const { data: reviewSummary } = useQuery(
+    trpc.reviews.summaryForTenant.queryOptions({ slug })
+  );
+
+  const reviewRating = reviewSummary?.avgRating ?? undefined;
+  const reviewCount = reviewSummary?.totalReviews ?? undefined;
+
   // redirect after checkout:
   const router = useRouter();
   const pathname = usePathname();
@@ -179,8 +187,8 @@ export default function TenantContent({ slug }: { slug: string }) {
       <section className="lg:hidden mb-2">
         <TenantCard
           tenant={cardTenant}
-          reviewRating={4.5}
-          reviewCount={12}
+          reviewRating={reviewRating}
+          reviewCount={reviewCount}
           isSignedIn={signedState} // ← tri-state: true | false | null
           variant="detail"
           showActions
@@ -345,8 +353,8 @@ export default function TenantContent({ slug }: { slug: string }) {
             {/* Desktop tenant card with action buttons */}
             <TenantCard
               tenant={cardTenant}
-              reviewRating={4.5}
-              reviewCount={12}
+              reviewRating={reviewRating}
+              reviewCount={reviewCount}
               isSignedIn={signedState}
               variant="detail"
               showActions

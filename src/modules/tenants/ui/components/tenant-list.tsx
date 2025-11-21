@@ -80,6 +80,21 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   // Get total count from the first page (all pages have the same totalDocs)
   const totalTenants = data.pages[0]?.totalDocs || 0;
 
+  // Reviews
+
+  // ➊ collect slugs
+  const slugs = allTenants.map((t: TenantWithRelations) => t.slug);
+
+  // ➋ one query for all ratings on this page
+  const { data: summaries } = useQuery({
+    ...trpc.reviews.summariesForTenants.queryOptions({ slugs }),
+    enabled: slugs.length > 0,
+  });
+
+  const summaryMap =
+    summaries ??
+    ({} as Record<string, { avgRating: number; totalReviews: number }>);
+
   // Show empty state if no tenants
   if (allTenants.length === 0) {
     return (
@@ -98,24 +113,26 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
     <div className="space-y-4">
       {/* Tenant Cards Container */}
       <div className="flex flex-wrap gap-4 justify-start pt-2">
-        {allTenants.map((tenant: TenantWithRelations) => (
-          <Link
-            key={tenant.id}
-            // href={`/tenants/${tenant.slug}`}
-            href={generateTenantUrl(tenant.slug)}
-            className="block hover:scale-[1.02] transition-transform duration-200"
-          >
-            <TenantCard
+        {allTenants.map((tenant: TenantWithRelations) => {
+          const ratingSummary = summaryMap[tenant.slug];
+          // As soon as you add { ... } after the arrow, the body becomes a block (not returned automatically), not a single expression.
+          return (
+            <Link
               key={tenant.id}
-              tenant={tenant}
-              reviewRating={3}
-              reviewCount={5}
-              isSignedIn={isSignedIn}
-              variant="list"
-              ordersCount={12} // placeholder; wire real value later
-            />
-          </Link>
-        ))}
+              href={generateTenantUrl(tenant.slug)}
+              className="block hover:scale-[1.02] transition-transform duration-200"
+            >
+              <TenantCard
+                tenant={tenant}
+                reviewRating={ratingSummary?.avgRating ?? null}
+                reviewCount={ratingSummary?.totalReviews ?? null}
+                isSignedIn={isSignedIn}
+                variant="list"
+                ordersCount={12} // placeholder; wire real value later
+              />
+            </Link>
+          );
+        })}
       </div>
 
       {/* Load More Button */}

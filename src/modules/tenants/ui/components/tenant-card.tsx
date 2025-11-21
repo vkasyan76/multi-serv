@@ -36,8 +36,8 @@ const handleImageError = (
 
 interface TenantCardProps {
   tenant: TenantWithRelations;
-  reviewRating?: number;
-  reviewCount?: number;
+  reviewRating?: number | null; // <– now clearly optional
+  reviewCount?: number | null; // <– now clearly optional
   isSignedIn: boolean | null; // ← was boolean accepts null
   variant?: "list" | "detail"; // NEW: layout control
   showActions?: boolean; // NEW: button rendering control
@@ -48,8 +48,8 @@ interface TenantCardProps {
 
 export const TenantCard = ({
   tenant,
-  reviewRating = 3,
-  reviewCount = 5,
+  reviewRating,
+  reviewCount,
   isSignedIn,
   variant = "list",
   showActions = false,
@@ -103,7 +103,9 @@ export const TenantCard = ({
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
 
         {/* Enhanced Rating Overlay with accessibility */}
-        {reviewCount > 0 ? (
+        {reviewCount != null &&
+        reviewCount > 0 &&
+        typeof reviewRating === "number" ? (
           <div className="absolute top-2 right-2 rounded-full bg-black/70 backdrop-blur px-2 py-1 text-white text-xs flex items-center gap-1">
             <Star
               aria-hidden
@@ -119,7 +121,7 @@ export const TenantCard = ({
             <span className="opacity-80">({reviewCount})</span>
           </div>
         ) : (
-          <div className="absolute top-2 right-2 rounded-full bg-black/70 backdrop-blur px-2 py-1 text-white text-xs">
+          <div className="absolute top-2 right-2 rounded-full bg-green-600  backdrop-blur px-2 py-1 text-white text-xs">
             New
           </div>
         )}

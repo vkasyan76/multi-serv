@@ -294,4 +294,51 @@ export const reviewsRouter = createTRPCRouter({
         };
       }
     ),
+
+  // review summaries for multiple tenants at once:
+  summariesForTenants: baseProcedure
+    .input(
+      z.object({
+        slugs: z.array(z.string()).min(1),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const res = await db.find({
+        collection: "reviews",
+        where: { tenantSlug: { in: input.slugs } },
+        limit: 1000,
+      });
+
+      const docs = res.docs as Review[];
+
+      // slug -> aggregate
+      const map: Record<string, { avgRating: number; totalReviews: number }> =
+        {};
+
+      for (const r of docs) {
+        const slug = r.tenantSlug;
+        if (!slug) continue;
+
+        const rating = Math.round(r.rating ?? 0);
+        if (rating < 1 || rating > 5) continue;
+
+        if (!map[slug]) {
+          map[slug] = { avgRating: 0, totalReviews: 0 };
+        }
+        map[slug].avgRating += rating;
+        map[slug].totalReviews += 1;
+      }
+
+      // finalize averages
+      for (const slug of Object.keys(map)) {
+        const entry = map[slug];
+        if (!entry) continue; // satisfies TypeScript with no magic
+        entry.avgRating =
+          entry.totalReviews > 0 ? entry.avgRating / entry.totalReviews : 0;
+      }
+
+      return map;
+    }),
 });
