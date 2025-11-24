@@ -15,6 +15,12 @@ import { Poppins } from "next/font/google";
 import { HomeRadarSkeleton } from "@/modules/home/ui/HomeRadarSkeleton";
 import { OrbitAndCarousel } from "./OrbitAndCarousel";
 
+import {
+  type AppLang,
+  getInitialLanguage,
+  normalizeToSupported,
+} from "@/modules/profile/location-utils";
+
 const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
 
 function RadarError({ resetErrorBoundary }: FallbackProps) {
@@ -62,6 +68,15 @@ export default function HomeView() {
 
   const [filters] = useTenantFilters();
 
+  // Single source of truth for app language: profile.language → supported code → fallback
+  const appLang: AppLang = useMemo(() => {
+    const profileLang = profileQ.data?.language;
+    if (profileLang) {
+      return normalizeToSupported(profileLang);
+    }
+    return getInitialLanguage();
+  }, [profileQ.data?.language]);
+
   // Distance mode needs viewer coords; otherwise first mount would re-suspend when viewer arrives.
 
   const queryInput = useMemo(
@@ -105,7 +120,11 @@ export default function HomeView() {
         {/* Orbit + Carousel are suspended together with a combined skeleton */}
         <Suspense fallback={<HomeRadarSkeleton />}>
           <ErrorBoundary FallbackComponent={RadarError}>
-            <OrbitAndCarousel queryInput={queryInput} viewer={viewer} />
+            <OrbitAndCarousel
+              queryInput={queryInput}
+              viewer={viewer}
+              appLang={appLang}
+            />
           </ErrorBoundary>
         </Suspense>
       </div>

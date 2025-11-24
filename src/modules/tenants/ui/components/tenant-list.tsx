@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
+import { useMemo } from "react";
+
+import {
+  type AppLang,
+  normalizeToSupported,
+  getInitialLanguage,
+} from "@/modules/profile/location-utils";
 
 interface Props {
   category?: string;
@@ -40,6 +47,15 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
     ...trpc.auth.getUserProfile.queryOptions(),
     enabled: isSignedIn, // Only fetch if user is signed in
   });
+
+  // use language of the profile or initial language (browser)
+  const appLang: AppLang = useMemo(() => {
+    const profileLang = userProfile?.language;
+    if (profileLang) {
+      return normalizeToSupported(profileLang);
+    }
+    return getInitialLanguage();
+  }, [userProfile?.language]);
 
   // Use infinite query for tenants with Load More functionality
   const base = trpc.tenants.getMany.infiniteQueryOptions(
@@ -143,6 +159,7 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
                 isSignedIn={isSignedIn}
                 variant="list"
                 ordersCount={orderSummary?.ordersCount}
+                appLang={appLang}
               />
             </Link>
           );

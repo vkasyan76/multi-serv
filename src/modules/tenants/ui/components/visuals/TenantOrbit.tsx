@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import {
   formatCurrency,
   getLocaleAndCurrency,
+  type AppLang,
+  DEFAULT_APP_LANG,
 } from "@/modules/profile/location-utils";
 
 /** props */
@@ -34,6 +36,8 @@ export type TenantOrbitProps = {
   viewer?: { lat: number; lng: number; city?: string | null }; // to detrmine coordinates of the viewer
   selectedSlug?: string;
   onSelect?: (slug: string) => void;
+  /** NEW: app language used for formatting prices */
+  appLang?: AppLang;
 };
 
 type Viewer = { lat: number; lng: number; city?: string | null };
@@ -52,6 +56,7 @@ function CircleBadge({
   color,
   mode,
   currency,
+  appLang,
   selected,
   onSelect,
 }: {
@@ -60,6 +65,7 @@ function CircleBadge({
   color?: string;
   mode: BadgeMode;
   currency: string;
+  appLang: AppLang;
   selected?: boolean;
   onSelect?: (slug: string) => void;
 }) {
@@ -71,7 +77,7 @@ function CircleBadge({
   const hr = t.hourlyRate;
   const price =
     typeof hr === "number" && Number.isFinite(hr)
-      ? `${formatCurrency(hr, currency)}/h`
+      ? `${formatCurrency(hr, currency, appLang)}/h`
       : null;
 
   // tiny font steps per mode
@@ -130,6 +136,7 @@ export default function TenantOrbit({
   viewer: viewerProp, // viewer coordinates
   selectedSlug,
   onSelect,
+  appLang = DEFAULT_APP_LANG,
 }: TenantOrbitProps) {
   const R = size / 2;
 
@@ -151,7 +158,7 @@ export default function TenantOrbit({
   // or "#ecfdf5" (teal-green 50), "#e8f5e9" (greenish), "hsl(142 70% 95%)", "#eaf9f0" minty, "#eceff3" greyish
 
   // UI bits we still use below
-  const { currency } = getLocaleAndCurrency();
+  const { currency } = getLocaleAndCurrency(appLang);
   const mode: "compact" | "normal" | "full" =
     size < 420 ? "compact" : size < 600 ? "normal" : "full";
 
@@ -476,6 +483,7 @@ export default function TenantOrbit({
                   color={color}
                   mode={mode}
                   currency={currency}
+                  appLang={appLang}
                   selected={tenant.slug === selectedSlug}
                   onSelect={onSelect}
                 />

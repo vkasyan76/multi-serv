@@ -18,6 +18,9 @@ import {
   formatNumberForLocale,
   formatIntegerForLocale,
   formatOneDecimalForLocale,
+  type AppLang,
+  getInitialLanguage,
+  formatCurrency,
 } from "@/modules/profile/location-utils";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +47,7 @@ interface TenantCardProps {
   onBook?: () => void; // NEW: optional handler
   onContact?: () => void; // NEW: optional handler
   ordersCount?: number; // NEW: optional orders count
+  appLang?: AppLang;
 }
 
 export const TenantCard = ({
@@ -56,7 +60,10 @@ export const TenantCard = ({
   onBook,
   onContact,
   ordersCount, // NEW
+  appLang,
 }: TenantCardProps) => {
+  const effectiveLang: AppLang = appLang ?? getInitialLanguage();
+
   // Edge case variables for cleaner logic
   const hasServices = !!tenant.services?.length;
   const showDistanceRow = hasServices || isSignedIn || tenant.distance != null; // we still render a left block (unavailable / tooltip) for balance
@@ -116,10 +123,14 @@ export const TenantCard = ({
             />
             <span className="sr-only">Rating</span>
             <span suppressHydrationWarning>
-              {formatNumberForLocale(reviewRating, {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              })}
+              {formatNumberForLocale(
+                reviewRating,
+                {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
+                },
+                effectiveLang
+              )}
             </span>
             <span className="opacity-80">({reviewCount})</span>
           </div>
@@ -174,7 +185,7 @@ export const TenantCard = ({
                 )}
                 suppressHydrationWarning
               >
-                €{tenant.hourlyRate}/h
+                {formatCurrency(tenant.hourlyRate, "EUR", effectiveLang)} /h
               </span>
             )}
           </div>
@@ -211,7 +222,7 @@ export const TenantCard = ({
               {/* Content */}
               {tenant.distance != null ? (
                 <span className="tabular-nums" suppressHydrationWarning>
-                  {`${formatOneDecimalForLocale(tenant.distance)} km`}
+                  {`${formatOneDecimalForLocale(tenant.distance, effectiveLang)} km`}
                 </span>
               ) : isSignedIn === null ? (
                 // auth unknown → neutral placeholder (prevents the “Log in…” flash)
@@ -283,7 +294,7 @@ export const TenantCard = ({
               <div className="flex items-center gap-1">
                 <BadgeCheck className="h-4 w-4 text-emerald-600" />
                 <span suppressHydrationWarning>
-                  {formatIntegerForLocale(ordersCount ?? 0)}{" "}
+                  {formatIntegerForLocale(ordersCount ?? 0, effectiveLang)}{" "}
                   {(ordersCount ?? 0) === 1 ? "order" : "orders"}
                 </span>
               </div>
@@ -293,7 +304,11 @@ export const TenantCard = ({
             <div className="flex items-center gap-1">
               <span className="text-gray-500">Since:</span>
               <span suppressHydrationWarning>
-                {formatMonthYearForLocale(tenant.createdAt)}
+                {formatMonthYearForLocale(
+                  tenant.createdAt,
+                  "short",
+                  effectiveLang
+                )}
               </span>
             </div>
           </div>

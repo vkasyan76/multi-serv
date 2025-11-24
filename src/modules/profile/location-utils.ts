@@ -346,12 +346,25 @@ export function getCountryCodeFromName(countryName: string): string {
   return "DE";
 }
 
+// Google Maps language detection (CLIENT ONLY) – used only for Maps,
+// not for your app UI language.
+
+// ---- Language + appLang helpers ----
+
+export type AppLang = "en" | "es" | "fr" | "de" | "it" | "pt";
+export const DEFAULT_APP_LANG: AppLang = "en";
+
 export function detectLanguage(): Language {
   if (typeof navigator === "undefined") return Language.en;
   const langCode = navigator.language.slice(0, 2);
   const mapped = (Language as Record<string, Language>)[langCode];
   return mapped ?? Language.en;
 }
+
+//  * Maps browser/system language to your supported language codes.
+//  * Defaults to English if not supported.
+//  */
+// Single source of truth for app language codes
 
 export const SUPPORTED_LANGUAGES = [
   { code: "en", label: "English" },
@@ -362,46 +375,72 @@ export const SUPPORTED_LANGUAGES = [
   { code: "pt", label: "Portuguese" },
 ];
 
-//  * Maps browser/system language to your supported language codes.
-//  * Defaults to English if not supported.
-//  */
-export function getInitialLanguage(): "en" | "es" | "fr" | "de" | "it" | "pt" {
-  if (typeof navigator === "undefined") return "en";
-  const langCode = navigator.language.slice(0, 2).toLowerCase();
-  const supportedLanguages = ["en", "es", "fr", "de", "it", "pt"];
-  if (supportedLanguages.includes(langCode)) {
-    return langCode as "en" | "es" | "fr" | "de" | "it" | "pt";
-  }
-  return "en";
-}
+/**
+ * Normalize an arbitrary language string (e.g. "de-DE,de;q=0.9")
+ * to your supported AppLang codes.
+ *
+ * Safe on SERVER and CLIENT (no navigator here).
+ */
 
-// Currency formatting
-
-export function getLocaleAndCurrency() {
-  if (typeof window !== "undefined") {
-    // Try to get user's browser settings
-    const locale = navigator.language || "en-US";
-    // For demo, always EUR, but you could map locale to currency if needed
-    const currency = "EUR";
-    return { locale, currency };
-  }
-  return { locale: "en-US", currency: "EUR" };
-}
-
-// Add this new helper function
-export function normalizeToSupported(
-  code?: string
-): "en" | "es" | "fr" | "de" | "it" | "pt" {
-  const fallback = getInitialLanguage();
+export function normalizeToSupported(code?: string): AppLang {
+  const fallback: AppLang = DEFAULT_APP_LANG;
   if (!code) return fallback;
 
-  const short = code.split(",")[0]?.split("-")[0] ?? code;
-  const supportedCodes = ["en", "es", "fr", "de", "it", "pt"] as const;
-  return supportedCodes.includes(
-    short as "en" | "es" | "fr" | "de" | "it" | "pt"
-  )
-    ? (short as "en" | "es" | "fr" | "de" | "it" | "pt")
-    : fallback;
+  const short = code.split(",")[0]?.split("-")[0] ?? code; // take first entry if "de-DE,de;q=0.9"
+  const allowed: AppLang[] = ["en", "es", "fr", "de", "it", "pt"];
+  return allowed.includes(short as AppLang) ? (short as AppLang) : fallback;
+}
+
+/**
+ * CLIENT-ONLY: derive initial AppLang from browser language.
+ * Use this ONLY in client components (e.g. useState(() => getInitialLanguage())).
+ */
+export function getInitialLanguage(): AppLang {
+  if (typeof navigator === "undefined") {
+    return DEFAULT_APP_LANG;
+  }
+  return normalizeToSupported(navigator.language);
+}
+
+/**
+ * SERVER-ONLY helper: derive AppLang from Accept-Language header.
+ * This is what lets a first-time German user see DE *on the first paint*.
+ */
+// src/modules/profile/location-utils.ts
+
+export function getAppLangFromHeaders(headers: Pick<Headers, "get">): AppLang {
+  const acceptLanguage = headers.get("accept-language") || undefined;
+  return normalizeToSupported(acceptLanguage);
+}
+
+// ---- Locale + formatting ----
+
+// Currency formatting
+// For demo, always EUR, but you could map locale to currency if needed
+// mapper:
+export function mapAppLangToLocale(appLang: AppLang): string {
+  switch (appLang) {
+    case "de":
+      return "de-DE";
+    case "fr":
+      return "fr-FR";
+    case "it":
+      return "it-IT";
+    case "es":
+      return "es-ES";
+    case "pt":
+      return "pt-PT";
+    case "en":
+    default:
+      return "en-US";
+  }
+}
+
+// use const locale = mapAppLangToLocale(appLang) instead of const locale = navigator.language || "en-US"  because otherwise the server (SSR): typeof window === "undefined" → we always get "en-US". > mismatch will cause hydration errror
+
+export function getLocaleAndCurrency(appLang: AppLang = DEFAULT_APP_LANG) {
+  const locale = mapAppLangToLocale(appLang);
+  return { locale, currency: "EUR" };
 }
 
 // New helper functions for consistent location display formatting
@@ -426,11 +465,14 @@ export function formatLocationFromCoords(
   return country;
 }
 
+// ---- Number / date / currency formatting ----
+
 export function formatDateForLocale(
   date: Date | string,
-  options?: Intl.DateTimeFormatOptions
+  options: Intl.DateTimeFormatOptions = {},
+  appLang: AppLang = DEFAULT_APP_LANG
 ) {
-  const { locale } = getLocaleAndCurrency();
+  const { locale } = getLocaleAndCurrency(appLang);
   const dateObj = typeof date === "string" ? new Date(date) : date;
 
   return dateObj.toLocaleDateString(locale, {
@@ -443,9 +485,10 @@ export function formatDateForLocale(
 
 export function formatNumberForLocale(
   value: number,
-  opts: Intl.NumberFormatOptions = {}
+  opts: Intl.NumberFormatOptions = {},
+  appLang: AppLang = DEFAULT_APP_LANG
 ) {
-  const { locale } = getLocaleAndCurrency();
+  const { locale } = getLocaleAndCurrency(appLang);
 
   // Extract and normalize
   let { minimumFractionDigits, maximumFractionDigits } = opts;
@@ -484,30 +527,43 @@ export function formatNumberForLocale(
 }
 
 // Convenience wrappers for common formatting patterns
-export const formatIntegerForLocale = (n: number) =>
-  formatNumberForLocale(n, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
+export const formatIntegerForLocale = (
+  n: number,
+  appLang: AppLang = DEFAULT_APP_LANG
+) =>
+  formatNumberForLocale(
+    n,
+    { minimumFractionDigits: 0, maximumFractionDigits: 0 },
+    appLang
+  );
 
-export const formatOneDecimalForLocale = (n: number) =>
-  formatNumberForLocale(n, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
+export const formatOneDecimalForLocale = (
+  n: number,
+  appLang: AppLang = DEFAULT_APP_LANG
+) =>
+  formatNumberForLocale(
+    n,
+    { minimumFractionDigits: 1, maximumFractionDigits: 1 },
+    appLang
+  );
 
 export function formatMonthYearForLocale(
   date: Date | string,
-  monthStyle: "short" | "long" = "short"
+  monthStyle: "short" | "long" = "short",
+  appLang: AppLang = DEFAULT_APP_LANG
 ) {
-  const { locale } = getLocaleAndCurrency();
+  const { locale } = getLocaleAndCurrency(appLang);
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleDateString(locale, { month: monthStyle, year: "numeric" });
 }
 
 // Currency formatter that uses the user's locale from getLocaleAndCurrency()
-export function formatCurrency(amountMajor: number, currency?: string) {
-  const { locale } = getLocaleAndCurrency();
+export function formatCurrency(
+  amountMajor: number,
+  currency?: string,
+  appLang: AppLang = DEFAULT_APP_LANG
+) {
+  const { locale } = getLocaleAndCurrency(appLang);
   const cur = (currency ?? "EUR").toUpperCase();
 
   try {

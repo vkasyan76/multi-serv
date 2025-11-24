@@ -21,12 +21,15 @@ type Item = {
   city: string;
   country?: string;
   imageSrc?: string;
-  pricePerHour: number;
+  pricePerHour?: number;
+  pricePerHourLabel?: string;
   rating: number;
   ratingCount: number;
   since: string;
   orders: number;
   blurb: string;
+  categoryName?: string;
+  categoryColor?: string;
 };
 
 export default function TenantsCarousel({
@@ -85,12 +88,14 @@ export default function TenantsCarousel({
                 name={t.name}
                 city={t.city}
                 country={t.country}
-                pricePerHour={t.pricePerHour}
+                pricePerHourLabel={t.pricePerHourLabel}
                 rating={t.rating}
                 ratingCount={t.ratingCount}
                 since={t.since}
                 orders={t.orders}
                 blurb={t.blurb}
+                categoryName={t.categoryName}
+                categoryColor={t.categoryColor}
               />
             </Link>
           </CarouselItem>

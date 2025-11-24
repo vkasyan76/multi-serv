@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useTRPC } from "@/trpc/client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation"; // for navigation after chekout
 import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
@@ -23,6 +23,12 @@ import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary";
+
+import {
+  type AppLang,
+  normalizeToSupported,
+  getInitialLanguage,
+} from "@/modules/profile/location-utils";
 
 // import TenantCalendar from "@/modules/bookings/ui/TenantCalendar";
 
@@ -67,6 +73,20 @@ export default function TenantContent({ slug }: { slug: string }) {
   const isCancelling = cancel && !!sessionId; // canvelling paymente process
   const { isSignedIn, isLoaded } = useUser();
   const signedState = isLoaded ? !!isSignedIn : null;
+
+  // Determine app language
+  const profileQ = useQuery({
+    ...trpc.auth.getUserProfile.queryOptions(),
+    enabled: signedState === true,
+  });
+
+  const appLang: AppLang = useMemo(() => {
+    const profileLang = profileQ.data?.language;
+    if (profileLang) {
+      return normalizeToSupported(profileLang);
+    }
+    return getInitialLanguage();
+  }, [profileQ.data?.language]);
 
   const scrollToCalendar = () => {
     window.dispatchEvent(
@@ -207,6 +227,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           showActions
           ordersCount={ordersCount}
           onBook={scrollToCalendar}
+          appLang={appLang}
         />
       </section>
 
@@ -373,6 +394,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               showActions
               ordersCount={ordersCount}
               onBook={scrollToCalendar}
+              appLang={appLang}
             />
             {/* REMOVED: Contact and Pricing sections - now redundant */}
           </div>
