@@ -1,9 +1,15 @@
 // src/modules/orders/server/procedures.ts
 import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
-import type { Order, Booking } from "@/payload-types";
+import type { Order, Booking, Tenant } from "@/payload-types";
+import { z } from "zod";
 
 type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
+
+// orders where tenant is either an ID string or a populated Tenant
+type OrderWithTenantRef = Order & {
+  tenant?: string | Tenant | null;
+};
 
 export const ordersRouter = createTRPCRouter({
   // Boolean for the navbar “My Orders”
@@ -77,4 +83,52 @@ export const ordersRouter = createTRPCRouter({
       };
     });
   }),
+
+  // Aggregated number of orders per tenant (for TenantCard badges)
+  statsForTenants: baseProcedure
+    .input(
+      z.object({
+        tenantIds: z.array(z.string()).min(1),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const res = await db.find({
+        collection: "orders",
+        where: {
+          and: [
+            { tenant: { in: input.tenantIds } },
+            // Count fulfilled orders – adjust statuses if you want only "paid"
+            { status: { in: ["paid", "refunded"] } },
+          ],
+        },
+        limit: 1000,
+        depth: 0,
+        overrideAccess: true,
+      });
+
+      const docs = res.docs as OrderWithTenantRef[];
+
+      const map: Record<string, { ordersCount: number }> = {};
+
+      for (const o of docs) {
+        const rawTenant = o.tenant;
+        let tenantId: string | undefined;
+
+        if (typeof rawTenant === "string") {
+          tenantId = rawTenant;
+        } else if (rawTenant && typeof rawTenant === "object") {
+          tenantId = rawTenant.id as string;
+        }
+
+        if (!tenantId) continue;
+
+        map[tenantId] = {
+          ordersCount: (map[tenantId]?.ordersCount ?? 0) + 1,
+        };
+      }
+
+      return map;
+    }),
 });

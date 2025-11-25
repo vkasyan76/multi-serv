@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { Star, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { formatIntegerForLocale } from "@/modules/profile/location-utils";
 
 // handle broken <Image>, show fallback tile
 const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -20,12 +20,14 @@ type Props = {
   name?: string;
   city?: string;
   country?: string;
-  pricePerHour?: number;
+  pricePerHourLabel?: string;
   rating?: number;
   ratingCount?: number;
   since?: string;
   orders?: number;
   blurb?: string;
+  categoryName?: string;
+  categoryColor?: string;
 };
 
 export default function TenantBillboard({
@@ -34,14 +36,18 @@ export default function TenantBillboard({
   name = "Valentyn Kasyan",
   city = "Frankfurt am Main",
   country = "DE",
-  pricePerHour = 1,
-  rating = 5.0,
-  ratingCount = 626,
+  pricePerHourLabel = "€1.00/h",
+  rating = 0,
+  ratingCount = 0,
   since = "Oct 2025",
-  orders = 12,
+  orders = 0,
   blurb = "Friendly professional. On-site & online.",
+  categoryName,
+  categoryColor,
 }: Props) {
   const initial = name?.trim()?.[0]?.toUpperCase() ?? "—"; // user initals fallback if image fails
+
+  const hasOrders = typeof orders === "number" && orders > 0;
 
   return (
     <Card
@@ -85,7 +91,7 @@ export default function TenantBillboard({
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
           {/* rating top-left */}
-          {ratingCount && ratingCount > 0 && (
+          {/* {ratingCount > 0 ? (
             <Badge className="absolute top-3 left-3 bg-black/70 text-white hover:bg-black/70 backdrop-blur px-2.5 py-1.5 text-xs">
               <span className="inline-flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
@@ -93,6 +99,41 @@ export default function TenantBillboard({
                 <span className="opacity-80">({ratingCount})</span>
               </span>
             </Badge>
+          ) : (
+            <Badge className="absolute top-3 left-3 bg-green-600 text-white hover:bg-green-600 backdrop-blur px-2.5 py-1.5 text-xs">
+              New
+            </Badge>
+          )} */}
+
+          {/* Category badge – top-left, using orbit category color */}
+          {categoryName && (
+            <div
+              className="absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-medium text-white shadow-sm"
+              style={
+                categoryColor ? { backgroundColor: categoryColor } : undefined
+              }
+            >
+              {categoryName}
+            </div>
+          )}
+
+          {/* Rating badge – top-right, same shape as TenantCard */}
+          {ratingCount != null &&
+          ratingCount > 0 &&
+          typeof rating === "number" ? (
+            <div className="absolute top-3 right-3 rounded-full bg-black/70 backdrop-blur px-2 py-1 text-white text-xs flex items-center gap-1">
+              <Star
+                aria-hidden
+                className="h-3 w-3 text-yellow-400 fill-yellow-400"
+              />
+              <span className="sr-only">Rating</span>
+              <span>{rating.toFixed(1)}</span>
+              <span className="opacity-80">({ratingCount})</span>
+            </div>
+          ) : (
+            <div className="absolute top-3 right-3 rounded-full bg-green-600 backdrop-blur px-2 py-1 text-white text-xs">
+              New
+            </div>
           )}
 
           {/* name + location bottom-left */}
@@ -113,7 +154,7 @@ export default function TenantBillboard({
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="text-blue-700 font-bold text-xl">
-                €{pricePerHour}/h
+                {pricePerHourLabel}
               </div>
               {/* <div className="text-sm text-gray-600 truncate">{blurb}</div> */}
               {/* description */}
@@ -127,9 +168,13 @@ export default function TenantBillboard({
               )}
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-700 font-medium">
-                {orders} orders
-              </div>
+              {hasOrders && (
+                <div className="text-sm text-gray-700 font-medium">
+                  {formatIntegerForLocale(orders ?? 0)}{" "}
+                  {(orders ?? 0) === 1 ? "order" : "orders"}
+                </div>
+              )}
+
               <div className="text-xs text-gray-500">Since: {since}</div>
             </div>
           </div>

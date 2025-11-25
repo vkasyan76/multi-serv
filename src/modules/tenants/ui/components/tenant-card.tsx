@@ -18,6 +18,9 @@ import {
   formatNumberForLocale,
   formatIntegerForLocale,
   formatOneDecimalForLocale,
+  type AppLang,
+  getInitialLanguage,
+  formatCurrency,
 } from "@/modules/profile/location-utils";
 import { cn } from "@/lib/utils";
 
@@ -36,27 +39,31 @@ const handleImageError = (
 
 interface TenantCardProps {
   tenant: TenantWithRelations;
-  reviewRating?: number;
-  reviewCount?: number;
+  reviewRating?: number | null; // <– now clearly optional
+  reviewCount?: number | null; // <– now clearly optional
   isSignedIn: boolean | null; // ← was boolean accepts null
   variant?: "list" | "detail"; // NEW: layout control
   showActions?: boolean; // NEW: button rendering control
   onBook?: () => void; // NEW: optional handler
   onContact?: () => void; // NEW: optional handler
   ordersCount?: number; // NEW: optional orders count
+  appLang?: AppLang;
 }
 
 export const TenantCard = ({
   tenant,
-  reviewRating = 3,
-  reviewCount = 5,
+  reviewRating,
+  reviewCount,
   isSignedIn,
   variant = "list",
   showActions = false,
   onBook,
   onContact,
   ordersCount, // NEW
+  appLang,
 }: TenantCardProps) => {
+  const effectiveLang: AppLang = appLang ?? getInitialLanguage();
+
   // Edge case variables for cleaner logic
   const hasServices = !!tenant.services?.length;
   const showDistanceRow = hasServices || isSignedIn || tenant.distance != null; // we still render a left block (unavailable / tooltip) for balance
@@ -69,6 +76,9 @@ export const TenantCard = ({
       ? "w-[280px] max-w-[320px] flex-shrink-0"
       : "w-full lg:w-[320px] lg:max-w-[320px] lg:flex-shrink-0"
   );
+
+  // order count logic
+  const hasOrders = typeof ordersCount === "number" && ordersCount > 0;
 
   return (
     <div className={wrapperClass}>
@@ -103,7 +113,9 @@ export const TenantCard = ({
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
 
         {/* Enhanced Rating Overlay with accessibility */}
-        {reviewCount > 0 ? (
+        {reviewCount != null &&
+        reviewCount > 0 &&
+        typeof reviewRating === "number" ? (
           <div className="absolute top-2 right-2 rounded-full bg-black/70 backdrop-blur px-2 py-1 text-white text-xs flex items-center gap-1">
             <Star
               aria-hidden
@@ -111,15 +123,19 @@ export const TenantCard = ({
             />
             <span className="sr-only">Rating</span>
             <span suppressHydrationWarning>
-              {formatNumberForLocale(reviewRating, {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              })}
+              {formatNumberForLocale(
+                reviewRating,
+                {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
+                },
+                effectiveLang
+              )}
             </span>
             <span className="opacity-80">({reviewCount})</span>
           </div>
         ) : (
-          <div className="absolute top-2 right-2 rounded-full bg-black/70 backdrop-blur px-2 py-1 text-white text-xs">
+          <div className="absolute top-2 right-2 rounded-full bg-green-600  backdrop-blur px-2 py-1 text-white text-xs">
             New
           </div>
         )}
@@ -169,7 +185,7 @@ export const TenantCard = ({
                 )}
                 suppressHydrationWarning
               >
-                €{tenant.hourlyRate}/h
+                {formatCurrency(tenant.hourlyRate, "EUR", effectiveLang)} /h
               </span>
             )}
           </div>
@@ -206,7 +222,7 @@ export const TenantCard = ({
               {/* Content */}
               {tenant.distance != null ? (
                 <span className="tabular-nums" suppressHydrationWarning>
-                  {`${formatOneDecimalForLocale(tenant.distance)} km`}
+                  {`${formatOneDecimalForLocale(tenant.distance, effectiveLang)} km`}
                 </span>
               ) : isSignedIn === null ? (
                 // auth unknown → neutral placeholder (prevents the “Log in…” flash)
@@ -273,21 +289,26 @@ export const TenantCard = ({
         {/* Orders fulfilled + Active since (one row) */}
         {(typeof ordersCount === "number" || tenant.createdAt) && (
           <div className="flex items-center justify-between text-sm text-gray-500 pt-2">
-            {/* Left: fulfilled orders (placeholder-ready) */}
-            <div className="flex items-center gap-1">
-              <BadgeCheck className="h-4 w-4 text-emerald-600" />
-              <span suppressHydrationWarning>
-                {typeof ordersCount === "number"
-                  ? `${formatIntegerForLocale(ordersCount)} orders`
-                  : "—"}
-              </span>
-            </div>
+            {/* Left: fulfilled orders – only show when > 0 */}
+            {hasOrders && (
+              <div className="flex items-center gap-1">
+                <BadgeCheck className="h-4 w-4 text-emerald-600" />
+                <span suppressHydrationWarning>
+                  {formatIntegerForLocale(ordersCount ?? 0, effectiveLang)}{" "}
+                  {(ordersCount ?? 0) === 1 ? "order" : "orders"}
+                </span>
+              </div>
+            )}
 
             {/* Right: Active since (Month + Year) */}
             <div className="flex items-center gap-1">
               <span className="text-gray-500">Since:</span>
               <span suppressHydrationWarning>
-                {formatMonthYearForLocale(tenant.createdAt)}
+                {formatMonthYearForLocale(
+                  tenant.createdAt,
+                  "short",
+                  effectiveLang
+                )}
               </span>
             </div>
           </div>

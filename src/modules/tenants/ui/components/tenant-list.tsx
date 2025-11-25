@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
+import { useMemo } from "react";
+
+import {
+  type AppLang,
+  normalizeToSupported,
+  getInitialLanguage,
+} from "@/modules/profile/location-utils";
 
 interface Props {
   category?: string;
@@ -40,6 +47,15 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
     ...trpc.auth.getUserProfile.queryOptions(),
     enabled: isSignedIn, // Only fetch if user is signed in
   });
+
+  // use language of the profile or initial language (browser)
+  const appLang: AppLang = useMemo(() => {
+    const profileLang = userProfile?.language;
+    if (profileLang) {
+      return normalizeToSupported(profileLang);
+    }
+    return getInitialLanguage();
+  }, [userProfile?.language]);
 
   // Use infinite query for tenants with Load More functionality
   const base = trpc.tenants.getMany.infiniteQueryOptions(
@@ -80,6 +96,34 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   // Get total count from the first page (all pages have the same totalDocs)
   const totalTenants = data.pages[0]?.totalDocs || 0;
 
+  // Reviews
+
+  // ➊ collect slugs
+  const slugs = allTenants.map((t: TenantWithRelations) => t.slug);
+
+  const tenantIds = allTenants
+    .map((t: TenantWithRelations) => t.id)
+    .filter((id): id is string => Boolean(id));
+
+  // ➋ one query for all ratings on this page
+  const { data: summaries } = useQuery({
+    ...trpc.reviews.summariesForTenants.queryOptions({ slugs }),
+    enabled: slugs.length > 0,
+  });
+
+  const summaryMap =
+    summaries ??
+    ({} as Record<string, { avgRating: number; totalReviews: number }>);
+
+  // ➍ one query for all order counts on this page
+  const { data: orderStats } = useQuery({
+    ...trpc.orders.statsForTenants.queryOptions({ tenantIds }),
+    enabled: tenantIds.length > 0,
+  });
+
+  const ordersMap =
+    orderStats ?? ({} as Record<string, { ordersCount: number }>);
+
   // Show empty state if no tenants
   if (allTenants.length === 0) {
     return (
@@ -98,24 +142,28 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
     <div className="space-y-4">
       {/* Tenant Cards Container */}
       <div className="flex flex-wrap gap-4 justify-start pt-2">
-        {allTenants.map((tenant: TenantWithRelations) => (
-          <Link
-            key={tenant.id}
-            // href={`/tenants/${tenant.slug}`}
-            href={generateTenantUrl(tenant.slug)}
-            className="block hover:scale-[1.02] transition-transform duration-200"
-          >
-            <TenantCard
+        {allTenants.map((tenant: TenantWithRelations) => {
+          const ratingSummary = summaryMap[tenant.slug];
+          const orderSummary = ordersMap[tenant.id];
+          // As soon as you add { ... } after the arrow, the body becomes a block (not returned automatically), not a single expression.
+          return (
+            <Link
               key={tenant.id}
-              tenant={tenant}
-              reviewRating={3}
-              reviewCount={5}
-              isSignedIn={isSignedIn}
-              variant="list"
-              ordersCount={12} // placeholder; wire real value later
-            />
-          </Link>
-        ))}
+              href={generateTenantUrl(tenant.slug)}
+              className="block hover:scale-[1.02] transition-transform duration-200"
+            >
+              <TenantCard
+                tenant={tenant}
+                reviewRating={ratingSummary?.avgRating ?? null}
+                reviewCount={ratingSummary?.totalReviews ?? null}
+                isSignedIn={isSignedIn}
+                variant="list"
+                ordersCount={orderSummary?.ordersCount}
+                appLang={appLang}
+              />
+            </Link>
+          );
+        })}
       </div>
 
       {/* Load More Button */}

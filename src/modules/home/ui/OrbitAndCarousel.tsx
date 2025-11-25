@@ -8,10 +8,15 @@ import {
   useState,
   useLayoutEffect,
 } from "react";
-import { useSuspenseQuery, skipToken } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, skipToken } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import type { TenantWithRelations } from "@/modules/tenants/types";
-import { formatMonthYearForLocale } from "@/modules/profile/location-utils";
+import {
+  formatMonthYearForLocale,
+  type AppLang,
+  formatCurrency,
+  getLocaleAndCurrency,
+} from "@/modules/profile/location-utils";
 
 import TenantOrbit from "@/modules/tenants/ui/components/visuals/TenantOrbit";
 import TenantsCarousel from "@/modules/tenants/ui/components/visuals/TenantsCarousel";
@@ -29,9 +34,11 @@ const clamp = (n: number, min: number, max: number) =>
 export function OrbitAndCarousel({
   queryInput,
   viewer,
+  appLang,
 }: {
   queryInput: GetManyInput; // <-- router-true input type
   viewer: Viewer;
+  appLang: AppLang;
 }) {
   const trpc = useTRPC();
 
@@ -57,6 +64,48 @@ export function OrbitAndCarousel({
     [data?.docs]
   );
 
+  // collect IDs/slugs for rating + order aggregations
+  const tenantSlugs = useMemo(
+    () =>
+      tenants
+        .map((t) => t.slug)
+        .filter((slug): slug is string => typeof slug === "string"),
+    [tenants]
+  );
+
+  const tenantIds = useMemo(
+    () =>
+      tenants
+        .map((t) => t.id)
+        .filter((id): id is string => typeof id === "string"),
+    [tenants]
+  );
+
+  // reviews: aggregated avgRating + totalReviews per tenant slug
+  const { data: reviewSummaries } = useQuery({
+    ...trpc.reviews.summariesForTenants.queryOptions({ slugs: tenantSlugs }),
+    enabled: tenantSlugs.length > 0,
+  });
+
+  // orders: aggregated ordersCount per tenant id
+  const { data: orderStats } = useQuery({
+    ...trpc.orders.statsForTenants.queryOptions({ tenantIds }),
+    enabled: tenantIds.length > 0,
+  });
+
+  // ✅ memoize these maps so they’re stable for useMemo deps
+  const reviewMap = useMemo(
+    () =>
+      reviewSummaries ??
+      ({} as Record<string, { avgRating: number; totalReviews: number }>),
+    [reviewSummaries]
+  );
+
+  const ordersMap = useMemo(
+    () => orderStats ?? ({} as Record<string, { ordersCount: number }>),
+    [orderStats]
+  );
+
   // small helper: strip HTML and collapse whitespace: for tenant blurbs (descriptions)
   const toPlain = (s: string | null | undefined): string =>
     typeof s === "string"
@@ -66,34 +115,61 @@ export function OrbitAndCarousel({
           .trim()
       : "";
 
+  // Currency for the current appLang
+  const { currency } = useMemo(() => getLocaleAndCurrency(appLang), [appLang]);
+
   // Map to carousel items
   // The non-null assertion assumes all tenants have an id, but if the type allows undefined this will cause a runtime error.
   const items = useMemo(
     () =>
       tenants
         .filter((t) => Boolean(t.id) && Boolean(t.slug))
-        .map((t) => ({
-          id: t.id,
-          slug: t.slug,
-          name: t.name,
-          city: t.user?.coordinates?.city ?? "",
-          country: t.user?.coordinates?.countryISO ?? undefined,
-          imageSrc: t.image?.url ?? t.user?.clerkImageUrl ?? undefined,
-          pricePerHour: typeof t.hourlyRate === "number" ? t.hourlyRate : 0,
-          rating: 5.0,
-          ratingCount: 0,
-          since: t.createdAt ? formatMonthYearForLocale(t.createdAt) : "",
-          orders: 0,
-          blurb: toPlain(t.bio) || "Professional services.", // ← use bio
-        })),
-    [tenants]
-  );
+        .map((t) => {
+          const summary = reviewMap[t.slug];
+          const ordersSummary = t.id ? ordersMap[t.id] : undefined;
 
+          const rating = summary?.avgRating ?? 0;
+          const ratingCount = summary?.totalReviews ?? 0;
+          const orders = ordersSummary?.ordersCount ?? 0;
+          const pricePerHour =
+            typeof t.hourlyRate === "number" ? t.hourlyRate : 0;
+
+          // pick the primary category (first one)
+          const primaryCategory = t.categories?.[0];
+
+          return {
+            id: t.id!,
+            slug: t.slug,
+            name: t.name,
+            city: t.user?.coordinates?.city ?? "",
+            country: t.user?.coordinates?.countryISO ?? undefined,
+            imageSrc: t.image?.url ?? t.user?.clerkImageUrl ?? undefined,
+            // preformatted price label, including currency and /h
+            pricePerHourLabel: `${formatCurrency(
+              pricePerHour,
+              currency,
+              appLang
+            )}/h`,
+            rating,
+            ratingCount,
+            since: t.createdAt
+              ? formatMonthYearForLocale(t.createdAt, "short", appLang)
+              : "",
+            orders,
+            blurb: toPlain(t.bio) || "Professional services.",
+            // category info for billboard
+            categoryName: primaryCategory?.name,
+            categoryColor:
+              typeof primaryCategory?.color === "string"
+                ? primaryCategory.color
+                : undefined,
+          };
+        }),
+    [tenants, reviewMap, ordersMap, appLang, currency]
+  );
   // Sync selection
   const [activeSlug, setActiveSlug] = useState<string | undefined>(undefined);
-  // useEffect(() => {
-  //   if (!activeSlug && tenants[0]?.slug) setActiveSlug(tenants[0].slug);
-  // }, [activeSlug, tenants]);
+
   // fall back to the first available tenant (or clear the selection) whenever the dataset changes and the current slug disappears:
   useEffect(() => {
     if (tenants.length === 0) {
@@ -169,6 +245,7 @@ export function OrbitAndCarousel({
             selectedSlug={activeSlug}
             onSelect={onOrbitSelect}
             {...(viewer ? { viewer } : {})} // Omit the prop entirely when viewer is undefined to avoid type error.
+            appLang={appLang}
           />
         )}
       </div>

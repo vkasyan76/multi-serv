@@ -8,6 +8,12 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ClerkUserSync } from "@/modules/auth/ui/views/clerk-user-sync";
 import GeoBootstrap from "@/components/geo-bootstrap";
 
+import { headers } from "next/headers";
+import {
+  getAppLangFromHeaders,
+  type AppLang,
+} from "@/modules/profile/location-utils";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -40,13 +46,18 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", images: ["/opengraph-image.png"] }, // Consistent rich previews when someone shares a page Facebook, LinkedIn, Slack, WhatsApp,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // derive AppLang from Accept-Language header on the SERVER
+  // Next 15: headers() is async
+  const h = await headers();
+  const appLang: AppLang = getAppLangFromHeaders(h);
+
   return (
-    <html lang="en">
+    <html lang={appLang}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
