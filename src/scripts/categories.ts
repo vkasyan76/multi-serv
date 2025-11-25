@@ -11,6 +11,7 @@ type Cat = {
   name: string;
   slug: string;
   color?: string;
+  icon?: string; // Lucide icon name for the category
   subcategories?: Array<{ name: string; slug: string }>;
 };
 
@@ -19,6 +20,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Auto Repair",
     slug: "auto-repair",
     color: "#374151",
+    icon: "Car", // lucide-react icon name
     subcategories: [
       { name: "Vehicle Diagnostics", slug: "vehicle-diagnostics" },
       { name: "Brake Service", slug: "brake-service" },
@@ -31,6 +33,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Plumbing",
     slug: "plumbing",
     color: "#2563eb",
+    icon: "Wrench",
     subcategories: [
       { name: "Leak Repair", slug: "leak-repair" },
       { name: "Pipe Installation", slug: "pipe-installation" },
@@ -43,6 +46,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Bricklaying & Masonry",
     slug: "bricklaying-masonry",
     color: "#d97706",
+    icon: "Hammer",
     subcategories: [
       { name: "Masonry Repair", slug: "masonry-repair" },
       { name: "Paving & Walkways", slug: "paving-walkways" },
@@ -55,6 +59,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Roofing",
     slug: "roofing",
     color: "#6b7280",
+    icon: "Home",
     subcategories: [
       { name: "Roof Repair", slug: "roof-repair" },
       { name: "New Roof Installation", slug: "new-roof-installation" },
@@ -67,6 +72,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Furniture Assembly",
     slug: "furniture-assembly",
     color: "#10b981",
+    icon: "Couch",
     subcategories: [
       { name: "Flat-pack / IKEA", slug: "flatpack-assembly" },
       { name: "Office Furniture", slug: "office-furniture-assembly" },
@@ -79,6 +85,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Relocation",
     slug: "relocation",
     color: "#0ea5e9",
+    icon: "Truck",
     subcategories: [
       { name: "Local Moving", slug: "local-moving" },
       { name: "Long-Distance Moving", slug: "long-distance-moving" },
@@ -94,6 +101,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Cleaning",
     slug: "cleaning",
     color: "#a855f7",
+    icon: "Broom",
     subcategories: [
       { name: "Regular Home Cleaning", slug: "home-cleaning" },
       { name: "Deep Cleaning", slug: "deep-cleaning" },
@@ -106,6 +114,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Gardening",
     slug: "gardening",
     color: "#16a34a",
+    icon: "Trees",
     subcategories: [
       { name: "Lawn Mowing", slug: "lawn-mowing" },
       { name: "Hedge & Tree Trimming", slug: "hedge-tree-trimming" },
@@ -121,12 +130,20 @@ type UpsertResult = { id: string; action: "created" | "updated" | "skipped" };
 // Create or update by slug (idempotent). No deletes.
 async function upsertCategory(
   payload: Payload,
-  data: { name: string; slug: string; color?: string; parent?: string | null }
+  data: {
+    name: string;
+    slug: string;
+    color?: string;
+    icon?: string;
+    parent?: string | null;
+  }
 ): Promise<UpsertResult> {
   const existing = await payload.find({
     collection: "categories",
     where: { slug: { equals: data.slug } },
     limit: 1,
+    depth: 0,
+    overrideAccess: true,
   });
 
   if (existing.totalDocs > 0) {
@@ -134,6 +151,7 @@ async function upsertCategory(
       id: string;
       name?: string;
       color?: string | null;
+      icon?: string | null;
       parent?: string | { id?: string } | null;
     };
 
@@ -143,6 +161,9 @@ async function upsertCategory(
     if (doc.name !== data.name) patch.name = data.name;
     if ((doc.color ?? null) !== (data.color ?? null))
       patch.color = data.color ?? null;
+
+    if ((doc.icon ?? null) !== (data.icon ?? null))
+      patch.icon = data.icon ?? null;
 
     // parent can be string or populated object; compare as strings
     const currentParentId =
@@ -174,6 +195,7 @@ async function upsertCategory(
       name: data.name,
       slug: data.slug,
       color: data.color,
+      icon: data.icon ?? null,
       parent: data.parent ?? null,
     },
     overrideAccess: true,
@@ -191,6 +213,7 @@ async function run() {
       name: cat.name,
       slug: cat.slug,
       color: cat.color,
+      icon: cat.icon,
       parent: null,
     });
     summary.push({ slug: cat.slug, action: parent.action });

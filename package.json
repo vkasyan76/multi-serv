@@ -17,7 +17,9 @@
     "db:clear:bookings": "node --loader ts-node/esm ./src/scripts/clear-bookings.ts",
     "db:clear:orders:all": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --all",
     "db:clear:orders:unpaid": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --unpaid",
-    "orders:cancel-stale": "node --loader ts-node/esm ./src/scripts/cancel-stale-orders.ts"
+    "orders:cancel-stale": "node --loader ts-node/esm ./src/scripts/cancel-stale-orders.ts",
+    "db:prune:categories:dry": "node --loader ts-node/esm ./src/scripts/categories-prune-unused.ts -- --dry-run",
+    "db:prune:categories": "node --loader ts-node/esm ./src/scripts/categories-prune-unused.ts"
   },
   "dependencies": {
     "@clerk/backend": "^2.4.2",
