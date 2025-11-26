@@ -30,6 +30,7 @@ type Item = {
   blurb: string;
   categoryName?: string;
   categoryColor?: string;
+  categoryIcon?: string | null;
 };
 
 export default function TenantsCarousel({
@@ -96,6 +97,7 @@ export default function TenantsCarousel({
                 blurb={t.blurb}
                 categoryName={t.categoryName}
                 categoryColor={t.categoryColor}
+                categoryIcon={t.categoryIcon}
               />
             </Link>
           </CarouselItem>

@@ -20,6 +20,7 @@ import {
 
 import TenantOrbit from "@/modules/tenants/ui/components/visuals/TenantOrbit";
 import TenantsCarousel from "@/modules/tenants/ui/components/visuals/TenantsCarousel";
+import { Category } from "@/payload-types";
 
 type Viewer = { lat: number; lng: number; city?: string | null } | undefined;
 // Derive the EXACT input type from the TRPC client:
@@ -137,6 +138,13 @@ export function OrbitAndCarousel({
           // pick the primary category (first one)
           const primaryCategory = t.categories?.[0];
 
+          const categoryIcon =
+            primaryCategory &&
+            typeof primaryCategory === "object" &&
+            "icon" in primaryCategory
+              ? (primaryCategory as Category).icon
+              : null;
+
           return {
             id: t.id!,
             slug: t.slug,
@@ -163,6 +171,8 @@ export function OrbitAndCarousel({
               typeof primaryCategory?.color === "string"
                 ? primaryCategory.color
                 : undefined,
+            categoryIcon:
+              typeof categoryIcon === "string" ? categoryIcon : null,
           };
         }),
     [tenants, reviewMap, ordersMap, appLang, currency]

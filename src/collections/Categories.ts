@@ -31,6 +31,16 @@ export const Categories: CollectionConfig = {
       type: "text",
     },
     {
+      name: "icon", // Optional Lucide icon name for top-level categories
+      type: "text",
+      required: false,
+      admin: {
+        description:
+          "Optional lucide-react icon name (e.g. 'Car', 'Wrench'). Leave empty for subcategories.",
+        condition: (_, siblingData) => !siblingData?.parent, // show only if no parent
+      },
+    },
+    {
       name: "parent", // Reference to a "parent" category (for building category trees)
       type: "relationship", // Creates a relationship with another category
       relationTo: "categories", // It relates to the same "categories" collection

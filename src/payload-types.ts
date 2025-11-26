@@ -353,6 +353,10 @@ export interface Category {
   name: string;
   slug: string;
   color?: string | null;
+  /**
+   * Optional lucide-react icon name (e.g. 'Car', 'Wrench'). Leave empty for subcategories.
+   */
+  icon?: string | null;
   parent?: (string | null) | Category;
   subcategories?: {
     docs?: (string | Category)[];
@@ -612,6 +616,7 @@ export interface CategoriesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   color?: T;
+  icon?: T;
   parent?: T;
   subcategories?: T;
   updatedAt?: T;
