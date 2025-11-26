@@ -23,6 +23,7 @@ import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary";
+import { CategoryIcon } from "@/modules/categories/category-icons";
 
 import {
   type AppLang,
@@ -270,26 +271,29 @@ export default function TenantContent({ slug }: { slug: string }) {
                   </div>
                 </div>
               )}
-
               {cardTenant?.categories && cardTenant.categories.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Categories</h3>
                   <div className="flex flex-wrap gap-2">
                     {cardTenant.categories.map(
-                      (category: string | Category) => (
-                        <span
-                          key={
-                            typeof category === "string"
-                              ? category
-                              : category.id
-                          }
-                          className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
-                        >
-                          {typeof category === "string"
-                            ? category
-                            : category.name}
-                        </span>
-                      )
+                      (category: string | Category) => {
+                        const cat =
+                          typeof category === "string" ? null : category;
+
+                        const key = cat?.id ?? String(category);
+                        const name = cat?.name ?? String(category);
+                        const icon = cat?.icon ?? null;
+
+                        return (
+                          <span
+                            key={key}
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                          >
+                            <CategoryIcon icon={icon} label={name} size={16} />
+                            <span>{name}</span>
+                          </span>
+                        );
+                      }
                     )}
                   </div>
                 </div>

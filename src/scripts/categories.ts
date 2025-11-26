@@ -20,7 +20,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Auto Repair",
     slug: "auto-repair",
     color: "#374151",
-    icon: "Car", // lucide-react icon name
+    icon: "lucide:car",
     subcategories: [
       { name: "Vehicle Diagnostics", slug: "vehicle-diagnostics" },
       { name: "Brake Service", slug: "brake-service" },
@@ -33,7 +33,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Plumbing",
     slug: "plumbing",
     color: "#2563eb",
-    icon: "Wrench",
+    icon: "lucide:wrench",
     subcategories: [
       { name: "Leak Repair", slug: "leak-repair" },
       { name: "Pipe Installation", slug: "pipe-installation" },
@@ -46,7 +46,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Bricklaying & Masonry",
     slug: "bricklaying-masonry",
     color: "#d97706",
-    icon: "Hammer",
+    icon: "lucide:brick-wall",
     subcategories: [
       { name: "Masonry Repair", slug: "masonry-repair" },
       { name: "Paving & Walkways", slug: "paving-walkways" },
@@ -59,7 +59,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Roofing",
     slug: "roofing",
     color: "#6b7280",
-    icon: "Home",
+    icon: "fa6-solid:house-chimney",
     subcategories: [
       { name: "Roof Repair", slug: "roof-repair" },
       { name: "New Roof Installation", slug: "new-roof-installation" },
@@ -72,7 +72,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Furniture Assembly",
     slug: "furniture-assembly",
     color: "#10b981",
-    icon: "Couch",
+    icon: "lucide:armchair",
     subcategories: [
       { name: "Flat-pack / IKEA", slug: "flatpack-assembly" },
       { name: "Office Furniture", slug: "office-furniture-assembly" },
@@ -85,7 +85,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Relocation",
     slug: "relocation",
     color: "#0ea5e9",
-    icon: "Truck",
+    icon: "lucide:truck",
     subcategories: [
       { name: "Local Moving", slug: "local-moving" },
       { name: "Long-Distance Moving", slug: "long-distance-moving" },
@@ -101,7 +101,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Cleaning",
     slug: "cleaning",
     color: "#a855f7",
-    icon: "Broom",
+    icon: "mdi:broom",
     subcategories: [
       { name: "Regular Home Cleaning", slug: "home-cleaning" },
       { name: "Deep Cleaning", slug: "deep-cleaning" },
@@ -114,7 +114,7 @@ const MANUAL_CATEGORIES: Cat[] = [
     name: "Gardening",
     slug: "gardening",
     color: "#16a34a",
-    icon: "Trees",
+    icon: "lucide:trees",
     subcategories: [
       { name: "Lawn Mowing", slug: "lawn-mowing" },
       { name: "Hedge & Tree Trimming", slug: "hedge-tree-trimming" },

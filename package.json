@@ -27,6 +27,7 @@
     "@clerk/nextjs": "^6.24.0",
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@hookform/resolvers": "^5.1.1",
+    "@iconify/react": "^6.0.2",
     "@nouance/payload-better-fields-plugin": "^2.0.2",
     "@payloadcms/db-mongodb": "3.35.0",
     "@payloadcms/next": "3.35.0",
