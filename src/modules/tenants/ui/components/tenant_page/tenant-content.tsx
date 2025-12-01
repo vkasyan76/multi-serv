@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useTRPC } from "@/trpc/client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation"; // for navigation after chekout
-import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -24,6 +24,9 @@ import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary";
 import { CategoryIcon } from "@/modules/categories/category-icons";
+import Image from "next/image";
+import Link from "next/link";
+import { platformHomeHref } from "@/lib/utils";
 
 import {
   type AppLang,
@@ -45,6 +48,17 @@ const TenantCalendar = dynamic(
 );
 
 export default function TenantContent({ slug }: { slug: string }) {
+  const homeHref = platformHomeHref();
+
+  // ensures "/plumbing" becomes "https://root-domain/plumbing" in prod,
+  // and stays "/plumbing" in dev
+  const toPlatform = (path: string) => {
+    if (homeHref === "/") return path;
+    const base = homeHref.endsWith("/") ? homeHref.slice(0, -1) : homeHref;
+    const p = path.startsWith("/") ? path : `/${path}`;
+    return `${base}${p}`;
+  };
+
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
 
@@ -195,8 +209,34 @@ export default function TenantContent({ slug }: { slug: string }) {
     refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
     refetchOnReconnect: "always",
     refetchOnWindowFocus: false,
-    placeholderData: keepPreviousData,
+    // placeholderData: keepPreviousData,
   });
+
+  // check for subcategories to adjust layout
+  const subcatsLen = cardTenant?.subcategories?.length ?? 0;
+  const hasSubcats = subcatsLen > 0;
+  const subcatsTooMany = subcatsLen > 3;
+  const competenciesSpan =
+    !hasSubcats || subcatsTooMany ? "md:col-span-2" : "md:col-span-1";
+
+  const subcatsSpan = subcatsTooMany ? "md:col-span-2" : "md:col-span-1";
+
+  // grab “parent” category once (used for subcategory links/colors)
+  // grab parent category (used for subcategory links/colors)
+  const categoriesArr = cardTenant?.categories ?? [];
+
+  // to avoid a runtime error is because you access cardTenant.categories before cardTenant exists.
+
+  let parentCat: Category | null = null;
+  for (const c of categoriesArr) {
+    if (typeof c !== "string") {
+      parentCat = c;
+      break;
+    }
+  }
+
+  const parentSlug = parentCat?.slug ?? null;
+  const parentColor = parentCat?.color ?? null;
 
   // Aggregated orders count for this tenant
   const { data: tenantOrderStats } = useQuery({
@@ -238,11 +278,22 @@ export default function TenantContent({ slug }: { slug: string }) {
           {/* About Section */}
           <section
             id="about"
-            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
+            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px]"
           >
-            <h2 className="text-2xl font-bold mb-4">About</h2>
-            <div className="prose max-w-none">
-              <p className="text-gray-700 leading-relaxed">
+            {/* <h2 className="text-2xl font-bold mb-4">About</h2> */}
+            <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
+              <Image
+                src="/SVGs/Writing.svg"
+                alt=""
+                aria-hidden="true"
+                width={56}
+                height={56}
+                className="opacity-90"
+              />
+              <span>About</span>
+            </h2>
+            <div className="rounded-2xl border bg-white/70 p-5 shadow-sm">
+              <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed break-words">
                 {cardTenant?.bio || "No bio available."}
               </p>
             </div>
@@ -253,28 +304,45 @@ export default function TenantContent({ slug }: { slug: string }) {
             id="services"
             className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
           >
-            <h2 className="text-2xl font-bold mb-4">Services</h2>
-            <div className="space-y-4">
-              {/* Service Types */}
-              {cardTenant?.services && cardTenant.services.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Service Types</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {cardTenant.services.map((service: string) => (
-                      <span
-                        key={service}
-                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                      >
-                        {service === "on-site" ? "On-site" : "Online"}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
+              <Image
+                src="/SVGs/Services_3d-2.svg"
+                alt=""
+                aria-hidden="true"
+                width={64}
+                height={64}
+                className="opacity-90"
+              />
+              <span>Services</span>
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* My Competencies (FIRST / LEFT) */}
               {cardTenant?.categories && cardTenant.categories.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Categories</h3>
-                  <div className="flex flex-wrap gap-2">
+                <div
+                  className={[
+                    "rounded-2xl border bg-white/70 p-5 shadow-sm",
+                    competenciesSpan,
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 shrink-0 flex items-center justify-center">
+                      <Image
+                        src="/SVGs/Competencies.svg"
+                        alt=""
+                        aria-hidden="true"
+                        width={22}
+                        height={22}
+                        className="opacity-90 object-contain -translate-y-[1px]"
+                      />
+                    </div>
+
+                    <h3 className="text-base font-semibold leading-6">
+                      My Competencies:
+                    </h3>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {cardTenant.categories.map(
                       (category: string | Category) => {
                         const cat =
@@ -284,14 +352,43 @@ export default function TenantContent({ slug }: { slug: string }) {
                         const name = cat?.name ?? String(category);
                         const icon = cat?.icon ?? null;
 
+                        const slug = cat?.slug ?? null;
+                        const color = cat?.color ?? null;
+
+                        if (!slug) {
+                          return (
+                            <span
+                              key={key}
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold text-white shadow-sm hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                            >
+                              <CategoryIcon
+                                icon={icon}
+                                label={name}
+                                size={12}
+                              />
+                              <span className="truncate">{name}</span>
+                            </span>
+                          );
+                        }
                         return (
-                          <span
+                          <Link
                             key={key}
-                            className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                            href={toPlatform(`/${slug}`)}
+                            prefetch={false}
+                            className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white shadow-sm hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                            style={
+                              color ? { backgroundColor: color } : undefined
+                            }
+                            aria-label={`Open category ${name}`}
                           >
-                            <CategoryIcon icon={icon} label={name} size={16} />
-                            <span>{name}</span>
-                          </span>
+                            <CategoryIcon
+                              icon={icon}
+                              label={name}
+                              size={14}
+                              className="text-white"
+                            />
+                            <span className="truncate">{name}</span>
+                          </Link>
                         );
                       }
                     )}
@@ -299,29 +396,77 @@ export default function TenantContent({ slug }: { slug: string }) {
                 </div>
               )}
 
+              {/* My Offer (Subcategories) — full width to avoid gaps */}
               {cardTenant?.subcategories &&
                 cardTenant.subcategories.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">
-                      Subcategories
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {cardTenant.subcategories.map(
-                        (subcategory: string | Category) => (
-                          <span
-                            key={
+                  <div
+                    className={[
+                      "rounded-2xl border bg-white/70 p-5 shadow-sm",
+                      subcatsSpan,
+                    ].join(" ")}
+                  >
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 flex items-center justify-center">
+                          <Image
+                            src="/SVGs/Competencies_Toolbox.svg"
+                            alt=""
+                            aria-hidden="true"
+                            width={44}
+                            height={44}
+                            className="opacity-90 scale-125"
+                          />
+                        </div>
+
+                        <h3 className="text-base font-semibold leading-6">
+                          Specialisation:
+                        </h3>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {cardTenant.subcategories.map(
+                          (subcategory: string | Category) => {
+                            const sub =
                               typeof subcategory === "string"
-                                ? subcategory
-                                : subcategory.id
+                                ? null
+                                : subcategory;
+
+                            const key = sub?.id ?? String(subcategory);
+                            const name = sub?.name ?? String(subcategory);
+                            const subSlug = sub?.slug ?? null;
+
+                            // If we can build /{categorySlug}/{subSlug}, make it a link
+                            if (parentSlug && subSlug) {
+                              return (
+                                <Link
+                                  key={key}
+                                  href={toPlatform(`/${parentSlug}/${subSlug}`)}
+                                  prefetch={false}
+                                  className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white shadow-sm hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                  style={
+                                    parentColor
+                                      ? { backgroundColor: parentColor }
+                                      : undefined
+                                  }
+                                  aria-label={`Open subcategory ${name}`}
+                                >
+                                  <span className="truncate">{name}</span>
+                                </Link>
+                              );
                             }
-                            className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
-                          >
-                            {typeof subcategory === "string"
-                              ? subcategory
-                              : subcategory.name}
-                          </span>
-                        )
-                      )}
+
+                            // Fallback: non-clickable chip
+                            return (
+                              <span
+                                key={key}
+                                className="inline-flex items-center gap-2 rounded-full border bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm"
+                              >
+                                <span className="truncate">{name}</span>
+                              </span>
+                            );
+                          }
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -333,7 +478,18 @@ export default function TenantContent({ slug }: { slug: string }) {
             id="booking"
             className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
           >
-            <h2 className="text-2xl font-bold mb-4">Booking</h2>
+            <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
+              <Image
+                src="/SVGs/Calendar.svg"
+                alt=""
+                aria-hidden="true"
+                width={64}
+                height={64}
+                className="opacity-90"
+              />
+              <span>Booking</span>
+            </h2>
+
             <TenantCalendar
               tenantSlug={slug}
               editable={false}
@@ -381,6 +537,18 @@ export default function TenantContent({ slug }: { slug: string }) {
             id="reviews"
             className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
           >
+            <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
+              <Image
+                src="/SVGs/Review.svg"
+                alt=""
+                aria-hidden="true"
+                width={56}
+                height={56}
+                className="opacity-90"
+              />
+              <span>Reviews</span>
+            </h2>
+
             <TenantReviewSummary slug={slug} />
           </section>
         </div>

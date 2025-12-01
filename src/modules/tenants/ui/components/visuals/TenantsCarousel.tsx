@@ -13,6 +13,13 @@ import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 
+// import dynamic from "next/dynamic";
+
+// const TenantBillboard = dynamic(
+//   () => import("@/modules/tenants/ui/components/visuals/TenantBillboard"),
+//   { ssr: false }
+// );
+
 // ✅ items is optional; fallback to demo data
 type Item = {
   id: string;
