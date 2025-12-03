@@ -67,37 +67,6 @@ export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
           {/* Right: breakdown per star (Amazon-style bars) */}
           ...
         </div>
-
-        {/* ===== List ===== */}
-        <div className="space-y-4">
-          {listQ.isError && (
-            <p className="text-sm text-muted-foreground">
-              We couldn’t load review details right now. Please try again later.
-            </p>
-          )}
-
-          {listQ.isLoading && (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="rounded-2xl border bg-white/70 p-4 shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="flex-1">
-                      <Skeleton className="h-4 w-40 mb-2" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-4 w-56 mt-4" />
-                  <Skeleton className="h-4 w-full mt-2" />
-                  <Skeleton className="h-4 w-5/6 mt-2" />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     );
   }
@@ -178,7 +147,7 @@ export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
           </p>
         )}
 
-        {listQ.isLoading && (
+        {listQ.isLoading && reviews.length === 0 ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div
@@ -198,76 +167,76 @@ export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
               </div>
             ))}
           </div>
-        )}
+        ) : (
+          reviews.map((r) => {
+            const isExpanded = !!expanded[r.id];
+            const showToggle = (r.body?.length ?? 0) > 260;
 
-        {reviews.map((r) => {
-          const isExpanded = !!expanded[r.id];
-          const showToggle = (r.body?.length ?? 0) > 260;
+            return (
+              <div
+                key={r.id}
+                className="rounded-2xl border bg-white/70 p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarImage
+                        src={r.author.avatarUrl ?? undefined}
+                        alt={r.author.name}
+                        referrerPolicy="no-referrer"
+                      />
+                      <AvatarFallback className="font-semibold text-sm">
+                        {initials(r.author.name)}
+                      </AvatarFallback>
+                    </Avatar>
 
-          return (
-            <div
-              key={r.id}
-              className="rounded-2xl border bg-white/70 p-4 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Avatar className="h-10 w-10 shrink-0">
-                    <AvatarImage
-                      src={r.author.avatarUrl ?? undefined}
-                      alt={r.author.name}
-                      referrerPolicy="no-referrer"
-                    />
-                    <AvatarFallback className="font-semibold text-sm">
-                      {initials(r.author.name)}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="min-w-0">
-                    <div className="font-semibold truncate">
-                      {r.author.name}
-                    </div>
-                    {r.createdAt ? (
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(r.createdAt).toLocaleDateString()}
+                    <div className="min-w-0">
+                      <div className="font-semibold truncate">
+                        {r.author.name}
                       </div>
-                    ) : null}
+                      {r.createdAt ? (
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="shrink-0">
+                    <StarRating rating={r.rating ?? 0} />
                   </div>
                 </div>
 
-                <div className="shrink-0">
-                  <StarRating rating={r.rating ?? 0} />
+                <div className="mt-3 space-y-2">
+                  {r.title ? (
+                    <div className="font-semibold leading-snug">{r.title}</div>
+                  ) : null}
+
+                  {r.body ? (
+                    <p
+                      className={[
+                        "text-sm text-muted-foreground whitespace-pre-line break-words",
+                        isExpanded ? "" : "line-clamp-4",
+                      ].join(" ")}
+                    >
+                      {r.body}
+                    </p>
+                  ) : null}
+
+                  {showToggle && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(r.id)}
+                      className="text-sm font-medium text-blue-700 hover:underline"
+                    >
+                      {isExpanded ? "Show less" : "Show more"}
+                    </button>
+                  )}
                 </div>
               </div>
-
-              <div className="mt-3 space-y-2">
-                {r.title ? (
-                  <div className="font-semibold leading-snug">{r.title}</div>
-                ) : null}
-
-                {r.body ? (
-                  <p
-                    className={[
-                      "text-sm text-muted-foreground whitespace-pre-line break-words",
-                      isExpanded ? "" : "line-clamp-4",
-                    ].join(" ")}
-                  >
-                    {r.body}
-                  </p>
-                ) : null}
-
-                {showToggle && (
-                  <button
-                    type="button"
-                    onClick={() => toggleExpanded(r.id)}
-                    className="text-sm font-medium text-blue-700 hover:underline"
-                  >
-                    {isExpanded ? "Show less" : "Show more"}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
 
         {listQ.hasNextPage && (
           <div className="flex justify-center pt-2">
