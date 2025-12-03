@@ -2,7 +2,15 @@ import { createTRPCRouter, clerkProcedure, baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { Tenant, Order, Review, Booking, Category } from "@payload-types";
+import type {
+  Tenant,
+  Order,
+  Review,
+  Booking,
+  Category,
+  User,
+} from "@payload-types";
+
 import { getPayloadUserIdOrNull } from "./utils";
 
 /** Zod schemas so we can reuse the inferred types in the resolver signatures */
@@ -39,12 +47,14 @@ export const reviewsRouter = createTRPCRouter({
         const payloadUserId = await getPayloadUserIdOrNull(db, userId);
         if (!payloadUserId) return null;
 
+        // Render only the most recent review by this user for this tenant
         const rRes = await db.find({
           collection: "reviews",
           where: {
             tenant: { equals: tenant.id },
             author: { equals: payloadUserId },
           },
+          sort: "-updatedAt",
           limit: 1,
         });
 
@@ -193,6 +203,7 @@ export const reviewsRouter = createTRPCRouter({
             tenant: { equals: tenant.id },
             author: { equals: payloadUserId },
           },
+          sort: "-updatedAt",
           limit: 1,
         });
 
@@ -323,5 +334,83 @@ export const reviewsRouter = createTRPCRouter({
       }
 
       return map;
+    }),
+
+  listForTenant: baseProcedure
+    .input(
+      z.object({
+        slug: z.string(),
+        cursor: z.number().optional(), // page number
+        limit: z.number().min(1).max(20).default(5),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const res = await ctx.db.find({
+        collection: "reviews",
+        where: { tenantSlug: { equals: input.slug } },
+        sort: "-updatedAt",
+        page: input.cursor ?? 1,
+        limit: input.limit,
+        depth: 1, // populate author
+        pagination: true,
+      });
+
+      const raw = res.docs as Review[];
+
+      // keep only latest review per author (because we sorted by -updatedAt)
+      const seen = new Set<string>();
+      const unique: Review[] = [];
+
+      for (const r of raw) {
+        const a = r.author;
+
+        const authorId =
+          typeof a === "string"
+            ? a
+            : a && typeof a === "object" && "id" in a
+              ? String((a as User).id)
+              : "";
+
+        // if we can't detect author id, keep it (rare)
+        if (!authorId) {
+          unique.push(r);
+          continue;
+        }
+
+        if (seen.has(authorId)) continue;
+        seen.add(authorId);
+        unique.push(r);
+      }
+
+      const docs = unique.map((r) => {
+        const a = r.author;
+        const user = a && typeof a === "object" ? (a as User) : null;
+
+        const name =
+          typeof user?.username === "string" && user.username.trim()
+            ? user.username
+            : "User";
+
+        // if you DON'T store avatarUrl in DB, keep this null
+        const avatarUrl = null;
+
+        return {
+          id: r.id,
+          rating: r.rating ?? 0,
+          title: r.title ?? "",
+          body: r.body ?? "",
+          createdAt: r.createdAt ?? null,
+          author: { name, avatarUrl },
+        };
+      });
+
+      return {
+        docs,
+        hasNextPage: res.hasNextPage,
+        nextPage: res.hasNextPage ? res.nextPage : undefined,
+        page: res.page,
+        totalDocs: res.totalDocs,
+        totalPages: res.totalPages,
+      };
     }),
 });
