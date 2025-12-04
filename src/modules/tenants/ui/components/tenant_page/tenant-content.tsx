@@ -63,12 +63,12 @@ export default function TenantContent({ slug }: { slug: string }) {
   const trpc = useTRPC();
 
   // Reviews & Ratings:
-  const { data: reviewSummary } = useQuery(
+  const reviewSummaryQ = useQuery(
     trpc.reviews.summaryForTenant.queryOptions({ slug })
   );
 
-  const reviewRating = reviewSummary?.avgRating ?? undefined;
-  const reviewCount = reviewSummary?.totalReviews ?? undefined;
+  const reviewRating = reviewSummaryQ.data?.avgRating ?? undefined;
+  const reviewCount = reviewSummaryQ.data?.totalReviews ?? undefined;
 
   // redirect after checkout:
   const router = useRouter();
@@ -549,7 +549,12 @@ export default function TenantContent({ slug }: { slug: string }) {
               <span>Reviews</span>
             </h2>
 
-            <TenantReviewSummary slug={slug} />
+            <TenantReviewSummary
+              slug={slug}
+              summary={reviewSummaryQ.data ?? null}
+              summaryIsLoading={reviewSummaryQ.isLoading}
+              summaryIsError={reviewSummaryQ.isError}
+            />
           </section>
         </div>
 

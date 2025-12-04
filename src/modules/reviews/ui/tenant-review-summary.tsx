@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { StarRating } from "./star-rating";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,18 +10,28 @@ import { Loader2 } from "lucide-react";
 import { DEFAULT_LIMIT } from "@/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-type TenantReviewSummaryProps = {
-  slug: string; // tenant slug
+type ReviewSummary = {
+  avgRating: number;
+  totalReviews: number;
+  breakdown: Record<1 | 2 | 3 | 4 | 5, number>;
 };
 
-export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
+type TenantReviewSummaryProps = {
+  slug: string;
+  summary: ReviewSummary | null;
+  summaryIsLoading: boolean;
+  summaryIsError: boolean;
+};
+
+export function TenantReviewSummary({
+  slug,
+  summary,
+  summaryIsLoading,
+  summaryIsError,
+}: TenantReviewSummaryProps) {
   const trpc = useTRPC();
 
-  // ---------- Review summary ----------
-
-  const summaryQ = useQuery(
-    trpc.reviews.summaryForTenant.queryOptions({ slug })
-  );
+  // ---------- Review summary generated at tenant-content level ----------
 
   // ---------- Review comments: list (paginated) ----------
 
@@ -35,7 +45,7 @@ export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
 
   const listQ = useInfiniteQuery({
     ...listBase,
-    enabled: !!slug && (summaryQ.data?.totalReviews ?? 0) > 0,
+    enabled: !!slug && (summary?.totalReviews ?? 0) > 0,
   });
 
   const reviews = useMemo(() => {
@@ -57,22 +67,29 @@ export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
   };
 
   // Loading state – simple skeleton
-  if (summaryQ.isLoading) {
+  if (summaryIsLoading) {
     return (
       <div className="space-y-8">
         {/* ===== Summary ===== */}
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left: overall rating block */}
-          ...
+          <div className="flex flex-col gap-2 min-w-[220px]">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-4 w-20" />
+          </div>
           {/* Right: breakdown per star (Amazon-style bars) */}
-          ...
+          <div className="flex-1 max-w-xl space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-3 w-full" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   // Error or no reviews yet
-  if (summaryQ.isError) {
+  if (summaryIsError) {
     return (
       <div>
         <p className="text-sm text-muted-foreground">
@@ -81,7 +98,7 @@ export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
       </div>
     );
   }
-  if (!summaryQ.data || summaryQ.data.totalReviews === 0) {
+  if (!summary || summary.totalReviews === 0) {
     return (
       <div>
         <p className="text-sm text-muted-foreground">
@@ -92,7 +109,7 @@ export function TenantReviewSummary({ slug }: TenantReviewSummaryProps) {
     );
   }
 
-  const { avgRating, totalReviews, breakdown } = summaryQ.data;
+  const { avgRating, totalReviews, breakdown } = summary;
   const roundedAvg = Math.round(avgRating * 10) / 10; // 4.44 -> 4.4
   const rows = [5, 4, 3, 2, 1] as const;
 
