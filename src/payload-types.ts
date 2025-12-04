@@ -75,6 +75,7 @@ export interface Config {
     bookings: Booking;
     orders: Order;
     reviews: Review;
+    conversations: Conversation;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -93,6 +94,7 @@ export interface Config {
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
+    conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -470,6 +472,24 @@ export interface Review {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "conversations".
+ */
+export interface Conversation {
+  id: string;
+  tenant: string | Tenant;
+  customer: string | User;
+  /**
+   * Cached from tenant.user for faster filtering and access control.
+   */
+  tenantUser: string | User;
+  status?: ('open' | 'archived' | 'closed') | null;
+  lastMessageAt?: string | null;
+  lastMessagePreview?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -506,6 +526,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'reviews';
         value: string | Review;
+      } | null)
+    | ({
+        relationTo: 'conversations';
+        value: string | Conversation;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -722,6 +746,20 @@ export interface ReviewsSelect<T extends boolean = true> {
   rating?: T;
   title?: T;
   body?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "conversations_select".
+ */
+export interface ConversationsSelect<T extends boolean = true> {
+  tenant?: T;
+  customer?: T;
+  tenantUser?: T;
+  status?: T;
+  lastMessageAt?: T;
+  lastMessagePreview?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -115,20 +115,18 @@ export const Navbar = ({ slug }: Props) => {
 
             {/* Right: brand - Always show Infinisimo name on small screens */}
             <div className="flex items-center gap-2 shrink-0">
-              <div className="flex items-center gap-2 shrink-0">
-                <Image
-                  src="/images/infinisimo_logo_illustrator.png"
-                  alt="Infinisimo"
-                  width={24}
-                  height={24}
-                  className="shrink-0"
-                />
-                <span
-                  className={cn("text-base font-semibold", poppins.className)}
-                >
-                  Infinisimo
-                </span>
-              </div>
+              <Image
+                src="/images/infinisimo_logo_illustrator.png"
+                alt="Infinisimo"
+                width={24}
+                height={24}
+                className="shrink-0"
+              />
+              <span
+                className={cn("text-base font-semibold", poppins.className)}
+              >
+                Infinisimo
+              </span>
             </div>
           </div>
 

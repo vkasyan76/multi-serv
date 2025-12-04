@@ -22,6 +22,7 @@ import { BookSlotsButton } from "@/modules/checkout/ui/book-slots-button";
 import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
+import { ConversationSheet } from "@/modules/conversations/ui/conversation-sheet";
 import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary";
 import { CategoryIcon } from "@/modules/categories/category-icons";
 import Image from "next/image";
@@ -110,6 +111,19 @@ export default function TenantContent({ slug }: { slug: string }) {
     document
       .getElementById("booking")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // conversation
+  // conversation trigger (MUST be before any early return)
+  // must be before any early return
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const handleContact = () => {
+    if (signedState === false) {
+      toast.error("Sign in to contact this provider.");
+      return;
+    }
+    setChatOpen(true);
   };
 
   const {
@@ -269,6 +283,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           ordersCount={ordersCount}
           onBook={scrollToCalendar}
           appLang={appLang}
+          onContact={handleContact}
         />
       </section>
 
@@ -572,11 +587,24 @@ export default function TenantContent({ slug }: { slug: string }) {
               ordersCount={ordersCount}
               onBook={scrollToCalendar}
               appLang={appLang}
+              onContact={handleContact}
             />
             {/* REMOVED: Contact and Pricing sections - now redundant */}
           </div>
         </aside>
       </div>
+      {/* Conversation Sheet */}
+      <ConversationSheet
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        tenantSlug={slug}
+        tenantName={cardTenant.name}
+        tenantAvatarUrl={
+          cardTenant.image?.url ?? cardTenant.user?.clerkImageUrl ?? null
+        }
+        myAvatarUrl={null}
+        disabled={signedState !== true}
+      />
     </div>
   );
 }
