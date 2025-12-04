@@ -5,6 +5,7 @@ import { Star, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatIntegerForLocale } from "@/modules/profile/location-utils";
+import { CategoryIcon } from "@/modules/categories/category-icons";
 
 // handle broken <Image>, show fallback tile
 const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -28,6 +29,7 @@ type Props = {
   blurb?: string;
   categoryName?: string;
   categoryColor?: string;
+  categoryIcon?: string | null;
 };
 
 export default function TenantBillboard({
@@ -44,6 +46,7 @@ export default function TenantBillboard({
   blurb = "Friendly professional. On-site & online.",
   categoryName,
   categoryColor,
+  categoryIcon,
 }: Props) {
   const initial = name?.trim()?.[0]?.toUpperCase() ?? "—"; // user initals fallback if image fails
 
@@ -90,30 +93,21 @@ export default function TenantBillboard({
 
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-          {/* rating top-left */}
-          {/* {ratingCount > 0 ? (
-            <Badge className="absolute top-3 left-3 bg-black/70 text-white hover:bg-black/70 backdrop-blur px-2.5 py-1.5 text-xs">
-              <span className="inline-flex items-center gap-1">
-                <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-                {rating.toFixed(1)}{" "}
-                <span className="opacity-80">({ratingCount})</span>
-              </span>
-            </Badge>
-          ) : (
-            <Badge className="absolute top-3 left-3 bg-green-600 text-white hover:bg-green-600 backdrop-blur px-2.5 py-1.5 text-xs">
-              New
-            </Badge>
-          )} */}
+          {/* top section */}
 
-          {/* Category badge – top-left, using orbit category color */}
           {categoryName && (
             <div
-              className="absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-medium text-white shadow-sm"
+              className="absolute top-3 left-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white shadow-sm"
               style={
                 categoryColor ? { backgroundColor: categoryColor } : undefined
               }
             >
-              {categoryName}
+              <CategoryIcon
+                icon={categoryIcon ?? null}
+                className="text-white"
+                size={14}
+              />
+              <span>{categoryName}</span>
             </div>
           )}
 

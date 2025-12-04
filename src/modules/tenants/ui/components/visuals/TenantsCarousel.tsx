@@ -13,6 +13,13 @@ import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 
+// import dynamic from "next/dynamic";
+
+// const TenantBillboard = dynamic(
+//   () => import("@/modules/tenants/ui/components/visuals/TenantBillboard"),
+//   { ssr: false }
+// );
+
 // ✅ items is optional; fallback to demo data
 type Item = {
   id: string;
@@ -30,6 +37,7 @@ type Item = {
   blurb: string;
   categoryName?: string;
   categoryColor?: string;
+  categoryIcon?: string | null;
 };
 
 export default function TenantsCarousel({
@@ -96,6 +104,7 @@ export default function TenantsCarousel({
                 blurb={t.blurb}
                 categoryName={t.categoryName}
                 categoryColor={t.categoryColor}
+                categoryIcon={t.categoryIcon}
               />
             </Link>
           </CarouselItem>

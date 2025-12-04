@@ -25,6 +25,8 @@ import {
   DEFAULT_APP_LANG,
 } from "@/modules/profile/location-utils";
 
+import { getReadableTextStyle } from "./color-utils";
+
 /** props */
 export type TenantOrbitProps = {
   size?: number;
@@ -73,6 +75,13 @@ function CircleBadge({
   const category = t.categories?.[0]?.name ?? "—";
   const bg = color && /^#/.test(color) ? color : undefined;
 
+  // contrast-based logic for text color/shadow
+  const readable = bg ? getReadableTextStyle(bg) : null;
+
+  // dynamic opacity
+  const metaOpacity = readable?.useDarkText ? "opacity-90" : "opacity-80";
+  const priceOpacity = readable?.useDarkText ? "opacity-95" : "opacity-90";
+
   // hourly rate (present by contract; may be null)
   const hr = t.hourlyRate;
   const price =
@@ -98,8 +107,17 @@ function CircleBadge({
         width: size,
         height: size,
         padding: 10,
+        // ...(bg
+        //   ? { backgroundColor: bg, borderColor: bg, color: "#111827" }
+        //   : {}),
         ...(bg
-          ? { backgroundColor: bg, borderColor: bg, color: "#111827" }
+          ? {
+              backgroundColor: bg,
+              borderColor: bg,
+              ...(readable
+                ? { color: readable.color, textShadow: readable.textShadow }
+                : {}),
+            }
           : {}),
       }}
       title={`${t.name} • ${category}${city ? ` • ${city}` : ""}${price ? ` • ${price}` : ""}`}
@@ -107,17 +125,30 @@ function CircleBadge({
     >
       <div className="leading-tight">
         <div className={`${nameCls} font-semibold line-clamp-1`}>{t.name}</div>
-
         {/* Category: always visible (also on compact) */}
-        <div className={`${metaCls} opacity-80 line-clamp-1`}>{category}</div>
+
+        {/* <div className={`${metaCls} opacity-80 line-clamp-1`}>{category}</div> */}
+
+        {/* {mode === "full" && (
+          <div className={`${metaCls} opacity-80 line-clamp-1`}>{city}</div>
+        )} */}
+        {/* {price && (
+          <div className={`${metaCls} font-semibold opacity-90 mt-0.5`}>
+            {price}
+          </div>
+        )} */}
+        {/* add dynamic opacity */}
+        <div className={`${metaCls} ${metaOpacity} line-clamp-1`}>
+          {category}
+        </div>
 
         {mode === "full" && (
-          <div className={`${metaCls} opacity-80 line-clamp-1`}>{city}</div>
+          <div className={`${metaCls} ${metaOpacity} line-clamp-1`}>{city}</div>
         )}
-
         {/* Price always last; shows on all modes if available */}
+
         {price && (
-          <div className={`${metaCls} font-semibold opacity-90 mt-0.5`}>
+          <div className={`${metaCls} font-semibold ${priceOpacity} mt-0.5`}>
             {price}
           </div>
         )}

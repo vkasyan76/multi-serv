@@ -7,6 +7,12 @@ import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { TenantSubnav } from "./tenant-subnav";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["700"] });
 
@@ -49,26 +55,36 @@ export const Navbar = ({ slug }: Props) => {
           {/* Centered tabs */}
           <TenantSubnav headerOffsetPx={{ base: 56, sm: 64 }} />
 
-          {/* Right: brand */}
+          {/* Right: brand (large screens) */}
           <div className="justify-self-end">
-            <Link
-              href={process.env.NEXT_PUBLIC_APP_URL ?? "/"}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-              aria-label="Infinisimo Home"
-            >
-              <Image
-                src="/images/infinisimo_logo_illustrator.png"
-                alt="Infinisimo"
-                width={28}
-                height={28}
-                className="shrink-0"
-              />
-              <span
-                className={cn("text-base font-semibold", poppins.className)}
-              >
-                Infinisimo
-              </span>
-            </Link>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={process.env.NEXT_PUBLIC_APP_URL ?? "/"}
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    aria-label="Infinisimo Home"
+                  >
+                    <Image
+                      src="/images/infinisimo_logo_illustrator.png"
+                      alt="Infinisimo"
+                      width={28}
+                      height={28}
+                      className="shrink-0"
+                    />
+                    <span
+                      className={cn(
+                        "text-base font-semibold",
+                        poppins.className
+                      )}
+                    >
+                      Infinisimo
+                    </span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Home</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
@@ -99,18 +115,20 @@ export const Navbar = ({ slug }: Props) => {
 
             {/* Right: brand - Always show Infinisimo name on small screens */}
             <div className="flex items-center gap-2 shrink-0">
-              <Image
-                src="/images/infinisimo_logo_illustrator.png"
-                alt="Infinisimo"
-                width={24}
-                height={24}
-                className="shrink-0"
-              />
-              <span
-                className={cn("text-base font-semibold", poppins.className)}
-              >
-                Infinisimo
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <Image
+                  src="/images/infinisimo_logo_illustrator.png"
+                  alt="Infinisimo"
+                  width={24}
+                  height={24}
+                  className="shrink-0"
+                />
+                <span
+                  className={cn("text-base font-semibold", poppins.className)}
+                >
+                  Infinisimo
+                </span>
+              </div>
             </div>
           </div>
 
