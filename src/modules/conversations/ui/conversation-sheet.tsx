@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTRPC } from "@/trpc/client";
-import { useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import {
   Sheet,
   SheetContent,
@@ -21,15 +21,12 @@ import type { AppRouter } from "@/trpc/routers/_app";
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type UpsertForTenantOutput = RouterOutputs["conversations"]["upsertForTenant"];
 
-type ChatMessage = {
-  id: string;
-  role: "me" | "tenant";
-  text: string;
-};
+type MessagesListOutput = RouterOutputs["messages"]["list"];
+type MessageItem = MessagesListOutput["items"][number];
 
 type ConversationSheetProps = {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChangeAction: (open: boolean) => void;
   tenantSlug: string;
   tenantName: string;
   tenantAvatarUrl?: string | null;
@@ -39,7 +36,7 @@ type ConversationSheetProps = {
 
 export function ConversationSheet({
   open,
-  onOpenChange,
+  onOpenChangeAction,
   tenantSlug,
   tenantName,
   tenantAvatarUrl,
@@ -50,11 +47,11 @@ export function ConversationSheet({
 
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   // prevent double upsert while open
   const startedRef = useRef(false);
 
+  // Upsert conversation for this tenant
   const upsert = useMutation({
     ...trpc.conversations.upsertForTenant.mutationOptions(),
     onSuccess: (doc: UpsertForTenantOutput) => {
@@ -62,10 +59,44 @@ export function ConversationSheet({
     },
   });
 
+  // create a list of messages
+  const messagesQ = useInfiniteQuery({
+    ...trpc.messages.list.infiniteQueryOptions({
+      conversationId: conversationId ?? "",
+      limit: 30,
+    }),
+    enabled: open && !!conversationId && !disabled,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
+
+  // pages: first page = newest chunk, next pages = older chunks
+  // so for UI (oldest -> newest), reverse pages then flatten
+  const allMessages: MessageItem[] = useMemo(() => {
+    const pages = messagesQ.data?.pages ?? [];
+    return [...pages].reverse().flatMap((p) => p.items);
+  }, [messagesQ.data]);
+
+  // sending messages
+  const send = useMutation({
+    ...trpc.messages.send.mutationOptions(),
+    onSuccess: () => {
+      setDraft("");
+      messagesQ.refetch(); // simplest: refresh latest page so new msg appears
+    },
+  });
+
+  const sendMessage = () => {
+    const text = draft.trim();
+    if (!text) return;
+    if (!conversationId) return;
+    if (disabled) return;
+
+    send.mutate({ conversationId, text });
+  };
+
   // Reset when tenant changes
   useEffect(() => {
     setConversationId(null);
-    setMessages([]);
     setDraft("");
     startedRef.current = false;
   }, [tenantSlug]);
@@ -80,30 +111,27 @@ export function ConversationSheet({
     upsert.mutate({ tenantSlug });
   }, [open, disabled, tenantSlug, upsert]); // intentionally minimal deps
 
+  // enable message send
+
   const canSend = useMemo(
-    () => draft.trim().length > 0 && !disabled,
-    [draft, disabled]
+    () =>
+      draft.trim().length > 0 &&
+      !disabled &&
+      !!conversationId &&
+      !send.isPending,
+    [draft, disabled, conversationId, send.isPending]
   );
+
+  // Don’t render empty-state while upsert is still running / no conversationId yet
+  const conversationReady = !!conversationId && !upsert.isPending;
 
   // if user closes and reopens in the same tenant, allow upsert return
   useEffect(() => {
     if (!open) startedRef.current = false;
   }, [open]);
 
-  const sendLocal = () => {
-    const text = draft.trim();
-    if (!text) return;
-
-    // TEMP: local-only messages until we build Messages collection + procedures
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: "me", text },
-    ]);
-    setDraft("");
-  };
-
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChangeAction}>
       <SheetContent
         side="right"
         className="w-full sm:max-w-md p-0 flex flex-col"
@@ -139,51 +167,77 @@ export function ConversationSheet({
         </SheetHeader>
 
         {/* History */}
+        {/* History */}
         <ScrollArea className="flex-1 px-4 py-4">
-          {/* Small “system” hint for now */}
-          <div className="mb-4 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            This is the chat UI shell. Next step: persist messages in the
-            database.
-          </div>
+          {messagesQ.hasNextPage && (
+            <div className="mb-3 flex justify-center">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => messagesQ.fetchNextPage()}
+                disabled={messagesQ.isFetchingNextPage}
+              >
+                {messagesQ.isFetchingNextPage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Load earlier"
+                )}
+              </Button>
+            </div>
+          )}
 
-          <div className="space-y-3">
-            {messages.map((m) => {
-              const isMe = m.role === "me";
+          {!conversationReady && !disabled ? (
+            <div className="text-xs text-muted-foreground">
+              Loading messages…
+            </div>
+          ) : allMessages.length === 0 ? (
+            <div className="text-xs text-muted-foreground">
+              No messages yet. Start a conversation with{" "}
+              <span className="font-medium">{tenantSlug}</span>.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {allMessages.map((m) => {
+                // on the public tenant page, "customer" is ME, "tenant" is THE OTHER SIDE
+                // When you reuse this in the tenant dashboard, you’ll either: invert that (senderRole === "tenant" isMe), or add a prop like viewerRole: "customer" | "tenant" and compute isMe from it.
+                const isMe = m.senderRole === "customer";
 
-              return (
-                <div
-                  key={m.id}
-                  className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
-                >
-                  {!isMe && (
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={tenantAvatarUrl ?? undefined} />
-                      <AvatarFallback>
-                        {tenantName.slice(0, 1).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-
+                return (
                   <div
-                    className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
-                      isMe
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-muted text-foreground rounded-bl-md"
-                    }`}
+                    key={m.id}
+                    className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
                   >
-                    {m.text}
-                  </div>
+                    {!isMe && (
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src={tenantAvatarUrl ?? undefined} />
+                        <AvatarFallback>
+                          {tenantName.slice(0, 1).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
 
-                  {isMe && (
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={myAvatarUrl ?? undefined} />
-                      <AvatarFallback>Me</AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
+                        isMe
+                          ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-muted text-foreground rounded-bl-md"
+                      }`}
+                    >
+                      {m.text}
+                    </div>
+
+                    {isMe && (
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src={myAvatarUrl ?? undefined} />
+                        <AvatarFallback>Me</AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </ScrollArea>
 
         {/* Composer */}
@@ -192,21 +246,28 @@ export function ConversationSheet({
             <Textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={disabled ? "Sign in to write…" : "Write a message…"}
-              disabled={disabled}
+              placeholder={
+                disabled
+                  ? "Sign in to write…"
+                  : !conversationReady
+                    ? "Starting conversation…"
+                    : "Write a message…"
+              }
+              disabled={disabled || !conversationReady}
               className="min-h-11 max-h-32 resize-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (canSend) sendLocal();
+                  if (canSend) sendMessage();
                 }
               }}
             />
             <Button
               type="button"
               size="icon"
+              className="h-11 w-11"
               disabled={!canSend}
-              onClick={sendLocal}
+              onClick={sendMessage}
               aria-label="Send"
             >
               <Send className="h-4 w-4" />

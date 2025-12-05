@@ -293,7 +293,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           {/* About Section */}
           <section
             id="about"
-            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px]"
+            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-16"
           >
             {/* <h2 className="text-2xl font-bold mb-4">About</h2> */}
             <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
@@ -308,7 +308,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               <span>About</span>
             </h2>
             <div className="rounded-2xl border bg-white/70 p-5 shadow-sm">
-              <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed break-words">
+              <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed wrap-break-word">
                 {cardTenant?.bio || "No bio available."}
               </p>
             </div>
@@ -491,7 +491,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           {/* booking Section */}
           <section
             id="booking"
-            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
+            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-16 min-h-[200px]"
           >
             <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
               <Image
@@ -550,7 +550,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           {/* Reviews Section */}
           <section
             id="reviews"
-            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
+            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-16 min-h-[200px]"
           >
             <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
               <Image
@@ -575,7 +575,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
         {/* Desktop Sidebar - Right Column (updated with new props) */}
         <aside className="hidden lg:block">
-          <div className="sticky top-[104px] sm:top-[120px] lg:top-[64px] space-y-4">
+          <div className="sticky top-[104px] sm:top-[120px] lg:top-16 space-y-4">
             {/* Desktop tenant card with action buttons */}
             <TenantCard
               tenant={cardTenant}
@@ -596,7 +596,7 @@ export default function TenantContent({ slug }: { slug: string }) {
       {/* Conversation Sheet */}
       <ConversationSheet
         open={chatOpen}
-        onOpenChange={setChatOpen}
+        onOpenChangeAction={setChatOpen}
         tenantSlug={slug}
         tenantName={cardTenant.name}
         tenantAvatarUrl={

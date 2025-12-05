@@ -29,9 +29,11 @@ const Layout = async ({ children, params }: LayoutProps) => {
           <Navbar slug={slug} />
         </Suspense>
         <div className="flex-1">
-          <div className="max-w-[var(--breakpoint-xl)] mx-auto"> {children}</div>
+          <div className="max-w-(--breakpoint-xl) mx-auto"> {children}</div>
         </div>
-        <Suspense fallback={<div className="border-t font-medium bg-white h-16" />}>
+        <Suspense
+          fallback={<div className="border-t font-medium bg-white h-16" />}
+        >
           <Footer slug={slug} />
         </Suspense>
       </HydrationBoundary>

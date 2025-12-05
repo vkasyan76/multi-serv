@@ -84,8 +84,11 @@ export const conversationsRouter = createTRPCRouter({
         });
       } catch (err) {
         // Unique index (tenant, customer) makes this race-safe.
-        const message = err instanceof Error ? err.message : String(err);
-        if (!message.includes("E11000")) throw err;
+        const anyErr = err as { code?: number; message?: string };
+        const message = anyErr?.message ?? String(err);
+        // duplicate detection
+        const isDup = anyErr?.code === 11000 || message.includes("E11000");
+        if (!isDup) throw err;
 
         const again = await ctx.db.find({
           collection: "conversations",

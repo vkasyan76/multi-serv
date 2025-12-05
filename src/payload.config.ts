@@ -21,6 +21,7 @@ import { Bookings } from "./collections/Bookings.ts";
 import { Orders } from "./collections/Orders.ts";
 import { Reviews } from "./collections/Reviews.ts";
 import { Conversations } from "./collections/Conversations.ts";
+import { Messages } from "./collections/Messages.tsx";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -42,6 +43,7 @@ export default buildConfig({
     Orders,
     Reviews,
     Conversations,
+    Messages,
   ],
   // cookiePrefix: "funroad",  // optional: if we want to change the cookie prefix
   editor: lexicalEditor(),
