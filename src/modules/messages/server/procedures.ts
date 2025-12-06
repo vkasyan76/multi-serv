@@ -145,21 +145,25 @@ export const messagesRouter = createTRPCRouter({
         ];
       }
 
+      const pageSize = input.limit;
+
       const res = await ctx.db.find({
         collection: "messages",
         where,
-        limit: input.limit,
+        limit: pageSize + 1, // fetch one extra to detect "has more"
         sort: "-createdAt",
         depth: 0,
         overrideAccess: true,
       });
 
       const docsDesc = res.docs as Message[];
-      const last = docsDesc[docsDesc.length - 1];
-      const nextCursor = last?.createdAt ?? null;
+      const hasMore = docsDesc.length > pageSize;
+      const pageDocs = hasMore ? docsDesc.slice(0, pageSize) : docsDesc;
+      const last = pageDocs[pageDocs.length - 1];
+      const nextCursor = hasMore ? (last?.createdAt ?? null) : null;
 
       // return ascending so UI can render naturally
-      const items = [...docsDesc].reverse();
+      const items = [...pageDocs].reverse();
 
       return { items, nextCursor };
     }),

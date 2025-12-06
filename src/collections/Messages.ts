@@ -3,6 +3,7 @@ import { isSuperAdmin } from "../lib/access";
 
 export const Messages: CollectionConfig = {
   slug: "messages",
+  indexes: [{ fields: ["conversation", "createdAt"] }],
   admin: {
     useAsTitle: "text",
   },

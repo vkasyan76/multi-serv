@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
+import { TenantMessagesSection } from "@/modules/conversations/ui/tenant-messages-section";
 
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
@@ -41,10 +42,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
       <section id="messages" className="scroll-mt-28 sm:scroll-mt-32">
         <h2 className="text-xl font-semibold mb-3">Messages</h2>
         <div className="rounded-lg border bg-white p-5">
-          <p className="text-muted-foreground">
-            Messaging/Inbox section placeholder. Hook up when the messaging API
-            lands.
-          </p>
+          <TenantMessagesSection tenantSlug={slug} />
         </div>
       </section>
 

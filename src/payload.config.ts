@@ -21,7 +21,7 @@ import { Bookings } from "./collections/Bookings.ts";
 import { Orders } from "./collections/Orders.ts";
 import { Reviews } from "./collections/Reviews.ts";
 import { Conversations } from "./collections/Conversations.ts";
-import { Messages } from "./collections/Messages.tsx";
+import { Messages } from "./collections/Messages.ts";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
