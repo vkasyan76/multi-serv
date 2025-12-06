@@ -27,12 +27,18 @@ export function TenantInbox({
 }: TenantInboxProps) {
   const trpc = useTRPC();
 
+  // Fetch messages with interval
+
   const inboxQ = useInfiniteQuery({
     ...trpc.conversations.listForTenant.infiniteQueryOptions({
       tenantSlug,
       limit: 10,
     }),
     getNextPageParam: (last) => last.nextPage ?? undefined,
+
+    refetchInterval: 8000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
 
   const items = useMemo(() => {

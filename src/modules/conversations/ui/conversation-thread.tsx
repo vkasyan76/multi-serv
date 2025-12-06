@@ -79,6 +79,7 @@ export function ConversationThread({
 
   const myInitial = myLabel ? myLabel.slice(0, 1).toUpperCase() : "👤";
 
+  // Fetch messages with interval
   const messagesQ = useInfiniteQuery({
     ...trpc.messages.list.infiniteQueryOptions({
       conversationId: conversationId ?? "",
@@ -86,6 +87,10 @@ export function ConversationThread({
     }),
     enabled: !!conversationId && !disabled,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+
+    refetchInterval: !!conversationId && !disabled ? 5000 : false,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
 
   const allMessages: MessageItem[] = useMemo(() => {
