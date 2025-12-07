@@ -63,6 +63,14 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
 
+  // Bridge declaration.
+  // use auth.getUserProfile as the backend “am I signed in?” source:
+  const {
+    data: bridge,
+    isLoading: bridgeLoading,
+    isFetching: bridgeFetching,
+  } = useBridge(); // Gate the tRPC query with the bridge in your client component
+
   // Reviews & Ratings:
   const reviewSummaryQ = useQuery(
     trpc.reviews.summaryForTenant.queryOptions({ slug })
@@ -87,14 +95,30 @@ export default function TenantContent({ slug }: { slug: string }) {
     retry: false,
   });
   const isCancelling = cancel && !!sessionId; // canvelling paymente process
-  const { isSignedIn, isLoaded } = useUser();
-  const signedState = isLoaded ? !!isSignedIn : null;
 
-  // Determine app language
+  // const { isSignedIn, isLoaded } = useUser();
+  // eslint-disable-next-line
+  const { user } = useUser();
+  // const signedState = isLoaded ? !!isSignedIn : null;
+
+  // Determine app language using bridege
   const profileQ = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: signedState === true,
+    enabled: !!bridge?.ok,
+    retry: false,
   });
+
+  const waitingForBridge =
+    bridgeLoading || bridgeFetching || !bridge?.ok || profileQ.isLoading;
+
+  // Compute signedState from backend profile (tri-state)
+  const signedState: boolean | null = useMemo(() => {
+    if (!bridge?.ok) return null;
+    if (profileQ.isLoading) return null;
+
+    // If your procedure returns null when signed out:
+    return !!profileQ.data;
+  }, [bridge?.ok, profileQ.isLoading, profileQ.data]);
 
   const appLang: AppLang = useMemo(() => {
     const profileLang = profileQ.data?.language;
@@ -125,12 +149,6 @@ export default function TenantContent({ slug }: { slug: string }) {
     }
     setChatOpen(true);
   };
-
-  const {
-    data: bridge,
-    isLoading: bridgeLoading,
-    isFetching: bridgeFetching,
-  } = useBridge(); // Gate the tRPC query with the bridge in your client component
 
   // Clear selections on unmount
   useEffect(() => () => setSelected([]), []);
@@ -212,8 +230,6 @@ export default function TenantContent({ slug }: { slug: string }) {
       return [...prev, id];
     });
   };
-
-  const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok;
 
   const { data: cardTenant, isLoading: cardLoading } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug }),
@@ -604,6 +620,7 @@ export default function TenantContent({ slug }: { slug: string }) {
         }
         myAvatarUrl={null}
         disabled={signedState !== true}
+        authState={signedState}
       />
     </div>
   );

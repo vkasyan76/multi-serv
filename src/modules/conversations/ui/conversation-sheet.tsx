@@ -27,6 +27,7 @@ type ConversationSheetProps = {
   tenantAvatarUrl?: string | null;
   myAvatarUrl?: string | null;
   disabled?: boolean;
+  authState?: boolean | null; // check if user is signed in via payload backend
 };
 
 export function ConversationSheet({
@@ -35,7 +36,9 @@ export function ConversationSheet({
   tenantSlug,
   tenantName,
   tenantAvatarUrl,
+  myAvatarUrl,
   disabled,
+  authState = null,
 }: ConversationSheetProps) {
   const trpc = useTRPC();
 
@@ -58,20 +61,22 @@ export function ConversationSheet({
   }, [tenantSlug]);
 
   // Upsert when sheet opens
+  // Do not render ConversationThread until you have a conversationId (and are authed).
+  const canStart = authState === true && !disabled;
+
+  // Upsert when sheet opens (only when authed)
   useEffect(() => {
     if (!open) return;
-    if (disabled) return;
+    if (!canStart) return;
     if (startedRef.current) return;
 
     startedRef.current = true;
     upsert.mutate({ tenantSlug });
-  }, [open, disabled, tenantSlug, upsert]);
+  }, [open, canStart, tenantSlug, upsert]);
 
   useEffect(() => {
     if (!open) startedRef.current = false;
   }, [open]);
-
-  const conversationReady = !!conversationId && !upsert.isPending;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChangeAction}>
@@ -93,13 +98,15 @@ export function ConversationSheet({
                 {tenantName}
               </SheetTitle>
               <p className="text-xs text-muted-foreground truncate">
-                {disabled
-                  ? "Sign in to contact this provider."
-                  : upsert.isPending
-                    ? "Starting conversation…"
-                    : conversationId
-                      ? "Conversation ready"
-                      : " "}
+                {authState === null
+                  ? "Checking sign-in…"
+                  : authState === false
+                    ? "Sign in to contact this provider."
+                    : upsert.isPending
+                      ? "Starting conversation…"
+                      : conversationId
+                        ? "Conversation ready"
+                        : " "}
               </p>
             </div>
 
@@ -109,19 +116,37 @@ export function ConversationSheet({
           </div>
         </SheetHeader>
 
-        <ConversationThread
-          conversationId={conversationReady ? conversationId : null}
-          viewerRole="customer"
-          otherName={tenantSlug}
-          otherAvatarUrl={tenantAvatarUrl ?? null}
-          disabled={disabled || !conversationReady}
-          emptyStateText={
-            <>
-              No messages yet. Start a conversation with{" "}
-              <span className="font-medium">{tenantSlug}</span>.
-            </>
-          }
-        />
+        <div className="flex-1 min-h-0">
+          {authState === null ? (
+            <div className="h-full grid place-items-center text-sm text-muted-foreground">
+              Checking sign-in…
+            </div>
+          ) : authState === false ? (
+            <div className="h-full grid place-items-center text-sm text-muted-foreground">
+              Sign in to contact this provider.
+            </div>
+          ) : upsert.isPending || !conversationId ? (
+            <div className="h-full grid place-items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading conversation…
+            </div>
+          ) : (
+            <ConversationThread
+              conversationId={conversationId}
+              viewerRole="customer"
+              otherName={tenantSlug}
+              otherAvatarUrl={tenantAvatarUrl ?? null}
+              myAvatarUrl={myAvatarUrl ?? null}
+              disabled={!!disabled}
+              emptyStateText={
+                <>
+                  No messages yet. Start a conversation with{" "}
+                  <span className="font-medium">{tenantSlug}</span>.
+                </>
+              }
+            />
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   );
