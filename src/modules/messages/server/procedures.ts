@@ -66,7 +66,7 @@ export const messagesRouter = createTRPCRouter({
 
       const senderRole = isTenantUser ? "tenant" : "customer";
 
-      return await ctx.db.create({
+      const msg = await ctx.db.create({
         collection: "messages",
         data: {
           conversation: convo.id,
@@ -77,6 +77,21 @@ export const messagesRouter = createTRPCRouter({
         depth: 0,
         overrideAccess: true,
       });
+
+      // keep conversation “hot” for inbox sorting + preview
+      await ctx.db.update({
+        collection: "conversations",
+        id: convo.id,
+        data: {
+          lastMessageAt: msg.createdAt,
+          lastMessagePreview: msg.text.slice(0, 120),
+          status: "open",
+        },
+        depth: 0,
+        overrideAccess: true,
+      });
+
+      return msg;
     }),
 
   list: clerkProcedure
@@ -160,7 +175,7 @@ export const messagesRouter = createTRPCRouter({
       const hasMore = docsDesc.length > pageSize;
       const pageDocs = hasMore ? docsDesc.slice(0, pageSize) : docsDesc;
       const last = pageDocs[pageDocs.length - 1];
-      const nextCursor = hasMore ? (last?.createdAt ?? null) : null;
+      const nextCursor = hasMore ? last?.createdAt : undefined; // getNextPageParam in conversation-thread can safely return undefined to stop pagination
 
       // return ascending so UI can render naturally
       const items = [...pageDocs].reverse();

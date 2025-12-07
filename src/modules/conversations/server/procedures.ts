@@ -2,7 +2,7 @@ import { clerkProcedure, createTRPCRouter } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import type { Conversation, User, Tenant, Message } from "@payload-types";
+import type { Conversation, User, Tenant } from "@payload-types";
 
 // helper to get ID from relation field for list for tenant
 const getRelId = (v: unknown) =>
@@ -92,8 +92,14 @@ export const conversationsRouter = createTRPCRouter({
         // Unique index (tenant, customer) makes this race-safe.
         const anyErr = err as { code?: number; message?: string };
         const message = anyErr?.message ?? String(err);
-        // duplicate detection
-        const isDup = anyErr?.code === 11000 || message.includes("E11000");
+        // duplicate detection.
+        const isDup =
+          anyErr?.code === 11000 ||
+          message.includes("E11000") ||
+          message.includes("Conversation already exists") ||
+          message.includes(
+            "EMake upsertForTenant truly race-safe even if hook throws a custom “duplicate” error11000"
+          );
         if (!isDup) throw err;
 
         const again = await ctx.db.find({
@@ -208,29 +214,20 @@ export const conversationsRouter = createTRPCRouter({
               ? customer.username.trim()
               : "Customer";
 
-          const lastMsgRes = await ctx.db.find({
-            collection: "messages",
-            where: { conversation: { equals: c.id } },
-            sort: "-createdAt",
-            limit: 1,
-            depth: 0,
-            overrideAccess: true,
-          });
-
-          const last = lastMsgRes.docs[0] as Message | undefined;
+          // Now that messages.send updates lastMessageAt/Preview, you don’t need to query messages per conversation anymore.
 
           return {
             id: c.id,
             customer: {
               id: getRelId(c.customer) ?? "",
               name: customerName,
-              avatarUrl: null, // wire later if you store it
+              avatarUrl: null,
             },
-            lastMessage: last
+            lastMessage: c.lastMessageAt
               ? {
-                  text: last.text ?? "",
-                  createdAt: last.createdAt ?? null,
-                  senderRole: last.senderRole ?? null,
+                  text: c.lastMessagePreview ?? "",
+                  createdAt: c.lastMessageAt ?? null,
+                  senderRole: null, // not stored on convo (fine for your UI)
                 }
               : null,
             updatedAt: c.updatedAt ?? null,

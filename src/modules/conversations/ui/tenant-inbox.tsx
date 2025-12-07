@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTRPC } from "@/trpc/client";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -27,24 +27,63 @@ export function TenantInbox({
 }: TenantInboxProps) {
   const trpc = useTRPC();
 
-  // Fetch messages with interval
+  // Fetch messages with interval.
+  // useQuery for the newest chunk, and useState/useEffect for the “history enabled” toggle.
 
-  const inboxQ = useInfiniteQuery({
-    ...trpc.conversations.listForTenant.infiniteQueryOptions({
+  const [historyEnabled, setHistoryEnabled] = useState(false);
+
+  useEffect(() => {
+    setHistoryEnabled(false);
+  }, [tenantSlug]);
+
+  const latestQ = useQuery({
+    ...trpc.conversations.listForTenant.queryOptions({
       tenantSlug,
       limit: 10,
+      cursor: 1, // newest page
     }),
-    getNextPageParam: (last) => last.nextPage ?? undefined,
-
     refetchInterval: 8000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });
 
+  // infinite query (only when user clicks “Load more”): historyEnabled keeps older fetching “opt-in”
+  const olderQ = useInfiniteQuery({
+    ...trpc.conversations.listForTenant.infiniteQueryOptions({
+      tenantSlug,
+      limit: 10,
+    }),
+    enabled: historyEnabled && latestQ.data?.hasNextPage === true,
+    initialPageParam: latestQ.data?.nextPage ?? null,
+    getNextPageParam: (last) => last.nextPage ?? null,
+
+    // optional but recommended: don't auto-refetch old pages
+    refetchOnWindowFocus: false,
+  });
+
+  // Merge newest + older + dedupe by id
+
   const items = useMemo(() => {
-    const pages = inboxQ.data?.pages ?? [];
-    return pages.flatMap((p) => p.docs);
-  }, [inboxQ.data]);
+    const latestDocs = latestQ.data?.docs ?? [];
+    const olderDocs = (olderQ.data?.pages ?? []).flatMap((p) => p.docs);
+
+    // Dedupe: conversations can move between pages when updatedAt changes
+    const seen = new Set<string>();
+    const merged: InboxItem[] = [];
+
+    for (const c of [...latestDocs, ...olderDocs]) {
+      if (seen.has(c.id)) continue;
+      seen.add(c.id);
+      merged.push(c);
+    }
+
+    return merged;
+  }, [latestQ.data?.docs, olderQ.data]);
+
+  // params for refetcging older messages
+  const hasMore = !historyEnabled
+    ? !!latestQ.data?.hasNextPage
+    : olderQ.hasNextPage;
 
   return (
     <div className="h-full flex flex-col border-r bg-background">
@@ -56,7 +95,7 @@ export function TenantInbox({
       </div>
 
       <div className="flex-1 overflow-auto">
-        {inboxQ.isLoading ? (
+        {latestQ.isLoading ? (
           <div className="p-4 text-xs text-muted-foreground">Loading…</div>
         ) : items.length === 0 ? (
           <div className="p-4 text-xs text-muted-foreground">
@@ -99,16 +138,19 @@ export function TenantInbox({
         )}
       </div>
 
-      {inboxQ.hasNextPage && (
+      {(hasMore || olderQ.isLoading) && (
         <div className="p-2 border-t">
           <Button
             type="button"
             variant="ghost"
             className="w-full"
-            onClick={() => inboxQ.fetchNextPage()}
-            disabled={inboxQ.isFetchingNextPage}
+            onClick={() => {
+              if (!historyEnabled) setHistoryEnabled(true);
+              else olderQ.fetchNextPage();
+            }}
+            disabled={olderQ.isFetchingNextPage || olderQ.isLoading}
           >
-            {inboxQ.isFetchingNextPage ? (
+            {olderQ.isFetchingNextPage || olderQ.isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               "Load more"

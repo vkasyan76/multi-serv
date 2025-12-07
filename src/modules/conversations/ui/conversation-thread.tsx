@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTRPC } from "@/trpc/client";
-import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ export function ConversationThread({
 }: ConversationThreadProps) {
   const trpc = useTRPC();
   const [draft, setDraft] = useState("");
-
+  const [historyEnabled, setHistoryEnabled] = useState(false);
   const { user } = useUser();
 
   //!mine should render otherAvatarUrl / otherInitial
@@ -79,32 +79,61 @@ export function ConversationThread({
 
   const myInitial = myLabel ? myLabel.slice(0, 1).toUpperCase() : "👤";
 
-  // Fetch messages with interval
-  const messagesQ = useInfiniteQuery({
-    ...trpc.messages.list.infiniteQueryOptions({
+  // Fetch messages with interval: poll only the newest chunk with a normal query, and load older pages separately.
+
+  // -- MESSAGE FETCHING LOGIC --
+
+  const latestQ = useQuery({
+    ...trpc.messages.list.queryOptions({
       conversationId: conversationId ?? "",
       limit: DEFAULT_LIMIT,
     }),
     enabled: !!conversationId && !disabled,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-
     refetchInterval: !!conversationId && !disabled ? 5000 : false,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });
 
-  const allMessages: MessageItem[] = useMemo(() => {
-    const pages = messagesQ.data?.pages ?? [];
+  useEffect(() => {
+    setHistoryEnabled(false);
+  }, [conversationId]);
+
+  const olderQ = useInfiniteQuery({
+    ...trpc.messages.list.infiniteQueryOptions({
+      conversationId: conversationId ?? "",
+      limit: DEFAULT_LIMIT,
+    }),
+    enabled:
+      historyEnabled &&
+      !!conversationId &&
+      !disabled &&
+      latestQ.data?.nextCursor != null,
+    initialPageParam: latestQ.data?.nextCursor ?? null,
+    getNextPageParam: (last) => last.nextCursor ?? null,
+  });
+
+  // older pages: reverse pages then flatten
+  const olderMessages = useMemo(() => {
+    const pages = olderQ.data?.pages ?? [];
     return [...pages].reverse().flatMap((p) => p.items);
-  }, [messagesQ.data]);
+  }, [olderQ.data]);
+
+  const allMessages: MessageItem[] = useMemo(() => {
+    const latestMessages = latestQ.data?.items ?? [];
+    return [...olderMessages, ...latestMessages];
+  }, [olderMessages, latestQ.data?.items]);
 
   const send = useMutation({
     ...trpc.messages.send.mutationOptions(),
     onSuccess: () => {
       setDraft("");
-      messagesQ.refetch();
+      latestQ.refetch(); // ✅ refetch newest chunk only
     },
   });
+
+  const hasOlder = !!latestQ.data?.nextCursor;
+
+  //---
 
   const canSend =
     draft.trim().length > 0 && !!conversationId && !disabled && !send.isPending;
@@ -120,25 +149,26 @@ export function ConversationThread({
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1 px-4 py-4">
-        {messagesQ.hasNextPage && (
-          <div className="mb-3 flex justify-center">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => messagesQ.fetchNextPage()}
-              disabled={messagesQ.isFetchingNextPage}
-            >
-              {messagesQ.isFetchingNextPage ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Load earlier"
-              )}
-            </Button>
-          </div>
+        {(!historyEnabled ? hasOlder : olderQ.hasNextPage) && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (!historyEnabled) setHistoryEnabled(true);
+              else olderQ.fetchNextPage();
+            }}
+            disabled={olderQ.isFetchingNextPage || olderQ.isLoading}
+          >
+            {olderQ.isFetchingNextPage || olderQ.isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Load earlier"
+            )}
+          </Button>
         )}
 
-        {messagesQ.isLoading ? (
+        {latestQ.isLoading ? (
           <div className="text-xs text-muted-foreground">Loading messages…</div>
         ) : allMessages.length === 0 ? (
           <div className="text-xs text-muted-foreground">
