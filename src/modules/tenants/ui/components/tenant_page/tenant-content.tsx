@@ -118,9 +118,18 @@ export default function TenantContent({ slug }: { slug: string }) {
   const waitingForBridge =
     bridgeLoading || bridgeFetching || !bridge?.ok || profileQ.isLoading;
 
+  // one-shot “refetch when bridge becomes ok”
+
+  // This is mostly redundant and can create extra requests:
+  // useEffect(() => {
+  //   if (bridge?.ok) profileQ.refetch();
+  // }, [bridge?.ok]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Pass a viewer identity to the sheet (so it resets when user changes)
 
-  const viewerKey = user?.id ?? null;
+  // const viewerKey = user?.id ?? null;
+
+  const viewerKey = profileQ.data?.id ?? null;
 
   // Compute signedState from backend profile (tri-state)
   // Stops treating “temporary error / timing / refetch” as “signed out”.
@@ -129,6 +138,8 @@ export default function TenantContent({ slug }: { slug: string }) {
   const signedState: boolean | null = useMemo(() => {
     if (!bridge?.ok) return null;
 
+    if (profileQ.isError) return null;
+
     // data-first: if backend already said "null", you're signed out,
     // even if a refetch is happening in the background.
     if (profileQ.data === null) return false;
@@ -136,7 +147,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
     // still unknown (loading / error / disabled / etc.)
     return null;
-  }, [bridge?.ok, profileQ.data]);
+  }, [bridge?.ok, profileQ.data, profileQ.isError]);
 
   const appLang: AppLang = useMemo(() => {
     const profileLang = profileQ.data?.language;
@@ -162,7 +173,11 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   // chat opens only for signed-in users. Signed-out or “unknown” users get the toast and the sheet won’t open.
   const handleContact = () => {
-    if (signedState !== true) {
+    if (signedState === null) {
+      setChatOpen(true); // sheet shows "Checking sign-in…"
+      return;
+    }
+    if (signedState === false) {
       toast.error("Sign in to contact this provider.");
       return;
     }

@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 // import { CustomCategory } from "../types";
 import { CategoriesSidebar } from "./categories-sidebar";
+import { SignedIn, useAuth } from "@clerk/nextjs";
 
 interface Props {
   disabled?: boolean;
@@ -25,17 +26,36 @@ export const SearchInput = ({
   defaultValue,
   onChange,
 }: Props) => {
-  const trpc = useTRPC();
-  const session = useQuery(trpc.auth.session.queryOptions());
+  const { isSignedIn } = useAuth();
 
-  // show Orders button only for users with paid/refunded orders
+  const trpc = useTRPC();
+
+  // always refetch + don’t keep stale auth
+  const session = useQuery({
+    ...trpc.auth.session.queryOptions(),
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: true,
+  });
+
+  // show Orders button only for users with paid/refunded orders - not “sticky”
+  // show Orders button only for users with paid/refunded orders - not “sticky”
   const hasOrdersQ = useQuery({
     ...trpc.orders.hasAnyPaidMine.queryOptions(),
-    enabled: !!session.data?.user?.id, // only when signed in
-    staleTime: 60_000,
+    enabled: isSignedIn && !!session.data?.user?.id, // <- add isSignedIn gate
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
   });
-  const showOrders = !!hasOrdersQ.data?.hasAny;
+
+  // showOrders depends on Clerk + backend answer
+  const showOrders = isSignedIn && !!hasOrdersQ.data?.hasAny;
+
+  // showOrders depend on session
+  // const showOrders = !!session.data?.user?.id && !!hasOrdersQ.data?.hasAny;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [searchValue, setSearchValue] = useState(defaultValue || "");
@@ -68,18 +88,16 @@ export const SearchInput = ({
         <ListFilterIcon className="size-4" />
       </Button>
       {/* library button */}
-      {showOrders && (
-        <Button
-          asChild
-          variant="elevated"
-          className="h-12" // to match the input height
-        >
-          <Link href="/orders">
-            <BookmarkCheckIcon />
-            My Orders
-          </Link>
-        </Button>
-      )}
+      <SignedIn>
+        {showOrders && (
+          <Button asChild variant="elevated" className="h-12">
+            <Link href="/orders">
+              <BookmarkCheckIcon />
+              My Orders
+            </Link>
+          </Button>
+        )}
+      </SignedIn>
     </div>
   );
 };

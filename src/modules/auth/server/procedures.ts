@@ -696,6 +696,8 @@ export const authRouter = createTRPCRouter({
     }
 
     return {
+      id: String(currentUser.id),
+      clerkUserId: currentUser.clerkUserId ?? userId,
       username: currentUser.username,
       email: currentUser.email,
       location: currentUser.location || "",
