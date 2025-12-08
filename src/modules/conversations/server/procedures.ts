@@ -97,9 +97,7 @@ export const conversationsRouter = createTRPCRouter({
           anyErr?.code === 11000 ||
           message.includes("E11000") ||
           message.includes("Conversation already exists") ||
-          message.includes(
-            "EMake upsertForTenant truly race-safe even if hook throws a custom “duplicate” error11000"
-          );
+          message.includes("duplicate key");
         if (!isDup) throw err;
 
         const again = await ctx.db.find({

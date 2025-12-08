@@ -101,24 +101,42 @@ export default function TenantContent({ slug }: { slug: string }) {
   const { user } = useUser();
   // const signedState = isLoaded ? !!isSignedIn : null;
 
-  // Determine app language using bridege
+  // Determine app language using bridege.
+  // If the first getUserProfile result is wrong because of timing (cold start / cookie race), it won’t stay cached and block chat.
   const profileQ = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
     enabled: !!bridge?.ok,
     retry: false,
+
+    // don’t keep a “bad first answer” around
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
   });
 
   const waitingForBridge =
     bridgeLoading || bridgeFetching || !bridge?.ok || profileQ.isLoading;
 
+  // Pass a viewer identity to the sheet (so it resets when user changes)
+
+  const viewerKey = user?.id ?? null;
+
   // Compute signedState from backend profile (tri-state)
+  // Stops treating “temporary error / timing / refetch” as “signed out”.
+  // If the backend returns null, you immediately get false (signed out) and stop showing “Checking sign-in…” forever.
+
   const signedState: boolean | null = useMemo(() => {
     if (!bridge?.ok) return null;
-    if (profileQ.isLoading) return null;
 
-    // If your procedure returns null when signed out:
-    return !!profileQ.data;
-  }, [bridge?.ok, profileQ.isLoading, profileQ.data]);
+    // data-first: if backend already said "null", you're signed out,
+    // even if a refetch is happening in the background.
+    if (profileQ.data === null) return false;
+    if (profileQ.data) return true;
+
+    // still unknown (loading / error / disabled / etc.)
+    return null;
+  }, [bridge?.ok, profileQ.data]);
 
   const appLang: AppLang = useMemo(() => {
     const profileLang = profileQ.data?.language;
@@ -142,8 +160,9 @@ export default function TenantContent({ slug }: { slug: string }) {
   // must be before any early return
   const [chatOpen, setChatOpen] = useState(false);
 
+  // chat opens only for signed-in users. Signed-out or “unknown” users get the toast and the sheet won’t open.
   const handleContact = () => {
-    if (signedState === false) {
+    if (signedState !== true) {
       toast.error("Sign in to contact this provider.");
       return;
     }
@@ -621,6 +640,7 @@ export default function TenantContent({ slug }: { slug: string }) {
         myAvatarUrl={null}
         disabled={signedState !== true}
         authState={signedState}
+        viewerKey={viewerKey}
       />
     </div>
   );

@@ -28,6 +28,7 @@ type ConversationSheetProps = {
   myAvatarUrl?: string | null;
   disabled?: boolean;
   authState?: boolean | null; // check if user is signed in via payload backend
+  viewerKey?: string | null; // NEW: resets sheet when auth user changes
 };
 
 export function ConversationSheet({
@@ -39,6 +40,7 @@ export function ConversationSheet({
   myAvatarUrl,
   disabled,
   authState = null,
+  viewerKey = null,
 }: ConversationSheetProps) {
   const trpc = useTRPC();
 
@@ -54,11 +56,14 @@ export function ConversationSheet({
     },
   });
 
-  // Reset when tenant changes
+  // Reset when tenant changes: reset on tenant OR viewer change: don’t keep a previous user’s conversationId / mutation state when the auth user changes.
+  const { reset } = upsert;
+
   useEffect(() => {
     setConversationId(null);
     startedRef.current = false;
-  }, [tenantSlug]);
+    reset();
+  }, [tenantSlug, viewerKey, reset]);
 
   // Upsert when sheet opens
   // Do not render ConversationThread until you have a conversationId (and are authed).
