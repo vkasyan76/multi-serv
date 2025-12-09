@@ -36,11 +36,29 @@ export const tenantsRouter = createTRPCRouter({
         distanceFilterEnabled: z.boolean().default(false), // NEW
         cursor: z.number().optional(), // Optional cursor for infinite queries
         limit: z.number().min(1).max(100).default(20), // Page size
+        // 🔍 NEW: search term from URL (?search=foo)
+        search: z.string().nullable().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       // prepare a "where" object (by default empty):
-      const where: Where = {};
+      type WhereWithOr = Where & { or?: Where[] };
+
+      const where: WhereWithOr = {};
+
+      // 🔍 FREE-TEXT SEARCH ON TENANT NAME: AND between search and all other filters (price, distance, category…) || AND between search and all other filters (price, distance, category…)
+      if (input.search && input.search.trim() !== "") {
+        const term = input.search.trim();
+
+        where.or = [
+          ...(where.or ?? []),
+          { name: { like: term } },
+          { bio: { like: term } }, // ✅ Tenant has `bio` in payload-types.ts
+
+          // OPTIONAL (only if you really want “search by subcategory”):
+          // where.or.push({ "subcategories.slug": { like: term } });
+        ];
+      }
 
       // Map new sort values to Payload sort syntax
       const mapSortToPayloadFormat = (sort?: string | null): Sort => {

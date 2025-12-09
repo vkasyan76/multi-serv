@@ -39,6 +39,8 @@ export const params = {
   categories: parseAsArrayOf(parseAsString)
     .withOptions({ clearOnDefault: true })
     .withDefault([]),
+  // 🔍 NEW: free-text search
+  search: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
 };
 
 // passing to the client tenant-filters.tsx:
