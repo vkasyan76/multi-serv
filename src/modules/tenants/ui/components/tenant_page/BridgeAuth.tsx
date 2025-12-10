@@ -19,9 +19,11 @@ export default function BridgeAuth({
 }: {
   refreshMs?: number;
 }) {
-  const { getToken, isLoaded } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const authedOnce = useRef(false);
+  // ✅ one quick retry to avoid waiting up to refreshMs
+  const quickRetryRef = useRef(false);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -36,45 +38,79 @@ export default function BridgeAuth({
     const proto = isLocalRoot ? window.location.protocol : "https:";
 
     const pingOnce = async () => {
-      let token: string | null = null;
-      try {
-        token =
-          (await getToken({ template: "bridge" })) ??
-          (await getToken()) ??
-          null;
-      } catch {
-        // ignore
-      }
+      // ✅ if Clerk says signed out, ask server to clear bridge cookie
+      const shouldClear = isSignedIn === false;
+      const clearQS = shouldClear ? "?clear=1" : "";
 
-      const targets = onApex
-        ? ["/api/auth/bridge", `${proto}//www.${rootHost}/api/auth/bridge`]
-        : [
-            `${proto}//${rootHost}/api/auth/bridge`,
-            `${proto}//www.${rootHost}/api/auth/bridge`,
-          ];
+      // Don’t fetch/send a token when you’re explicitly clearing
+      let token: string | null = null;
+      if (!shouldClear) {
+        try {
+          token =
+            (await getToken({ template: "bridge" })) ??
+            (await getToken()) ??
+            null;
+        } catch {
+          // ignore
+        }
+      }
 
       const headers: HeadersInit = token
         ? { Authorization: `Bearer ${token}` }
         : {};
 
-      const results: PromiseSettledResult<BridgeJson>[] =
-        await Promise.allSettled(
-          targets.map(async (u) => {
-            try {
-              const r = await fetch(u, {
-                method: "GET",
-                credentials: "include",
-                headers,
-                cache: "no-store",
-                mode: "cors",
-                keepalive: true,
-              });
-              return (await r.json()) as BridgeJson;
-            } catch {
-              return {};
-            }
-          })
-        );
+      const targets = onApex
+        ? ["/api/auth/bridge", `${proto}//www.${rootHost}/api/auth/bridge`]
+        : [
+            // ✅ include current-origin first (helps reliability)
+            "/api/auth/bridge",
+            `${proto}//${rootHost}/api/auth/bridge`,
+            `${proto}//www.${rootHost}/api/auth/bridge`,
+          ];
+
+      // const results: PromiseSettledResult<BridgeJson>[] =
+      //   await Promise.allSettled(
+      //     targets.map(async (u) => {
+      //       try {
+      //         const r = await fetch(u, {
+      //           method: "GET",
+      //           credentials: "include",
+      //           headers,
+      //           cache: "no-store",
+      //           mode: "cors",
+      //           keepalive: true,
+      //         });
+      //         return (await r.json()) as BridgeJson;
+      //       } catch {
+      //         return {};
+      //       }
+      //     })
+      //   );
+
+      const results = await Promise.allSettled(
+        targets.map(async (u) => {
+          try {
+            const url = `${u}${clearQS}`; // ✅ USE clearQS
+            const r = await fetch(url, {
+              method: "GET",
+              credentials: "include",
+              headers,
+              cache: "no-store",
+              mode: "cors",
+              keepalive: true,
+            });
+            return (await r.json()) as BridgeJson;
+          } catch {
+            return {};
+          }
+        })
+      );
+
+      // Optional but helpful: if we’re signed out, allow future sign-in to refresh again
+      if (shouldClear) {
+        authedOnce.current = false;
+        quickRetryRef.current = false;
+      }
 
       const authed = results
         .filter(isFulfilled)
@@ -83,6 +119,14 @@ export default function BridgeAuth({
       if (authed && !authedOnce.current) {
         authedOnce.current = true;
         router.refresh(); // server re-fetch sees the new bridge cookie
+        return;
+      }
+
+      // ✅ If user is signed in but bridge isn't authed yet, do ONE quick retry
+      // This prevents “wait until refreshMs” (60s) in dev.
+      if (isSignedIn && !authed && !quickRetryRef.current) {
+        quickRetryRef.current = true;
+        setTimeout(pingOnce, 1200);
       }
     };
 
@@ -95,7 +139,7 @@ export default function BridgeAuth({
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [isLoaded, getToken, refreshMs, router]);
+  }, [isLoaded, isSignedIn, getToken, refreshMs, router]);
 
   return null;
 }
@@ -113,7 +157,11 @@ export function useBridge() {
       if (!r.ok) throw new Error("Bridge failed");
       return r.json();
     },
-    staleTime: 60_000,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: true,
     retry: 0,
   });
 }

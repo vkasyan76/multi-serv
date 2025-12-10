@@ -35,6 +35,26 @@ export async function OPTIONS(req: Request) {
 export async function GET(req: Request) {
   const origin = req.headers.get("origin") ?? undefined;
 
+  // ✅ minimal addition: optional clear mode
+  const url = new URL(req.url);
+  const clear = url.searchParams.get("clear") === "1";
+
+  if (clear) {
+    const res = NextResponse.json(
+      { ok: true, authenticated: false, source: "none" },
+      { headers: corsHeaders(origin) }
+    );
+
+    // clear cookie hard (maxAge + expires)
+    res.cookies.set(BRIDGE_COOKIE, "", {
+      ...BRIDGE_COOKIE_OPTS,
+      maxAge: 0,
+      expires: new Date(0),
+    });
+
+    return res;
+  }
+
   // Clerk helper bound to this request (async in your version)
   const a = await auth(); // <-- await
   let userId: string | null = a.userId ?? null;
@@ -121,6 +141,7 @@ export async function GET(req: Request) {
     res.cookies.set(BRIDGE_COOKIE, "", {
       ...BRIDGE_COOKIE_OPTS,
       maxAge: 0,
+      expires: new Date(0), // ✅ helps some browsers clear reliably
     });
   }
 
