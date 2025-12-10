@@ -21,38 +21,6 @@ export const BOOKING_CH = "booking-updates" as const;
 
 export const BRIDGE_COOKIE = "inf_br" as const;
 
-// normalize ONLY for production cookie domain
-function normalizeCookieDomain(raw?: string) {
-  if (!raw) return undefined;
-
-  // strip protocol + path
-  const hostWithPath = raw.replace(/^https?:\/\//, "").split("/")[0];
-  if (!hostWithPath) return undefined;
-
-  // strip port
-  const hostNoPort = hostWithPath.split(":")[0];
-  if (!hostNoPort) return undefined;
-
-  // strip leading dot + www.
-  const host = hostNoPort.replace(/^\./, "").replace(/^www\./, "");
-  // don't set Domain on localhost-style hosts
-  if (
-    !host ||
-    host === "localhost" ||
-    host === "127.0.0.1" ||
-    host === "[::1]"
-  ) {
-    return undefined;
-  }
-
-  return `.${host}`;
-}
-
-const PROD_COOKIE_DOMAIN =
-  process.env.NODE_ENV === "production"
-    ? normalizeCookieDomain(process.env.NEXT_PUBLIC_ROOT_DOMAIN)
-    : undefined;
-
 // Bridge cookie options with dev environment gating
 export const BRIDGE_COOKIE_OPTS =
   process.env.NODE_ENV === "production"
@@ -60,7 +28,7 @@ export const BRIDGE_COOKIE_OPTS =
         httpOnly: true,
         secure: true,
         sameSite: "none" as const,
-        domain: PROD_COOKIE_DOMAIN, // ✅ safe`,
+        domain: `.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`,
         path: "/",
       }
     : {

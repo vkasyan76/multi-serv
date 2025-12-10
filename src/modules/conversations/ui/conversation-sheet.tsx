@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
@@ -53,6 +54,17 @@ export function ConversationSheet({
     ...trpc.conversations.upsertForTenant.mutationOptions(),
     onSuccess: (doc: UpsertForTenantOutput) => {
       setConversationId(doc.id);
+    },
+    onError: (err) => {
+      const code = (err as { data?: { code?: string } })?.data?.code;
+
+      if (code === "UNAUTHORIZED") {
+        toast.error("Sign in to contact this provider.");
+        onOpenChangeAction(false); // close sheet; prevents “stuck loading”
+        return;
+      }
+
+      toast.error("Couldn't start the conversation. Please try again.");
     },
   });
 
@@ -126,7 +138,7 @@ export function ConversationSheet({
             <div className="h-full grid place-items-center text-sm text-muted-foreground">
               Checking sign-in…
             </div>
-          ) : authState === false ? (
+          ) : upsert.isError ? (
             <div className="h-full grid place-items-center text-sm text-muted-foreground">
               Sign in to contact this provider.
             </div>

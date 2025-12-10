@@ -65,7 +65,11 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   // Bridge declaration.
   // use auth.getUserProfile as the backend “am I signed in?” source:
-  const { data: bridge, isLoading: bridgeLoading } = useBridge(); // Gate the tRPC query with the bridge in your client component
+  const {
+    data: bridge,
+    isLoading: bridgeLoading,
+    isFetching: bridgeFetching,
+  } = useBridge(); // Gate the tRPC query with the bridge in your client component
 
   // Reviews & Ratings:
   const reviewSummaryQ = useQuery(
@@ -92,9 +96,9 @@ export default function TenantContent({ slug }: { slug: string }) {
   });
   const isCancelling = cancel && !!sessionId; // canvelling paymente process
 
-  const { isSignedIn, isLoaded } = useUser();
-  const clerkSignedOut = isLoaded && isSignedIn === false;
-
+  // const { isSignedIn, isLoaded } = useUser();
+  // eslint-disable-next-line
+  const { user } = useUser();
   // const signedState = isLoaded ? !!isSignedIn : null;
 
   const backendAuthed = bridge?.authenticated === true;
@@ -103,10 +107,8 @@ export default function TenantContent({ slug }: { slug: string }) {
   // If the first getUserProfile result is wrong because of timing (cold start / cookie race), it won’t stay cached and block chat.
   const profileQ = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
-    // enabled: !!bridge?.ok,
-    // retry: false,
-
-    enabled: backendAuthed, // ✅ backend auth, not just Clerk UI auth
+    enabled: backendAuthed,
+    retry: false,
 
     // don’t keep a “bad first answer” around
     staleTime: 0,
@@ -115,49 +117,8 @@ export default function TenantContent({ slug }: { slug: string }) {
     refetchOnReconnect: "always",
   });
 
-  const cardTenantQ = useQuery({
-    ...trpc.tenants.getOneForCard.queryOptions({ slug }),
-    enabled: !!bridge?.ok && !isCancelling,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
-    refetchOnReconnect: "always",
-    refetchOnWindowFocus: false,
-  });
-
-  const cardTenant = cardTenantQ.data;
-  const cardLoading = cardTenantQ.isLoading;
-
-  const lastAuthedRef = useRef<boolean | undefined>(undefined);
-
-  useEffect(() => {
-    if (!bridge?.ok) return;
-
-    // Only react when authenticated state changes (sign-in/out switch)
-    if (lastAuthedRef.current === undefined) {
-      lastAuthedRef.current = bridge.authenticated;
-      return;
-    }
-
-    if (lastAuthedRef.current === bridge.authenticated) return;
-    lastAuthedRef.current = bridge.authenticated;
-
-    // Refresh tenant card for viewer-dependent fields
-    cardTenantQ.refetch();
-
-    // Only refetch profile when signed in
-    if (bridge.authenticated === true) {
-      profileQ.refetch();
-    }
-  }, [
-    bridge?.ok,
-    bridge?.authenticated,
-    cardTenantQ.refetch,
-    profileQ.refetch,
-  ]);
-
   const waitingForBridge =
-    bridgeLoading || !bridge?.ok || (backendAuthed && profileQ.isLoading);
+    bridgeLoading || bridgeFetching || !bridge?.ok || profileQ.isLoading;
 
   // one-shot “refetch when bridge becomes ok”
 
@@ -170,7 +131,10 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   // const viewerKey = user?.id ?? null;
 
-  const viewerKey = profileQ.data?.id ?? null;
+  // That prevents the sheet from “thinking” it still has a viewer when backend auth is false.
+
+  const viewerKey =
+    bridge?.authenticated === true ? (profileQ.data?.id ?? null) : null;
 
   // Compute signedState from backend profile (tri-state)
   // Stops treating “temporary error / timing / refetch” as “signed out”.
@@ -179,7 +143,6 @@ export default function TenantContent({ slug }: { slug: string }) {
   const signedState: boolean | null = useMemo(() => {
     if (!bridge?.ok) return null;
 
-    // ✅ if bridge says not authenticated, treat as signed out
     if (bridge.authenticated === false) return false;
 
     if (profileQ.isError) return null;
@@ -216,19 +179,20 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [chatOpen, setChatOpen] = useState(false);
 
   // chat opens only for signed-in users. Signed-out or “unknown” users get the toast and the sheet won’t open.
+  // const handleContact = () => {
+  //   if (signedState === null) {
+  //     setChatOpen(true); // sheet shows "Checking sign-in…"
+  //     return;
+  //   }
+  //   if (signedState === false) {
+  //     toast.error("Sign in to contact this provider.");
+  //     return;
+  //   }
+  //   setChatOpen(true);
+  // };
+
   const handleContact = () => {
-    // ✅ hard stop: signed-out users must NOT open the sheet
-    if (clerkSignedOut) {
-      toast.error("Sign in to contact this provider.");
-      return;
-    }
-    // If we’re still verifying backend auth, you may keep opening the sheet
-    // (it will show “Checking sign-in…”)
-    if (signedState === null) {
-      setChatOpen(true); // sheet shows "Checking sign-in…"
-      return;
-    }
-    if (signedState === false) {
+    if (signedState !== true) {
       toast.error("Sign in to contact this provider.");
       return;
     }
@@ -298,16 +262,6 @@ export default function TenantContent({ slug }: { slug: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cancel, sessionId]);
 
-  // useEffect(() => {
-  //   if (!backendAuthed) return;
-
-  //   // ✅ once backend sees the user, refresh backend-dependent queries
-  //   profileQ.refetch();
-  //   cardTenantQ.refetch(); // distance/user-derived fields update without manual refresh
-  //   // ✅ only refetch profile when authenticated
-  //   if (backendAuthed) profileQ.refetch();
-  // }, [bridge?.ok, backendAuthed, cardTenantQ.refetch, profileQ.refetch]);// intentionally only depends on backendAuthed
-
   const handleToggleSelect = (id: string) => {
     setSelected((prev) => {
       // remove if already selected
@@ -326,18 +280,16 @@ export default function TenantContent({ slug }: { slug: string }) {
     });
   };
 
-  // const { data: cardTenant, isLoading: cardLoading } = useQuery({
-  //   ...trpc.tenants.getOneForCard.queryOptions({ slug }),
-  //   enabled: !!bridge?.ok && !isCancelling, // pause heavy data work while the cancel flow is in progress
-  //   staleTime: 0, // ← was 60_000; must be 0
-  //   gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
-  //   refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
-  //   refetchOnReconnect: "always",
-  //   refetchOnWindowFocus: false,
-  //   // placeholderData: keepPreviousData,
-  // });
-
-  // To refetch safely, you need the query object. So change your tenant query from destructuring directly to storing it.
+  const { data: cardTenant, isLoading: cardLoading } = useQuery({
+    ...trpc.tenants.getOneForCard.queryOptions({ slug }),
+    enabled: !!bridge?.ok && !isCancelling, // pause heavy data work while the cancel flow is in progress
+    staleTime: 0, // ← was 60_000; must be 0
+    gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
+    refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: false,
+    // placeholderData: keepPreviousData,
+  });
 
   // check for subcategories to adjust layout
   const subcatsLen = cardTenant?.subcategories?.length ?? 0;

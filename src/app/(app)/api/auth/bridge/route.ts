@@ -4,7 +4,8 @@ import { cookies as nextCookies } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
 import { verifyToken } from "@clerk/backend";
 import { BRIDGE_COOKIE, BRIDGE_COOKIE_OPTS } from "@/constants";
-import { signBridgeToken, verifyBridgeToken } from "@/lib/app-auth";
+// import { signBridgeToken, verifyBridgeToken } from "@/lib/app-auth";
+import { signBridgeToken } from "@/lib/app-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,26 +35,6 @@ export async function OPTIONS(req: Request) {
 
 export async function GET(req: Request) {
   const origin = req.headers.get("origin") ?? undefined;
-
-  // ✅ minimal addition: optional clear mode
-  const url = new URL(req.url);
-  const clear = url.searchParams.get("clear") === "1";
-
-  if (clear) {
-    const res = NextResponse.json(
-      { ok: true, authenticated: false, source: "none" },
-      { headers: corsHeaders(origin) }
-    );
-
-    // clear cookie hard (maxAge + expires)
-    res.cookies.set(BRIDGE_COOKIE, "", {
-      ...BRIDGE_COOKIE_OPTS,
-      maxAge: 0,
-      expires: new Date(0),
-    });
-
-    return res;
-  }
 
   // Clerk helper bound to this request (async in your version)
   const a = await auth(); // <-- await
@@ -108,23 +89,35 @@ export async function GET(req: Request) {
   // 4) Fallback to an existing bridge cookie (if present & valid)
   const jar = await nextCookies();
   const existing = jar.get(BRIDGE_COOKIE)?.value;
+  // if (!userId && existing) {
+  //   try {
+  //     const data = await verifyBridgeToken(existing);
+  //     if (data?.uid) {
+  //       userId = data.uid;
+  //       if (data?.sid && !sessionId) sessionId = data.sid;
+  //       if (userId) source = "bridge";
+  //     }
+  //   } catch {
+  //     /* ignore invalid/expired */
+  //   }
+  // }
+
+  // Do NOT accept bridge cookie as proof of auth.
+  // Only mint/refresh bridge cookie from auth()/bearer/__session.
   if (!userId && existing) {
-    try {
-      const data = await verifyBridgeToken(existing);
-      if (data?.uid) {
-        userId = data.uid;
-        if (data?.sid && !sessionId) sessionId = data.sid;
-        if (userId) source = "bridge";
-      }
-    } catch {
-      /* ignore invalid/expired */
-    }
+    source = "none";
+    // keep userId null so the “else if (existing)” branch clears it
   }
 
   // Response + CORS
   const res = NextResponse.json(
     { ok: true, authenticated: !!userId, source },
-    { headers: corsHeaders(origin) }
+    {
+      headers: {
+        ...corsHeaders(origin),
+        "Cache-Control": "no-store",
+      },
+    }
   );
 
   // Set / clear the apex-scoped bridge cookie
@@ -141,7 +134,7 @@ export async function GET(req: Request) {
     res.cookies.set(BRIDGE_COOKIE, "", {
       ...BRIDGE_COOKIE_OPTS,
       maxAge: 0,
-      expires: new Date(0), // ✅ helps some browsers clear reliably
+      expires: new Date(0),
     });
   }
 
