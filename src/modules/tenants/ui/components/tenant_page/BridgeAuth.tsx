@@ -102,14 +102,33 @@ export default function BridgeAuth({
 
 type BridgeResponse = { ok: boolean; authenticated?: boolean; source?: string };
 
+// send the same Bearer token that you already use in pingOnce()
+// send bearer to authenticate the user
+
 export function useBridge() {
+  const { getToken, isLoaded } = useAuth();
+
   return useQuery<BridgeResponse>({
     queryKey: ["auth", "bridge"],
+    enabled: isLoaded,
     queryFn: async () => {
+      let token: string | null = null;
+
+      try {
+        token =
+          (await getToken({ template: "bridge" })) ??
+          (await getToken()) ??
+          null;
+      } catch {
+        // ignore
+      }
+
       const r = await fetch("/api/auth/bridge", {
         credentials: "include",
         cache: "no-store",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
+
       if (!r.ok) throw new Error("Bridge failed");
       return r.json();
     },
