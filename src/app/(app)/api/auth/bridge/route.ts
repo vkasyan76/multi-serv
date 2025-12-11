@@ -4,8 +4,7 @@ import { cookies as nextCookies } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
 import { verifyToken } from "@clerk/backend";
 import { BRIDGE_COOKIE, BRIDGE_COOKIE_OPTS } from "@/constants";
-// import { signBridgeToken, verifyBridgeToken } from "@/lib/app-auth";
-import { signBridgeToken } from "@/lib/app-auth";
+import { signBridgeToken, verifyBridgeToken } from "@/lib/app-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +34,13 @@ export async function OPTIONS(req: Request) {
 
 export async function GET(req: Request) {
   const origin = req.headers.get("origin") ?? undefined;
+
+  // NEW: determine whether this request is for the apex host
+  // (e.g. infinisimo.com or www.infinisimo.com) or for a tenant subdomain.
+  const host = req.headers.get("host") ?? "";
+  const rootHost = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "";
+  const isApexHost =
+    rootHost.length > 0 && (host === rootHost || host === `www.${rootHost}`);
 
   // Clerk helper bound to this request (async in your version)
   const a = await auth(); // <-- await
@@ -89,35 +95,26 @@ export async function GET(req: Request) {
   // 4) Fallback to an existing bridge cookie (if present & valid)
   const jar = await nextCookies();
   const existing = jar.get(BRIDGE_COOKIE)?.value;
-  // if (!userId && existing) {
-  //   try {
-  //     const data = await verifyBridgeToken(existing);
-  //     if (data?.uid) {
-  //       userId = data.uid;
-  //       if (data?.sid && !sessionId) sessionId = data.sid;
-  //       if (userId) source = "bridge";
-  //     }
-  //   } catch {
-  //     /* ignore invalid/expired */
-  //   }
-  // }
-
-  // Do NOT accept bridge cookie as proof of auth.
-  // Only mint/refresh bridge cookie from auth()/bearer/__session.
-  if (!userId && existing) {
-    source = "none";
-    // keep userId null so the “else if (existing)” branch clears it
+  // IMPORTANT:
+  // Only trust the bridge cookie on tenant subdomains.
+  // On the apex host we require real Clerk auth or a valid __session.
+  if (!userId && existing && !isApexHost) {
+    try {
+      const data = await verifyBridgeToken(existing);
+      if (data?.uid) {
+        userId = data.uid;
+        if (data?.sid && !sessionId) sessionId = data.sid;
+        if (userId) source = "bridge";
+      }
+    } catch {
+      /* ignore invalid/expired */
+    }
   }
 
   // Response + CORS
   const res = NextResponse.json(
     { ok: true, authenticated: !!userId, source },
-    {
-      headers: {
-        ...corsHeaders(origin),
-        "Cache-Control": "no-store",
-      },
-    }
+    { headers: corsHeaders(origin) }
   );
 
   // Set / clear the apex-scoped bridge cookie
@@ -134,7 +131,6 @@ export async function GET(req: Request) {
     res.cookies.set(BRIDGE_COOKIE, "", {
       ...BRIDGE_COOKIE_OPTS,
       maxAge: 0,
-      expires: new Date(0),
     });
   }
 
