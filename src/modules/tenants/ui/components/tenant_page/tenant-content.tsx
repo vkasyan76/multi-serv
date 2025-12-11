@@ -101,13 +101,11 @@ export default function TenantContent({ slug }: { slug: string }) {
   const { user } = useUser();
   // const signedState = isLoaded ? !!isSignedIn : null;
 
-  const backendAuthed = bridge?.authenticated === true;
-
   // Determine app language using bridege.
   // If the first getUserProfile result is wrong because of timing (cold start / cookie race), it won’t stay cached and block chat.
   const profileQ = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: backendAuthed,
+    enabled: !!bridge?.ok,
     retry: false,
 
     // don’t keep a “bad first answer” around
@@ -131,10 +129,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   // const viewerKey = user?.id ?? null;
 
-  // That prevents the sheet from “thinking” it still has a viewer when backend auth is false.
-
-  const viewerKey =
-    bridge?.authenticated === true ? (profileQ.data?.id ?? null) : null;
+  const viewerKey = profileQ.data?.id ?? null;
 
   // Compute signedState from backend profile (tri-state)
   // Stops treating “temporary error / timing / refetch” as “signed out”.
@@ -142,8 +137,6 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const signedState: boolean | null = useMemo(() => {
     if (!bridge?.ok) return null;
-
-    if (bridge.authenticated === false) return false;
 
     if (profileQ.isError) return null;
 
@@ -154,7 +147,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
     // still unknown (loading / error / disabled / etc.)
     return null;
-  }, [bridge?.ok, bridge?.authenticated, profileQ.data, profileQ.isError]);
+  }, [bridge?.ok, profileQ.data, profileQ.isError]);
 
   const appLang: AppLang = useMemo(() => {
     const profileLang = profileQ.data?.language;
@@ -179,20 +172,12 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [chatOpen, setChatOpen] = useState(false);
 
   // chat opens only for signed-in users. Signed-out or “unknown” users get the toast and the sheet won’t open.
-  // const handleContact = () => {
-  //   if (signedState === null) {
-  //     setChatOpen(true); // sheet shows "Checking sign-in…"
-  //     return;
-  //   }
-  //   if (signedState === false) {
-  //     toast.error("Sign in to contact this provider.");
-  //     return;
-  //   }
-  //   setChatOpen(true);
-  // };
-
   const handleContact = () => {
-    if (signedState !== true) {
+    if (signedState === null) {
+      setChatOpen(true); // sheet shows "Checking sign-in…"
+      return;
+    }
+    if (signedState === false) {
       toast.error("Sign in to contact this provider.");
       return;
     }
