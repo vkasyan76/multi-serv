@@ -105,7 +105,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   // If the first getUserProfile result is wrong because of timing (cold start / cookie race), it won’t stay cached and block chat.
   const profileQ = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: !!bridge?.ok,
+    enabled: bridge?.authenticated === true, // ONLY when bridge says authed
     retry: false,
 
     // don’t keep a “bad first answer” around
@@ -115,21 +115,7 @@ export default function TenantContent({ slug }: { slug: string }) {
     refetchOnReconnect: "always",
   });
 
-  const waitingForBridge =
-    bridgeLoading || bridgeFetching || !bridge?.ok || profileQ.isLoading;
-
-  // one-shot “refetch when bridge becomes ok”
-
-  // This is mostly redundant and can create extra requests:
-  // useEffect(() => {
-  //   if (bridge?.ok) profileQ.refetch();
-  // }, [bridge?.ok]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Pass a viewer identity to the sheet (so it resets when user changes)
-
-  // const viewerKey = user?.id ?? null;
-
-  const viewerKey = profileQ.data?.id ?? null;
+  const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok; // This way the page renders immediately, while chat correctly shows “Checking sign-in…” until ready.
 
   // Compute signedState from backend profile (tri-state)
   // Stops treating “temporary error / timing / refetch” as “signed out”.
@@ -138,16 +124,17 @@ export default function TenantContent({ slug }: { slug: string }) {
   const signedState: boolean | null = useMemo(() => {
     if (!bridge?.ok) return null;
 
-    if (profileQ.isError) return null;
+    // definitive logout comes from bridge
+    if (bridge.authenticated === false) return false;
 
-    // data-first: if backend already said "null", you're signed out,
-    // even if a refetch is happening in the background.
-    if (profileQ.data === null) return false;
+    // bridge says authed, but profile may still be loading / erroring
+    if (profileQ.isError) return null;
     if (profileQ.data) return true;
 
-    // still unknown (loading / error / disabled / etc.)
-    return null;
-  }, [bridge?.ok, profileQ.data, profileQ.isError]);
+    return null; // authed but profile not ready yet
+  }, [bridge?.ok, bridge?.authenticated, profileQ.data, profileQ.isError]);
+
+  const viewerKey = signedState === true ? (profileQ.data?.id ?? null) : null;
 
   const appLang: AppLang = useMemo(() => {
     const profileLang = profileQ.data?.language;
