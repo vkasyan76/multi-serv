@@ -171,18 +171,6 @@ export default function TenantContent({ slug }: { slug: string }) {
   // must be before any early return
   const [chatOpen, setChatOpen] = useState(false);
 
-  // chat opens only for signed-in users. Signed-out or “unknown” users get the toast and the sheet won’t open.
-  // const handleContact = () => {
-  //   if (signedState === null) {
-  //     setChatOpen(true); // sheet shows "Checking sign-in…"
-  //     return;
-  //   }
-  //   if (signedState === false) {
-  //     toast.error("Sign in to contact this provider.");
-  //     return;
-  //   }
-  //   setChatOpen(true);
-  // };
   // If the user is logged out, bridge.authenticated === false → you get the toast and the sheet does not open.
   const handleContact = () => {
     // definitive: bridge says "not authenticated" -> toast, don't open

@@ -19,7 +19,7 @@ export default function BridgeAuth({
 }: {
   refreshMs?: number;
 }) {
-  const { getToken, isLoaded } = useAuth();
+  const { getToken, isLoaded, userId } = useAuth();
   const router = useRouter();
   const authedOnce = useRef(false);
 
@@ -80,6 +80,10 @@ export default function BridgeAuth({
         .filter(isFulfilled)
         .some((r) => r.value?.authenticated === true);
 
+      if (!authed) {
+        authedOnce.current = false; // allow refresh on next login
+      }
+
       if (authed && !authedOnce.current) {
         authedOnce.current = true;
         router.refresh(); // server re-fetch sees the new bridge cookie
@@ -95,7 +99,7 @@ export default function BridgeAuth({
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [isLoaded, getToken, refreshMs, router]);
+  }, [isLoaded, getToken, refreshMs, router, userId]); // include user Id in the dependency: tear down + recreate the interval and visibility handler on login/logout
 
   return null;
 }
