@@ -100,16 +100,23 @@ export default function BridgeAuth({
   return null;
 }
 
-type BridgeResponse = { ok: boolean; authenticated?: boolean; source?: string };
+type BridgeResponse = {
+  ok: boolean;
+  authenticated?: boolean;
+  source?: string;
+  uid?: string | null;
+  sid?: string | null;
+};
 
 // send the same Bearer token that you already use in pingOnce()
 // send bearer to authenticate the user
 
 export function useBridge() {
-  const { getToken, isLoaded } = useAuth();
+  const { getToken, isLoaded, userId } = useAuth();
 
   return useQuery<BridgeResponse>({
-    queryKey: ["auth", "bridge"],
+    // queryKey: ["auth", "bridge"],
+    queryKey: ["auth", "bridge", userId ?? "anon"], // IMPORTANT: bust cache on login/logout
     enabled: isLoaded,
     queryFn: async () => {
       let token: string | null = null;
@@ -132,7 +139,13 @@ export function useBridge() {
       if (!r.ok) throw new Error("Bridge failed");
       return r.json();
     },
-    staleTime: 60_000,
+    // IMPORTANT: do not “stick” to a bad first answer for 60s
+    // staleTime: 60_000,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: false,
     retry: 0,
   });
 }

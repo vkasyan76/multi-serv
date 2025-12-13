@@ -101,9 +101,15 @@ export async function GET(req: Request) {
     }
   }
 
+  const debug = process.env.NODE_ENV !== "production"; // only expose debug info in non-prod
   // Response + CORS
   const res = NextResponse.json(
-    { ok: true, authenticated: !!userId, source },
+    {
+      ok: true,
+      authenticated: !!userId,
+      source,
+      ...(debug ? { uid: userId ?? null, sid: sessionId ?? null } : {}),
+    },
     { headers: corsHeaders(origin) }
   );
 
