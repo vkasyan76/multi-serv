@@ -134,7 +134,11 @@ export function ConversationSheet({
         </SheetHeader>
 
         <div className="flex-1 min-h-0">
-          {authState === null ? (
+          {authState === false ? (
+            <div className="h-full grid place-items-center text-sm text-muted-foreground">
+              Sign in to contact this provider.
+            </div>
+          ) : authState === null ? (
             <div className="h-full grid place-items-center text-sm text-muted-foreground">
               Checking sign-in…
             </div>
