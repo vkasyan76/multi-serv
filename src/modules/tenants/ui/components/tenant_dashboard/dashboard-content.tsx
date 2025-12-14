@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { TenantMessagesSection } from "@/modules/conversations/ui/tenant-messages-section";
+import { useBridge } from "@/modules/tenants/ui/components/tenant_page/BridgeAuth";
 
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
@@ -18,13 +19,24 @@ const TenantCalendar = dynamic(
 );
 
 export default function DashboardContent({ slug }: { slug: string }) {
+  const {
+    data: bridge,
+    isLoading: bridgeLoading,
+    isFetching: bridgeFetching,
+  } = useBridge();
+  const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok;
+
   return (
     <div className="space-y-12">
       {/* CALENDAR */}
       <section id="calendar" className="scroll-mt-28 sm:scroll-mt-32">
         <h2 className="text-xl font-semibold mb-3">Calendar</h2>
         {/* Dashboard mode → calendar is editable */}
-        <TenantCalendar tenantSlug={slug} editable />
+        {waitingForBridge ? (
+          <div className="h-[50vh] bg-muted animate-pulse rounded-lg" />
+        ) : (
+          <TenantCalendar tenantSlug={slug} editable />
+        )}
       </section>
 
       {/* ORDERS (placeholder for now) */}
@@ -42,7 +54,13 @@ export default function DashboardContent({ slug }: { slug: string }) {
       <section id="messages" className="scroll-mt-28 sm:scroll-mt-32">
         <h2 className="text-xl font-semibold mb-3">Messages</h2>
         <div className="rounded-lg border bg-white p-5">
-          <TenantMessagesSection tenantSlug={slug} />
+          {waitingForBridge ? (
+            <div className="text-sm text-muted-foreground">
+              Checking sign-in…
+            </div>
+          ) : (
+            <TenantMessagesSection tenantSlug={slug} />
+          )}
         </div>
       </section>
 
