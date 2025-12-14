@@ -33,6 +33,7 @@ export default function BridgeAuth({
     const isLocalRoot = /(^|\.)(localhost|127\.0\.0\.1|\[::1\])(:(\d+))?$/.test(
       rootHost
     );
+
     const proto = isLocalRoot ? window.location.protocol : "https:";
 
     const pingOnce = async () => {
@@ -134,9 +135,33 @@ export function useBridge() {
         // ignore
       }
 
-      const r = await fetch("/api/auth/bridge", {
+      // const r = await fetch("/api/auth/bridge", {
+      //   credentials: "include",
+      //   cache: "no-store",
+      //   headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      // });
+
+      const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN!;
+      const rootHost = ROOT.replace(/^https?:\/\//, "");
+      const pageHost = window.location.host;
+      const onApex = pageHost === rootHost || pageHost === `www.${rootHost}`;
+      const isLocalRoot =
+        /(^|\.)(localhost|127\.0\.0\.1|\[::1\])(:(\d+))?$/.test(rootHost);
+
+      const proto = isLocalRoot ? window.location.protocol : "https:";
+
+      // Critical: when on a tenant subdomain, call the APEX bridge endpoint
+      // so it can read the apex Clerk session and mint the shared bridge cookie.
+      const url = onApex
+        ? "/api/auth/bridge"
+        : `${proto}//${rootHost}/api/auth/bridge`;
+
+      const r = await fetch(url, {
+        method: "GET",
         credentials: "include",
         cache: "no-store",
+        mode: onApex ? "same-origin" : "cors",
+        keepalive: true,
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
@@ -149,7 +174,8 @@ export function useBridge() {
     gcTime: 0,
     refetchOnMount: "always",
     refetchOnReconnect: "always",
-    refetchOnWindowFocus: false,
+    // refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     retry: 0,
   });
 }
