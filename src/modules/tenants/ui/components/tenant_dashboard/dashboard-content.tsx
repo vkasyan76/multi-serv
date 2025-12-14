@@ -4,18 +4,26 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
-import { TenantMessagesSection } from "@/modules/conversations/ui/tenant-messages-section";
+// import { TenantMessagesSection } from "@/modules/conversations/ui/tenant-messages-section";
 import { useBridge } from "@/modules/tenants/ui/components/tenant_page/BridgeAuth";
+import { TenantCalendarSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-calendar-skeleton";
+import { TenantMessagesSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-messages-skeleton";
 
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
   () => import("@/modules/bookings/ui/TenantCalendar"),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-[50vh] bg-muted animate-pulse rounded-lg" />
-    ),
+    loading: () => <TenantCalendarSkeleton />,
   }
+);
+
+const TenantMessagesSection = dynamic(
+  () =>
+    import("@/modules/conversations/ui/tenant-messages-section").then(
+      (m) => m.TenantMessagesSection
+    ),
+  { ssr: false, loading: () => <TenantMessagesSkeleton /> }
 );
 
 export default function DashboardContent({ slug }: { slug: string }) {
@@ -39,7 +47,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
         <h2 className="text-xl font-semibold mb-3">Calendar</h2>
         {/* Dashboard mode → calendar is editable */}
         {waitingForBridge ? (
-          <div className="h-[50vh] bg-muted animate-pulse rounded-lg" />
+          <TenantCalendarSkeleton />
         ) : (
           <TenantCalendar
             key={`${slug}:${bridge?.uid ?? "anon"}`}
@@ -65,9 +73,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
         <h2 className="text-xl font-semibold mb-3">Messages</h2>
         <div className="rounded-lg border bg-white p-5">
           {waitingForBridge ? (
-            <div className="text-sm text-muted-foreground">
-              Checking sign-in…
-            </div>
+            <TenantMessagesSkeleton />
           ) : (
             <TenantMessagesSection
               key={`${slug}:${bridge?.uid ?? "anon"}`}

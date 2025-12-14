@@ -103,11 +103,6 @@ export async function GET(req: Request) {
       const client = await clerkClient();
       const sess = await client.sessions.getSession(data.sid);
 
-      // if (data?.uid) {
-      //   userId = data.uid;
-      //   if (data?.sid && !sessionId) sessionId = data.sid;
-      //   if (userId) source = "bridge";
-      // }
       if (sess?.status === "active") {
         userId = data.uid;
         sessionId = data.sid;

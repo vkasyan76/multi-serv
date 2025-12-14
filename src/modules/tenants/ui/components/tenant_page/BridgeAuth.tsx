@@ -135,12 +135,6 @@ export function useBridge() {
         // ignore
       }
 
-      // const r = await fetch("/api/auth/bridge", {
-      //   credentials: "include",
-      //   cache: "no-store",
-      //   headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      // });
-
       const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN!;
       const rootHost = ROOT.replace(/^https?:\/\//, "");
       const pageHost = window.location.host;
@@ -166,7 +160,17 @@ export function useBridge() {
       });
 
       if (!r.ok) throw new Error("Bridge failed");
-      return r.json();
+
+      // treat post-login bridge state as unknown when bearer token present
+      const data = (await r.json()) as BridgeResponse;
+
+      if (userId && token && data?.ok && data.authenticated !== true) {
+        return { ...data, authenticated: undefined };
+      }
+
+      return data;
+
+      // return r.json();
     },
     // IMPORTANT: do not “stick” to a bad first answer for 60s
     // staleTime: 60_000,
