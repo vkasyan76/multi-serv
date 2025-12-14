@@ -24,7 +24,13 @@ export default function DashboardContent({ slug }: { slug: string }) {
     isLoading: bridgeLoading,
     isFetching: bridgeFetching,
   } = useBridge();
-  const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok;
+
+  // dashboard to mount its auth-dependent components only when the bridge is definitively authenticated.
+  const waitingForBridge =
+    bridgeLoading ||
+    bridgeFetching ||
+    !bridge?.ok ||
+    bridge.authenticated !== true;
 
   return (
     <div className="space-y-12">
@@ -35,7 +41,11 @@ export default function DashboardContent({ slug }: { slug: string }) {
         {waitingForBridge ? (
           <div className="h-[50vh] bg-muted animate-pulse rounded-lg" />
         ) : (
-          <TenantCalendar tenantSlug={slug} editable />
+          <TenantCalendar
+            key={`${slug}:${bridge?.uid ?? "anon"}`}
+            tenantSlug={slug}
+            editable
+          />
         )}
       </section>
 
@@ -59,7 +69,10 @@ export default function DashboardContent({ slug }: { slug: string }) {
               Checking sign-in…
             </div>
           ) : (
-            <TenantMessagesSection tenantSlug={slug} />
+            <TenantMessagesSection
+              key={`${slug}:${bridge?.uid ?? "anon"}`}
+              tenantSlug={slug}
+            />
           )}
         </div>
       </section>
