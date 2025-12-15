@@ -69,6 +69,7 @@ export default function TenantContent({ slug }: { slug: string }) {
     data: bridge,
     isLoading: bridgeLoading,
     isFetching: bridgeFetching,
+    refetch: refetchBridge, // refetch bridge if the sheetdoes not open for logged in user
   } = useBridge(); // Gate the tRPC query with the bridge in your client component
 
   // Reviews & Ratings:
@@ -232,6 +233,36 @@ export default function TenantContent({ slug }: { slug: string }) {
     // deps intentionally kept to just the URL signal
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cancel, sessionId]);
+
+  // on mount, consume the flag and re-open the sheet if the sign-in user cannot open it
+
+  useEffect(() => {
+    // only act when bridge has a definitive answer
+    if (!bridge?.ok) return;
+
+    const raw = sessionStorage.getItem("pendingConversationOpen");
+    if (!raw) return;
+
+    // if user is actually signed out, drop the flag to avoid loops
+    if (bridge.authenticated === false) {
+      sessionStorage.removeItem("pendingConversationOpen");
+      return;
+    }
+
+    try {
+      const data = JSON.parse(raw) as { tenantSlug: string; ts: number };
+      const fresh = Date.now() - data.ts < 15_000; // 15s window
+
+      if (fresh && data.tenantSlug === slug) {
+        sessionStorage.removeItem("pendingConversationOpen");
+        setChatOpen(true); // reopen immediately after reload
+      } else {
+        sessionStorage.removeItem("pendingConversationOpen");
+      }
+    } catch {
+      sessionStorage.removeItem("pendingConversationOpen");
+    }
+  }, [bridge?.ok, bridge?.authenticated, slug]);
 
   const handleToggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -642,6 +673,10 @@ export default function TenantContent({ slug }: { slug: string }) {
         disabled={signedState !== true}
         authState={signedState}
         viewerKey={viewerKey}
+        onBridgeResync={async () => {
+          const res = await refetchBridge();
+          return res.data?.ok === true && res.data?.authenticated === true;
+        }}
       />
     </div>
   );

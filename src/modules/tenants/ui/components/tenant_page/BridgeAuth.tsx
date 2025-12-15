@@ -160,17 +160,7 @@ export function useBridge() {
       });
 
       if (!r.ok) throw new Error("Bridge failed");
-
-      // treat post-login bridge state as unknown when bearer token present
-      const data = (await r.json()) as BridgeResponse;
-
-      if (userId && token && data?.ok && data.authenticated !== true) {
-        return { ...data, authenticated: undefined };
-      }
-
-      return data;
-
-      // return r.json();
+      return r.json();
     },
     // IMPORTANT: do not “stick” to a bad first answer for 60s
     // staleTime: 60_000,

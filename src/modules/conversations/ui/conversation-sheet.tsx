@@ -30,6 +30,7 @@ type ConversationSheetProps = {
   disabled?: boolean;
   authState?: boolean | null; // check if user is signed in via payload backend
   viewerKey?: string | null; // NEW: resets sheet when auth user changes
+  onBridgeResync?: () => Promise<boolean>; //  one-shot “bridge handshake then retry” hook
 };
 
 export function ConversationSheet({
@@ -42,6 +43,7 @@ export function ConversationSheet({
   disabled,
   authState = null,
   viewerKey = null,
+  onBridgeResync,
 }: ConversationSheetProps) {
   const trpc = useTRPC();
 
@@ -50,17 +52,42 @@ export function ConversationSheet({
   // prevent double upsert while open
   const startedRef = useRef(false);
 
+  const didHardReloadRef = useRef(false); // to reload the page if the users is expected to be authed but the sheet does not open
+
   const upsert = useMutation({
     ...trpc.conversations.upsertForTenant.mutationOptions(),
     onSuccess: (doc: UpsertForTenantOutput) => {
       setConversationId(doc.id);
     },
-    onError: (err) => {
+    onError: async (err) => {
       const code = (err as { data?: { code?: string } })?.data?.code;
 
       if (code === "UNAUTHORIZED") {
+        // Only attempt resync/reload if we EXPECT a signed-in user.
+        if (
+          authState === true &&
+          viewerKey &&
+          onBridgeResync &&
+          !didHardReloadRef.current
+        ) {
+          didHardReloadRef.current = true;
+
+          const ok = await onBridgeResync();
+          // reload the window if the user is signed in but the sheet did not open
+          if (ok) {
+            // remember user intent across hard reload (same-tab only)
+            sessionStorage.setItem(
+              "pendingConversationOpen",
+              JSON.stringify({ tenantSlug, ts: Date.now() })
+            );
+
+            window.location.reload();
+            return;
+          }
+        }
+
         toast.error("Sign in to contact this provider.");
-        onOpenChangeAction(false); // close sheet; prevents “stuck loading”
+        onOpenChangeAction(false);
         return;
       }
 
@@ -74,6 +101,7 @@ export function ConversationSheet({
   useEffect(() => {
     setConversationId(null);
     startedRef.current = false;
+    didHardReloadRef.current = false; // allow recovery again on auth/user change
     reset();
   }, [tenantSlug, viewerKey, reset]);
 
