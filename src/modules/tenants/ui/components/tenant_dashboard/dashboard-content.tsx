@@ -8,6 +8,9 @@ import { ExternalLink } from "lucide-react";
 import { useBridge } from "@/modules/tenants/ui/components/tenant_page/BridgeAuth";
 import { TenantCalendarSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-calendar-skeleton";
 import { TenantMessagesSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-messages-skeleton";
+import { useEffect, useRef } from "react";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
@@ -27,18 +30,68 @@ const TenantMessagesSection = dynamic(
 );
 
 export default function DashboardContent({ slug }: { slug: string }) {
+  const trpc = useTRPC();
   const {
     data: bridge,
     isLoading: bridgeLoading,
     isFetching: bridgeFetching,
+    refetch: refetchBridge, // refetch page if the calendar was not loaded due to race condition
   } = useBridge();
+
+  //auth sentinel for tenant dashboard (already used by TenantMessagesSection)
+  const vendorQ = useQuery({
+    ...trpc.auth.getVendorProfile.queryOptions(),
+    enabled: bridge?.ok === true && bridge.authenticated === true,
+    retry: false,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+  });
+
+  const didHardReloadRef = useRef(false);
+
+  useEffect(() => {
+    if (!bridge?.ok || bridge.authenticated !== true) return;
+    if (!vendorQ.isError) return;
+
+    const code = (vendorQ.error as { data?: { code?: string } } | null)?.data
+      ?.code;
+
+    if (code !== "UNAUTHORIZED") return;
+    if (didHardReloadRef.current) return;
+
+    const loopKey = `dashboardReload:${slug}`;
+    const last = sessionStorage.getItem(loopKey);
+    if (last && Date.now() - Number(last) < 15_000) return;
+
+    didHardReloadRef.current = true;
+    sessionStorage.setItem(loopKey, String(Date.now()));
+
+    (async () => {
+      const res = await refetchBridge();
+      const ok = res.data?.ok === true && res.data?.authenticated === true;
+      if (ok) window.location.reload();
+    })();
+  }, [
+    bridge?.ok,
+    bridge?.authenticated,
+    vendorQ.isError,
+    vendorQ.error,
+    refetchBridge,
+    slug,
+  ]);
 
   // dashboard to mount its auth-dependent components only when the bridge is definitively authenticated.
   const waitingForBridge =
     bridgeLoading ||
     bridgeFetching ||
     !bridge?.ok ||
-    bridge.authenticated !== true;
+    bridge.authenticated !== true ||
+    vendorQ.isLoading;
+
+  // stable id that exists in that response for passing to imported components
+  const viewerKey = vendorQ.data?.id ?? "anon";
 
   return (
     <div className="space-y-12">
@@ -50,7 +103,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
           <TenantCalendarSkeleton />
         ) : (
           <TenantCalendar
-            key={`${slug}:${bridge?.uid ?? "anon"}`}
+            key={`${slug}:${viewerKey}`}
             tenantSlug={slug}
             editable
           />
@@ -76,7 +129,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
             <TenantMessagesSkeleton />
           ) : (
             <TenantMessagesSection
-              key={`${slug}:${bridge?.uid ?? "anon"}`}
+              key={`${slug}:${viewerKey}`}
               tenantSlug={slug}
             />
           )}
