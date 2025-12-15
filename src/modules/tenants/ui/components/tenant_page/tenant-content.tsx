@@ -22,6 +22,7 @@ import { BookSlotsButton } from "@/modules/checkout/ui/book-slots-button";
 import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
+import { ConversationSheet } from "@/modules/conversations/ui/conversation-sheet";
 import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary";
 import { CategoryIcon } from "@/modules/categories/category-icons";
 import Image from "next/image";
@@ -62,6 +63,15 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
 
+  // Bridge declaration.
+  // use auth.getUserProfile as the backend “am I signed in?” source:
+  const {
+    data: bridge,
+    isLoading: bridgeLoading,
+    isFetching: bridgeFetching,
+    refetch: refetchBridge, // refetch bridge if the sheetdoes not open for logged in user
+  } = useBridge(); // Gate the tRPC query with the bridge in your client component
+
   // Reviews & Ratings:
   const reviewSummaryQ = useQuery(
     trpc.reviews.summaryForTenant.queryOptions({ slug })
@@ -86,14 +96,46 @@ export default function TenantContent({ slug }: { slug: string }) {
     retry: false,
   });
   const isCancelling = cancel && !!sessionId; // canvelling paymente process
-  const { isSignedIn, isLoaded } = useUser();
-  const signedState = isLoaded ? !!isSignedIn : null;
 
-  // Determine app language
+  // const { isSignedIn, isLoaded } = useUser();
+  // eslint-disable-next-line
+  const { user } = useUser();
+  // const signedState = isLoaded ? !!isSignedIn : null;
+
+  // Determine app language using bridege.
+  // If the first getUserProfile result is wrong because of timing (cold start / cookie race), it won’t stay cached and block chat.
   const profileQ = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: signedState === true,
+    enabled: bridge?.authenticated === true, // ONLY when bridge says authed
+    retry: false,
+
+    // don’t keep a “bad first answer” around
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
   });
+
+  const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok; // This way the page renders immediately, while chat correctly shows “Checking sign-in…” until ready.
+
+  // Compute signedState from backend profile (tri-state)
+  // Stops treating “temporary error / timing / refetch” as “signed out”.
+  // If the backend returns null, you immediately get false (signed out) and stop showing “Checking sign-in…” forever.
+
+  const signedState: boolean | null = useMemo(() => {
+    if (!bridge?.ok) return null;
+
+    // definitive logout comes from bridge
+    if (bridge.authenticated === false) return false;
+
+    // bridge says authed, but profile may still be loading / erroring
+    if (profileQ.isError) return null;
+    if (profileQ.data) return true;
+
+    return null; // authed but profile not ready yet
+  }, [bridge?.ok, bridge?.authenticated, profileQ.data, profileQ.isError]);
+
+  const viewerKey = signedState === true ? (profileQ.data?.id ?? null) : null;
 
   const appLang: AppLang = useMemo(() => {
     const profileLang = profileQ.data?.language;
@@ -112,11 +154,22 @@ export default function TenantContent({ slug }: { slug: string }) {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const {
-    data: bridge,
-    isLoading: bridgeLoading,
-    isFetching: bridgeFetching,
-  } = useBridge(); // Gate the tRPC query with the bridge in your client component
+  // conversation
+  // conversation trigger (MUST be before any early return)
+  // must be before any early return
+  const [chatOpen, setChatOpen] = useState(false);
+
+  // If the user is logged out, bridge.authenticated === false → you get the toast and the sheet does not open.
+  const handleContact = () => {
+    // definitive: bridge says "not authenticated" -> toast, don't open
+    if (bridge?.ok && bridge.authenticated === false) {
+      toast.error("Sign in to contact this provider.");
+      return;
+    }
+
+    // otherwise allow opening; if profile still resolving, the sheet can show "Checking sign-in…"
+    setChatOpen(true);
+  };
 
   // Clear selections on unmount
   useEffect(() => () => setSelected([]), []);
@@ -181,6 +234,36 @@ export default function TenantContent({ slug }: { slug: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cancel, sessionId]);
 
+  // on mount, consume the flag and re-open the sheet if the sign-in user cannot open it
+
+  useEffect(() => {
+    // only act when bridge has a definitive answer
+    if (!bridge?.ok) return;
+
+    const raw = sessionStorage.getItem("pendingConversationOpen");
+    if (!raw) return;
+
+    // if user is actually signed out, drop the flag to avoid loops
+    if (bridge.authenticated === false) {
+      sessionStorage.removeItem("pendingConversationOpen");
+      return;
+    }
+
+    try {
+      const data = JSON.parse(raw) as { tenantSlug: string; ts: number };
+      const fresh = Date.now() - data.ts < 15_000; // 15s window
+
+      if (fresh && data.tenantSlug === slug) {
+        sessionStorage.removeItem("pendingConversationOpen");
+        setChatOpen(true); // reopen immediately after reload
+      } else {
+        sessionStorage.removeItem("pendingConversationOpen");
+      }
+    } catch {
+      sessionStorage.removeItem("pendingConversationOpen");
+    }
+  }, [bridge?.ok, bridge?.authenticated, slug]);
+
   const handleToggleSelect = (id: string) => {
     setSelected((prev) => {
       // remove if already selected
@@ -198,8 +281,6 @@ export default function TenantContent({ slug }: { slug: string }) {
       return [...prev, id];
     });
   };
-
-  const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok;
 
   const { data: cardTenant, isLoading: cardLoading } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug }),
@@ -269,6 +350,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           ordersCount={ordersCount}
           onBook={scrollToCalendar}
           appLang={appLang}
+          onContact={handleContact}
         />
       </section>
 
@@ -278,7 +360,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           {/* About Section */}
           <section
             id="about"
-            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px]"
+            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-16"
           >
             {/* <h2 className="text-2xl font-bold mb-4">About</h2> */}
             <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
@@ -293,7 +375,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               <span>About</span>
             </h2>
             <div className="rounded-2xl border bg-white/70 p-5 shadow-sm">
-              <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed break-words">
+              <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed wrap-break-word">
                 {cardTenant?.bio || "No bio available."}
               </p>
             </div>
@@ -476,7 +558,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           {/* booking Section */}
           <section
             id="booking"
-            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
+            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-16 min-h-[200px]"
           >
             <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
               <Image
@@ -535,7 +617,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           {/* Reviews Section */}
           <section
             id="reviews"
-            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-[64px] min-h-[200px]"
+            className="scroll-mt-[104px] sm:scroll-mt-[120px] lg:scroll-mt-16 min-h-[200px]"
           >
             <h2 className="text-2xl font-bold mb-4 inline-flex items-center gap-3">
               <Image
@@ -560,7 +642,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
         {/* Desktop Sidebar - Right Column (updated with new props) */}
         <aside className="hidden lg:block">
-          <div className="sticky top-[104px] sm:top-[120px] lg:top-[64px] space-y-4">
+          <div className="sticky top-[104px] sm:top-[120px] lg:top-16 space-y-4">
             {/* Desktop tenant card with action buttons */}
             <TenantCard
               tenant={cardTenant}
@@ -572,11 +654,30 @@ export default function TenantContent({ slug }: { slug: string }) {
               ordersCount={ordersCount}
               onBook={scrollToCalendar}
               appLang={appLang}
+              onContact={handleContact}
             />
             {/* REMOVED: Contact and Pricing sections - now redundant */}
           </div>
         </aside>
       </div>
+      {/* Conversation Sheet */}
+      <ConversationSheet
+        open={chatOpen}
+        onOpenChangeAction={setChatOpen}
+        tenantSlug={slug}
+        tenantName={cardTenant.name}
+        tenantAvatarUrl={
+          cardTenant.image?.url ?? cardTenant.user?.clerkImageUrl ?? null
+        }
+        myAvatarUrl={null}
+        disabled={signedState !== true}
+        authState={signedState}
+        viewerKey={viewerKey}
+        onBridgeResync={async () => {
+          const res = await refetchBridge();
+          return res.data?.ok === true && res.data?.authenticated === true;
+        }}
+      />
     </div>
   );
 }

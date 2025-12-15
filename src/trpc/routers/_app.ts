@@ -14,6 +14,8 @@ import { checkoutRouter } from "@/modules/checkout/server/procedures";
 import { vatRouter } from "@/modules/profile/server/routers/vat";
 import { ordersRouter } from "@/modules/orders/server/procedures";
 import { reviewsRouter } from "@/modules/reviews/server/procedures";
+import { conversationsRouter } from "@/modules/conversations/server/procedures";
+import { messagesRouter } from "@/modules/messages/server/procedures";
 
 export const appRouter = createTRPCRouter({
   // hello: baseProcedure
@@ -36,6 +38,8 @@ export const appRouter = createTRPCRouter({
   checkout: checkoutRouter,
   orders: ordersRouter,
   reviews: reviewsRouter,
+  conversations: conversationsRouter,
+  messages: messagesRouter,
   vat: vatRouter,
 });
 // export type definition of API

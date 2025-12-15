@@ -30,6 +30,8 @@ const params = {
   categories: parseAsArrayOf(parseAsString)
     .withOptions({ clearOnDefault: true })
     .withDefault([]),
+  // 🔍 NEW: free-text search (tenant name, later maybe more)
+  search: parseAsString.withOptions({ clearOnDefault: true }).withDefault(""),
 };
 
 export const loadTenantFilters = createLoader(params);

@@ -4,26 +4,57 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
+// import { TenantMessagesSection } from "@/modules/conversations/ui/tenant-messages-section";
+import { useBridge } from "@/modules/tenants/ui/components/tenant_page/BridgeAuth";
+import { TenantCalendarSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-calendar-skeleton";
+import { TenantMessagesSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-messages-skeleton";
 
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
   () => import("@/modules/bookings/ui/TenantCalendar"),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-[50vh] bg-muted animate-pulse rounded-lg" />
-    ),
+    loading: () => <TenantCalendarSkeleton />,
   }
 );
 
+const TenantMessagesSection = dynamic(
+  () =>
+    import("@/modules/conversations/ui/tenant-messages-section").then(
+      (m) => m.TenantMessagesSection
+    ),
+  { ssr: false, loading: () => <TenantMessagesSkeleton /> }
+);
+
 export default function DashboardContent({ slug }: { slug: string }) {
+  const {
+    data: bridge,
+    isLoading: bridgeLoading,
+    isFetching: bridgeFetching,
+  } = useBridge();
+
+  // dashboard to mount its auth-dependent components only when the bridge is definitively authenticated.
+  const waitingForBridge =
+    bridgeLoading ||
+    bridgeFetching ||
+    !bridge?.ok ||
+    bridge.authenticated !== true;
+
   return (
     <div className="space-y-12">
       {/* CALENDAR */}
       <section id="calendar" className="scroll-mt-28 sm:scroll-mt-32">
         <h2 className="text-xl font-semibold mb-3">Calendar</h2>
         {/* Dashboard mode → calendar is editable */}
-        <TenantCalendar tenantSlug={slug} editable />
+        {waitingForBridge ? (
+          <TenantCalendarSkeleton />
+        ) : (
+          <TenantCalendar
+            key={`${slug}:${bridge?.uid ?? "anon"}`}
+            tenantSlug={slug}
+            editable
+          />
+        )}
       </section>
 
       {/* ORDERS (placeholder for now) */}
@@ -41,10 +72,14 @@ export default function DashboardContent({ slug }: { slug: string }) {
       <section id="messages" className="scroll-mt-28 sm:scroll-mt-32">
         <h2 className="text-xl font-semibold mb-3">Messages</h2>
         <div className="rounded-lg border bg-white p-5">
-          <p className="text-muted-foreground">
-            Messaging/Inbox section placeholder. Hook up when the messaging API
-            lands.
-          </p>
+          {waitingForBridge ? (
+            <TenantMessagesSkeleton />
+          ) : (
+            <TenantMessagesSection
+              key={`${slug}:${bridge?.uid ?? "anon"}`}
+              tenantSlug={slug}
+            />
+          )}
         </div>
       </section>
 

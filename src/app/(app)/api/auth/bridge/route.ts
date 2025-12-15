@@ -1,7 +1,7 @@
 // src/app/(app)/api/auth/bridge/route.ts
 import { NextResponse } from "next/server";
 import { cookies as nextCookies } from "next/headers";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { verifyToken } from "@clerk/backend";
 import { BRIDGE_COOKIE, BRIDGE_COOKIE_OPTS } from "@/constants";
 import { signBridgeToken, verifyBridgeToken } from "@/lib/app-auth";
@@ -88,22 +88,42 @@ export async function GET(req: Request) {
   // 4) Fallback to an existing bridge cookie (if present & valid)
   const jar = await nextCookies();
   const existing = jar.get(BRIDGE_COOKIE)?.value;
+
   if (!userId && existing) {
     try {
       const data = await verifyBridgeToken(existing);
-      if (data?.uid) {
+
+      // Reject bridge tokens that do not carry BOTH uid and sid
+      // (you observed sid:null; those must never authenticate)
+      if (!data?.uid || !data?.sid) {
+        throw new Error("bridge token missing uid/sid");
+      }
+
+      // Validate the session is still active in Clerk
+      const client = await clerkClient();
+      const sess = await client.sessions.getSession(data.sid);
+
+      if (sess?.status === "active") {
         userId = data.uid;
-        if (data?.sid && !sessionId) sessionId = data.sid;
-        if (userId) source = "bridge";
+        sessionId = data.sid;
+        source = "bridge";
+      } else {
+        throw new Error("session not active");
       }
     } catch {
-      /* ignore invalid/expired */
+      // invalid/expired/revoked -> ignore; we'll clear cookie below
     }
   }
 
+  const debug = process.env.NODE_ENV !== "production"; // only expose debug info in non-prod
   // Response + CORS
   const res = NextResponse.json(
-    { ok: true, authenticated: !!userId, source },
+    {
+      ok: true,
+      authenticated: !!userId,
+      source,
+      ...(debug ? { uid: userId ?? null, sid: sessionId ?? null } : {}),
+    },
     { headers: corsHeaders(origin) }
   );
 
