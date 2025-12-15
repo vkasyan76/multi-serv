@@ -14,7 +14,7 @@ import { useBridge } from "./BridgeAuth";
 import LoadingPage from "@/components/shared/loading";
 
 import type { Category } from "@/payload-types";
-import { useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 // import { CartButton } from "@/modules/checkout/ui/cart-button";
 // add:
@@ -102,11 +102,21 @@ export default function TenantContent({ slug }: { slug: string }) {
   const { user } = useUser();
   // const signedState = isLoaded ? !!isSignedIn : null;
 
+  const { userId: clerkUserId, isLoaded: clerkLoaded } = useAuth();
+
   // Determine app language using bridege.
   // If the first getUserProfile result is wrong because of timing (cold start / cookie race), it won’t stay cached and block chat.
   const profileQ = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: bridge?.authenticated === true, // ONLY when bridge says authed
+    // enabled: bridge?.authenticated === true, // ONLY when bridge says authed
+
+    // Only run when BOTH systems are ready and agree user is authenticated
+    enabled:
+      bridge?.ok === true &&
+      bridge.authenticated === true &&
+      clerkLoaded === true &&
+      !!clerkUserId,
+
     retry: false,
 
     // don’t keep a “bad first answer” around
