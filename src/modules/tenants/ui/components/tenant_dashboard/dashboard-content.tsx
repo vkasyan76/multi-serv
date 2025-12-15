@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 // import { TenantMessagesSection } from "@/modules/conversations/ui/tenant-messages-section";
-import { useBridge } from "@/modules/tenants/ui/components/tenant_page/BridgeAuth";
 import { TenantCalendarSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-calendar-skeleton";
 import { TenantMessagesSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-messages-skeleton";
 
@@ -27,34 +26,13 @@ const TenantMessagesSection = dynamic(
 );
 
 export default function DashboardContent({ slug }: { slug: string }) {
-  const {
-    data: bridge,
-    isLoading: bridgeLoading,
-    isFetching: bridgeFetching,
-  } = useBridge();
-
-  // dashboard to mount its auth-dependent components only when the bridge is definitively authenticated.
-  const waitingForBridge =
-    bridgeLoading ||
-    bridgeFetching ||
-    !bridge?.ok ||
-    bridge.authenticated !== true;
-
   return (
     <div className="space-y-12">
       {/* CALENDAR */}
       <section id="calendar" className="scroll-mt-28 sm:scroll-mt-32">
         <h2 className="text-xl font-semibold mb-3">Calendar</h2>
         {/* Dashboard mode → calendar is editable */}
-        {waitingForBridge ? (
-          <TenantCalendarSkeleton />
-        ) : (
-          <TenantCalendar
-            key={`${slug}:${bridge?.uid ?? "anon"}`}
-            tenantSlug={slug}
-            editable
-          />
-        )}
+        <TenantCalendar tenantSlug={slug} editable />
       </section>
 
       {/* ORDERS (placeholder for now) */}
@@ -72,14 +50,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
       <section id="messages" className="scroll-mt-28 sm:scroll-mt-32">
         <h2 className="text-xl font-semibold mb-3">Messages</h2>
         <div className="rounded-lg border bg-white p-5">
-          {waitingForBridge ? (
-            <TenantMessagesSkeleton />
-          ) : (
-            <TenantMessagesSection
-              key={`${slug}:${bridge?.uid ?? "anon"}`}
-              tenantSlug={slug}
-            />
-          )}
+          <TenantMessagesSection tenantSlug={slug} />
         </div>
       </section>
 

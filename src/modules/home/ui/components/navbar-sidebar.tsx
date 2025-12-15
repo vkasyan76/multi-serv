@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { cn, generateTenantUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   SignInButton,
   SignedIn,
@@ -37,19 +37,21 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
   const hasTenant = !!user?.tenants?.length;
 
   // Get info for user's tenant:
-  const {
-    data: myTenant,
-    isLoading: isMineLoading,
-  } = useQuery({
+  const { data: myTenant, isLoading: isMineLoading } = useQuery({
     ...trpc.tenants.getMine.queryOptions({}),
     enabled: !!session.data?.user?.id,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 
+  // stop using domain redirect for the dashboard - it is internal page
   const dashHref = myTenant
-    ? `${generateTenantUrl(myTenant.slug)}/dashboard`
+    ? `/tenants/${myTenant.slug}/dashboard`
     : "/profile?tab=vendor";
+
+  // const dashHref = myTenant
+  //   ? `${generateTenantUrl(myTenant.slug)}/dashboard`
+  //   : "/profile?tab=vendor";
 
   // Only disable when session says user has a tenant but getMine hasn't returned it yet
   const isDashLoading = hasTenant && !myTenant && isMineLoading;
@@ -135,8 +137,8 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                 aria-busy={isDashLoading}
                 onClick={
                   isDashLoading
-                    ? (e) => e.preventDefault()            // block keyboard + mouse activation
-                    : () => onOpenChange(false)            // current behavior when ready
+                    ? (e) => e.preventDefault() // block keyboard + mouse activation
+                    : () => onOpenChange(false) // current behavior when ready
                 }
               >
                 {myTenant ? "Dashboard" : "Start Business"}
