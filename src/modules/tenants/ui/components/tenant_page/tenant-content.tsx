@@ -252,6 +252,12 @@ export default function TenantContent({ slug }: { slug: string }) {
     return <LoadingPage />;
   }
 
+  // check if user is also the tenat whose page is visisted
+  const isOwner =
+    signedState === true &&
+    !!viewerKey &&
+    viewerKey === (cardTenant.user?.id ?? null);
+
   return (
     <div className="px-3 sm:px-4 lg:px-12 py-2">
       {/* NEW: Mobile card above grid (ChatGPT's approach) */}
@@ -267,6 +273,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           onBook={scrollToCalendar}
           appLang={appLang}
           onContact={handleContact}
+          isOwner={isOwner}
         />
       </section>
 
@@ -571,6 +578,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               onBook={scrollToCalendar}
               appLang={appLang}
               onContact={handleContact}
+              isOwner={isOwner}
             />
             {/* REMOVED: Contact and Pricing sections - now redundant */}
           </div>
