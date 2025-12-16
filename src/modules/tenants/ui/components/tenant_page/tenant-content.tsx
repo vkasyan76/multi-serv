@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTRPC } from "@/trpc/client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation"; // for navigation after chekout
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -9,15 +9,11 @@ import { toast } from "sonner";
 
 import { MAX_SLOTS_PER_BOOKING } from "@/constants";
 import { TenantCard } from "@/modules/tenants/ui/components/tenant-card";
-
-import { useBridge } from "./BridgeAuth";
 import LoadingPage from "@/components/shared/loading";
 
 import type { Category } from "@/payload-types";
-import { useUser } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
-// import { CartButton } from "@/modules/checkout/ui/cart-button";
-// add:
+
 import { BookSlotsButton } from "@/modules/checkout/ui/book-slots-button";
 import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
@@ -29,11 +25,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { platformHomeHref } from "@/lib/utils";
 
-import {
-  type AppLang,
-  normalizeToSupported,
-  getInitialLanguage,
-} from "@/modules/profile/location-utils";
+import { useTenantAuth } from "./hooks/use-tenant-auth";
 
 // import TenantCalendar from "@/modules/bookings/ui/TenantCalendar";
 
@@ -63,15 +55,6 @@ export default function TenantContent({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const trpc = useTRPC();
 
-  // Bridge declaration.
-  // use auth.getUserProfile as the backend “am I signed in?” source:
-  const {
-    data: bridge,
-    isLoading: bridgeLoading,
-    isFetching: bridgeFetching,
-    refetch: refetchBridge, // refetch bridge if the sheetdoes not open for logged in user
-  } = useBridge(); // Gate the tRPC query with the bridge in your client component
-
   // Reviews & Ratings:
   const reviewSummaryQ = useQuery(
     trpc.reviews.summaryForTenant.queryOptions({ slug })
@@ -97,53 +80,16 @@ export default function TenantContent({ slug }: { slug: string }) {
   });
   const isCancelling = cancel && !!sessionId; // canvelling paymente process
 
-  // const { isSignedIn, isLoaded } = useUser();
-  // eslint-disable-next-line
-  const { user } = useUser();
-  // const signedState = isLoaded ? !!isSignedIn : null;
-
-  // Determine app language using bridege.
-  // If the first getUserProfile result is wrong because of timing (cold start / cookie race), it won’t stay cached and block chat.
-  const profileQ = useQuery({
-    ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: bridge?.authenticated === true, // ONLY when bridge says authed
-    retry: false,
-
-    // don’t keep a “bad first answer” around
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
-    refetchOnReconnect: "always",
-  });
-
-  const waitingForBridge = bridgeLoading || bridgeFetching || !bridge?.ok; // This way the page renders immediately, while chat correctly shows “Checking sign-in…” until ready.
-
-  // Compute signedState from backend profile (tri-state)
-  // Stops treating “temporary error / timing / refetch” as “signed out”.
-  // If the backend returns null, you immediately get false (signed out) and stop showing “Checking sign-in…” forever.
-
-  const signedState: boolean | null = useMemo(() => {
-    if (!bridge?.ok) return null;
-
-    // definitive logout comes from bridge
-    if (bridge.authenticated === false) return false;
-
-    // bridge says authed, but profile may still be loading / erroring
-    if (profileQ.isError) return null;
-    if (profileQ.data) return true;
-
-    return null; // authed but profile not ready yet
-  }, [bridge?.ok, bridge?.authenticated, profileQ.data, profileQ.isError]);
-
-  const viewerKey = signedState === true ? (profileQ.data?.id ?? null) : null;
-
-  const appLang: AppLang = useMemo(() => {
-    const profileLang = profileQ.data?.language;
-    if (profileLang) {
-      return normalizeToSupported(profileLang);
-    }
-    return getInitialLanguage();
-  }, [profileQ.data?.language]);
+  // Auth + language + “warmup gate” in one place.
+  // waiting for bridge validation
+  const {
+    bridge,
+    signedState,
+    viewerKey,
+    appLang,
+    waitingForAuth,
+    onBridgeResync,
+  } = useTenantAuth(slug);
 
   const scrollToCalendar = () => {
     window.dispatchEvent(
@@ -234,36 +180,6 @@ export default function TenantContent({ slug }: { slug: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cancel, sessionId]);
 
-  // on mount, consume the flag and re-open the sheet if the sign-in user cannot open it
-
-  useEffect(() => {
-    // only act when bridge has a definitive answer
-    if (!bridge?.ok) return;
-
-    const raw = sessionStorage.getItem("pendingConversationOpen");
-    if (!raw) return;
-
-    // if user is actually signed out, drop the flag to avoid loops
-    if (bridge.authenticated === false) {
-      sessionStorage.removeItem("pendingConversationOpen");
-      return;
-    }
-
-    try {
-      const data = JSON.parse(raw) as { tenantSlug: string; ts: number };
-      const fresh = Date.now() - data.ts < 15_000; // 15s window
-
-      if (fresh && data.tenantSlug === slug) {
-        sessionStorage.removeItem("pendingConversationOpen");
-        setChatOpen(true); // reopen immediately after reload
-      } else {
-        sessionStorage.removeItem("pendingConversationOpen");
-      }
-    } catch {
-      sessionStorage.removeItem("pendingConversationOpen");
-    }
-  }, [bridge?.ok, bridge?.authenticated, slug]);
-
   const handleToggleSelect = (id: string) => {
     setSelected((prev) => {
       // remove if already selected
@@ -284,7 +200,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const { data: cardTenant, isLoading: cardLoading } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug }),
-    enabled: !!bridge?.ok && !isCancelling, // pause heavy data work while the cancel flow is in progress
+    enabled: !!bridge?.ok && !waitingForAuth && !isCancelling, // pause heavy data work while the cancel flow is in progress
     staleTime: 0, // ← was 60_000; must be 0
     gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
     refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
@@ -332,8 +248,8 @@ export default function TenantContent({ slug }: { slug: string }) {
       ? (tenantOrderStats[cardTenant.id]?.ordersCount ?? undefined)
       : undefined;
 
-  if (waitingForBridge || cardLoading || !cardTenant) {
-    return <LoadingPage />; // full-screen overlay while we warm up
+  if (waitingForAuth || cardLoading || !cardTenant) {
+    return <LoadingPage />;
   }
 
   return (
@@ -673,10 +589,7 @@ export default function TenantContent({ slug }: { slug: string }) {
         disabled={signedState !== true}
         authState={signedState}
         viewerKey={viewerKey}
-        onBridgeResync={async () => {
-          const res = await refetchBridge();
-          return res.data?.ok === true && res.data?.authenticated === true;
-        }}
+        onBridgeResync={onBridgeResync}
       />
     </div>
   );
