@@ -336,7 +336,7 @@ export const TenantCard = ({
               <>
                 <Button size="lg" className="w-full" asChild>
                   <Link href={dashboardHref} prefetch={false}>
-                    Your dashboard
+                    Dashboard
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="w-full" asChild>

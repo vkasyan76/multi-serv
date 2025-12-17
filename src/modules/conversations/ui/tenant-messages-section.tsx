@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { TenantInbox } from "@/modules/conversations/ui/tenant-inbox";
@@ -8,6 +8,8 @@ import { TenantConversationPanel } from "@/modules/conversations/ui/tenant-conve
 
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
+
+import { cn } from "@/lib/utils";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type InboxItem =
@@ -49,23 +51,57 @@ export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
     return typeof u === "string" ? u : null;
   }, [active]);
 
+  const [mobileView, setMobileView] = useState<"inbox" | "thread">("inbox");
+
+  useEffect(() => {
+    // reset when tenant changes
+    setActive(null);
+    setMobileView("inbox");
+  }, [tenantSlug]);
+
+  const handleSelect = (c: InboxItem) => {
+    setActive(c);
+    setMobileView("thread"); // ✅ on mobile: open the thread
+  };
+
+  const handleBack = () => {
+    setMobileView("inbox"); // ✅ on mobile: back to list
+  };
+
   return (
     <div className="h-[70vh] rounded-lg border bg-white overflow-hidden">
-      <div className="grid grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] h-full">
-        <TenantInbox
-          tenantSlug={tenantSlug}
-          activeConversationId={conversationId}
-          onSelectAction={setActive}
-        />
+      <div className="h-full min-h-0 md:grid md:grid-cols-[320px_minmax(0,1fr)]">
+        {/* Inbox: hidden on mobile when viewing thread; always visible on md+ */}
+        <div
+          className={cn(
+            "h-full min-h-0",
+            mobileView === "thread" ? "hidden md:block" : "block"
+          )}
+        >
+          <TenantInbox
+            tenantSlug={tenantSlug}
+            activeConversationId={conversationId}
+            onSelectAction={handleSelect}
+          />
+        </div>
 
-        <TenantConversationPanel
-          conversationId={conversationId}
-          customerName={customerName}
-          customerAvatarUrl={customerAvatarUrl}
-          tenantName={tenantName}
-          tenantAvatarUrl={tenantAvatarUrl}
-          disabled={false}
-        />
+        {/* Thread: hidden on mobile until selected; always visible on md+ */}
+        <div
+          className={cn(
+            "h-full min-h-0",
+            mobileView === "inbox" ? "hidden md:block" : "block"
+          )}
+        >
+          <TenantConversationPanel
+            conversationId={conversationId}
+            customerName={customerName}
+            customerAvatarUrl={customerAvatarUrl}
+            tenantName={tenantName}
+            tenantAvatarUrl={tenantAvatarUrl}
+            disabled={false}
+            onBackAction={handleBack} // ✅ back button appears only on mobile
+          />
+        </div>
       </div>
     </div>
   );
