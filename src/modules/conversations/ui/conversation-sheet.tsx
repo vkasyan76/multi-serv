@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
 import { ConversationThread } from "@/modules/conversations/ui/conversation-thread";
+import type { AppLang } from "@/modules/profile/location-utils";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type UpsertForTenantOutput = RouterOutputs["conversations"]["upsertForTenant"];
@@ -31,6 +32,7 @@ type ConversationSheetProps = {
   authState?: boolean | null; // check if user is signed in via payload backend
   viewerKey?: string | null; // NEW: resets sheet when auth user changes
   onBridgeResync?: () => Promise<boolean>; //  one-shot “bridge handshake then retry” hook
+  appLang?: AppLang;
 };
 
 export function ConversationSheet({
@@ -44,6 +46,7 @@ export function ConversationSheet({
   authState = null,
   viewerKey = null,
   onBridgeResync,
+  appLang,
 }: ConversationSheetProps) {
   const trpc = useTRPC();
 
@@ -177,6 +180,7 @@ export function ConversationSheet({
             <ConversationThread
               conversationId={conversationId}
               viewerRole="customer"
+              appLang={appLang}
               otherName={tenantSlug}
               otherAvatarUrl={tenantAvatarUrl ?? null}
               myAvatarUrl={myAvatarUrl ?? null}

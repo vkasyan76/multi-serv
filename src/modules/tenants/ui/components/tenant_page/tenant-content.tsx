@@ -598,6 +598,7 @@ export default function TenantContent({ slug }: { slug: string }) {
         authState={signedState}
         viewerKey={viewerKey}
         onBridgeResync={onBridgeResync}
+        appLang={appLang}
       />
     </div>
   );
