@@ -500,6 +500,7 @@ export interface Message {
   senderRole: 'customer' | 'tenant';
   senderUser: string | User;
   text: string;
+  deletedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -791,6 +792,7 @@ export interface MessagesSelect<T extends boolean = true> {
   senderRole?: T;
   senderUser?: T;
   text?: T;
+  deletedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -45,5 +45,11 @@ export const Messages: CollectionConfig = {
       type: "textarea",
       required: true,
     },
+    {
+      name: "deletedAt",
+      type: "date",
+      required: false,
+      admin: { position: "sidebar", readOnly: true },
+    },
   ],
 };
