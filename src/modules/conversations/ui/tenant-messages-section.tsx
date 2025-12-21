@@ -57,6 +57,24 @@ export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
 
   const [mobileView, setMobileView] = useState<"inbox" | "thread">("inbox");
 
+  // ✅ detect mobile (Tailwind md breakpoint is 768px)
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+
+    const sync = () => setIsMobile(mql.matches);
+    sync();
+
+    mql.addEventListener("change", sync);
+    return () => mql.removeEventListener("change", sync);
+  }, []);
+
+  // ✅ if user becomes desktop (resize/rotate), close the sheet view
+  useEffect(() => {
+    if (!isMobile) setMobileView("inbox");
+  }, [isMobile]);
+
   useEffect(() => {
     // reset when tenant changes
     setActive(null);
@@ -66,11 +84,13 @@ export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
   const handleSelect = (c: InboxItem) => {
     setActive(c);
 
-    setMobileView("thread");
+    // ✅ only open the Sheet on mobile
+    if (isMobile) setMobileView("thread");
   };
 
   const handleBack = () => {
-    setMobileView("inbox"); // ✅ on mobile: back to list
+    // ✅ back is only meaningful on mobile sheet UX
+    if (isMobile) setMobileView("inbox");
   };
 
   // Tenant dashboard mobile UX: show either Inbox OR Conversation (full screen) + Back button
@@ -104,8 +124,11 @@ export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
       <div className="md:hidden">
         {" "}
         <Sheet
-          open={mobileView === "thread" && !!conversationId}
-          onOpenChange={(open) => setMobileView(open ? "thread" : "inbox")}
+          open={isMobile && mobileView === "thread" && !!conversationId}
+          onOpenChange={(open) => {
+            if (!isMobile) return;
+            setMobileView(open ? "thread" : "inbox");
+          }}
         >
           <SheetContent
             side="right"

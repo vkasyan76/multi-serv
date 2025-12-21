@@ -116,7 +116,7 @@ function MessageBody({
       <div
         className={mine ? "italic opacity-80" : "italic text-muted-foreground"}
       >
-        Message deleted
+        This message was deleted
       </div>
     );
   }
@@ -340,6 +340,10 @@ export function ConversationThread({
               const mine = isMe(m);
 
               const deleted = !!(m as { deletedAt?: string | null }).deletedAt;
+              const updatedAt =
+                (m as { updatedAt?: string | null }).updatedAt ?? null;
+              const edited =
+                !deleted && !!updatedAt && updatedAt !== m.createdAt;
 
               const prev = sortedMessages[idx - 1];
               const showDateSeparator =
@@ -366,10 +370,19 @@ export function ConversationThread({
                     )}
                     {/* Message Bubble */}
                     {/* Actions button (only for my messages, not deleted, not editing) */}
-                    <div
+                    {/* <div
                       className={`relative group max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
                         mine
                           ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-muted text-foreground rounded-bl-md"
+                      }`}
+                      
+                    > */}
+                    {/* Alternative: Blue bg (Facebook-like): "bg-blue-600 || "bg-emerald-600" ||  pink-400 || text text-black or text-white */}
+                    <div
+                      className={`relative group max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
+                        mine
+                          ? "bg-blue-600 text-white rounded-br-md"
                           : "bg-muted text-foreground rounded-bl-md"
                       }`}
                     >
@@ -413,13 +426,26 @@ export function ConversationThread({
                         }
                       />
 
-                      {/* WhatsApp-style timestamp */}
+                      {/* WhatsApp-style timestamp incl. deleted or edited */}
                       <div
-                        className={`mt-1 text-[10px] leading-none text-right ${
-                          mine ? "opacity-80" : "text-muted-foreground"
-                        }`}
+                        className={[
+                          "mt-1 flex items-center justify-end gap-1 text-[10px] leading-none",
+                          mine ? "opacity-80" : "text-muted-foreground",
+                        ].join(" ")}
                       >
-                        {formatMsgTime(m.createdAt)}
+                        {deleted && (
+                          <span className="rounded-full bg-background/60 px-2 py-0.5">
+                            Deleted
+                          </span>
+                        )}
+
+                        {!deleted && edited && (
+                          <span className="rounded-full bg-background/60 px-2 py-0.5">
+                            Edited
+                          </span>
+                        )}
+
+                        <span>{formatMsgTime(m.createdAt)}</span>
                       </div>
                     </div>
 
