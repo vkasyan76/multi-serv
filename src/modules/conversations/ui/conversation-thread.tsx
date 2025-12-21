@@ -30,7 +30,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { Loader2, Send, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Send, EllipsisVertical, Pencil, Trash2 } from "lucide-react";
 
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
@@ -81,12 +81,6 @@ export function ConversationThread({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [isTouch, setIsTouch] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setIsTouch(window.matchMedia("(hover: none)").matches);
-  }, []);
 
   const { user } = useUser();
 
@@ -245,7 +239,7 @@ export function ConversationThread({
 
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 px-4 py-4">
+      <ScrollArea className="flex-1 min-h-0 px-4 py-4">
         {(!historyEnabled ? hasOlder : olderQ.hasNextPage) && (
           <Button
             type="button"
@@ -300,13 +294,6 @@ export function ConversationThread({
                   {/* Message Bubble */}
                   <div
                     className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}
-                    onClick={() => {
-                      if (!mine) return;
-                      if (!isTouch) return;
-                      if (deleted) return;
-                      if (editingId) return;
-                      setMenuOpenId((prev) => (prev === m.id ? null : m.id));
-                    }}
                   >
                     {!mine && (
                       <Avatar className="h-7 w-7">
@@ -325,6 +312,7 @@ export function ConversationThread({
                       {/* Message Bubble */}
                       {/* Actions button (only for my messages, not deleted, not editing) */}
                       <div className="relative">
+                        {/* Actions (only my messages, not deleted, not editing) */}
                         {!deleted && mine && editingId !== m.id && (
                           <TooltipProvider>
                             <DropdownMenu
@@ -341,13 +329,27 @@ export function ConversationThread({
                                       aria-label="Actions"
                                       onClick={(e) => e.stopPropagation()}
                                       className={[
-                                        "absolute -top-2 -right-2 rounded-full border bg-background shadow-sm p-1",
-                                        // if you want “tap bubble to open” on touch, hide the icon visually on small screens:
-                                        "opacity-0 sm:opacity-0 sm:group-hover:opacity-100",
+                                        // OUTSIDE bubble, vertically centered relative to the bubble itself
+                                        "absolute top-1/2 -translate-y-1/2 -left-10",
+
+                                        // Messenger-like: no white circle
+                                        "inline-flex h-8 w-8 items-center justify-center rounded-full",
+                                        "bg-transparent border-0 shadow-none",
+
+                                        // Ensure icon is visible even inside `text-primary-foreground` bubble
+                                        "text-muted-foreground hover:text-foreground",
+
+                                        // Subtle hover hit-area (still no “white circle” by default)
+                                        "hover:bg-background/60 focus:bg-background/60",
+
+                                        // Desktop: only on hover. Mobile: always visible.
+                                        "opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
                                         "focus:opacity-100",
+
+                                        "transition-opacity",
                                       ].join(" ")}
                                     >
-                                      <MoreVertical className="h-4 w-4" />
+                                      <EllipsisVertical className="h-5 w-5" />
                                     </button>
                                   </DropdownMenuTrigger>
                                 </TooltipTrigger>

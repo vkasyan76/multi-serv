@@ -5,11 +5,15 @@ import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { TenantInbox } from "@/modules/conversations/ui/tenant-inbox";
 import { TenantConversationPanel } from "@/modules/conversations/ui/tenant-conversation-panel";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
-
-import { cn } from "@/lib/utils";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type InboxItem =
@@ -61,23 +65,21 @@ export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
 
   const handleSelect = (c: InboxItem) => {
     setActive(c);
-    setMobileView("thread"); // ✅ on mobile: open the thread
+
+    setMobileView("thread");
   };
 
   const handleBack = () => {
     setMobileView("inbox"); // ✅ on mobile: back to list
   };
 
+  // Tenant dashboard mobile UX: show either Inbox OR Conversation (full screen) + Back button
+
   return (
     <div className="h-[70vh] rounded-lg border bg-white overflow-hidden">
       <div className="h-full min-h-0 md:grid md:grid-cols-[320px_minmax(0,1fr)]">
         {/* Inbox: hidden on mobile when viewing thread; always visible on md+ */}
-        <div
-          className={cn(
-            "h-full min-h-0",
-            mobileView === "thread" ? "hidden md:block" : "block"
-          )}
-        >
+        <div className="h-full min-h-0">
           <TenantInbox
             tenantSlug={tenantSlug}
             activeConversationId={conversationId}
@@ -86,12 +88,7 @@ export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
         </div>
 
         {/* Thread: hidden on mobile until selected; always visible on md+ */}
-        <div
-          className={cn(
-            "h-full min-h-0",
-            mobileView === "inbox" ? "hidden md:block" : "block"
-          )}
-        >
+        <div className="hidden md:block h-full min-h-0">
           <TenantConversationPanel
             conversationId={conversationId}
             customerName={customerName}
@@ -102,6 +99,37 @@ export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
             onBackAction={handleBack} // ✅ back button appears only on mobile
           />
         </div>
+      </div>
+      {/* ✅ Mobile full-screen thread */}
+      <div className="md:hidden">
+        {" "}
+        <Sheet
+          open={mobileView === "thread" && !!conversationId}
+          onOpenChange={(open) => setMobileView(open ? "thread" : "inbox")}
+        >
+          <SheetContent
+            side="right"
+            className={[
+              "w-full p-0 flex flex-col",
+              "h-dvh", // ✅ reliable full mobile height
+              "[&>button]:hidden", // ✅ hide Sheet default close button (use chevron)
+            ].join(" ")}
+          >
+            {/* ✅ Required for Radix a11y: DialogTitle must exist */}
+            <SheetHeader className="sr-only">
+              <SheetTitle>{`Conversation with ${customerName}`}</SheetTitle>
+            </SheetHeader>
+            <TenantConversationPanel
+              conversationId={conversationId}
+              customerName={customerName}
+              customerAvatarUrl={customerAvatarUrl}
+              tenantName={tenantName}
+              tenantAvatarUrl={tenantAvatarUrl}
+              disabled={false}
+              onBackAction={handleBack} // ✅ chevron back on mobile
+            />
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );
