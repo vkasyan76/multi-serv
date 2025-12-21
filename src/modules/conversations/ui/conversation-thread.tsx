@@ -7,12 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,14 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { MessageActions } from "@/modules/conversations/ui/message-actions";
 
-import { Loader2, Send, EllipsisVertical, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Send } from "lucide-react";
 
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
@@ -43,12 +33,9 @@ import {
 } from "@/modules/profile/location-utils";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
-
 type MessagesListOutput = RouterOutputs["messages"]["list"];
 type MessageItem = MessagesListOutput["items"][number];
-
 type ViewerRole = "customer" | "tenant";
-
 type ConversationThreadProps = {
   conversationId: string | null;
   viewerRole: ViewerRole;
@@ -60,6 +47,82 @@ type ConversationThreadProps = {
   emptyStateText?: React.ReactNode;
   appLang?: AppLang; // NEW (optional)
 };
+
+type MessageBodyProps = {
+  mine: boolean;
+  deleted: boolean;
+  isEditing: boolean;
+  text: string;
+
+  editDraft: string;
+  onEditDraftChange: (value: string) => void;
+
+  onCancelEditAction: () => void;
+  onSaveEditAction: () => void;
+
+  saveDisabled: boolean;
+};
+
+function MessageBody({
+  mine,
+  deleted,
+  isEditing,
+  text,
+  editDraft,
+  onEditDraftChange,
+  onCancelEditAction,
+  onSaveEditAction,
+  saveDisabled,
+}: MessageBodyProps) {
+  if (isEditing) {
+    return (
+      <div className="space-y-2">
+        <Textarea
+          value={editDraft}
+          onChange={(e) => onEditDraftChange(e.target.value)}
+          className="min-h-20 resize-none bg-background/60"
+          onClick={(e) => e.stopPropagation()}
+        />
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCancelEditAction();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={saveDisabled}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSaveEditAction();
+            }}
+          >
+            Save
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (deleted) {
+    return (
+      <div
+        className={mine ? "italic opacity-80" : "italic text-muted-foreground"}
+      >
+        Message deleted
+      </div>
+    );
+  }
+
+  return <div>{text}</div>;
+}
 
 export function ConversationThread({
   conversationId,
@@ -301,7 +364,8 @@ export function ConversationThread({
                         <AvatarFallback>{otherInitial}</AvatarFallback>
                       </Avatar>
                     )}
-
+                    {/* Message Bubble */}
+                    {/* Actions button (only for my messages, not deleted, not editing) */}
                     <div
                       className={`relative group max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
                         mine
@@ -309,134 +373,45 @@ export function ConversationThread({
                           : "bg-muted text-foreground rounded-bl-md"
                       }`}
                     >
-                      {/* Message Bubble */}
-                      {/* Actions button (only for my messages, not deleted, not editing) */}
-                      <div className="relative">
-                        {/* Actions (only my messages, not deleted, not editing) */}
-                        {!deleted && mine && editingId !== m.id && (
-                          <TooltipProvider>
-                            <DropdownMenu
-                              open={menuOpenId === m.id}
-                              onOpenChange={(open) =>
-                                setMenuOpenId(open ? m.id : null)
-                              }
-                            >
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <DropdownMenuTrigger asChild>
-                                    <button
-                                      type="button"
-                                      aria-label="Actions"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className={[
-                                        // OUTSIDE bubble, vertically centered relative to the bubble itself
-                                        "absolute top-1/2 -translate-y-1/2 -left-10",
-
-                                        // Messenger-like: no white circle
-                                        "inline-flex h-8 w-8 items-center justify-center rounded-full",
-                                        "bg-transparent border-0 shadow-none",
-
-                                        // Ensure icon is visible even inside `text-primary-foreground` bubble
-                                        "text-muted-foreground hover:text-foreground",
-
-                                        // Subtle hover hit-area (still no “white circle” by default)
-                                        "hover:bg-background/60 focus:bg-background/60",
-
-                                        // Desktop: only on hover. Mobile: always visible.
-                                        "opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
-                                        "focus:opacity-100",
-
-                                        "transition-opacity",
-                                      ].join(" ")}
-                                    >
-                                      <EllipsisVertical className="h-5 w-5" />
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>Actions</TooltipContent>
-                              </Tooltip>
-
-                              <DropdownMenuContent align="end" side="top">
-                                <DropdownMenuItem
-                                  onSelect={() => {
-                                    setEditingId(m.id);
-                                    setEditDraft(m.text);
-                                    setMenuOpenId(null);
-                                  }}
-                                >
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onSelect={() => {
-                                    setDeleteId(m.id);
-                                    setMenuOpenId(null);
-                                  }}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TooltipProvider>
-                        )}
-                      </div>
-
-                      {/* ✅ INSERT THIS BLOCK HERE (message body) */}
-                      {editingId === m.id ? (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={editDraft}
-                            onChange={(e) => setEditDraft(e.target.value)}
-                            className="min-h-20 resize-none bg-background/60"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingId(null);
-                                setEditDraft("");
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              disabled={
-                                editMsg.isPending ||
-                                editDraft.trim().length === 0 ||
-                                editDraft.trim().length > 5000
-                              }
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                editMsg.mutate({
-                                  messageId: m.id,
-                                  text: editDraft,
-                                });
-                              }}
-                            >
-                              Save
-                            </Button>
-                          </div>
-                        </div>
-                      ) : deleted ? (
-                        <div
-                          className={
-                            mine
-                              ? "italic opacity-80"
-                              : "italic text-muted-foreground"
+                      {!deleted && mine && editingId !== m.id && (
+                        <MessageActions
+                          open={menuOpenId === m.id}
+                          onOpenChangeAction={(open) =>
+                            setMenuOpenId(open ? m.id : null)
                           }
-                        >
-                          Message deleted
-                        </div>
-                      ) : (
-                        <div>{m.text}</div>
+                          onEditAction={() => {
+                            setEditingId(m.id);
+                            setEditDraft(m.text);
+                            setMenuOpenId(null);
+                          }}
+                          onDeleteAction={() => {
+                            setDeleteId(m.id);
+                            setMenuOpenId(null);
+                          }}
+                        />
                       )}
+
+                      {/* ✅ (message body) */}
+                      <MessageBody
+                        mine={mine}
+                        deleted={deleted}
+                        isEditing={editingId === m.id}
+                        text={m.text}
+                        editDraft={editDraft}
+                        onEditDraftChange={(value) => setEditDraft(value)}
+                        onCancelEditAction={() => {
+                          setEditingId(null);
+                          setEditDraft("");
+                        }}
+                        onSaveEditAction={() => {
+                          editMsg.mutate({ messageId: m.id, text: editDraft });
+                        }}
+                        saveDisabled={
+                          editMsg.isPending ||
+                          editDraft.trim().length === 0 ||
+                          editDraft.trim().length > 5000
+                        }
+                      />
 
                       {/* WhatsApp-style timestamp */}
                       <div
