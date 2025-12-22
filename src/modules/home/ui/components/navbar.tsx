@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Poppins } from "next/font/google";
 
-import { cn } from "@/lib/utils";
+import { cn, platformHomeHref } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -69,10 +69,17 @@ export const Navbar = () => {
     refetchOnWindowFocus: false,
   });
 
-  // stop using domain redirect for the dashboard - it is internal page
+  // links to point to /dashboard (platform root)
+  const homeHref = platformHomeHref();
+
   const dashHref = myTenant
-    ? `/tenants/${myTenant.slug}/dashboard`
+    ? `${homeHref}${homeHref.endsWith("/") ? "" : "/"}dashboard`
     : "/profile?tab=vendor";
+
+  // stop using domain redirect for the dashboard - it is internal page
+  // const dashHref = myTenant
+  //   ? `/tenants/${myTenant.slug}/dashboard`
+  //   : "/profile?tab=vendor";
 
   // const dashHref = myTenant
   //   ? `${generateTenantUrl(myTenant.slug)}/dashboard`
