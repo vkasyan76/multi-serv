@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { TenantSubnav } from "./tenant-subnav";
+import { TenantShareSheet } from "./tenant-share-sheet";
 import {
   Tooltip,
   TooltipContent,
@@ -31,7 +32,7 @@ export const Navbar = ({ slug }: Props) => {
       <div className="max-w-[var(--breakpoint-xl)] mx-auto px-3 sm:px-4 lg:px-12">
         {/* Large screens: Single row layout */}
         <div className="hidden lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-4 lg:h-16">
-          {/* Left: Tenant Info */}
+          {/* Left: Tenant Info + Share */}
           <div className="flex items-center gap-2 min-w-0">
             {tenant?.image?.url && (
               <Image
@@ -42,14 +43,23 @@ export const Navbar = ({ slug }: Props) => {
                 alt={tenant?.name ?? "Tenant"}
               />
             )}
+
             <p
               className={cn(
-                "text-xl font-semibold truncate",
+                "text-lg sm:text-xl font-semibold truncate min-w-0",
                 poppins.className
               )}
             >
               {tenant?.name}
             </p>
+
+            <div className="shrink-0">
+              <TenantShareSheet
+                slug={slug}
+                tenantName={tenant?.name ?? undefined}
+                showTooltip
+              />
+            </div>
           </div>
 
           {/* Centered tabs */}
@@ -65,6 +75,10 @@ export const Navbar = ({ slug }: Props) => {
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                     aria-label="Infinisimo Home"
                   >
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">
+                      Powered by
+                    </span>
+
                     <Image
                       src="/images/infinisimo_logo_illustrator.png"
                       alt="Infinisimo"
@@ -72,6 +86,7 @@ export const Navbar = ({ slug }: Props) => {
                       height={28}
                       className="shrink-0"
                     />
+
                     <span
                       className={cn(
                         "text-base font-semibold",
@@ -92,8 +107,8 @@ export const Navbar = ({ slug }: Props) => {
         <div className="lg:hidden">
           {/* Row 1: Tenant info + brand */}
           <div className="h-14 sm:h-16 flex items-center justify-between gap-3">
-            {/* Left: Tenant Info */}
-            <div className="flex items-center gap-2 min-w-0 flex-1">
+            {/* Left: Tenant Info + Share */}
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
               {tenant?.image?.url && (
                 <Image
                   src={tenant.image.url}
@@ -103,17 +118,26 @@ export const Navbar = ({ slug }: Props) => {
                   alt={tenant?.name ?? "Tenant"}
                 />
               )}
-              <p
-                className={cn(
-                  "text-lg sm:text-xl font-semibold truncate",
-                  poppins.className
-                )}
-              >
-                {tenant?.name}
-              </p>
+
+              {/* keep name + share together */}
+              <div className="flex items-center gap-1 min-w-0">
+                <p
+                  className={cn(
+                    "text-lg sm:text-xl font-semibold truncate min-w-0 max-w-[clamp(8rem,40vw,14rem)]",
+                    poppins.className
+                  )}
+                >
+                  {tenant?.name}
+                </p>
+
+                <TenantShareSheet
+                  slug={slug}
+                  tenantName={tenant?.name ?? undefined}
+                />
+              </div>
             </div>
 
-            {/* Right: brand - Always show Infinisimo name on small screens */}
+            {/* Right: brand */}
             <div className="flex items-center gap-2 shrink-0">
               <Image
                 src="/images/infinisimo_logo_illustrator.png"
