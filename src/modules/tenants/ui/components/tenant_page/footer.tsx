@@ -14,11 +14,33 @@ interface FooterProps {
   slug: string;
 }
 
+function toAbsoluteUrl(raw?: string | null) {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+}
+
+function prettyWebsite(raw?: string | null) {
+  const absolute = toAbsoluteUrl(raw);
+  if (!absolute) return "";
+
+  const host = absolute.replace(/^https?:\/\//, "").split("/")[0] ?? ""; // ✅ fixes "possibly undefined" with noUncheckedIndexedAccess
+
+  const clean = host.trim();
+  if (!clean) return "";
+
+  // ✅ show "www." in the label (more familiar)
+  return clean.startsWith("www.") ? clean : `www.${clean}`;
+}
+
 export const Footer = ({ slug }: FooterProps) => {
   const trpc = useTRPC();
   const { data: tenant } = useSuspenseQuery(
     trpc.tenants.getOne.queryOptions({ slug })
   );
+
+  const websiteHref = toAbsoluteUrl(tenant?.website);
+  const websiteLabel = prettyWebsite(tenant?.website);
 
   return (
     <footer className="border-t font-medium bg-white">
@@ -81,16 +103,13 @@ export const Footer = ({ slug }: FooterProps) => {
                 <div className="flex items-center gap-2">
                   <Globe className="w-4 h-4 text-gray-500 shrink-0" />
                   <a
-                    href={
-                      tenant.website.startsWith("http")
-                        ? tenant.website
-                        : `https://${tenant.website}`
-                    }
+                    href={websiteHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline truncate max-w-[120px] sm:max-w-none"
+                    className="text-blue-600 hover:underline truncate max-w-[140px] sm:max-w-none"
+                    title={websiteHref}
                   >
-                    {tenant.website}
+                    {websiteLabel}
                   </a>
                 </div>
               )}

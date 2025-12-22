@@ -26,8 +26,11 @@ export function generateTenantUrl(tenantSlug: string) {
 // used in tenant dashboard navbar
 export const tenantPublicHref = (slug: string) =>
   process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true"
-    ? "/"
+    ? generateTenantUrl(slug) // -> change form  ? "/" after we stopped using rewrites for dashboard
     : `/tenants/${slug}`;
+
+//  alternative (simple version)
+// export const tenantPublicHref = (slug: string) => generateTenantUrl(slug);
 
 export const platformHomeHref = () =>
   process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true"

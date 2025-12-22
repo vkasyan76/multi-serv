@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Poppins } from "next/font/google";
 
-import { cn, generateTenantUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -69,9 +69,14 @@ export const Navbar = () => {
     refetchOnWindowFocus: false,
   });
 
+  // stop using domain redirect for the dashboard - it is internal page
   const dashHref = myTenant
-    ? `${generateTenantUrl(myTenant.slug)}/dashboard`
+    ? `/tenants/${myTenant.slug}/dashboard`
     : "/profile?tab=vendor";
+
+  // const dashHref = myTenant
+  //   ? `${generateTenantUrl(myTenant.slug)}/dashboard`
+  //   : "/profile?tab=vendor";
 
   // Only disable when session says user has a tenant but getMine hasn't returned it yet
   const hasTenant = !!session.data?.user?.tenants?.length;

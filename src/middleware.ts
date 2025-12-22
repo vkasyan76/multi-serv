@@ -1,17 +1,30 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
 const ENABLED = process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true";
 
+const isProtectedRoute = createRouteMatcher([
+  "/profile(.*)",
+  "/tenants/:slug/dashboard(.*)",
+  "/dashboard(.*)", // for tenant subdomain routing before rewrite
+]);
+
 // for domain rewrite:
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
+  // ✅ Always protect private routes (regardless of subdomain routing)
+  if (isProtectedRoute(req)) await auth.protect();
+
   // Don't touch anything unless subdomain routing is on and we know the root domain
   if (!ENABLED || !ROOT) return NextResponse.next();
 
   // ⛔️ Never rewrite API (incl. tRPC) calls
   const { pathname } = req.nextUrl;
   if (pathname.startsWith("/api")) return NextResponse.next();
+
+  // ✅ Avoid double-rewrite for internal routes that already include /tenants/*
+  // early escape before the rewrite to avoid rewriting already-internal paths
+  if (pathname.startsWith("/tenants/")) return NextResponse.next();
 
   const host = req.headers.get("host") ?? ""; // e.g. react_jedi.infinisimo.com
   const suffix = `.${ROOT}`; // ".infinisimo.com"

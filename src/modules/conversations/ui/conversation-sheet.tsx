@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
 import { ConversationThread } from "@/modules/conversations/ui/conversation-thread";
+import type { AppLang } from "@/modules/profile/location-utils";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type UpsertForTenantOutput = RouterOutputs["conversations"]["upsertForTenant"];
@@ -31,6 +32,7 @@ type ConversationSheetProps = {
   authState?: boolean | null; // check if user is signed in via payload backend
   viewerKey?: string | null; // NEW: resets sheet when auth user changes
   onBridgeResync?: () => Promise<boolean>; //  one-shot “bridge handshake then retry” hook
+  appLang?: AppLang;
 };
 
 export function ConversationSheet({
@@ -44,6 +46,7 @@ export function ConversationSheet({
   authState = null,
   viewerKey = null,
   onBridgeResync,
+  appLang,
 }: ConversationSheetProps) {
   const trpc = useTRPC();
 
@@ -52,7 +55,7 @@ export function ConversationSheet({
   // prevent double upsert while open
   const startedRef = useRef(false);
 
-  const didHardReloadRef = useRef(false); // to reload the page if the users is expected to be authed but the sheet does not open
+  const didResyncRef = useRef(false); // one retry after bridge resync (no hard reload)
 
   const upsert = useMutation({
     ...trpc.conversations.upsertForTenant.mutationOptions(),
@@ -63,25 +66,19 @@ export function ConversationSheet({
       const code = (err as { data?: { code?: string } })?.data?.code;
 
       if (code === "UNAUTHORIZED") {
-        // Only attempt resync/reload if we EXPECT a signed-in user.
+        // If we EXPECT the user to be authed, do a one-time resync and retry.
         if (
           authState === true &&
           viewerKey &&
           onBridgeResync &&
-          !didHardReloadRef.current
+          !didResyncRef.current
         ) {
-          didHardReloadRef.current = true;
+          didResyncRef.current = true;
 
           const ok = await onBridgeResync();
-          // reload the window if the user is signed in but the sheet did not open
           if (ok) {
-            // remember user intent across hard reload (same-tab only)
-            sessionStorage.setItem(
-              "pendingConversationOpen",
-              JSON.stringify({ tenantSlug, ts: Date.now() })
-            );
-
-            window.location.reload();
+            // retry once (no reload)
+            upsert.mutate({ tenantSlug });
             return;
           }
         }
@@ -101,7 +98,7 @@ export function ConversationSheet({
   useEffect(() => {
     setConversationId(null);
     startedRef.current = false;
-    didHardReloadRef.current = false; // allow recovery again on auth/user change
+    didResyncRef.current = false; // allow one retry again on tenant/user change
     reset();
   }, [tenantSlug, viewerKey, reset]);
 
@@ -183,6 +180,7 @@ export function ConversationSheet({
             <ConversationThread
               conversationId={conversationId}
               viewerRole="customer"
+              appLang={appLang}
               otherName={tenantSlug}
               otherAvatarUrl={tenantAvatarUrl ?? null}
               myAvatarUrl={myAvatarUrl ?? null}

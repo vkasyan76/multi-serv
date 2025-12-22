@@ -4,10 +4,9 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
-// import { TenantMessagesSection } from "@/modules/conversations/ui/tenant-messages-section";
-import { useBridge } from "@/modules/tenants/ui/components/tenant_page/BridgeAuth";
 import { TenantCalendarSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-calendar-skeleton";
 import { TenantMessagesSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-messages-skeleton";
+import Image from "next/image";
 
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
@@ -26,40 +25,42 @@ const TenantMessagesSection = dynamic(
   { ssr: false, loading: () => <TenantMessagesSkeleton /> }
 );
 
+function SectionTitle({ iconSrc, label }: { iconSrc: string; label: string }) {
+  return (
+    <h2 className="text-lg sm:text-xl font-semibold mb-3 inline-flex items-center gap-2">
+      <Image
+        src={iconSrc}
+        alt=""
+        aria-hidden="true"
+        width={32}
+        height={32}
+        className="opacity-90 w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7"
+      />
+
+      <span>{label}</span>
+    </h2>
+  );
+}
+
 export default function DashboardContent({ slug }: { slug: string }) {
-  const {
-    data: bridge,
-    isLoading: bridgeLoading,
-    isFetching: bridgeFetching,
-  } = useBridge();
-
-  // dashboard to mount its auth-dependent components only when the bridge is definitively authenticated.
-  const waitingForBridge =
-    bridgeLoading ||
-    bridgeFetching ||
-    !bridge?.ok ||
-    bridge.authenticated !== true;
-
   return (
     <div className="space-y-12">
       {/* CALENDAR */}
       <section id="calendar" className="scroll-mt-28 sm:scroll-mt-32">
-        <h2 className="text-xl font-semibold mb-3">Calendar</h2>
+        <SectionTitle
+          iconSrc="/SVGs/Dashboard/Calendar_Icon.svg"
+          label="Calendar"
+        />
         {/* Dashboard mode → calendar is editable */}
-        {waitingForBridge ? (
-          <TenantCalendarSkeleton />
-        ) : (
-          <TenantCalendar
-            key={`${slug}:${bridge?.uid ?? "anon"}`}
-            tenantSlug={slug}
-            editable
-          />
-        )}
+        <TenantCalendar tenantSlug={slug} editable />
       </section>
 
       {/* ORDERS (placeholder for now) */}
       <section id="orders" className="scroll-mt-28 sm:scroll-mt-32">
-        <h2 className="text-xl font-semibold mb-3">Orders</h2>
+        <SectionTitle
+          iconSrc="/SVGs/Dashboard/Orders_Icon.svg"
+          label="Orders"
+        />
         <div className="rounded-lg border bg-white p-5">
           <p className="text-muted-foreground">
             Orders table will appear here. We’ll query <code>orders</code> for
@@ -70,22 +71,21 @@ export default function DashboardContent({ slug }: { slug: string }) {
 
       {/* MESSAGES (placeholder for now) */}
       <section id="messages" className="scroll-mt-28 sm:scroll-mt-32">
-        <h2 className="text-xl font-semibold mb-3">Messages</h2>
+        <SectionTitle
+          iconSrc="/SVGs/Dashboard/Messages_Icon.svg"
+          label="Messages"
+        />
         <div className="rounded-lg border bg-white p-5">
-          {waitingForBridge ? (
-            <TenantMessagesSkeleton />
-          ) : (
-            <TenantMessagesSection
-              key={`${slug}:${bridge?.uid ?? "anon"}`}
-              tenantSlug={slug}
-            />
-          )}
+          <TenantMessagesSection tenantSlug={slug} />
         </div>
       </section>
 
       {/* FINANCE */}
       <section id="finance" className="scroll-mt-28 sm:scroll-mt-32">
-        <h2 className="text-xl font-semibold mb-3">Finance</h2>
+        <SectionTitle
+          iconSrc="/SVGs/Dashboard/Finance_Icon.svg"
+          label="Finance"
+        />
         <div className="rounded-lg border bg-white p-5 flex items-center justify-between gap-4">
           <p className="text-muted-foreground">
             Open your payouts & balances panel in Profile.

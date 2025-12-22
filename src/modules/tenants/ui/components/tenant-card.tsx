@@ -22,7 +22,8 @@ import {
   getInitialLanguage,
   formatCurrency,
 } from "@/modules/profile/location-utils";
-import { cn } from "@/lib/utils";
+import { cn, platformHomeHref } from "@/lib/utils";
+import Link from "next/link";
 
 // Helper function to handle image errors
 const handleImageError = (
@@ -48,6 +49,7 @@ interface TenantCardProps {
   onContact?: () => void; // NEW: optional handler
   ordersCount?: number; // NEW: optional orders count
   appLang?: AppLang;
+  isOwner?: boolean; // to check if the user sees his own tenant card
 }
 
 export const TenantCard = ({
@@ -61,8 +63,21 @@ export const TenantCard = ({
   onContact,
   ordersCount, // NEW
   appLang,
+  isOwner = false,
 }: TenantCardProps) => {
   const effectiveLang: AppLang = appLang ?? getInitialLanguage();
+
+  const homeHref = platformHomeHref();
+  // redirect the tenant to his pages
+  const toPlatform = (path: string) => {
+    if (homeHref === "/") return path;
+    const base = homeHref.endsWith("/") ? homeHref.slice(0, -1) : homeHref;
+    const p = path.startsWith("/") ? path : `/${path}`;
+    return `${base}${p}`;
+  };
+
+  const dashboardHref = toPlatform(`/tenants/${tenant.slug}/dashboard`);
+  const profileHref = toPlatform(`/profile?tab=vendor`);
 
   // Edge case variables for cleaner logic
   const hasServices = !!tenant.services?.length;
@@ -317,23 +332,40 @@ export const TenantCard = ({
         {/* Action Buttons (only when showActions is true) */}
         {showActions && (
           <div className="grid grid-cols-1 gap-2 pt-2">
-            <Button
-              size="lg"
-              className="w-full"
-              aria-label="Book service"
-              onClick={onBook}
-            >
-              Book service
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full"
-              aria-label="Contact provider"
-              onClick={onContact ?? (() => console.log("TODO: Contact"))}
-            >
-              Contact
-            </Button>
+            {isOwner ? (
+              <>
+                <Button size="lg" className="w-full" asChild>
+                  <Link href={dashboardHref} prefetch={false}>
+                    Dashboard
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="w-full" asChild>
+                  <Link href={profileHref} prefetch={false}>
+                    Profile
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  size="lg"
+                  className="w-full"
+                  aria-label="Book service"
+                  onClick={onBook}
+                >
+                  Book service
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full"
+                  aria-label="Contact provider"
+                  onClick={onContact ?? (() => console.log("TODO: Contact"))}
+                >
+                  Contact
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>

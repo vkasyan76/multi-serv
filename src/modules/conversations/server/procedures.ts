@@ -187,8 +187,18 @@ export const conversationsRouter = createTRPCRouter({
 
       const convoRes = await ctx.db.find({
         collection: "conversations",
-        where: { tenant: { equals: tenant.id } },
-        sort: "-updatedAt", // best effort; see NOTE below
+        where: {
+          and: [
+            { tenant: { equals: tenant.id } },
+
+            // ✅ Hide conversations without messages
+            // Payload-compatible approach: treat null as "no last message"
+            { lastMessageAt: { not_equals: null } },
+          ],
+        },
+
+        // ✅ Inbox recency should be based on last message time
+        sort: "-lastMessageAt",
         page,
         limit: input.limit,
         depth: 1, // populate customer

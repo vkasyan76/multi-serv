@@ -5,10 +5,11 @@ import { useTRPC } from "@/trpc/client";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowUpDown } from "lucide-react";
 
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
+import { Input } from "@/components/ui/input";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type InboxPage = RouterOutputs["conversations"]["listForTenant"];
@@ -32,8 +33,16 @@ export function TenantInbox({
 
   const [historyEnabled, setHistoryEnabled] = useState(false);
 
+  const [search, setSearch] = useState(""); // Search by customer name
+
+  const [dateOrder, setDateOrder] = useState<"desc" | "asc">("desc"); // Date sort toggle (Recent ⇄ Oldest)(local UI state)
+
   useEffect(() => {
     setHistoryEnabled(false);
+
+    // Optional: reset search/sort when switching tenant
+    setSearch("");
+    setDateOrder("desc");
   }, [tenantSlug]);
 
   const latestQ = useQuery({
@@ -80,30 +89,85 @@ export function TenantInbox({
     return merged;
   }, [latestQ.data?.docs, olderQ.data]);
 
+  // ✅ Apply: hide empty convos + date sort + search-by-name
+  const visibleItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    // 1) Hide conversations without messages (UI safety net)
+    const withMessages = items.filter((c) => !!c.lastMessage?.createdAt);
+
+    // 2) Sort by date (Recent ⇄ Oldest)
+    const sorted = [...withMessages].sort((a, b) => {
+      const aTs = a.lastMessage?.createdAt
+        ? new Date(a.lastMessage.createdAt).getTime()
+        : 0;
+
+      const bTs = b.lastMessage?.createdAt
+        ? new Date(b.lastMessage.createdAt).getTime()
+        : 0;
+
+      // desc = Recent first, asc = Oldest first
+      return dateOrder === "desc" ? bTs - aTs : aTs - bTs;
+    });
+
+    // 3) Search by customer name
+    if (!q) return sorted;
+
+    return sorted.filter((c) =>
+      (c.customer?.name ?? "Customer").toLowerCase().includes(q)
+    );
+  }, [items, search, dateOrder]);
+
   // params for refetcging older messages
   const hasMore = !historyEnabled
     ? !!latestQ.data?.hasNextPage
     : olderQ.hasNextPage;
 
   return (
-    <div className="h-full flex flex-col border-r bg-background">
-      <div className="px-4 py-3 border-b">
-        <div className="text-sm font-semibold">Inbox</div>
-        <div className="text-xs text-muted-foreground truncate">
-          {tenantSlug}
+    // (italki-style: search box + date sort toggle in the header area)
+    <div className="h-full min-h-0 flex flex-col bg-background md:border-r border-b md:border-b-0">
+      <div className="px-4 py-3 border-b space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className="text-sm font-semibold">Inbox</div>
+            <div className="text-xs text-muted-foreground truncate">
+              {tenantSlug}
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            className="shrink-0"
+            onClick={() => setDateOrder((p) => (p === "desc" ? "asc" : "desc"))}
+            title={dateOrder === "desc" ? "Sort: Recent" : "Sort: Oldest"}
+          >
+            <ArrowUpDown className="h-4 w-4 mr-2" />
+            {dateOrder === "desc" ? "Recent" : "Oldest"}
+          </Button>
         </div>
+
+        <Input
+          type="search"
+          placeholder="Search by name"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-11 text-sm placeholder:text-sm"
+        />
       </div>
 
       <div className="flex-1 overflow-auto">
         {latestQ.isLoading ? (
           <div className="p-4 text-xs text-muted-foreground">Loading…</div>
-        ) : items.length === 0 ? (
+        ) : visibleItems.length === 0 ? (
           <div className="p-4 text-xs text-muted-foreground">
-            No conversations yet.
+            {search.trim()
+              ? "No matching conversations."
+              : "No conversations yet."}
           </div>
         ) : (
           <div className="p-2 space-y-1">
-            {items.map((c) => {
+            {visibleItems.map((c) => {
               const active = c.id === activeConversationId;
               const preview = c.lastMessage?.text?.slice(0, 80) ?? "";
 
@@ -129,7 +193,7 @@ export function TenantInbox({
                   </div>
 
                   <div className="text-xs text-muted-foreground truncate mt-0.5">
-                    {preview || "No messages yet"}
+                    {preview}
                   </div>
                 </button>
               );
