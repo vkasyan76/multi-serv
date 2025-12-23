@@ -59,6 +59,26 @@ export function useTenantAuth(slug: string, opts: Options = {}) {
   const profileRefetch = profileQ.refetch;
   const profileIsError = profileQ.isError;
 
+  // Auth identity marker:
+  // - authenticated is always present
+  // - uid/sid are present in non-prod (debug), but safely empty in prod
+  // - profileData?.id is your Payload-backed identity proof
+  const authIdentityKey = useMemo(() => {
+    const b = bridge as BridgeResponse | undefined;
+
+    if (!b?.ok) return "bridge:not-ok";
+
+    const authed =
+      b.authenticated === true ? "1" : b.authenticated === false ? "0" : "u";
+
+    // Only attach identity when authed; avoids stale profile id during signed-out phases
+    const uid = b.authenticated === true ? (b.uid ?? "") : "";
+    const sid = b.authenticated === true ? (b.sid ?? "") : "";
+    const pid = b.authenticated === true ? (profileData?.id ?? "") : "";
+
+    return `${authed}:${uid}:${sid}:${pid}`;
+  }, [bridge, profileData?.id]);
+
   // Step 3) Warmup gate:
   // Goal: right after fast logout->login, give the bridge/profile a short window
   // to converge to the "real" signed-in state before we render tenant content.
@@ -69,6 +89,8 @@ export function useTenantAuth(slug: string, opts: Options = {}) {
   const warmStartRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
   const reloadedRef = useRef(false);
+
+  const warmIdentityRef = useRef<string | null>(null); // ref to remember the identity used when warmup completed
 
   // Step 3a) Detect if we already performed the one-time reload for this slug.
   // This prevents infinite reload loops.
@@ -119,6 +141,7 @@ export function useTenantAuth(slug: string, opts: Options = {}) {
 
     const finish = () => {
       warmDoneRef.current = true;
+      warmIdentityRef.current = authIdentityKey; // <-- NEW: remember identity when warmup finished
       setWarmReady(true);
     };
 
@@ -171,7 +194,37 @@ export function useTenantAuth(slug: string, opts: Options = {}) {
     maxMs,
     stepMs,
     allowOneReload,
+    authIdentityKey,
   ]);
+
+  // new effect after the warmup loop effect to reset warmup on identity change:
+
+  // Reset warmup if auth identity changes without a remount (e.g., fast logout -> login as another user).
+  useEffect(() => {
+    // If subdomain routing is disabled, there is no cross-domain bridge race to manage.
+    if (process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING !== "true") return;
+
+    // Only react AFTER we have completed a warmup at least once.
+    if (!warmDoneRef.current) return;
+
+    const prev = warmIdentityRef.current;
+    if (!prev) return;
+
+    if (prev === authIdentityKey) return;
+
+    // Auth identity changed -> rerun warmup gate to avoid stale "ready" state across users.
+    warmDoneRef.current = false;
+    warmStartRef.current = null;
+    setWarmReady(false);
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Do NOT touch reloadedRef; your sessionStorage guard still prevents reload loops.
+    // warmIdentityRef will be updated again when warmup finishes.
+  }, [authIdentityKey]);
 
   // Step 4) Derive auth state for UI (tri-state):
   // - false: bridge definitively says signed out
