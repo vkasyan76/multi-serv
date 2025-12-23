@@ -231,13 +231,11 @@ export const conversationsRouter = createTRPCRouter({
               name: customerName,
               avatarUrl: null,
             },
-            lastMessage: c.lastMessageAt
-              ? {
-                  text: c.lastMessagePreview ?? "",
-                  createdAt: c.lastMessageAt ?? null,
-                  senderRole: null, // not stored on convo (fine for your UI)
-                }
-              : null,
+
+            // ✅ Canonical fields (what inbox should rely on)
+            lastMessageAt: c.lastMessageAt ?? null,
+            lastMessagePreview: c.lastMessagePreview ?? "",
+
             updatedAt: c.updatedAt ?? null,
           };
         })
