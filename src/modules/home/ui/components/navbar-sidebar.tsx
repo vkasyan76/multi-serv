@@ -45,9 +45,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
   });
 
   // stop using domain redirect for the dashboard - it is internal page
-  const dashHref = myTenant
-    ? `/tenants/${myTenant.slug}/dashboard`
-    : "/profile?tab=vendor";
+  const dashHref = myTenant ? "/dashboard" : "/profile?tab=vendor";
 
   // const dashHref = myTenant
   //   ? `${generateTenantUrl(myTenant.slug)}/dashboard`

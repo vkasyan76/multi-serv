@@ -62,9 +62,9 @@ export function TenantInbox({
       tenantSlug,
       limit: 10,
     }),
-    enabled: historyEnabled && latestQ.data?.hasNextPage === true,
-    initialPageParam: latestQ.data?.nextPage ?? null,
-    getNextPageParam: (last) => last.nextPage ?? null,
+    enabled: historyEnabled && !!latestQ.data?.hasNextPage,
+    initialPageParam: latestQ.data?.nextPage ?? 2,
+    getNextPageParam: (last) => last.nextPage, // returns undefined when done. Prevents “Load more” from staying available forever. Prevents cursor: null calls.
 
     // optional but recommended: don't auto-refetch old pages
     refetchOnWindowFocus: false,
@@ -94,19 +94,13 @@ export function TenantInbox({
     const q = search.trim().toLowerCase();
 
     // 1) Hide conversations without messages (UI safety net)
-    const withMessages = items.filter((c) => !!c.lastMessage?.createdAt);
+    const withMessages = items.filter((c) => !!c.lastMessageAt);
 
     // 2) Sort by date (Recent ⇄ Oldest)
     const sorted = [...withMessages].sort((a, b) => {
-      const aTs = a.lastMessage?.createdAt
-        ? new Date(a.lastMessage.createdAt).getTime()
-        : 0;
+      const aTs = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const bTs = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
 
-      const bTs = b.lastMessage?.createdAt
-        ? new Date(b.lastMessage.createdAt).getTime()
-        : 0;
-
-      // desc = Recent first, asc = Oldest first
       return dateOrder === "desc" ? bTs - aTs : aTs - bTs;
     });
 
@@ -169,7 +163,7 @@ export function TenantInbox({
           <div className="p-2 space-y-1">
             {visibleItems.map((c) => {
               const active = c.id === activeConversationId;
-              const preview = c.lastMessage?.text?.slice(0, 80) ?? "";
+              const preview = (c.lastMessagePreview ?? "").slice(0, 80);
 
               return (
                 <button
@@ -186,8 +180,8 @@ export function TenantInbox({
                       {c.customer?.name ?? "Customer"}
                     </div>
                     <div className="text-[11px] text-muted-foreground shrink-0">
-                      {c.lastMessage?.createdAt
-                        ? new Date(c.lastMessage.createdAt).toLocaleDateString()
+                      {c.lastMessageAt
+                        ? new Date(c.lastMessageAt).toLocaleDateString()
                         : ""}
                     </div>
                   </div>

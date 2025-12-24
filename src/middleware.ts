@@ -6,7 +6,6 @@ const ENABLED = process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true";
 
 const isProtectedRoute = createRouteMatcher([
   "/profile(.*)",
-  "/tenants/:slug/dashboard(.*)",
   "/dashboard(.*)", // for tenant subdomain routing before rewrite
 ]);
 

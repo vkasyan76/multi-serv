@@ -1,4 +1,6 @@
+// src/app/(app)/dashboard/layout.tsx
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { Footer } from "@/modules/tenants/ui/components/tenant_page/footer";
 import DashboardNavbar, {
   DashboardNavbarSkeleton,
@@ -8,21 +10,23 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 export default async function DashboardLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-
   const qc = getQueryClient();
-  await qc.prefetchQuery(trpc.tenants.getOne.queryOptions({ slug }));
+
+  // 1) Get my tenant
+  const mine = await qc.fetchQuery(trpc.tenants.getMine.queryOptions({}));
+  if (!mine?.slug) redirect("/profile?tab=vendor");
+
+  // 2) Prefetch tenant details used by navbar/calendar
+  await qc.prefetchQuery(trpc.tenants.getOne.queryOptions({ slug: mine.slug }));
 
   return (
     <div className="min-h-screen bg-[#F4F4F0] flex flex-col">
       <HydrationBoundary state={dehydrate(qc)}>
         <Suspense fallback={<DashboardNavbarSkeleton />}>
-          <DashboardNavbar slug={slug} />
+          <DashboardNavbar slug={mine.slug} />
         </Suspense>
 
         <main className="flex-1">
@@ -31,7 +35,7 @@ export default async function DashboardLayout({
           </div>
         </main>
 
-        <Footer slug={slug} />
+        <Footer slug={mine.slug} />
       </HydrationBoundary>
     </div>
   );

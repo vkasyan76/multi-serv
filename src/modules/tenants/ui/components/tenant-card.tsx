@@ -76,7 +76,7 @@ export const TenantCard = ({
     return `${base}${p}`;
   };
 
-  const dashboardHref = toPlatform(`/tenants/${tenant.slug}/dashboard`);
+  const dashboardHref = toPlatform("/dashboard");
   const profileHref = toPlatform(`/profile?tab=vendor`);
 
   // Edge case variables for cleaner logic

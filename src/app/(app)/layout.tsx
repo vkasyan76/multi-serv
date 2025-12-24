@@ -8,6 +8,10 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ClerkUserSync } from "@/modules/auth/ui/views/clerk-user-sync";
 import GeoBootstrap from "@/components/geo-bootstrap";
 
+// Import styles for react-big-calendar
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
+
 import { headers } from "next/headers";
 import {
   getAppLangFromHeaders,
