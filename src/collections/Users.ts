@@ -260,5 +260,32 @@ export const Users: CollectionConfig = {
         position: "sidebar",
       },
     },
+
+    // blocking users who dont pay from booking new services
+    {
+      name: "bookingBlocked",
+      type: "checkbox",
+      defaultValue: false,
+      index: true,
+      admin: {
+        position: "sidebar",
+        description:
+          "If true, user is blocked platform-wide from creating new bookings until resolved.",
+      },
+    },
+    {
+      name: "bookingBlockedReason",
+      type: "text",
+      admin: {
+        position: "sidebar",
+      },
+    },
+    {
+      name: "bookingBlockedAt",
+      type: "date",
+      admin: {
+        position: "sidebar",
+      },
+    },
   ],
 };
