@@ -62,7 +62,7 @@ export function TenantInbox({
       tenantSlug,
       limit: 10,
     }),
-    enabled: historyEnabled && !!latestQ.data?.nextPage,
+    enabled: historyEnabled && !!latestQ.data?.hasNextPage,
     initialPageParam: latestQ.data?.nextPage ?? 2,
     getNextPageParam: (last) => last.nextPage, // returns undefined when done. Prevents “Load more” from staying available forever. Prevents cursor: null calls.
 
