@@ -226,6 +226,12 @@ export interface User {
    * When the user's geolocation was last updated
    */
   geoUpdatedAt?: string | null;
+  /**
+   * If true, user is blocked platform-wide from creating new bookings until resolved.
+   */
+  bookingBlocked?: boolean | null;
+  bookingBlockedReason?: string | null;
+  bookingBlockedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -392,6 +398,14 @@ export interface Booking {
   start: string;
   end: string;
   status: 'available' | 'booked' | 'confirmed';
+  /**
+   * Service lifecycle: scheduled → completed → confirmed (or disputed).
+   */
+  serviceStatus?: ('scheduled' | 'completed' | 'confirmed' | 'disputed') | null;
+  /**
+   * Payment lifecycle: unpaid → pending → paid. Meaningful after service confirmation.
+   */
+  paymentStatus?: ('unpaid' | 'pending' | 'paid') | null;
   /**
    * Selected service (subcategory) for this booking.
    */
@@ -630,6 +644,9 @@ export interface UsersSelect<T extends boolean = true> {
       };
   onboardingCompleted?: T;
   geoUpdatedAt?: T;
+  bookingBlocked?: T;
+  bookingBlockedReason?: T;
+  bookingBlockedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -719,6 +736,8 @@ export interface BookingsSelect<T extends boolean = true> {
   start?: T;
   end?: T;
   status?: T;
+  serviceStatus?: T;
+  paymentStatus?: T;
   service?: T;
   notes?: T;
   serviceSnapshot?:
