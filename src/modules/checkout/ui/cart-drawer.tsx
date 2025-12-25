@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useEffect } from "react";
+import Link from "next/link";
 import {
   getLocaleAndCurrency,
   formatDateForLocale,
@@ -30,7 +31,7 @@ import {
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
-import { BOOKING_CH } from "@/constants";
+import { BOOKING_CH, POLICY_VERSION } from "@/constants";
 
 export function CartDrawer() {
   const open = useCartStore((s) => s.open);
@@ -40,6 +41,9 @@ export function CartDrawer() {
   const remove = useCartStore((s) => s.remove);
   const setService = useCartStore((s) => s.setService); // ← NEW
 
+  const acceptedPolicy = useCartStore((s) => s.acceptedPolicy);
+  const setAcceptedPolicy = useCartStore((s) => s.setAcceptedPolicy);
+
   const tenantSlug = useCartStore((s) => s.tenant);
 
   const totalCents = items.reduce((sum, it) => sum + (it.priceCents ?? 0), 0);
@@ -48,6 +52,30 @@ export function CartDrawer() {
 
   const trpc = useTRPC();
   const qc = useQueryClient();
+
+  // check if policy already accepted
+  const session = useQuery(trpc.auth.session.queryOptions());
+
+  const serverPolicyOk =
+    session.data?.user?.policyAcceptedVersion === POLICY_VERSION &&
+    !!session.data?.user?.policyAcceptedAt;
+
+  // Render the checkbox only when we know the user is signed-in and has NOT accepted the current version.
+  const showAcceptanceGate =
+    session.isSuccess && !!session.data?.user && !serverPolicyOk;
+
+  useEffect(() => {
+    if (!open) return;
+    if (!session.isSuccess) return;
+
+    // If they accepted the CURRENT version -> set true, otherwise set false.
+    setAcceptedPolicy(serverPolicyOk);
+  }, [open, session.isSuccess, serverPolicyOk, setAcceptedPolicy]);
+
+  // Mutation to record policy acceptance
+  const acceptPolicy = useMutation({
+    ...trpc.legal.acceptPolicy.mutationOptions(),
+  });
 
   // Pull tenant's subcategories/categories to build "Service" options
   const { data: tenant } = useQuery({
@@ -136,7 +164,18 @@ export function CartDrawer() {
       return;
     }
 
+    // accept policy gate
+    if (showAcceptanceGate && !acceptedPolicy) {
+      toast.error("Please accept the Policy before checkout.");
+      return;
+    }
+
     try {
+      // ✅ persist acceptance server-side (idempotent) - if the policy wasn't already accepted
+      if (!serverPolicyOk) {
+        await acceptPolicy.mutateAsync();
+      }
+
       // Step 1 — reserve the slots (available -> booked)
       await bookSlots.mutateAsync({
         // NOTE: server will require serviceId, so we send strings
@@ -164,7 +203,7 @@ export function CartDrawer() {
       if (err instanceof TRPCClientError) {
         msg =
           err.data?.code === "UNAUTHORIZED"
-            ? "Please sign in to book slots."
+            ? "Please sign in to continue."
             : err.message || msg;
       }
       toast.error(msg);
@@ -174,7 +213,8 @@ export function CartDrawer() {
   };
 
   // Loading button:
-  const isBusy = bookSlots.isPending || createSession.isPending;
+  const isBusy =
+    bookSlots.isPending || createSession.isPending || acceptPolicy.isPending;
 
   // Close the drawer automatically when the cart becomes empty
   useEffect(() => {
@@ -270,6 +310,26 @@ export function CartDrawer() {
         </div>
 
         <SheetFooter className="mt-3 sm:mt-4">
+          {showAcceptanceGate && (
+            <div className="mb-3 space-y-2">
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 accent-black"
+                  checked={acceptedPolicy}
+                  onChange={(e) => setAcceptedPolicy(e.target.checked)}
+                  disabled={isBusy}
+                />
+                <span className="leading-6">
+                  I have read and agree to the{" "}
+                  <Link className="underline font-medium" href="/policy">
+                    Policy
+                  </Link>{" "}
+                  .
+                </span>
+              </label>
+            </div>
+          )}
           <div className="w-full pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-between text-base mb-3">
               <span>Total</span>
@@ -286,7 +346,12 @@ export function CartDrawer() {
                 // if you want just a spinner with no text:
                 loadingText=""
                 reserveWidth={false}
-                disabled={items.length === 0 || !allHaveService || isBusy}
+                disabled={
+                  items.length === 0 ||
+                  !allHaveService ||
+                  (showAcceptanceGate && !acceptedPolicy) ||
+                  isBusy
+                }
               >
                 Checkout
               </LoadingButton>

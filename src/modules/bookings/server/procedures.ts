@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { isBefore, addHours, startOfHour, isEqual } from "date-fns";
 import type { Booking, Tenant, User } from "@/payload-types";
+import { POLICY_VERSION } from "@/constants";
 import {
   uniqueIds,
   fetchBookable,
@@ -12,6 +13,21 @@ import {
 
 // Payload returns docs with an id. Make that explicit.
 type DocWithId<T> = T & { id: string };
+
+// Ensure user has accepted latest policy
+
+function assertPolicyAccepted(payloadUser: DocWithId<User>) {
+  const ok =
+    payloadUser.policyAcceptedVersion === POLICY_VERSION &&
+    !!payloadUser.policyAcceptedAt;
+
+  if (!ok) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "You must accept the Policy before booking.",
+    });
+  }
+}
 
 // Convenience return types
 type BookSlotsResult = {
@@ -290,9 +306,13 @@ export const bookingRouter = createTRPCRouter({
         limit: 1,
         depth: 0,
       })) as { docs: Array<DocWithId<User>> };
-      const payloadUserId = me.docs[0]?.id;
-      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
 
+      const payloadUser = me.docs[0];
+      if (!payloadUser) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // hard gate - policy acceptance:
+      assertPolicyAccepted(payloadUser);
+      const payloadUserId = payloadUser.id;
       const nowIso = new Date().toISOString();
 
       const current = await ctx.db.findByID({
@@ -300,6 +320,9 @@ export const bookingRouter = createTRPCRouter({
         id: input.bookingId,
         depth: 0,
       });
+
+      if (!current)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Slot not found" });
 
       // set snapshot:
       const tenantId =
@@ -574,14 +597,20 @@ export const bookingRouter = createTRPCRouter({
       const clerkUserId = ctx.userId;
       if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-      const me = await ctx.db.find({
+      const me = (await ctx.db.find({
         collection: "users",
         where: { clerkUserId: { equals: clerkUserId } },
         limit: 1,
         depth: 0,
-      });
-      const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
-      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+      })) as { docs: Array<DocWithId<User>> };
+
+      const payloadUser = me.docs[0];
+      if (!payloadUser) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // hard gate - policy acceptance:
+      assertPolicyAccepted(payloadUser);
+
+      const payloadUserId = payloadUser.id;
 
       // 1) normalize → ids
       const items = input.items as CartItem[];
