@@ -63,3 +63,6 @@ export type BookingPaymentStatus = (typeof BOOKING_PAYMENT_STATUSES)[number];
 // --- Dispute statuses (central enums) ---
 export const DISPUTE_STATUSES = ["open", "resolved", "withdrawn"] as const;
 export type DisputeStatus = (typeof DISPUTE_STATUSES)[number];
+
+// --- Policy versioning ---
+export const POLICY_VERSION = "v1";

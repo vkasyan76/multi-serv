@@ -287,5 +287,19 @@ export const Users: CollectionConfig = {
         position: "sidebar",
       },
     },
+
+    // Legal compliance fields
+    {
+      name: "policyAcceptedVersion",
+      type: "text",
+      required: false,
+      admin: { position: "sidebar", readOnly: true },
+    },
+    {
+      name: "policyAcceptedAt",
+      type: "date",
+      required: false,
+      admin: { position: "sidebar", readOnly: true },
+    },
   ],
 };

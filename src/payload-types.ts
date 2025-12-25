@@ -232,6 +232,8 @@ export interface User {
   bookingBlocked?: boolean | null;
   bookingBlockedReason?: string | null;
   bookingBlockedAt?: string | null;
+  policyAcceptedVersion?: string | null;
+  policyAcceptedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -647,6 +649,8 @@ export interface UsersSelect<T extends boolean = true> {
   bookingBlocked?: T;
   bookingBlockedReason?: T;
   bookingBlockedAt?: T;
+  policyAcceptedVersion?: T;
+  policyAcceptedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -1,4 +1,4 @@
-import { PolicyV1 } from "@/modules/legal/policy/policy-v1";
+import { CURRENT_POLICY } from "@/modules/legal/policy";
 
 export const dynamic = "force-dynamic";
 
@@ -7,5 +7,6 @@ export const metadata = {
 };
 
 export default function PolicyPage() {
-  return <PolicyV1 />;
+  const PolicyComponent = CURRENT_POLICY.Component;
+  return <PolicyComponent />;
 }
