@@ -32,6 +32,7 @@ import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
 import { BOOKING_CH, POLICY_VERSION } from "@/constants";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function CartDrawer() {
   const open = useCartStore((s) => s.open);
@@ -313,12 +314,12 @@ export function CartDrawer() {
           {showAcceptanceGate && (
             <div className="mb-3 space-y-2">
               <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4 accent-black"
+                <Checkbox
+                  id="policy-accept"
                   checked={acceptedPolicy}
-                  onChange={(e) => setAcceptedPolicy(e.target.checked)}
+                  onCheckedChange={(checked) => setAcceptedPolicy(!!checked)}
                   disabled={isBusy}
+                  className="mt-1"
                 />
                 <span className="leading-6">
                   I have read and agree to the{" "}

@@ -7,6 +7,5 @@ export const metadata = {
 };
 
 export default function PolicyPage() {
-  const PolicyComponent = CURRENT_POLICY.Component;
-  return <PolicyComponent />;
+  return <CURRENT_POLICY.Component />;
 }

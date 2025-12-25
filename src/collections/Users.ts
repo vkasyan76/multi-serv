@@ -299,6 +299,7 @@ export const Users: CollectionConfig = {
       name: "policyAcceptedAt",
       type: "date",
       required: false,
+      index: true,
       admin: { position: "sidebar", readOnly: true },
     },
   ],

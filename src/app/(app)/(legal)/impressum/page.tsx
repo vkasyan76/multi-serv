@@ -43,13 +43,6 @@ export default function ImpressumPage() {
           {"\n"}
           VAT ID: not applicable (not VAT-registered)
         </p>
-
-        <p>
-          <strong>EU dispute resolution</strong>
-          {"\n"}
-          The European Commission provides an online dispute resolution (ODR)
-          platform.
-        </p>
       </div>
     </article>
   );

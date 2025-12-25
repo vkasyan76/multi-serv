@@ -12,7 +12,7 @@ export default async function LegalLayout({
 }) {
   // Keep Navbar behavior consistent (it may rely on categories query)
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(trpc.categories.getMany.queryOptions());
+  await queryClient.prefetchQuery(trpc.categories.getMany.queryOptions());
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F4F0]">

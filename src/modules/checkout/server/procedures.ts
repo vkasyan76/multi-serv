@@ -61,7 +61,7 @@ export const checkoutRouter = createTRPCRouter({
       const payloadUser = (me.docs?.[0] as DocWithId<User> | undefined) ?? null;
       if (!payloadUser) throw new TRPCError({ code: "FORBIDDEN" });
 
-      // check policy accaptance
+      // check policy acceptance
 
       const policyOk =
         payloadUser.policyAcceptedVersion === POLICY_VERSION &&
