@@ -8,22 +8,24 @@ import {
   BOOKING_SERVICE_STATUSES,
   BOOKING_PAYMENT_STATUSES,
 } from "@/constants";
+import { PolicyConsent } from "./terms-consent";
 
-export const POLICY_V1 = {
+export const TERMS_V1 = {
   version: "v1",
   effectiveDate: "2025-12-25", // set this manually when you publish
 };
 
-export function PolicyV1() {
+export function TermsV1() {
   const commissionPercent = (COMMISSION_RATE_BPS_DEFAULT / 100).toFixed(2);
 
   return (
     <article className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Infinisimo Platform Policy</h1>
-        <p className="text-xs text-muted-foreground">
-          Version: {POLICY_V1.version} • Effective date:{" "}
-          {POLICY_V1.effectiveDate}
+      <header className="space-y-2 text-center border-b pb-4">
+        <h1 className="text-2xl sm:text-3xl font-semibold">
+          Infinisimo Terms of Use
+        </h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Version: {TERMS_V1.version} • Effective date: {TERMS_V1.effectiveDate}
         </p>
       </header>
 
@@ -158,6 +160,9 @@ export function PolicyV1() {
             where platform dispute workflows apply.
           </p>
         </section>
+      </div>
+      <div className="pt-4">
+        <PolicyConsent />
       </div>
     </article>
   );

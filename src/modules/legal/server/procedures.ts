@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import type { User } from "@/payload-types";
-import { POLICY_VERSION } from "@/constants";
+import { TERMS_VERSION } from "@/constants";
 
 type DocWithId<T> = T & { id: string };
 
@@ -26,13 +26,13 @@ export const legalRouter = createTRPCRouter({
       collection: "users",
       id: user.id,
       data: {
-        policyAcceptedVersion: POLICY_VERSION,
+        policyAcceptedVersion: TERMS_VERSION,
         policyAcceptedAt: nowIso,
       },
       overrideAccess: true,
       depth: 0,
     });
 
-    return { ok: true, policyAcceptedVersion: POLICY_VERSION };
+    return { ok: true, policyAcceptedVersion: TERMS_VERSION };
   }),
 });

@@ -64,5 +64,5 @@ export type BookingPaymentStatus = (typeof BOOKING_PAYMENT_STATUSES)[number];
 export const DISPUTE_STATUSES = ["open", "resolved", "withdrawn"] as const;
 export type DisputeStatus = (typeof DISPUTE_STATUSES)[number];
 
-// --- Policy versioning ---
-export const POLICY_VERSION = "v1";
+// --- Terms versioning ---
+export const TERMS_VERSION = "v1";

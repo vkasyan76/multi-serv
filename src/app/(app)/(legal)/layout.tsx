@@ -22,8 +22,8 @@ export default async function LegalLayout({
 
       <main className="flex-1">
         {/* “legal” pages styling wrapper */}
-        <div className="mx-auto w-full max-w-3xl px-4 py-10">
-          <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-10">
+          <div className="rounded-xl bg-white p-4 sm:p-6 shadow-sm ring-1 ring-black/5">
             {children}
           </div>
         </div>

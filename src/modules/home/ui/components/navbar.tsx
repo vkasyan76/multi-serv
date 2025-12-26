@@ -55,7 +55,7 @@ const navbarItems = [
   { href: "/features", children: "Features" },
   { href: "/pricing", children: "Pricing" },
   { href: "/contact", children: "Contact" },
-  { href: "/policy", children: "Policy" },
+  { href: "/terms-of-use", children: "Terms of Use" },
   { href: "/impressum", children: "Impressum" },
 ];
 

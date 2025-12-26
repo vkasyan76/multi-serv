@@ -31,8 +31,7 @@ import {
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
-import { BOOKING_CH, POLICY_VERSION } from "@/constants";
-import { Checkbox } from "@/components/ui/checkbox";
+import { BOOKING_CH, TERMS_VERSION } from "@/constants";
 
 export function CartDrawer() {
   const open = useCartStore((s) => s.open);
@@ -41,9 +40,6 @@ export function CartDrawer() {
   const clear = useCartStore((s) => s.clear);
   const remove = useCartStore((s) => s.remove);
   const setService = useCartStore((s) => s.setService); // ← NEW
-
-  const acceptedPolicy = useCartStore((s) => s.acceptedPolicy);
-  const setAcceptedPolicy = useCartStore((s) => s.setAcceptedPolicy);
 
   const tenantSlug = useCartStore((s) => s.tenant);
 
@@ -59,34 +55,12 @@ export function CartDrawer() {
   const session = useQuery(sessionQuery);
 
   const serverPolicyOk =
-    session.data?.user?.policyAcceptedVersion === POLICY_VERSION &&
+    session.data?.user?.policyAcceptedVersion === TERMS_VERSION &&
     !!session.data?.user?.policyAcceptedAt;
 
   // Render the checkbox only when we know the user is signed-in and has NOT accepted the current version.
   const showAcceptanceGate =
     session.isSuccess && !!session.data?.user && !serverPolicyOk;
-
-  useEffect(() => {
-    if (!open) return;
-    if (!session.isSuccess) return;
-
-    // If they accepted the CURRENT version -> set true, otherwise set false.
-    setAcceptedPolicy(serverPolicyOk);
-  }, [open, session.isSuccess, serverPolicyOk, setAcceptedPolicy]);
-
-  // Mutation to record policy acceptance (only triggered by checkbox)
-  const acceptPolicy = useMutation({
-    ...trpc.legal.acceptPolicy.mutationOptions(),
-    onSuccess: async () => {
-      toast.success("Policy accepted.");
-      // refresh auth.session so serverPolicyOk flips to true and gate disappears
-      await qc.invalidateQueries({ queryKey: sessionQuery.queryKey });
-    },
-    onError: () => {
-      toast.error("Could not record policy acceptance. Please try again.");
-      setAcceptedPolicy(false);
-    },
-  });
 
   // Pull tenant's subcategories/categories to build "Service" options
   const { data: tenant } = useQuery({
@@ -186,8 +160,8 @@ export function CartDrawer() {
     }
 
     // accept policy gate
-    if (showAcceptanceGate && !acceptedPolicy) {
-      toast.error("Please accept the Policy before checkout.");
+    if (showAcceptanceGate) {
+      toast.error("Please review and accept the Terms of Use before checkout.");
       return;
     }
 
@@ -231,8 +205,7 @@ export function CartDrawer() {
   };
 
   // Loading button:
-  const isBusy =
-    bookSlots.isPending || createSession.isPending || acceptPolicy.isPending;
+  const isBusy = bookSlots.isPending || createSession.isPending;
 
   // Close the drawer automatically when the cart becomes empty
   useEffect(() => {
@@ -329,39 +302,22 @@ export function CartDrawer() {
 
         <SheetFooter className="mt-3 sm:mt-4">
           {showAcceptanceGate && (
-            <div className="mb-3 space-y-2">
-              <label className="flex items-start gap-2 text-sm">
-                <Checkbox
-                  id="policy-accept"
-                  checked={acceptedPolicy}
-                  onCheckedChange={async (checked) => {
-                    const v = !!checked;
-                    setAcceptedPolicy(v);
-
-                    // Persist ONLY when user explicitly checks and server says it's not accepted yet.
-                    if (v && showAcceptanceGate && !serverPolicyOk) {
-                      await acceptPolicy.mutateAsync();
-                    }
-                  }}
-                  disabled={isBusy || acceptPolicy.isPending}
-                  className="mt-1"
-                />
-
-                <span className="leading-6">
-                  I have read and agree to the{" "}
-                  <Link
-                    className="underline font-medium"
-                    href="/policy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Policy
-                  </Link>{" "}
-                  .
-                </span>
-              </label>
+            <div className="mb-3 space-y-2 text-sm">
+              <div>
+                Please review and accept the{" "}
+                <Link
+                  className="underline font-medium"
+                  href="/terms-of-use"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Terms of Use
+                </Link>{" "}
+                to continue.
+              </div>
             </div>
           )}
+
           <div className="w-full pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-between text-base mb-3">
               <span>Total</span>
@@ -383,7 +339,7 @@ export function CartDrawer() {
                   !allHaveService ||
                   !session.isSuccess ||
                   !session.data?.user ||
-                  (showAcceptanceGate && !acceptedPolicy) ||
+                  showAcceptanceGate ||
                   isBusy
                 }
               >
