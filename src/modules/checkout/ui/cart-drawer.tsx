@@ -55,7 +55,8 @@ export function CartDrawer() {
   const qc = useQueryClient();
 
   // check if policy already accepted
-  const session = useQuery(trpc.auth.session.queryOptions());
+  const sessionQuery = trpc.auth.session.queryOptions();
+  const session = useQuery(sessionQuery);
 
   const serverPolicyOk =
     session.data?.user?.policyAcceptedVersion === POLICY_VERSION &&
@@ -73,9 +74,18 @@ export function CartDrawer() {
     setAcceptedPolicy(serverPolicyOk);
   }, [open, session.isSuccess, serverPolicyOk, setAcceptedPolicy]);
 
-  // Mutation to record policy acceptance
+  // Mutation to record policy acceptance (only triggered by checkbox)
   const acceptPolicy = useMutation({
     ...trpc.legal.acceptPolicy.mutationOptions(),
+    onSuccess: async () => {
+      toast.success("Policy accepted.");
+      // refresh auth.session so serverPolicyOk flips to true and gate disappears
+      await qc.invalidateQueries({ queryKey: sessionQuery.queryKey });
+    },
+    onError: () => {
+      toast.error("Could not record policy acceptance. Please try again.");
+      setAcceptedPolicy(false);
+    },
   });
 
   // Pull tenant's subcategories/categories to build "Service" options
@@ -165,6 +175,16 @@ export function CartDrawer() {
       return;
     }
 
+    // hard guard so checkout cannot run until session is known:
+    if (!session.isSuccess) {
+      toast.error("Please wait…");
+      return;
+    }
+    if (!session.data?.user) {
+      toast.error("Please sign in to continue.");
+      return;
+    }
+
     // accept policy gate
     if (showAcceptanceGate && !acceptedPolicy) {
       toast.error("Please accept the Policy before checkout.");
@@ -172,10 +192,7 @@ export function CartDrawer() {
     }
 
     try {
-      // ✅ persist acceptance server-side (idempotent) - if the policy wasn't already accepted
-      if (!serverPolicyOk) {
-        await acceptPolicy.mutateAsync();
-      }
+      // no auto-accept here — acceptance happens only via the checkbox
 
       // Step 1 — reserve the slots (available -> booked)
       await bookSlots.mutateAsync({
@@ -317,13 +334,27 @@ export function CartDrawer() {
                 <Checkbox
                   id="policy-accept"
                   checked={acceptedPolicy}
-                  onCheckedChange={(checked) => setAcceptedPolicy(!!checked)}
-                  disabled={isBusy}
+                  onCheckedChange={async (checked) => {
+                    const v = !!checked;
+                    setAcceptedPolicy(v);
+
+                    // Persist ONLY when user explicitly checks and server says it's not accepted yet.
+                    if (v && showAcceptanceGate && !serverPolicyOk) {
+                      await acceptPolicy.mutateAsync();
+                    }
+                  }}
+                  disabled={isBusy || acceptPolicy.isPending}
                   className="mt-1"
                 />
+
                 <span className="leading-6">
                   I have read and agree to the{" "}
-                  <Link className="underline font-medium" href="/policy">
+                  <Link
+                    className="underline font-medium"
+                    href="/policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     Policy
                   </Link>{" "}
                   .
@@ -350,6 +381,8 @@ export function CartDrawer() {
                 disabled={
                   items.length === 0 ||
                   !allHaveService ||
+                  !session.isSuccess ||
+                  !session.data?.user ||
                   (showAcceptanceGate && !acceptedPolicy) ||
                   isBusy
                 }
