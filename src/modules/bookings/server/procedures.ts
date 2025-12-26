@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { isBefore, addHours, startOfHour, isEqual } from "date-fns";
 import type { Booking, Tenant, User } from "@/payload-types";
-import { POLICY_VERSION } from "@/constants";
+import { TERMS_VERSION } from "@/constants";
 import {
   uniqueIds,
   fetchBookable,
@@ -18,7 +18,7 @@ type DocWithId<T> = T & { id: string };
 
 function assertPolicyAccepted(payloadUser: DocWithId<User>) {
   const ok =
-    payloadUser.policyAcceptedVersion === POLICY_VERSION &&
+    payloadUser.policyAcceptedVersion === TERMS_VERSION &&
     !!payloadUser.policyAcceptedAt;
 
   if (!ok) {

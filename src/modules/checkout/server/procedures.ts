@@ -12,7 +12,7 @@ import type { Booking, Tenant, User } from "@/payload-types";
 import { CheckoutMetadata } from "./types";
 import { addHours } from "date-fns";
 
-import { POLICY_VERSION } from "@/constants";
+import { TERMS_VERSION } from "@/constants";
 
 // If you already have this helper in your project, keep the import.
 // Otherwise, success/cancel can use NEXT_PUBLIC_APP_URL as a fallback.
@@ -64,7 +64,7 @@ export const checkoutRouter = createTRPCRouter({
       // check policy acceptance
 
       const policyOk =
-        payloadUser.policyAcceptedVersion === POLICY_VERSION &&
+        payloadUser.policyAcceptedVersion === TERMS_VERSION &&
         !!payloadUser.policyAcceptedAt;
 
       if (!policyOk) {
