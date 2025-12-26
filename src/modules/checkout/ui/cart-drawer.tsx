@@ -214,6 +214,19 @@ export function CartDrawer() {
     }
   }, [open, items.length, setOpen]);
 
+  // check Use Effekt to be removed after debugging
+
+  useEffect(() => {
+    if (session.isSuccess) {
+      console.log("auth.session", {
+        hasUser: !!session.data?.user,
+        policyAcceptedVersion: session.data?.user?.policyAcceptedVersion,
+        policyAcceptedAt: session.data?.user?.policyAcceptedAt,
+        TERMS_VERSION,
+      });
+    }
+  }, [session.isSuccess, session.data]);
+
   return (
     <Sheet
       open={open}
