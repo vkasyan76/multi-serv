@@ -55,6 +55,8 @@ const navbarItems = [
   { href: "/features", children: "Features" },
   { href: "/pricing", children: "Pricing" },
   { href: "/contact", children: "Contact" },
+  { href: "/terms-of-use", children: "Terms of Use" },
+  { href: "/impressum", children: "Impressum" },
 ];
 
 export const Navbar = () => {

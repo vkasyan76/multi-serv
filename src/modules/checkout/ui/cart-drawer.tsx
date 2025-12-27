@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useEffect } from "react";
+import Link from "next/link";
 import {
   getLocaleAndCurrency,
   formatDateForLocale,
@@ -30,9 +31,20 @@ import {
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
-import { BOOKING_CH } from "@/constants";
+import { BOOKING_CH, TERMS_VERSION } from "@/constants";
+import { platformHomeHref } from "@/lib/utils";
 
-export function CartDrawer() {
+type CartDrawerProps = {
+  authState?: boolean | null;
+  policyAcceptedAt?: string | null;
+  policyAcceptedVersion?: string | null;
+};
+
+export function CartDrawer({
+  authState,
+  policyAcceptedAt,
+  policyAcceptedVersion,
+}: CartDrawerProps = {}) {
   const open = useCartStore((s) => s.open);
   const setOpen = useCartStore((s) => s.setOpen);
   const items = useCartStore((s) => s.items);
@@ -48,6 +60,39 @@ export function CartDrawer() {
 
   const trpc = useTRPC();
   const qc = useQueryClient();
+
+  // check if policy already accepted:
+  const hasParentAuth = authState !== undefined;
+
+  const sessionQuery = trpc.auth.session.queryOptions();
+  const session = useQuery({
+    ...sessionQuery,
+    enabled: !hasParentAuth, // only use auth.session if parent didn't provide auth
+  });
+
+  const hasUser = hasParentAuth ? authState === true : !!session.data?.user;
+
+  const acceptedAt = hasParentAuth
+    ? policyAcceptedAt
+    : (session.data?.user?.policyAcceptedAt ?? null);
+
+  const acceptedVersion = hasParentAuth
+    ? policyAcceptedVersion
+    : (session.data?.user?.policyAcceptedVersion ?? null);
+
+  const serverPolicyOk = acceptedVersion === TERMS_VERSION && !!acceptedAt;
+
+  // Render the checkbox only when we know the user is signed-in and has NOT accepted the current version.
+  const showAcceptanceGate = hasUser && !serverPolicyOk;
+
+  const authReady = hasParentAuth ? authState !== null : session.isSuccess;
+
+  // for redirect to the terms-of-use page with returnTo=
+  const homeHref = platformHomeHref();
+  const termsHref =
+    homeHref === "/"
+      ? "/terms-of-use"
+      : `${homeHref.replace(/\/$/, "")}/terms-of-use`;
 
   // Pull tenant's subcategories/categories to build "Service" options
   const { data: tenant } = useQuery({
@@ -136,7 +181,25 @@ export function CartDrawer() {
       return;
     }
 
+    // hard guard so checkout cannot run until session is known:
+    if (!authReady) {
+      toast.error("Please wait…");
+      return;
+    }
+    if (!hasUser) {
+      toast.error("Please sign in to continue.");
+      return;
+    }
+
+    // accept policy gate
+    if (showAcceptanceGate) {
+      toast.error("Please review and accept the Terms of Use before checkout.");
+      return;
+    }
+
     try {
+      // no auto-accept here — acceptance happens only via the checkbox
+
       // Step 1 — reserve the slots (available -> booked)
       await bookSlots.mutateAsync({
         // NOTE: server will require serviceId, so we send strings
@@ -164,7 +227,7 @@ export function CartDrawer() {
       if (err instanceof TRPCClientError) {
         msg =
           err.data?.code === "UNAUTHORIZED"
-            ? "Please sign in to book slots."
+            ? "Please sign in to continue."
             : err.message || msg;
       }
       toast.error(msg);
@@ -182,6 +245,19 @@ export function CartDrawer() {
       setOpen(false); // onOpenChange will run and clear() (safe even if already empty)
     }
   }, [open, items.length, setOpen]);
+
+  // check Use Effekt to be removed after debugging
+
+  useEffect(() => {
+    if (session.isSuccess) {
+      console.log("auth.session", {
+        hasUser: !!session.data?.user,
+        policyAcceptedVersion: session.data?.user?.policyAcceptedVersion,
+        policyAcceptedAt: session.data?.user?.policyAcceptedAt,
+        TERMS_VERSION,
+      });
+    }
+  }, [session.isSuccess, session.data]);
 
   return (
     <Sheet
@@ -270,6 +346,23 @@ export function CartDrawer() {
         </div>
 
         <SheetFooter className="mt-3 sm:mt-4">
+          {showAcceptanceGate && (
+            <div className="mb-3 space-y-2 text-sm">
+              <div>
+                Please review and accept the{" "}
+                <Link
+                  className="underline font-medium"
+                  href={termsHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Terms of Use
+                </Link>{" "}
+                to continue.
+              </div>
+            </div>
+          )}
+
           <div className="w-full pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-between text-base mb-3">
               <span>Total</span>
@@ -286,7 +379,14 @@ export function CartDrawer() {
                 // if you want just a spinner with no text:
                 loadingText=""
                 reserveWidth={false}
-                disabled={items.length === 0 || !allHaveService || isBusy}
+                disabled={
+                  items.length === 0 ||
+                  !allHaveService ||
+                  isBusy ||
+                  !authReady ||
+                  !hasUser ||
+                  showAcceptanceGate
+                }
               >
                 Checkout
               </LoadingButton>

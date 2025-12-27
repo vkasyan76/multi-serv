@@ -2,6 +2,11 @@ import type { CollectionConfig } from "payload";
 
 import { isSuperAdmin } from "../lib/access.ts";
 
+import {
+  BOOKING_SERVICE_STATUSES,
+  BOOKING_PAYMENT_STATUSES,
+} from "@/constants";
+
 export const Bookings: CollectionConfig = {
   slug: "bookings",
   admin: { useAsTitle: "status" },
@@ -36,6 +41,36 @@ export const Bookings: CollectionConfig = {
       required: true,
       index: true,
     }, // available -> booked -> confirmed (for payment flow)
+
+    // NEW: service lifecycle status (calendar/workflow)
+    {
+      name: "serviceStatus",
+      type: "select",
+      options: [...BOOKING_SERVICE_STATUSES],
+      defaultValue: "scheduled",
+      required: false, // keep false for Phase 0 (avoid breaking existing docs)
+      index: true,
+      admin: {
+        description:
+          "Service lifecycle: scheduled → completed → confirmed (or disputed).",
+        condition: (_, siblingData) => siblingData?.status !== "available",
+      },
+    },
+
+    // NEW: payment lifecycle status (unpaid → pending → paid)
+    {
+      name: "paymentStatus",
+      type: "select",
+      options: [...BOOKING_PAYMENT_STATUSES],
+      defaultValue: "unpaid",
+      required: false, // keep false for Phase 0
+      index: true,
+      admin: {
+        description:
+          "Payment lifecycle: unpaid → pending → paid. Meaningful after service confirmation.",
+        condition: (_, siblingData) => siblingData?.status !== "available",
+      },
+    },
 
     // NEW: chosen subcategory/service at booking time
     {

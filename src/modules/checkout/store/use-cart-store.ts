@@ -15,6 +15,10 @@ type CartState = {
   items: CartItem[];
   open: boolean; // controls the checkout sheet/drawer
 
+  // ✅ policy acceptance (UI gating for checkout)
+  acceptedPolicy: boolean;
+  setAcceptedPolicy: (v: boolean) => void;
+
   // derived
   count: () => number;
   totalCents: () => number;
@@ -34,13 +38,16 @@ export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   open: false,
 
+  acceptedPolicy: false,
+  setAcceptedPolicy: (v) => set({ acceptedPolicy: v }),
+
   // derived
   count: () => get().items.length,
   totalCents: () => get().items.reduce((s, i) => s + i.priceCents, 0),
 
   // ui
   setOpen: (v) => set({ open: v }),
-  clear: () => set({ items: [], tenant: null }),
+  clear: () => set({ items: [], tenant: null, acceptedPolicy: false }),
 
   // core
   add: (tenant, item) => {
