@@ -89,6 +89,7 @@ export default function TenantContent({ slug }: { slug: string }) {
     appLang,
     waitingForAuth,
     onBridgeResync,
+    profileQ, // to pass to pass into CartDrawer for checking ternms acceptance
   } = useTenantAuth(slug);
 
   const scrollToCalendar = () => {
@@ -523,7 +524,13 @@ export default function TenantContent({ slug }: { slug: string }) {
               </div>
             )}
 
-            <CartDrawer />
+            <CartDrawer
+              authState={signedState}
+              policyAcceptedAt={profileQ.data?.policyAcceptedAt ?? null}
+              policyAcceptedVersion={
+                profileQ.data?.policyAcceptedVersion ?? null
+              }
+            />
 
             {/* Sticky mobile CTA (mobile only) */}
             {selected.length > 0 && (

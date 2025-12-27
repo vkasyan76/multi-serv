@@ -32,8 +32,19 @@ import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
 import { BOOKING_CH, TERMS_VERSION } from "@/constants";
+import { platformHomeHref } from "@/lib/utils";
 
-export function CartDrawer() {
+type CartDrawerProps = {
+  authState?: boolean | null;
+  policyAcceptedAt?: string | null;
+  policyAcceptedVersion?: string | null;
+};
+
+export function CartDrawer({
+  authState,
+  policyAcceptedAt,
+  policyAcceptedVersion,
+}: CartDrawerProps = {}) {
   const open = useCartStore((s) => s.open);
   const setOpen = useCartStore((s) => s.setOpen);
   const items = useCartStore((s) => s.items);
@@ -50,17 +61,38 @@ export function CartDrawer() {
   const trpc = useTRPC();
   const qc = useQueryClient();
 
-  // check if policy already accepted
-  const sessionQuery = trpc.auth.session.queryOptions();
-  const session = useQuery(sessionQuery);
+  // check if policy already accepted:
+  const hasParentAuth = authState !== undefined;
 
-  const serverPolicyOk =
-    session.data?.user?.policyAcceptedVersion === TERMS_VERSION &&
-    !!session.data?.user?.policyAcceptedAt;
+  const sessionQuery = trpc.auth.session.queryOptions();
+  const session = useQuery({
+    ...sessionQuery,
+    enabled: !hasParentAuth, // only use auth.session if parent didn't provide auth
+  });
+
+  const hasUser = hasParentAuth ? authState === true : !!session.data?.user;
+
+  const acceptedAt = hasParentAuth
+    ? policyAcceptedAt
+    : (session.data?.user?.policyAcceptedAt ?? null);
+
+  const acceptedVersion = hasParentAuth
+    ? policyAcceptedVersion
+    : (session.data?.user?.policyAcceptedVersion ?? null);
+
+  const serverPolicyOk = acceptedVersion === TERMS_VERSION && !!acceptedAt;
 
   // Render the checkbox only when we know the user is signed-in and has NOT accepted the current version.
-  const showAcceptanceGate =
-    session.isSuccess && !!session.data?.user && !serverPolicyOk;
+  const showAcceptanceGate = hasUser && !serverPolicyOk;
+
+  const authReady = hasParentAuth ? authState !== null : session.isSuccess;
+
+  // for redirect to the terms-of-use page with returnTo=
+  const homeHref = platformHomeHref();
+  const termsHref =
+    homeHref === "/"
+      ? "/terms-of-use"
+      : `${homeHref.replace(/\/$/, "")}/terms-of-use`;
 
   // Pull tenant's subcategories/categories to build "Service" options
   const { data: tenant } = useQuery({
@@ -150,11 +182,11 @@ export function CartDrawer() {
     }
 
     // hard guard so checkout cannot run until session is known:
-    if (!session.isSuccess) {
+    if (!authReady) {
       toast.error("Please wait…");
       return;
     }
-    if (!session.data?.user) {
+    if (!hasUser) {
       toast.error("Please sign in to continue.");
       return;
     }
@@ -320,7 +352,7 @@ export function CartDrawer() {
                 Please review and accept the{" "}
                 <Link
                   className="underline font-medium"
-                  href="/terms-of-use"
+                  href={termsHref}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -350,10 +382,10 @@ export function CartDrawer() {
                 disabled={
                   items.length === 0 ||
                   !allHaveService ||
-                  !session.isSuccess ||
-                  !session.data?.user ||
-                  showAcceptanceGate ||
-                  isBusy
+                  isBusy ||
+                  !authReady ||
+                  !hasUser ||
+                  showAcceptanceGate
                 }
               >
                 Checkout

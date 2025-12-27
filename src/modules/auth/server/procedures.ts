@@ -720,6 +720,9 @@ export const authRouter = createTRPCRouter({
           }
         : undefined,
       onboardingCompleted: currentUser.onboardingCompleted || false,
+      // Policy acceptance check:
+      policyAcceptedVersion: currentUser.policyAcceptedVersion ?? null,
+      policyAcceptedAt: currentUser.policyAcceptedAt ?? null,
     };
   }),
 
