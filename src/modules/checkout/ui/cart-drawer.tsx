@@ -34,17 +34,18 @@ import { toast } from "sonner";
 import { BOOKING_CH, TERMS_VERSION } from "@/constants";
 import { platformHomeHref } from "@/lib/utils";
 
+// all props are required: prevents accidental future usage without the tenant handoff
 type CartDrawerProps = {
-  authState?: boolean | null;
-  policyAcceptedAt?: string | null;
-  policyAcceptedVersion?: string | null;
+  authState: boolean | null;
+  policyAcceptedAt: string | null;
+  policyAcceptedVersion: string | null;
 };
 
 export function CartDrawer({
   authState,
   policyAcceptedAt,
   policyAcceptedVersion,
-}: CartDrawerProps = {}) {
+}: CartDrawerProps) {
   const open = useCartStore((s) => s.open);
   const setOpen = useCartStore((s) => s.setOpen);
   const items = useCartStore((s) => s.items);
@@ -62,30 +63,16 @@ export function CartDrawer({
   const qc = useQueryClient();
 
   // check if policy already accepted:
-  const hasParentAuth = authState !== undefined;
+  // Tenant content always provides these (CartDrawer is tenant-only):
+  const authReady = authState !== null;
+  const hasUser = authState === true;
 
-  const sessionQuery = trpc.auth.session.queryOptions();
-  const session = useQuery({
-    ...sessionQuery,
-    enabled: !hasParentAuth, // only use auth.session if parent didn't provide auth
-  });
+  const serverPolicyOk =
+    policyAcceptedVersion === TERMS_VERSION && !!policyAcceptedAt;
 
-  const hasUser = hasParentAuth ? authState === true : !!session.data?.user;
-
-  const acceptedAt = hasParentAuth
-    ? policyAcceptedAt
-    : (session.data?.user?.policyAcceptedAt ?? null);
-
-  const acceptedVersion = hasParentAuth
-    ? policyAcceptedVersion
-    : (session.data?.user?.policyAcceptedVersion ?? null);
-
-  const serverPolicyOk = acceptedVersion === TERMS_VERSION && !!acceptedAt;
-
-  // Render the checkbox only when we know the user is signed-in and has NOT accepted the current version.
+  // Show the Terms gate when signed-in but the current Terms version is not accepted.
+  // Acceptance is recorded on the /terms-of-use page.
   const showAcceptanceGate = hasUser && !serverPolicyOk;
-
-  const authReady = hasParentAuth ? authState !== null : session.isSuccess;
 
   // for redirect to the terms-of-use page with returnTo=
   const homeHref = platformHomeHref();
@@ -198,7 +185,7 @@ export function CartDrawer({
     }
 
     try {
-      // no auto-accept here — acceptance happens only via the checkbox
+      // no auto-accept here — acceptance is recorded on the Terms of Use page
 
       // Step 1 — reserve the slots (available -> booked)
       await bookSlots.mutateAsync({
@@ -246,18 +233,17 @@ export function CartDrawer({
     }
   }, [open, items.length, setOpen]);
 
-  // check Use Effekt to be removed after debugging
+  // Diagnostics Use Effekt - development only:
 
   useEffect(() => {
-    if (session.isSuccess) {
-      console.log("auth.session", {
-        hasUser: !!session.data?.user,
-        policyAcceptedVersion: session.data?.user?.policyAcceptedVersion,
-        policyAcceptedAt: session.data?.user?.policyAcceptedAt,
-        TERMS_VERSION,
+    if (process.env.NODE_ENV !== "production") {
+      console.log("cart drawer auth", {
+        authState,
+        policyAcceptedVersion,
+        policyAcceptedAt,
       });
     }
-  }, [session.isSuccess, session.data]);
+  }, [authState, policyAcceptedVersion, policyAcceptedAt]);
 
   return (
     <Sheet
@@ -358,7 +344,7 @@ export function CartDrawer({
                 >
                   Terms of Use
                 </Link>{" "}
-                to continue.
+                to continue with your booking.
               </div>
             </div>
           )}
