@@ -9,21 +9,21 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 
-export function PolicyConsent() {
+export function TermsConsent() {
   const trpc = useTRPC();
   const qc = useQueryClient();
   const router = useRouter();
 
-  const sessionQuery = trpc.auth.session.queryOptions();
-  const session = useQuery(sessionQuery);
+  const profileQuery = trpc.auth.getUserProfile.queryOptions();
+  const profile = useQuery(profileQuery);
 
-  const acceptedAt = session.data?.user?.policyAcceptedAt ?? null;
+  const acceptedAt = profile.data?.policyAcceptedAt ?? null;
 
   const serverPolicyOk =
-    session.data?.user?.policyAcceptedVersion === TERMS_VERSION && !!acceptedAt;
+    profile.data?.policyAcceptedVersion === TERMS_VERSION && !!acceptedAt;
 
   const needsAcceptance =
-    session.isSuccess && !!session.data?.user && !serverPolicyOk;
+    profile.isSuccess && !!profile.data && !serverPolicyOk;
 
   const acceptedAtLabel = useMemo(() => {
     if (!acceptedAt) return null;
@@ -42,7 +42,7 @@ export function PolicyConsent() {
     ...trpc.legal.acceptPolicy.mutationOptions(),
     onSuccess: async () => {
       toast.success("Terms accepted.");
-      await qc.invalidateQueries({ queryKey: sessionQuery.queryKey });
+      await qc.invalidateQueries({ queryKey: profileQuery.queryKey });
     },
     onError: () => {
       toast.error("Could not record acceptance. Please try again.");
@@ -50,7 +50,7 @@ export function PolicyConsent() {
   });
 
   // If user is signed in and already accepted -> show confirmation (no buttons)
-  if (session.isSuccess && session.data?.user && serverPolicyOk) {
+  if (profile.isSuccess && profile.data && serverPolicyOk) {
     return (
       <Card className="bg-muted/30">
         <CardContent className="p-4 sm:p-5">

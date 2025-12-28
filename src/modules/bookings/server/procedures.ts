@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { isBefore, addHours, startOfHour, isEqual } from "date-fns";
 import type { Booking, Tenant, User } from "@/payload-types";
-import { TERMS_VERSION } from "@/constants";
+
 import {
   uniqueIds,
   fetchBookable,
@@ -13,21 +13,6 @@ import {
 
 // Payload returns docs with an id. Make that explicit.
 type DocWithId<T> = T & { id: string };
-
-// Ensure user has accepted latest policy
-
-function assertPolicyAccepted(payloadUser: DocWithId<User>) {
-  const ok =
-    payloadUser.policyAcceptedVersion === TERMS_VERSION &&
-    !!payloadUser.policyAcceptedAt;
-
-  if (!ok) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "You must accept the Policy before booking.",
-    });
-  }
-}
 
 // Convenience return types
 type BookSlotsResult = {
@@ -310,8 +295,6 @@ export const bookingRouter = createTRPCRouter({
       const payloadUser = me.docs[0];
       if (!payloadUser) throw new TRPCError({ code: "FORBIDDEN" });
 
-      // hard gate - policy acceptance:
-      assertPolicyAccepted(payloadUser);
       const payloadUserId = payloadUser.id;
       const nowIso = new Date().toISOString();
 
@@ -606,9 +589,6 @@ export const bookingRouter = createTRPCRouter({
 
       const payloadUser = me.docs[0];
       if (!payloadUser) throw new TRPCError({ code: "FORBIDDEN" });
-
-      // hard gate - policy acceptance:
-      assertPolicyAccepted(payloadUser);
 
       const payloadUserId = payloadUser.id;
 

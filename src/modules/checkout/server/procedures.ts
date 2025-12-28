@@ -12,7 +12,7 @@ import type { Booking, Tenant, User } from "@/payload-types";
 import { CheckoutMetadata } from "./types";
 import { addHours } from "date-fns";
 
-import { TERMS_VERSION } from "@/constants";
+import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted"; // Ensure user has accepted latest policy
 
 // If you already have this helper in your project, keep the import.
 // Otherwise, success/cancel can use NEXT_PUBLIC_APP_URL as a fallback.
@@ -63,16 +63,7 @@ export const checkoutRouter = createTRPCRouter({
 
       // check policy acceptance
 
-      const policyOk =
-        payloadUser.policyAcceptedVersion === TERMS_VERSION &&
-        !!payloadUser.policyAcceptedAt;
-
-      if (!policyOk) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You must accept the Policy before checkout.",
-        });
-      }
+      assertTermsAccepted(payloadUser);
 
       const payloadUserId = payloadUser.id;
 

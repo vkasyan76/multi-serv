@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -13,6 +13,11 @@ import {
   Calendar,
   X,
 } from "lucide-react";
+
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { TERMS_VERSION } from "@/constants";
+import { VendorTermsDialog } from "@/modules/profile/ui/vendor-terms-dialog";
 
 type Mode = "prereq" | "confirm";
 
@@ -39,8 +44,44 @@ export default function ProviderConfirmation({
 
   const isPrereq = mode === "prereq";
 
+  // check terms acceptance:
+
+  const [termsOpen, setTermsOpen] = useState(false);
+
+  const trpc = useTRPC();
+  const profileQuery = trpc.auth.getUserProfile.queryOptions();
+  const profile = useQuery(profileQuery);
+
+  const acceptedAt = profile.data?.policyAcceptedAt ?? null;
+
+  const policyOk =
+    profile.isSuccess &&
+    profile.data?.policyAcceptedVersion === TERMS_VERSION &&
+    !!acceptedAt;
+
+  const handlePrimaryClick = () => {
+    if (isPrereq) return;
+
+    if (policyOk) {
+      onPrimaryAction();
+      return;
+    }
+
+    setTermsOpen(true);
+  };
+
   return (
     <div className="min-h-screen flex items-start justify-center p-4 sm:p-6 pt-20 sm:pt-24">
+      {!isPrereq && (
+        <VendorTermsDialog
+          open={termsOpen}
+          onOpenChangeAction={setTermsOpen}
+          onAcceptedAction={() => {
+            // open vendor form only after acceptance is recorded
+            onPrimaryAction();
+          }}
+        />
+      )}
       <Card
         className="relative w-full max-w-lg mx-auto border-0 shadow-lg"
         role="dialog"
@@ -139,9 +180,9 @@ export default function ProviderConfirmation({
               // Confirmation Card - Two buttons as intended
               <>
                 <Button
-                  onClick={onPrimaryAction}
-                  disabled={isSubmitting}
-                  className="w-full sm:flex-1 min-w-[140px]"
+                  onClick={handlePrimaryClick}
+                  disabled={isSubmitting || !profile.isSuccess}
+                  className="w-full sm:flex-1 min-w-[140px] bg-black text-white hover:bg-pink-400 hover:text-primary"
                 >
                   {isSubmitting && (
                     <Loader2

@@ -8,14 +8,14 @@ import {
   BOOKING_SERVICE_STATUSES,
   BOOKING_PAYMENT_STATUSES,
 } from "@/constants";
-import { PolicyConsent } from "./terms-consent";
+import { TermsConsent } from "./terms-consent";
 
 export const TERMS_V1 = {
   version: "v1",
   effectiveDate: "2025-12-25", // set this manually when you publish
 };
 
-export function TermsV1() {
+export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
   const commissionPercent = (COMMISSION_RATE_BPS_DEFAULT / 100).toFixed(2);
 
   return (
@@ -161,9 +161,11 @@ export function TermsV1() {
           </p>
         </section>
       </div>
-      <div className="pt-4">
-        <PolicyConsent />
-      </div>
+      {!hideConsent && (
+        <div className="pt-4">
+          <TermsConsent />
+        </div>
+      )}
     </article>
   );
 }
