@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useEffect } from "react";
+import { useMemo, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   getLocaleAndCurrency,
@@ -33,6 +33,7 @@ const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
 import { BOOKING_CH, TERMS_VERSION } from "@/constants";
 import { platformHomeHref } from "@/lib/utils";
+import { TermsAcceptanceDialog } from "@/modules/profile/ui/terms-acceptance-dialog";
 
 // all props are required: prevents accidental future usage without the tenant handoff
 type CartDrawerProps = {
@@ -67,12 +68,27 @@ export function CartDrawer({
   const authReady = authState !== null;
   const hasUser = authState === true;
 
+  // TermsAcceptanceDialog
+
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [pendingCheckout, setPendingCheckout] = useState(false); // after Accept in the dialog, we can resume checkout automatically not clicking Checkout buttonagain
+
+  // Avoid “accepted but props still stale” race right after mutation success
+  const [acceptedThisSession, setAcceptedThisSession] = useState(false);
+
   const serverPolicyOk =
     policyAcceptedVersion === TERMS_VERSION && !!policyAcceptedAt;
 
+  const policyOk = serverPolicyOk || acceptedThisSession;
+
   // Show the Terms gate when signed-in but the current Terms version is not accepted.
-  // Acceptance is recorded on the /terms-of-use page.
-  const showAcceptanceGate = hasUser && !serverPolicyOk;
+  const showAcceptanceGate = hasUser && !policyOk;
+
+  // small helper so “Decline/close” clears the pending intent:
+  const handleTermsOpenChange = (v: boolean) => {
+    setTermsOpen(v);
+    if (!v) setPendingCheckout(false);
+  };
 
   // for redirect to the terms-of-use page with returnTo=
   const homeHref = platformHomeHref();
@@ -158,6 +174,44 @@ export function CartDrawer({
     ...trpc.checkout.createSession.mutationOptions(),
   });
 
+  // Split the “real checkout” into a helper runCheckout() that does not contain the terms gate.
+  // to avoid that handleCheckout() immediately hits   setPendingCheckout(true) & setTermsOpen(true) - loop behaviour
+  const runCheckout = async () => {
+    try {
+      // Step 1 — reserve the slots (available -> booked)
+      await bookSlots.mutateAsync({
+        items: items.map((i) => ({
+          bookingId: i.id,
+          serviceId: i.serviceId as string,
+        })),
+      });
+
+      // Step 2 — create the Checkout session for these slot ids
+      const res = await createSession.mutateAsync({
+        slotIds: items.map((i) => i.id),
+      });
+
+      // Step 3 — send the user to Stripe
+      if (res?.url) {
+        window.location.assign(res.url);
+      } else {
+        toast.error("Could not start checkout. Please try again.");
+      }
+    } catch (err) {
+      let msg = "Checkout failed. Please try again.";
+      if (err instanceof TRPCClientError) {
+        msg =
+          err.data?.code === "UNAUTHORIZED"
+            ? "Please sign in to continue."
+            : err.message || msg;
+      }
+      toast.error(msg);
+    } finally {
+      // close the drawer for a cleaner UX
+      setOpen(false);
+    }
+  };
+
   // called by the Checkout button
   const handleCheckout = async () => {
     if (!items.length) return;
@@ -178,49 +232,13 @@ export function CartDrawer({
       return;
     }
 
-    // accept policy gate
+    // accept policy gate: open dialog (no page hop)
     if (showAcceptanceGate) {
-      toast.error("Please review and accept the Terms of Use before checkout.");
+      setPendingCheckout(true);
+      setTermsOpen(true);
       return;
     }
-
-    try {
-      // no auto-accept here — acceptance is recorded on the Terms of Use page
-
-      // Step 1 — reserve the slots (available -> booked)
-      await bookSlots.mutateAsync({
-        // NOTE: server will require serviceId, so we send strings
-        items: items.map((i) => ({
-          bookingId: i.id,
-          serviceId: i.serviceId as string,
-        })),
-      });
-
-      // Step 2 — create the Checkout session for these slot ids
-      const res = await createSession.mutateAsync({
-        slotIds: items.map((i) => i.id),
-      });
-
-      // Step 3 — send the user to Stripe
-      if (res?.url) {
-        // optional: close the drawer for a cleaner UX
-        setOpen(false);
-        window.location.assign(res.url);
-      } else {
-        toast.error("Could not start checkout. Please try again.");
-      }
-    } catch (err) {
-      let msg = "Checkout failed. Please try again.";
-      if (err instanceof TRPCClientError) {
-        msg =
-          err.data?.code === "UNAUTHORIZED"
-            ? "Please sign in to continue."
-            : err.message || msg;
-      }
-      toast.error(msg);
-    } finally {
-      setOpen(false);
-    }
+    await runCheckout();
   };
 
   // Loading button:
@@ -233,7 +251,7 @@ export function CartDrawer({
     }
   }, [open, items.length, setOpen]);
 
-  // Diagnostics Use Effekt - development only:
+  // Diagnostics UseEffect - development only:
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
@@ -244,6 +262,12 @@ export function CartDrawer({
       });
     }
   }, [authState, policyAcceptedVersion, policyAcceptedAt]);
+
+  useEffect(() => {
+    // if the upstream acceptance values change (likely different user or acceptance caught up),
+    // don't keep local override around
+    setAcceptedThisSession(false);
+  }, [policyAcceptedAt, policyAcceptedVersion, authState]);
 
   return (
     <Sheet
@@ -335,7 +359,7 @@ export function CartDrawer({
           {showAcceptanceGate && (
             <div className="mb-3 space-y-2 text-sm">
               <div>
-                Please review and accept the{" "}
+                You must accept the{" "}
                 <Link
                   className="underline font-medium"
                   href={termsHref}
@@ -344,7 +368,7 @@ export function CartDrawer({
                 >
                   Terms of Use
                 </Link>{" "}
-                to continue with your booking.
+                to continue. You can accept them when you click Checkout.
               </div>
             </div>
           )}
@@ -370,8 +394,7 @@ export function CartDrawer({
                   !allHaveService ||
                   isBusy ||
                   !authReady ||
-                  !hasUser ||
-                  showAcceptanceGate
+                  !hasUser
                 }
               >
                 Checkout
@@ -387,6 +410,21 @@ export function CartDrawer({
             </div>
           </div>
         </SheetFooter>
+
+        <TermsAcceptanceDialog
+          open={termsOpen}
+          onOpenChangeAction={handleTermsOpenChange}
+          onAcceptedAction={() => {
+            // locally mark as accepted to avoid “stale props” race
+            setAcceptedThisSession(true);
+
+            // continue checkout only if the user clicked Checkout and was intercepted
+            if (pendingCheckout) {
+              setPendingCheckout(false);
+              void runCheckout();
+            }
+          }}
+        />
       </SheetContent>
     </Sheet>
   );

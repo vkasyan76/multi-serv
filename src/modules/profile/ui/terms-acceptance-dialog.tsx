@@ -12,17 +12,17 @@ import {
 } from "@/components/ui/dialog";
 import { TermsV1 } from "@/modules/legal/terms-of-use/terms-v1";
 
-type VendorTermsDialogProps = {
+type TermsAcceptanceDialogProps = {
   open: boolean;
   onOpenChangeAction: (v: boolean) => void;
   onAcceptedAction: () => void; // open vendor form
 };
 
-export function VendorTermsDialog({
+export function TermsAcceptanceDialog({
   open,
   onOpenChangeAction,
   onAcceptedAction,
-}: VendorTermsDialogProps) {
+}: TermsAcceptanceDialogProps) {
   const trpc = useTRPC();
   const qc = useQueryClient();
 
@@ -34,8 +34,8 @@ export function VendorTermsDialog({
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: profileQuery.queryKey });
       toast.success("Terms accepted.");
-      onOpenChangeAction(false);
       onAcceptedAction();
+      onOpenChangeAction(false);
     },
     onError: () => {
       toast.error("Could not record acceptance. Please try again.");

@@ -17,7 +17,7 @@ import {
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { TERMS_VERSION } from "@/constants";
-import { VendorTermsDialog } from "@/modules/profile/ui/vendor-terms-dialog";
+import { TermsAcceptanceDialog } from "@/modules/profile/ui/terms-acceptance-dialog";
 
 type Mode = "prereq" | "confirm";
 
@@ -73,7 +73,7 @@ export default function ProviderConfirmation({
   return (
     <div className="min-h-screen flex items-start justify-center p-4 sm:p-6 pt-20 sm:pt-24">
       {!isPrereq && (
-        <VendorTermsDialog
+        <TermsAcceptanceDialog
           open={termsOpen}
           onOpenChangeAction={setTermsOpen}
           onAcceptedAction={() => {

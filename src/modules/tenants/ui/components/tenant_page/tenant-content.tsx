@@ -89,7 +89,7 @@ export default function TenantContent({ slug }: { slug: string }) {
     appLang,
     waitingForAuth,
     onBridgeResync,
-    profileQ, // to pass to pass into CartDrawer for checking ternms acceptance
+    profileQ, // to pass to pass into CartDrawer for checking terms acceptance
   } = useTenantAuth(slug);
 
   const scrollToCalendar = () => {
