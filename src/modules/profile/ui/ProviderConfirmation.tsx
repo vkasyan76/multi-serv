@@ -59,6 +59,10 @@ export default function ProviderConfirmation({
     profile.data?.policyAcceptedVersion === TERMS_VERSION &&
     !!acceptedAt;
 
+  // Adding lightweight loading/error
+  const profileLoading = profile.isLoading;
+  const profileError = profile.isError;
+
   const handlePrimaryClick = () => {
     if (isPrereq) return;
 
@@ -181,15 +185,28 @@ export default function ProviderConfirmation({
               <>
                 <Button
                   onClick={handlePrimaryClick}
-                  disabled={isSubmitting || !profile.isSuccess}
+                  disabled={
+                    isSubmitting ||
+                    profileLoading ||
+                    profileError ||
+                    !profile.isSuccess
+                  }
                   className="w-full sm:flex-1 min-w-[140px] bg-black text-white hover:bg-pink-400 hover:text-primary"
                 >
-                  {isSubmitting && (
+                  {profileLoading ? (
+                    <>
+                      <Loader2
+                        className="mr-2 h-4 w-4 animate-spin"
+                        aria-hidden
+                      />
+                      Loading...
+                    </>
+                  ) : isSubmitting ? (
                     <Loader2
                       className="mr-2 h-4 w-4 animate-spin"
                       aria-hidden
                     />
-                  )}
+                  ) : null}
                   Create Provider Profile
                 </Button>
                 <Button
@@ -202,6 +219,21 @@ export default function ProviderConfirmation({
               </>
             )}
           </div>
+          {/* NEW: error feedback + retry (confirm-mode only) */}
+          {!isPrereq && profileError && (
+            <div className="mt-2 text-center space-y-2">
+              <p className="text-sm text-destructive">
+                Failed to load your profile. Please try again.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => profile.refetch()}
+                disabled={isSubmitting}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -71,7 +71,7 @@ export function CartDrawer({
   // TermsAcceptanceDialog
 
   const [termsOpen, setTermsOpen] = useState(false);
-  const [pendingCheckout, setPendingCheckout] = useState(false); // after Accept in the dialog, we can resume checkout automatically not clicking Checkout buttonagain
+  const [pendingCheckout, setPendingCheckout] = useState(false); // after Accept in the dialog, we can resume checkout automatically not clicking Checkout button again
 
   // Avoid “accepted but props still stale” race right after mutation success
   const [acceptedThisSession, setAcceptedThisSession] = useState(false);
