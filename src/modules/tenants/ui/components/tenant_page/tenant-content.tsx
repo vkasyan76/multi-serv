@@ -14,7 +14,8 @@ import LoadingPage from "@/components/shared/loading";
 import type { Category } from "@/payload-types";
 import dynamic from "next/dynamic";
 
-import { BookSlotsButton } from "@/modules/checkout/ui/book-slots-button";
+import { BookingActionButton } from "./booking-action-button";
+
 import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
@@ -23,7 +24,7 @@ import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary"
 import { CategoryIcon } from "@/modules/categories/category-icons";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+
 import { platformHomeHref } from "@/lib/utils";
 
 import { useTenantAuth } from "./hooks/use-tenant-auth";
@@ -264,6 +265,8 @@ export default function TenantContent({ slug }: { slug: string }) {
   if (cardLoading || !cardTenant) {
     return <LoadingPage />;
   }
+
+  const pricePerHourCents = getHourlyRateCents(cardTenant); // for passing into BookingActionButton
 
   // check if user is also the tenat whose page is visisted
   const isOwner =
@@ -520,30 +523,12 @@ export default function TenantContent({ slug }: { slug: string }) {
             {selected.length > 0 && (
               <div className="mt-4 hidden sm:flex gap-3">
                 <div className="flex-1">
-                  {signedState === true ? (
-                    <BookSlotsButton
-                      tenantSlug={slug}
-                      selectedIds={selected}
-                      pricePerHourCents={getHourlyRateCents(cardTenant)}
-                    />
-                  ) : signedState === null ? (
-                    <Button className="w-full" disabled>
-                      <Loader2
-                        className="mr-2 h-4 w-4 animate-spin"
-                        aria-hidden
-                      />
-                      Checking sign-in…
-                    </Button>
-                  ) : (
-                    <Button
-                      className="w-full"
-                      onClick={() =>
-                        toast.error("Sign in to book this provider.")
-                      }
-                    >
-                      Book slots ({selected.length})
-                    </Button>
-                  )}
+                  <BookingActionButton
+                    signedState={signedState}
+                    slug={slug}
+                    selectedIds={selected}
+                    pricePerHourCents={pricePerHourCents}
+                  />
                 </div>
                 <Button
                   variant="outline"
@@ -566,30 +551,12 @@ export default function TenantContent({ slug }: { slug: string }) {
             {/* Sticky mobile CTA (mobile only) */}
             {selected.length > 0 && (
               <div className="sm:hidden sticky bottom-0 inset-x-0 z-20 bg-background/95 border-t p-3">
-                {signedState === true ? (
-                  <BookSlotsButton
-                    tenantSlug={slug}
-                    selectedIds={selected}
-                    pricePerHourCents={getHourlyRateCents(cardTenant)}
-                  />
-                ) : signedState === null ? (
-                  <Button className="w-full" disabled>
-                    <Loader2
-                      className="mr-2 h-4 w-4 animate-spin"
-                      aria-hidden
-                    />
-                    Checking sign-in…
-                  </Button>
-                ) : (
-                  <Button
-                    className="w-full"
-                    onClick={() =>
-                      toast.error("Sign in to book this provider.")
-                    }
-                  >
-                    Book slots ({selected.length})
-                  </Button>
-                )}
+                <BookingActionButton
+                  signedState={signedState}
+                  slug={slug}
+                  selectedIds={selected}
+                  pricePerHourCents={pricePerHourCents}
+                />
               </div>
             )}
           </section>
