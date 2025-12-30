@@ -125,9 +125,13 @@ export default function TenantContent({ slug }: { slug: string }) {
     }
 
     // signedState === null (still resolving): retry bridge/profile once
-    const ok = await onBridgeResync();
-    if (ok) setChatOpen(true);
-    else toast.error("Sign in to contact this provider.");
+    try {
+      const ok = await onBridgeResync();
+      if (ok) setChatOpen(true);
+      else toast.error("Sign in to contact this provider.");
+    } catch {
+      toast.error("Sign in to contact this provider.");
+    }
   };
 
   // Clear selections on unmount
@@ -261,7 +265,7 @@ export default function TenantContent({ slug }: { slug: string }) {
       ? (tenantOrderStats[cardTenant.id]?.ordersCount ?? undefined)
       : undefined;
 
-  // we remove waitingForAuth from loading check to make the page abvailable to unloged users
+  // we remove waitingForAuth from loading check to make the page available to unlogged users
   if (cardLoading || !cardTenant) {
     return <LoadingPage />;
   }
