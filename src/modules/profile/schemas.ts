@@ -5,12 +5,12 @@ const usernameValidation = z
   .min(3, "Username must be at least 3 characters")
   .max(63, "Username must be less than 63 characters")
   .regex(
-    /^[a-z0-9][a-z0-9-]*[a-z0-9]$/,
-    "Username can only contain lowercase letters, numbers and hyphens. It must start and end with a letter or number"
+    /^[a-z0-9][a-z0-9._-]*[a-z0-9]$/i,
+    "Username can only contain letters, numbers, dots, underscores and hyphens. It must start and end with a letter or number"
   )
   .refine(
-    (val) => !val.includes("--"),
-    "Username cannot contain consecutive hyphens"
+    (val) => !/[._-]{2,}/.test(val),
+    "Username cannot contain consecutive separators (., _, -)"
   )
   .transform((val) => val.toLowerCase());
 

@@ -865,6 +865,37 @@ export const authRouter = createTRPCRouter({
         throw new Error("User not found");
       }
 
+      const isLocked = currentUser.onboardingCompleted === true;
+
+      // 1) Lock username after onboarding
+      if (isLocked && input.username !== currentUser.username) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Username cannot be changed after onboarding.",
+        });
+      }
+
+      // 2) Enforce uniqueness during onboarding (only if user is allowed to edit)
+      if (!isLocked && input.username !== currentUser.username) {
+        const existing = await ctx.db.find({
+          collection: "users",
+          limit: 1,
+          where: {
+            and: [
+              { username: { equals: input.username } },
+              { id: { not_equals: currentUser.id } },
+            ],
+          },
+        });
+
+        if (existing.totalDocs > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Username already taken",
+          });
+        }
+      }
+
       // If user provides coordinates, mark them as manually set and preserve existing metadata
       let updatedCoordinates = input.coordinates;
       if (hasValidCoordinates(input.coordinates) && input.coordinates) {
@@ -875,7 +906,7 @@ export const authRouter = createTRPCRouter({
         collection: "users",
         id: currentUser.id as string,
         data: {
-          username: input.username,
+          username: input.username, // safe: either locked (same) or checked
           location: input.location,
           country: input.country,
           language: input.language,

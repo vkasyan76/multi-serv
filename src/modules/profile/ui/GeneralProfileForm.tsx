@@ -106,6 +106,8 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   // Determine if profile has been completed before
   const isProfileCompleted = userProfile?.onboardingCompleted || false;
 
+  const usernameLocked = isProfileCompleted; // Lock username if onboarding completed
+
   // Populate form with user data when it loads
   useEffect(() => {
     if (userProfile) {
@@ -305,8 +307,21 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                     autoComplete="off"
                     placeholder="Enter your username"
                     value={field.value}
+                    readOnly={usernameLocked}
+                    disabled={false}
+                    tabIndex={usernameLocked ? -1 : undefined}
+                    className={
+                      usernameLocked
+                        ? "bg-gray-100 cursor-not-allowed"
+                        : undefined
+                    }
                   />
                 </FormControl>
+                {!usernameLocked && (
+                  <span className="block text-xs text-gray-500 mt-1">
+                    * cannot be changed after registration
+                  </span>
+                )}
               </FormItem>
             )}
           />
@@ -315,7 +330,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
             control={form.control}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Location</FormLabel>
+                <FormLabel>Address</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
