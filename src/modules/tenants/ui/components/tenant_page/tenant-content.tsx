@@ -14,7 +14,8 @@ import LoadingPage from "@/components/shared/loading";
 import type { Category } from "@/payload-types";
 import dynamic from "next/dynamic";
 
-import { BookSlotsButton } from "@/modules/checkout/ui/book-slots-button";
+import { BookingActionButton } from "./booking-action-button";
+
 import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
@@ -23,6 +24,7 @@ import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary"
 import { CategoryIcon } from "@/modules/categories/category-icons";
 import Image from "next/image";
 import Link from "next/link";
+
 import { platformHomeHref } from "@/lib/utils";
 
 import { useTenantAuth } from "./hooks/use-tenant-auth";
@@ -83,12 +85,11 @@ export default function TenantContent({ slug }: { slug: string }) {
   // Auth + language + “warmup gate” in one place.
   // waiting for bridge validation
   const {
-    bridge,
     signedState,
     viewerKey,
     appLang,
-    waitingForAuth,
     onBridgeResync,
+    profileQ, // to pass to pass into CartDrawer for checking terms acceptance
   } = useTenantAuth(slug);
 
   const scrollToCalendar = () => {
@@ -100,21 +101,37 @@ export default function TenantContent({ slug }: { slug: string }) {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const handleBookService = () => {
+    scrollToCalendar();
+    if (signedState === false)
+      toast.info("Select slots, then sign in to book.");
+  };
+
   // conversation
   // conversation trigger (MUST be before any early return)
   // must be before any early return
   const [chatOpen, setChatOpen] = useState(false);
 
   // If the user is logged out, bridge.authenticated === false → you get the toast and the sheet does not open.
-  const handleContact = () => {
-    // definitive: bridge says "not authenticated" -> toast, don't open
-    if (bridge?.ok && bridge.authenticated === false) {
+  const handleContact = async () => {
+    if (signedState === true) {
+      setChatOpen(true);
+      return;
+    }
+
+    if (signedState === false) {
       toast.error("Sign in to contact this provider.");
       return;
     }
 
-    // otherwise allow opening; if profile still resolving, the sheet can show "Checking sign-in…"
-    setChatOpen(true);
+    // signedState === null (still resolving): retry bridge/profile once
+    try {
+      const ok = await onBridgeResync();
+      if (ok) setChatOpen(true);
+      else toast.error("Sign in to contact this provider.");
+    } catch {
+      toast.error("Sign in to contact this provider.");
+    }
   };
 
   // Clear selections on unmount
@@ -200,7 +217,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const { data: cardTenant, isLoading: cardLoading } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug }),
-    enabled: !!bridge?.ok && !waitingForAuth && !isCancelling, // pause heavy data work while the cancel flow is in progress
+    enabled: !!slug && !isCancelling, // pause heavy data work while the cancel flow is in progress
     staleTime: 0, // ← was 60_000; must be 0
     gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
     refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
@@ -248,9 +265,12 @@ export default function TenantContent({ slug }: { slug: string }) {
       ? (tenantOrderStats[cardTenant.id]?.ordersCount ?? undefined)
       : undefined;
 
-  if (waitingForAuth || cardLoading || !cardTenant) {
+  // we remove waitingForAuth from loading check to make the page available to unlogged users
+  if (cardLoading || !cardTenant) {
     return <LoadingPage />;
   }
+
+  const pricePerHourCents = getHourlyRateCents(cardTenant); // for passing into BookingActionButton
 
   // check if user is also the tenat whose page is visisted
   const isOwner =
@@ -270,7 +290,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           variant="detail"
           showActions
           ordersCount={ordersCount}
-          onBook={scrollToCalendar}
+          onBook={handleBookService}
           appLang={appLang}
           onContact={handleContact}
           isOwner={isOwner}
@@ -507,10 +527,11 @@ export default function TenantContent({ slug }: { slug: string }) {
             {selected.length > 0 && (
               <div className="mt-4 hidden sm:flex gap-3">
                 <div className="flex-1">
-                  <BookSlotsButton
-                    tenantSlug={slug}
+                  <BookingActionButton
+                    signedState={signedState}
+                    slug={slug}
                     selectedIds={selected}
-                    pricePerHourCents={getHourlyRateCents(cardTenant)}
+                    pricePerHourCents={pricePerHourCents}
                   />
                 </div>
                 <Button
@@ -523,15 +544,22 @@ export default function TenantContent({ slug }: { slug: string }) {
               </div>
             )}
 
-            <CartDrawer />
+            <CartDrawer
+              authState={signedState}
+              policyAcceptedAt={profileQ.data?.policyAcceptedAt ?? null}
+              policyAcceptedVersion={
+                profileQ.data?.policyAcceptedVersion ?? null
+              }
+            />
 
             {/* Sticky mobile CTA (mobile only) */}
             {selected.length > 0 && (
               <div className="sm:hidden sticky bottom-0 inset-x-0 z-20 bg-background/95 border-t p-3">
-                <BookSlotsButton
-                  tenantSlug={slug}
+                <BookingActionButton
+                  signedState={signedState}
+                  slug={slug}
                   selectedIds={selected}
-                  pricePerHourCents={getHourlyRateCents(cardTenant)}
+                  pricePerHourCents={pricePerHourCents}
                 />
               </div>
             )}
@@ -575,7 +603,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               variant="detail"
               showActions
               ordersCount={ordersCount}
-              onBook={scrollToCalendar}
+              onBook={handleBookService}
               appLang={appLang}
               onContact={handleContact}
               isOwner={isOwner}

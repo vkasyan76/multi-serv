@@ -24,6 +24,9 @@ import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
 import { normalizeVat } from "@/modules/profile/vat-validation-utils";
 import Stripe from "stripe";
 
+// for checking if user has accepted current terms:
+import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted";
+
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
 
@@ -219,6 +222,9 @@ export const authRouter = createTRPCRouter({
       }
 
       const currentUser = user.docs[0];
+
+      // Check if user has accepted current terms
+      assertTermsAccepted(currentUser);
 
       // Check if user already has a tenant (vendor profile)
       if (
@@ -452,6 +458,9 @@ export const authRouter = createTRPCRouter({
       }
 
       const currentUser = user.docs[0];
+
+      // Check if user has accepted current terms
+      assertTermsAccepted(currentUser);
 
       // Find the user's tenant
       if (
@@ -720,6 +729,9 @@ export const authRouter = createTRPCRouter({
           }
         : undefined,
       onboardingCompleted: currentUser.onboardingCompleted || false,
+      // Policy acceptance check:
+      policyAcceptedVersion: currentUser.policyAcceptedVersion ?? null,
+      policyAcceptedAt: currentUser.policyAcceptedAt ?? null,
     };
   }),
 

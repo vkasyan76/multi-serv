@@ -12,6 +12,8 @@ import type { Booking, Tenant, User } from "@/payload-types";
 import { CheckoutMetadata } from "./types";
 import { addHours } from "date-fns";
 
+import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted"; // Ensure user has accepted latest policy
+
 // If you already have this helper in your project, keep the import.
 // Otherwise, success/cancel can use NEXT_PUBLIC_APP_URL as a fallback.
 import { generateTenantUrl } from "@/lib/utils";
@@ -58,6 +60,11 @@ export const checkoutRouter = createTRPCRouter({
       });
       const payloadUser = (me.docs?.[0] as DocWithId<User> | undefined) ?? null;
       if (!payloadUser) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // check policy acceptance
+
+      assertTermsAccepted(payloadUser);
+
       const payloadUserId = payloadUser.id;
 
       // Load requested bookings

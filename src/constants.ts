@@ -38,3 +38,31 @@ export const BRIDGE_COOKIE_OPTS =
         // no domain on localhost
         path: "/",
       };
+
+//  Payment Policy Constants
+export const AUTO_CONFIRM_DAYS_DEFAULT = 5;
+export const SERVICE_ACTION_DEADLINE_DAYS = 5; //(confirm or dispute)
+export const PAYMENT_DEADLINE_DAYS = 5; // (pay or dispute after confirmation)
+export const CANCELLATION_WINDOW_HOURS = 24;
+export const COMMISSION_RATE_BPS_DEFAULT = 500;
+// Dispute Policy
+export const DISPUTE_WINDOW_DAYS_DEFAULT = 14; // allow disputes up to N days after service completion date
+
+// --- Booking statuses (central enums) ---
+export const BOOKING_SERVICE_STATUSES = [
+  "scheduled",
+  "completed",
+  "confirmed",
+  "disputed",
+] as const;
+export type BookingServiceStatus = (typeof BOOKING_SERVICE_STATUSES)[number];
+
+export const BOOKING_PAYMENT_STATUSES = ["unpaid", "pending", "paid"] as const;
+export type BookingPaymentStatus = (typeof BOOKING_PAYMENT_STATUSES)[number];
+
+// --- Dispute statuses (central enums) ---
+export const DISPUTE_STATUSES = ["open", "resolved", "withdrawn"] as const;
+export type DisputeStatus = (typeof DISPUTE_STATUSES)[number];
+
+// --- Terms versioning ---
+export const TERMS_VERSION = "v1";
