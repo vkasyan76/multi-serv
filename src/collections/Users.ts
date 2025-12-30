@@ -219,6 +219,13 @@ export const Users: CollectionConfig = {
           },
         },
         {
+          name: "streetNumber",
+          type: "text",
+          label: "Street Number",
+          admin: { description: "House number from Google Places" },
+        },
+
+        {
           name: "ipDetected",
           type: "checkbox",
           label: "IP Detected",

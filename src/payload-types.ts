@@ -210,6 +210,10 @@ export interface User {
      */
     street?: string | null;
     /**
+     * House number from Google Places
+     */
+    streetNumber?: string | null;
+    /**
      * Whether coordinates were detected from IP
      */
     ipDetected?: boolean | null;
@@ -641,6 +645,7 @@ export interface UsersSelect<T extends boolean = true> {
         region?: T;
         postalCode?: T;
         street?: T;
+        streetNumber?: T;
         ipDetected?: T;
         manuallySet?: T;
       };

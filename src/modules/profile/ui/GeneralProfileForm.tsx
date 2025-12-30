@@ -186,6 +186,15 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         placeDetails.address_components
       );
 
+      // Check if the street number is included:
+
+      if (!(addressComponents.streetNumber ?? "").trim()) {
+        toast.error(
+          "Please choose a full street address that includes a house number."
+        );
+        return;
+      }
+
       // Single, direct state update
       const next: SelectedLocation = {
         formattedAddress: placeDetails.formatted_address,
@@ -195,6 +204,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         region: addressComponents.region ?? undefined,
         postalCode: addressComponents.postalCode ?? undefined,
         street: addressComponents.street ?? undefined,
+        streetNumber: addressComponents.streetNumber ?? undefined,
         countryISO: addressComponents.countryISO ?? undefined,
         countryName: addressComponents.countryName ?? undefined,
       };
@@ -215,6 +225,29 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   };
 
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
+    // Address check:
+    if (!isProfileCompleted) {
+      if (!selectedLocation) {
+        form.setError("location", {
+          type: "manual",
+          message: "Please select an address from the suggestions.",
+        });
+        toast.error("Please select an address from the suggestions.");
+        return;
+      }
+
+      // Ensure street number is present
+      const streetNumber = (selectedLocation.streetNumber ?? "").trim();
+      if (!streetNumber) {
+        form.setError("location", {
+          type: "manual",
+          message: "Address must include a house number.",
+        });
+        toast.error("Address must include a house number.");
+        return;
+      }
+    }
+
     // Sanitize coordinates to ensure no old data is sent
     const sanitizeCoordinates = (location: SelectedLocation | null) => {
       if (
@@ -236,6 +269,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         region: location.region ?? null,
         postalCode: location.postalCode ?? null,
         street: location.street ?? null,
+        streetNumber: location.streetNumber ?? null,
         ipDetected: false,
         manuallySet: true,
       };
@@ -252,7 +286,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
     const submission = {
       ...values,
-      coordinates,
+      ...(coordinates ? { coordinates } : {}), // If the user does not pick a new address, you do not touch stored coordinates.
       // The server will automatically set onboardingCompleted: true
     };
 

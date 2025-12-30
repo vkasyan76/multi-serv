@@ -28,6 +28,7 @@ export type TenantWithRelations = Tenant & {
       region?: string | null;
       postalCode?: string | null;
       street?: string | null;
+      streetNumber?: string | null;
       ipDetected?: boolean;
       manuallySet?: boolean;
     };
@@ -45,6 +46,7 @@ export type UserCoordinates = {
   region: string | null;
   postalCode: string | null;
   street: string | null;
+  streetNumber: string | null;
   ipDetected?: boolean;
   manuallySet?: boolean;
 };
@@ -58,6 +60,7 @@ export type SelectedLocation = {
   region?: string | null;
   postalCode?: string | null;
   street?: string | null;
+  streetNumber?: string;
   countryISO?: string | null; // Store as ISO
   countryName?: string | null; // Display only
 };

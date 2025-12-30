@@ -723,6 +723,8 @@ export const authRouter = createTRPCRouter({
             region: (currentUser.coordinates as UserCoordinates).region,
             postalCode: (currentUser.coordinates as UserCoordinates).postalCode,
             street: (currentUser.coordinates as UserCoordinates).street,
+            streetNumber: (currentUser.coordinates as UserCoordinates)
+              .streetNumber,
             ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
             manuallySet: (currentUser.coordinates as UserCoordinates)
               .manuallySet,
@@ -865,6 +867,32 @@ export const authRouter = createTRPCRouter({
         throw new Error("User not found");
       }
 
+      // check if street number is provided:
+      const onboarding = currentUser.onboardingCompleted !== true;
+
+      if (onboarding) {
+        const coords = input.coordinates;
+
+        const hasCoords =
+          coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng);
+
+        if (!hasCoords) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Please select an address from the suggestions.",
+          });
+        }
+
+        const streetNumber = (coords?.streetNumber ?? "").trim();
+        if (!streetNumber) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Address must include a house number.",
+          });
+        }
+      }
+
+      // Lock Username Logic:
       const isLocked = currentUser.onboardingCompleted === true;
 
       // 1) Lock username after onboarding

@@ -81,6 +81,7 @@ export async function getLocationFromIP(
         region: data.region,
         postalCode: null,
         street: null,
+        streetNumber: null,
         ipDetected: true,
         manuallySet: false,
       };
@@ -199,6 +200,7 @@ export function replaceCoordinates(
     region: newCoords.region ?? null,
     postalCode: newCoords.postalCode ?? null,
     street: newCoords.street ?? null,
+    streetNumber: newCoords.streetNumber ?? null,
     ipDetected: !isManuallySet,
     manuallySet: isManuallySet,
   };
@@ -235,6 +237,7 @@ export function extractAddressComponents(
     region,
     postalCode: get("postal_code")?.long_name,
     street,
+    streetNumber,
     countryISO: get("country")?.short_name,
     countryName: get("country")?.long_name,
   };
