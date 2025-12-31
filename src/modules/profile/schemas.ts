@@ -15,6 +15,9 @@ const usernameValidation = z
   .transform((val) => val.toLowerCase());
 
 export const profileSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required"),
+  lastName: z.string().trim().min(1, "Last name is required"),
+
   username: usernameValidation,
   email: z.string().email("Invalid email address"),
   location: z.string().min(3, "Please select a location"),
@@ -38,6 +41,8 @@ export const profileSchema = z.object({
 });
 
 export const PROFILE_FIELD_LABELS: Record<string, string> = {
+  firstName: "First name",
+  lastName: "Last name",
   username: "Username",
   email: "Email address",
   location: "Location",

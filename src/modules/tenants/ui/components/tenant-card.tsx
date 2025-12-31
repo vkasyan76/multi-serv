@@ -95,16 +95,15 @@ export const TenantCard = ({
   // order count logic
   const hasOrders = typeof ordersCount === "number" && ordersCount > 0;
 
-  const providerLabel =
-    tenant.user?.firstName && tenant.user?.lastName
-      ? `${tenant.user.firstName} ${tenant.user.lastName}`
-      : tenant.user?.firstName
-        ? tenant.user.firstName
-        : tenant.user?.username
-          ? tenant.user.username
-          : tenant.user?.email
-            ? tenant.user.email
-            : "";
+  // Tenant name for the badge:
+  const providerLabel = (() => {
+    const { firstName, lastName, username, email } = tenant.user ?? {};
+    if (firstName && lastName) return `${firstName} ${lastName}`;
+    if (firstName) return firstName;
+    if (username) return username;
+    if (email) return email;
+    return "";
+  })();
 
   return (
     <div className={wrapperClass}>

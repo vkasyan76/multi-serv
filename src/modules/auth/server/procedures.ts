@@ -707,6 +707,8 @@ export const authRouter = createTRPCRouter({
     return {
       id: String(currentUser.id),
       clerkUserId: currentUser.clerkUserId ?? userId,
+      firstName: currentUser.firstName || "",
+      lastName: currentUser.lastName || "",
       username: currentUser.username,
       email: currentUser.email,
       location: currentUser.location || "",
@@ -924,24 +926,26 @@ export const authRouter = createTRPCRouter({
         }
       }
 
-      // If user provides coordinates, mark them as manually set and preserve existing metadata
-      let updatedCoordinates = input.coordinates;
+      // updatedCoordinates when it’s undefined, and instead conditionally add coordinates only when you actually have valid lat/lng.
+      const data: Record<string, unknown> = {
+        firstName: input.firstName,
+        lastName: input.lastName,
+        username: input.username,
+        location: input.location,
+        country: input.country,
+        language: input.language,
+        onboardingCompleted: true,
+        geoUpdatedAt: new Date().toISOString(),
+      };
+
       if (hasValidCoordinates(input.coordinates) && input.coordinates) {
-        updatedCoordinates = replaceCoordinates(input.coordinates, true);
+        data.coordinates = replaceCoordinates(input.coordinates, true);
       }
 
       await ctx.db.update({
         collection: "users",
         id: currentUser.id as string,
-        data: {
-          username: input.username, // safe: either locked (same) or checked
-          location: input.location,
-          country: input.country,
-          language: input.language,
-          coordinates: updatedCoordinates,
-          onboardingCompleted: true, // Mark onboarding as complete
-          geoUpdatedAt: new Date().toISOString(),
-        },
+        data,
       });
 
       // Update Clerk user metadata with the new username

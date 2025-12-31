@@ -33,7 +33,15 @@ export function normalizeForCard(
   // user -> { id, coordinates?, clerkImageUrl?, firstName?, lastName?, username?, email? } | undefined
   const user =
     typeof raw?.user === "string"
-      ? { id: raw.user, coordinates: undefined } // keeps your existing distance block unchanged
+      ? {
+          id: raw.user,
+          coordinates: undefined,
+          clerkImageUrl: null,
+          firstName: null,
+          lastName: null,
+          username: null,
+          email: null,
+        }
       : raw?.user
         ? (() => {
             const u = raw.user as ExtendedUser;

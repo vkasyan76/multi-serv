@@ -77,6 +77,8 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
     mode: "onBlur",
     resolver: zodResolver(profileSchema),
     defaultValues: {
+      firstName: "",
+      lastName: "",
       username: "",
       email: "",
       location: "",
@@ -111,6 +113,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   // Populate form with user data when it loads
   useEffect(() => {
     if (userProfile) {
+      form.setValue("firstName", userProfile.firstName || "");
+      form.setValue("lastName", userProfile.lastName || "");
+
       form.setValue("username", userProfile.username || "");
       form.setValue("email", userProfile.email || "");
       form.setValue("language", userProfile.language || "en");
@@ -330,6 +335,40 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <FormField
+            name="firstName"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>First name</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    autoComplete="given-name"
+                    placeholder="Enter your first name"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            name="lastName"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last name</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    autoComplete="family-name"
+                    placeholder="Enter your last name"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
             name="username"
             control={form.control}
             render={({ field }) => (
@@ -341,9 +380,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                     autoComplete="off"
                     placeholder="Enter your username"
                     value={field.value}
-                    readOnly={usernameLocked}
                     disabled={usernameLocked}
-                    tabIndex={usernameLocked ? -1 : undefined} // optional; disabled already prevents focus
                     className={
                       usernameLocked
                         ? "bg-gray-100 cursor-not-allowed"
