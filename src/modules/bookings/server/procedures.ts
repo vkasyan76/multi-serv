@@ -32,6 +32,17 @@ const displayNameFromUser = (
   u: User | string | null | undefined
 ): string | null => {
   if (!u || typeof u === "string") return null;
+
+  // avoid `any` while still allowing fields that may not exist on generated User type yet
+  const named = u as User & { firstName?: unknown; lastName?: unknown };
+
+  const first =
+    typeof named.firstName === "string" ? named.firstName.trim() : "";
+  const last = typeof named.lastName === "string" ? named.lastName.trim() : "";
+
+  if (first && last) return `${first} ${last}`;
+  if (first) return first;
+
   return u.username ?? u.email ?? null;
 };
 

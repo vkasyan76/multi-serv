@@ -342,8 +342,8 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                     placeholder="Enter your username"
                     value={field.value}
                     readOnly={usernameLocked}
-                    disabled={false}
-                    tabIndex={usernameLocked ? -1 : undefined}
+                    disabled={usernameLocked}
+                    tabIndex={usernameLocked ? -1 : undefined} // optional; disabled already prevents focus
                     className={
                       usernameLocked
                         ? "bg-gray-100 cursor-not-allowed"

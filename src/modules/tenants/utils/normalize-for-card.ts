@@ -30,16 +30,26 @@ export function normalizeForCard(
         }
     : undefined;
 
-  // user -> { id, coordinates?, clerkImageUrl? } | undefined
+  // user -> { id, coordinates?, clerkImageUrl?, firstName?, lastName?, username?, email? } | undefined
   const user =
     typeof raw?.user === "string"
-      ? { id: raw.user }
+      ? { id: raw.user, coordinates: undefined } // keeps your existing distance block unchanged
       : raw?.user
-        ? {
-            id: (raw.user as ExtendedUser).id,
-            coordinates: (raw.user as ExtendedUser).coordinates,
-            clerkImageUrl: (raw.user as ExtendedUser).clerkImageUrl ?? null,
-          }
+        ? (() => {
+            const u = raw.user as ExtendedUser;
+
+            return {
+              id: u.id,
+              coordinates: u.coordinates,
+              clerkImageUrl: u.clerkImageUrl ?? null,
+
+              // ✅ names migration fields (from raw.user, not "tenant")
+              firstName: u.firstName ?? null,
+              lastName: u.lastName ?? null,
+              username: u.username ?? null,
+              email: u.email ?? null,
+            };
+          })()
         : undefined;
 
   // categories / subcategories -> arrays of objects (no nulls)

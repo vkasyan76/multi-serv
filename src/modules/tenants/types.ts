@@ -33,6 +33,13 @@ export type TenantWithRelations = Tenant & {
       manuallySet?: boolean;
     };
     clerkImageUrl?: string | null; // Clerk profile image URL for fallback
+    // ✅ Phase 2
+    firstName?: string | null;
+    lastName?: string | null;
+
+    // ✅ fallback
+    username?: string | null;
+    email?: string | null;
   };
   distance?: number | null; // Distance from current user to this tenant
 };

@@ -162,6 +162,14 @@ export interface User {
       }[]
     | null;
   /**
+   * Legal/booking first name
+   */
+  firstName?: string | null;
+  /**
+   * Legal/booking last name
+   */
+  lastName?: string | null;
+  /**
    * User's location/address
    */
   location?: string | null;
@@ -631,6 +639,8 @@ export interface UsersSelect<T extends boolean = true> {
         tenant?: T;
         id?: T;
       };
+  firstName?: T;
+  lastName?: T;
   location?: T;
   country?: T;
   language?: T;

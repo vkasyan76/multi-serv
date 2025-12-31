@@ -95,6 +95,17 @@ export const TenantCard = ({
   // order count logic
   const hasOrders = typeof ordersCount === "number" && ordersCount > 0;
 
+  const providerLabel =
+    tenant.user?.firstName && tenant.user?.lastName
+      ? `${tenant.user.firstName} ${tenant.user.lastName}`
+      : tenant.user?.firstName
+        ? tenant.user.firstName
+        : tenant.user?.username
+          ? tenant.user.username
+          : tenant.user?.email
+            ? tenant.user.email
+            : "";
+
   return (
     <div className={wrapperClass}>
       {/* Image Section with aspect ratio instead of fixed height */}
@@ -167,7 +178,7 @@ export const TenantCard = ({
             variant="outline"
             className="text-gray-700 text-sm font-medium px-3 py-1 border-gray-300 truncate"
           >
-            {tenant.firstName} {tenant.lastName}
+            {providerLabel}
           </Badge>
         </div>
 
