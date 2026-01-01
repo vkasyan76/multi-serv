@@ -295,14 +295,6 @@ export interface Tenant {
     | null;
   lastStripeSyncAt?: string | null;
   /**
-   * Vendor's first name
-   */
-  firstName?: string | null;
-  /**
-   * Vendor's last name
-   */
-  lastName?: string | null;
-  /**
    * Vendor's bio/description
    */
   bio?: string | null;
@@ -717,8 +709,6 @@ export interface TenantsSelect<T extends boolean = true> {
   onboardingStatus?: T;
   stripeRequirements?: T;
   lastStripeSyncAt?: T;
-  firstName?: T;
-  lastName?: T;
   bio?: T;
   services?: T;
   categories?: T;

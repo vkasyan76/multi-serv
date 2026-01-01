@@ -108,8 +108,6 @@ export function VendorProfileForm() {
     shouldUnregister: true, // ✅ ensures hidden/unmounted fields (e.g., vatId) are removed from the payload
     defaultValues: {
       name: "",
-      firstName: "",
-      lastName: "",
       bio: "",
       services: [],
       categories: [],
@@ -141,8 +139,6 @@ export function VendorProfileForm() {
     if (vendorProfile) {
       form.reset({
         name: vendorProfile.name || "",
-        firstName: vendorProfile.firstName || "",
-        lastName: vendorProfile.lastName || "",
         bio: vendorProfile.bio || "",
         services: Array.isArray(vendorProfile.services)
           ? vendorProfile.services
@@ -614,58 +610,6 @@ export function VendorProfileForm() {
         <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
           {/* Left Column */}
           <div className="md:col-span-3 flex flex-col gap-4">
-            {/* First Name */}
-            <FormField
-              name="firstName"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      autoComplete="off"
-                      onChange={(e) => {
-                        field.onChange(e);
-                        // auto-update business name if empty
-                        if (!form.getValues("name")) {
-                          form.setValue(
-                            "name",
-                            `${e.target.value}_${form.getValues("lastName")}`
-                          );
-                        }
-                      }}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            {/* Last Name */}
-            <FormField
-              name="lastName"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      autoComplete="off"
-                      onChange={(e) => {
-                        field.onChange(e);
-                        // auto-update business name if empty
-                        if (!form.getValues("name")) {
-                          form.setValue(
-                            "name",
-                            `${form.getValues("firstName")}_${e.target.value}`
-                          );
-                        }
-                      }}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
             {/* Business Name */}
             <FormField
               name="name"
@@ -676,10 +620,20 @@ export function VendorProfileForm() {
                   <FormControl>
                     <Input
                       {...field}
-                      autoComplete="off"
+                      disabled={!!vendorProfile}
+                      className={
+                        vendorProfile
+                          ? "bg-gray-100 cursor-not-allowed"
+                          : undefined
+                      }
                       placeholder="Enter business name"
                     />
                   </FormControl>
+                  {!vendorProfile && (
+                    <span className="block text-xs text-gray-500 mt-1">
+                      * cannot be changed after creation (used in your page URL)
+                    </span>
+                  )}
                 </FormItem>
               )}
             />
@@ -787,7 +741,7 @@ export function VendorProfileForm() {
               control={form.control}
               render={({ field }) => (
                 // extra bottom space so the border that follows the grid never visually “cuts” chips
-                <FormItem className="mb-4">
+                <FormItem className="mb-2">
                   <FormLabel>Subcategories</FormLabel>
                   <FormControl>
                     <MultiSelect
@@ -813,6 +767,221 @@ export function VendorProfileForm() {
                 </FormItem>
               )}
             />
+            {/* ===== Business details (used for invoices & tax where applicable) ===== */}
+            <div className="mt-1 border-t pt-6">
+              {/* Business country — display only (ISO-2 kept in form state). */}
+              <FormField
+                name="country"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    {/* keep ISO-2 in the form state */}
+                    <input type="hidden" {...field} value={field.value} />
+
+                    {/* Label row with inline helper copy */}
+                    <div className="flex items-center justify-between gap-3">
+                      <FormLabel className="m-0">Business country</FormLabel>
+                      <span className="text-xs text-muted-foreground">
+                        Prepopulated from your user profile. To change it, edit{" "}
+                        <Link
+                          href="/profile?tab=general"
+                          className="underline font-medium"
+                        >
+                          General settings
+                        </Link>
+                        .
+                      </span>
+                    </div>
+
+                    <FormControl>
+                      <Input
+                        value={countryNameFromCode(
+                          field.value,
+                          intlConfig.locale
+                        )}
+                        readOnly
+                        disabled
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* VAT UI — compact two-column row */}
+              {isEUCountry && (
+                <div className="mt-3 grid grid-cols-1 gap-4">
+                  {/* left: checkbox unchanged */}
+                  <FormField
+                    name="vatRegistered"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                          <input
+                            id="vat-registered"
+                            type="checkbox"
+                            className="h-4 w-4 accent-black"
+                            checked={!!field.value}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              field.onChange(checked);
+                              setVatChecked(false);
+                              if (!checked) {
+                                form.setValue("vatId", "");
+                                form.setValue("vatIdValid", false);
+                              }
+                            }}
+                          />
+                          <FormLabel htmlFor="vat-registered" className="m-0">
+                            Do you have VAT ID? (optional)
+                          </FormLabel>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* right: VAT input + Validate button + status chip */}
+                  {watchedVatRegistered ? (
+                    <FormField
+                      name="vatId"
+                      control={form.control}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="m-0">VAT ID</FormLabel>
+
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="flex-1 min-w-0">
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  autoComplete="off"
+                                  value={field.value ?? ""}
+                                  placeholder="DE123456789"
+                                  className="min-w-0"
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    setVatChecked(false);
+                                    form.setValue("vatIdValid", false);
+                                  }}
+                                  onBlur={async () => {
+                                    const raw = field.value?.trim();
+                                    if (!raw) return;
+                                    try {
+                                      const { iso, vat } = normalizeVat(
+                                        form.getValues("country"),
+                                        raw
+                                      );
+                                      const res = await validateVat.mutateAsync(
+                                        {
+                                          countryCode: iso,
+                                          vat,
+                                        }
+                                      );
+
+                                      form.setValue(
+                                        "vatId",
+                                        composeVatWithIso(iso, vat),
+                                        {
+                                          shouldDirty: true,
+                                          shouldValidate: true,
+                                        }
+                                      );
+                                      form.setValue("vatIdValid", !!res.valid);
+                                      setVatChecked(true);
+                                    } catch (e: unknown) {
+                                      form.setValue("vatIdValid", false);
+                                      setVatChecked(true);
+                                      const msg =
+                                        e instanceof Error
+                                          ? e.message
+                                          : String(e);
+                                      toast.error(
+                                        `VAT validation failed: ${msg}`
+                                      );
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                            </div>
+
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              className="w-full sm:w-auto sm:shrink-0"
+                              disabled={
+                                validateVat.isPending ||
+                                !form.getValues("vatId")
+                              }
+                              onClick={async () => {
+                                try {
+                                  const { iso, vat } = normalizeVat(
+                                    form.getValues("country"),
+                                    form.getValues("vatId")!
+                                  );
+                                  const res = await validateVat.mutateAsync({
+                                    countryCode: iso,
+                                    vat,
+                                  });
+
+                                  form.setValue("vatIdValid", !!res.valid);
+                                  form.setValue(
+                                    "vatId",
+                                    composeVatWithIso(iso, vat),
+                                    {
+                                      shouldDirty: true,
+                                      shouldValidate: true,
+                                    }
+                                  );
+                                  setVatChecked(true);
+
+                                  toast[res.valid ? "success" : "error"](
+                                    res.valid
+                                      ? "VAT number is valid via VIES."
+                                      : "VAT number is NOT valid."
+                                  );
+                                } catch (e: unknown) {
+                                  form.setValue("vatIdValid", false);
+                                  setVatChecked(true);
+                                  const msg =
+                                    e instanceof Error ? e.message : String(e);
+                                  toast.error(`VAT validation failed: ${msg}`);
+                                }
+                              }}
+                            >
+                              {validateVat.isPending
+                                ? "Validating..."
+                                : "Validate"}
+                            </Button>
+                          </div>
+
+                          <div className="text-xs mt-1">
+                            {vatChecked ? (
+                              form.watch("vatIdValid") ? (
+                                <span className="text-green-600">
+                                  Valid VAT ID
+                                </span>
+                              ) : (
+                                <span className="text-red-600">
+                                  Invalid VAT ID
+                                </span>
+                              )
+                            ) : null}
+                          </div>
+
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <div className="hidden md:block" />
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Column (wider) */}
@@ -952,7 +1121,7 @@ export function VendorProfileForm() {
                   <FormControl>
                     <textarea
                       {...field}
-                      maxLength={600}
+                      maxLength={1200}
                       className="w-full border rounded px-3 py-2 bg-white resize-none overflow-y-auto"
                       autoComplete="off"
                       style={{
@@ -963,212 +1132,13 @@ export function VendorProfileForm() {
                     />
                   </FormControl>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {field.value?.length || 0}/600 characters
+                    {field.value?.length || 0}/1200 characters
                   </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-        </div>
-        {/* ===== Business details (used for invoices & tax where applicable) ===== */}
-        <div className="mt-4 border-t pt-6">
-          {/* Business country — display only (ISO-2 kept in form state). */}
-          <FormField
-            name="country"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                {/* keep ISO-2 in the form state */}
-                <input type="hidden" {...field} value={field.value} />
-
-                {/* Label row with inline helper copy */}
-                <div className="flex items-center justify-between gap-3">
-                  <FormLabel className="m-0">Business country</FormLabel>
-                  <span className="text-xs text-muted-foreground">
-                    Prepopulated from your user profile. To change it, edit{" "}
-                    <Link
-                      href="/profile?tab=general"
-                      className="underline font-medium"
-                    >
-                      General settings
-                    </Link>
-                    .
-                  </span>
-                </div>
-
-                <FormControl>
-                  <Input
-                    value={countryNameFromCode(field.value, intlConfig.locale)}
-                    readOnly
-                    disabled
-                  />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* VAT UI — compact two-column row */}
-          {isEUCountry && (
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-              {/* left: checkbox unchanged */}
-              <FormField
-                name="vatRegistered"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-3">
-                      <input
-                        id="vat-registered"
-                        type="checkbox"
-                        className="h-4 w-4 accent-black"
-                        checked={!!field.value}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          field.onChange(checked);
-                          setVatChecked(false);
-                          if (!checked) {
-                            form.setValue("vatId", "");
-                            form.setValue("vatIdValid", false);
-                          }
-                        }}
-                      />
-                      <FormLabel htmlFor="vat-registered" className="m-0">
-                        Do you have VAT ID? (optional)
-                      </FormLabel>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* right: VAT input + Validate button + status chip */}
-              {watchedVatRegistered ? (
-                <FormField
-                  name="vatId"
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-3">
-                        <FormLabel className="m-0 shrink-0 w-16">
-                          Valid VAT ID:
-                        </FormLabel>
-
-                        <div className="flex-1">
-                          <FormControl>
-                            <Input
-                              {...field}
-                              autoComplete="off"
-                              value={field.value ?? ""} // <- keep controlled so DB value renders immediately
-                              placeholder="e.g., DE123456789"
-                              onChange={(e) => {
-                                field.onChange(e);
-                                setVatChecked(false); // editing invalidates previous check
-                                form.setValue("vatIdValid", false);
-                              }}
-                              onBlur={async () => {
-                                const raw = field.value?.trim();
-                                if (!raw) return;
-                                try {
-                                  const { iso, vat } = normalizeVat(
-                                    form.getValues("country"),
-                                    raw
-                                  );
-                                  const res = await validateVat.mutateAsync({
-                                    countryCode: iso,
-                                    vat,
-                                  });
-                                  // ✅ write normalized value back into the field (e.g., "DE123456789")
-                                  form.setValue(
-                                    "vatId",
-                                    composeVatWithIso(iso, vat),
-                                    {
-                                      shouldDirty: true,
-                                      shouldValidate: true,
-                                    }
-                                  );
-                                  form.setValue("vatIdValid", !!res.valid);
-                                  setVatChecked(true);
-                                } catch (e: unknown) {
-                                  form.setValue("vatIdValid", false);
-                                  setVatChecked(true);
-                                  const msg =
-                                    e instanceof Error ? e.message : String(e);
-                                  toast.error(`VAT validation failed: ${msg}`);
-                                }
-                              }}
-                            />
-                          </FormControl>
-                        </div>
-
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          disabled={
-                            validateVat.isPending || !form.getValues("vatId")
-                          }
-                          onClick={async () => {
-                            try {
-                              const { iso, vat } = normalizeVat(
-                                form.getValues("country"),
-                                form.getValues("vatId")!
-                              );
-                              const res = await validateVat.mutateAsync({
-                                countryCode: iso,
-                                vat,
-                              });
-                              form.setValue("vatIdValid", !!res.valid);
-                              // ✅ normalize & write back to ensure a non-empty value is submitted
-                              form.setValue(
-                                "vatId",
-                                composeVatWithIso(iso, vat),
-                                {
-                                  shouldDirty: true,
-                                  shouldValidate: true,
-                                }
-                              );
-                              setVatChecked(true);
-                              toast[res.valid ? "success" : "error"](
-                                res.valid
-                                  ? "VAT number is valid via VIES."
-                                  : "VAT number is NOT valid."
-                              );
-                            } catch (e: unknown) {
-                              form.setValue("vatIdValid", false);
-                              setVatChecked(true);
-                              const msg =
-                                e instanceof Error ? e.message : String(e);
-                              toast.error(`VAT validation failed: ${msg}`);
-                            }
-                          }}
-                        >
-                          {validateVat.isPending ? "Validating..." : "Validate"}
-                        </Button>
-                      </div>
-
-                      {/* tiny status chip */}
-                      <div className="text-xs mt-1">
-                        {vatChecked ? (
-                          form.watch("vatIdValid") ? (
-                            <span className="text-green-600">Valid VAT ID</span>
-                          ) : (
-                            <span className="text-red-600">Invalid VAT ID</span>
-                          )
-                        ) : null}
-                      </div>
-
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                <div className="hidden md:block" />
-              )}
-            </div>
-          )}
         </div>
 
         <Button
@@ -1190,8 +1160,6 @@ export function VendorProfileForm() {
             </>
           ) : vendorProfile &&
             (vendorProfile.name ||
-              vendorProfile.firstName ||
-              vendorProfile.lastName ||
               vendorProfile.bio ||
               vendorProfile.services?.length > 0 ||
               vendorProfile.categories?.length > 0 ||

@@ -15,8 +15,8 @@ const usernameValidation = z
   .transform((val) => val.toLowerCase());
 
 export const profileSchema = z.object({
-  firstName: z.string().trim().min(1, "First name is required"),
-  lastName: z.string().trim().min(1, "Last name is required"),
+  firstName: z.string().trim().min(2, "First name is required"),
+  lastName: z.string().trim().min(2, "Last name is required"),
 
   username: usernameValidation,
   email: z.string().email("Invalid email address"),
@@ -61,11 +61,9 @@ export const vendorSchema = z
         "Business name can contain letters, numbers, hyphens, and underscores"
       )
       .transform((val) => val.toLowerCase()), // Normalize to lowercase for uniqueness
-    firstName: z.string().min(2, "First name is required"),
-    lastName: z.string().min(2, "Last name is required"),
     bio: z
       .string()
-      .max(600, "Description must be under 600 characters")
+      .max(1200, "Description must be under 1200 characters")
       .optional(),
     services: z
       .array(z.enum(["on-site", "on-line"]))
@@ -120,8 +118,6 @@ export const vendorSchema = z
 
 export const VENDOR_FIELD_LABELS = {
   name: "Business Name (letters, numbers, hyphens, underscores)",
-  firstName: "First Name",
-  lastName: "Last Name",
   bio: "Description",
   services: "Type of Service",
   website: "Website",

@@ -334,200 +334,198 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         <SettingsHeader title="Profile settings" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <FormField
-            name="firstName"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>First name</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    autoComplete="given-name"
-                    placeholder="Enter your first name"
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            name="lastName"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Last name</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    autoComplete="family-name"
-                    placeholder="Enter your last name"
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            name="username"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    autoComplete="off"
-                    placeholder="Enter your username"
-                    value={field.value}
-                    disabled={usernameLocked}
-                    className={
-                      usernameLocked
-                        ? "bg-gray-100 cursor-not-allowed"
-                        : undefined
-                    }
-                  />
-                </FormControl>
-                {!usernameLocked && (
-                  <span className="block text-xs text-gray-500 mt-1">
-                    * cannot be changed after registration
-                  </span>
-                )}
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="location"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address</FormLabel>
-                <FormControl>
-                  <div className="relative">
+          {/* Left column: identity */}
+          <div className="flex flex-col gap-8">
+            <FormField
+              name="firstName"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First name</FormLabel>
+                  <FormControl>
                     <Input
                       {...field}
-                      value={locationInput}
-                      onChange={(e) => {
-                        setLocationInput(e.target.value);
-                        field.onChange(e);
-                        form.setValue("country", "");
-
-                        // NUCLEAR OPTION: Completely clear ALL coordinate data when user types
-                        // This ensures we never have stale coordinate data
-                        if (
-                          e.target.value !== selectedLocation?.formattedAddress
-                        ) {
-                          console.log(
-                            "Location input changed - clearing ALL coordinate data"
-                          );
-                          setSelectedLocation(null);
-                        }
-                      }}
-                      autoComplete="off"
-                      placeholder="Search for your address…"
+                      autoComplete="given-name"
+                      placeholder="Enter your first name"
                     />
-                    {predictions.length > 0 &&
-                      locationInput !== selectedLocation?.formattedAddress && (
-                        <ul className="absolute left-0 right-0 z-10 bg-white border rounded shadow mt-1 max-h-48 overflow-y-auto">
-                          {predictions.map((prediction) => (
-                            <li
-                              key={prediction.place_id}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => handleLocationSelect(prediction)}
-                            >
-                              {prediction.description}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                  </div>
-                </FormControl>
-                {/* Show subtle indicator when location is auto-populated from IP */}
-                {/* {userProfile?.coordinates?.ipDetected &&
-                  !userProfile?.coordinates?.manuallySet &&
-                  locationInput && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      📍 Auto-detected from your IP address
-                    </p>
-                  )} */}
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="email"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email address</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="email"
-                    autoComplete="off"
-                    readOnly
-                    disabled
-                    className="bg-gray-100 cursor-not-allowed"
-                    value={userProfile?.email || ""}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="country"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={
-                      selectedLocation?.countryName ||
-                      userProfile?.country ||
-                      ""
-                    }
-                    readOnly
-                    disabled
-                    tabIndex={-1}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="language"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Language</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value ?? getInitialLanguage()}
-                    onValueChange={field.onChange}
-                    disabled={
-                      updateUserProfile.isPending ||
-                      form.formState.isSubmitting ||
-                      isLoading
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      {SUPPORTED_LANGUAGES.find(
-                        (l) => l.code === (field.value ?? "en")
-                      )?.label ?? "English"}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SUPPORTED_LANGUAGES.map(({ code, label }) => (
-                        <SelectItem key={code} value={code}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormItem>
-            )}
-          />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="lastName"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="family-name"
+                      placeholder="Enter your last name"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="username"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter your username"
+                      value={field.value}
+                      disabled={usernameLocked}
+                      className={
+                        usernameLocked
+                          ? "bg-gray-100 cursor-not-allowed"
+                          : undefined
+                      }
+                    />
+                  </FormControl>
+                  {!usernameLocked && (
+                    <span className="block text-xs text-gray-500 mt-1">
+                      * cannot be changed after registration
+                    </span>
+                  )}
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="email"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="email"
+                      autoComplete="off"
+                      readOnly
+                      disabled
+                      className="bg-gray-100 cursor-not-allowed"
+                      value={userProfile?.email || ""}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Right column: address + preferences */}
+          <div className="flex flex-col gap-8">
+            <FormField
+              name="location"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        value={locationInput}
+                        onChange={(e) => {
+                          setLocationInput(e.target.value);
+                          field.onChange(e);
+                          form.setValue("country", "");
+                          if (
+                            e.target.value !==
+                            selectedLocation?.formattedAddress
+                          ) {
+                            setSelectedLocation(null);
+                          }
+                        }}
+                        autoComplete="off"
+                        placeholder="Search for your address…"
+                      />
+                      {predictions.length > 0 &&
+                        locationInput !==
+                          selectedLocation?.formattedAddress && (
+                          <ul className="absolute left-0 right-0 z-10 bg-white border rounded shadow mt-1 max-h-48 overflow-y-auto">
+                            {predictions.map((prediction) => (
+                              <li
+                                key={prediction.place_id}
+                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                onClick={() => handleLocationSelect(prediction)}
+                              >
+                                {prediction.description}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="country"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={
+                        selectedLocation?.countryName ||
+                        userProfile?.country ||
+                        ""
+                      }
+                      readOnly
+                      disabled
+                      tabIndex={-1}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="language"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Language</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value ?? getInitialLanguage()}
+                      onValueChange={field.onChange}
+                      disabled={
+                        updateUserProfile.isPending ||
+                        form.formState.isSubmitting ||
+                        isLoading
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        {SUPPORTED_LANGUAGES.find(
+                          (l) => l.code === (field.value ?? "en")
+                        )?.label ?? "English"}
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_LANGUAGES.map(({ code, label }) => (
+                          <SelectItem key={code} value={code}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
         <Button

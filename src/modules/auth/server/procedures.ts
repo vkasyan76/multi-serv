@@ -26,6 +26,7 @@ import Stripe from "stripe";
 
 // for checking if user has accepted current terms:
 import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted";
+const PASSWORD_AUTH_ENABLED = false; // hard-disable payload auth - we rely entirely on Clerk,
 
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
@@ -57,6 +58,14 @@ export const authRouter = createTRPCRouter({
   register: baseProcedure
     .input(registerSchema)
     .mutation(async ({ ctx, input }) => {
+      // disable password auth completely:
+      if (!PASSWORD_AUTH_ENABLED) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Password auth is disabled. Please sign in with Clerk.",
+        });
+      }
+
       // find if the name was already used:
       const existingData = await ctx.db.find({
         collection: "users",
@@ -109,6 +118,14 @@ export const authRouter = createTRPCRouter({
     }),
   // Login Procedure:
   login: baseProcedure.input(loginSchema).mutation(async ({ ctx, input }) => {
+    // disable password auth completely:
+    if (!PASSWORD_AUTH_ENABLED) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Password auth is disabled. Please sign in with Clerk.",
+      });
+    }
+
     const data = await ctx.db.login({
       collection: "users",
       data: {
@@ -223,8 +240,27 @@ export const authRouter = createTRPCRouter({
 
       const currentUser = user.docs[0];
 
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
       // Check if user has accepted current terms
       assertTermsAccepted(currentUser);
+
+      // guard so vendors cannot be created without user names
+
+      const fn = (currentUser.firstName ?? "").trim();
+      const ln = (currentUser.lastName ?? "").trim();
+      if (!fn || !ln) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Please complete your General profile (first and last name) before creating a vendor profile.",
+        });
+      }
 
       // Check if user already has a tenant (vendor profile)
       if (
@@ -328,9 +364,9 @@ export const authRouter = createTRPCRouter({
 
         // Authoritative country: prefer user's profile ISO, then input, then DE
         const countryForTenant = (
-          input.country ||
           (currentUser.coordinates as UserCoordinates | undefined)
             ?.countryISO ||
+          input.country ||
           "DE"
         ).toUpperCase();
 
@@ -353,8 +389,6 @@ export const authRouter = createTRPCRouter({
             name: input.name || currentUser?.username || "",
             slug: input.name || currentUser?.username || "", // Use business name as slug for routing
             stripeAccountId: accountId,
-            firstName: input.firstName,
-            lastName: input.lastName,
             bio: input.bio,
             services: input.services,
             categories: categoryIds,
@@ -408,7 +442,11 @@ export const authRouter = createTRPCRouter({
         // 1) Try to roll back tenant if it was created
         if (tenant?.id) {
           await ctx.db
-            .delete({ collection: "tenants", id: tenant.id })
+            .delete({
+              collection: "tenants",
+              id: tenant.id,
+              overrideAccess: true,
+            })
             .then(() => {
               tenantDeleted = true;
             })
@@ -543,15 +581,36 @@ export const authRouter = createTRPCRouter({
       }
 
       try {
+        // fetch the tenant (depth:0) to get its stripeAccountId  - update business profile in Stripe:
+        const tenantDoc = await ctx.db.findByID({
+          collection: "tenants",
+          id: actualTenantId as string,
+          depth: 0,
+        });
+
+        if (!tenantDoc)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Tenant not found",
+          });
+
+        // guard agiant updating the business name:
+        if (
+          typeof tenantDoc.name === "string" &&
+          input.name !== tenantDoc.name
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Business name cannot be changed after the vendor profile is created.",
+          });
+        }
+
         // Update the tenant with vendor profile data
         const updatedTenant = await ctx.db.update({
           collection: "tenants",
           id: actualTenantId as string,
           data: {
-            name: input.name,
-            slug: input.name, // Update slug to match new business name
-            firstName: input.firstName,
-            lastName: input.lastName,
             bio: input.bio,
             services: input.services,
             categories: categoryIds, // Array of category ObjectIds
@@ -566,13 +625,6 @@ export const authRouter = createTRPCRouter({
             vatId: input.vatRegistered ? input.vatId?.trim() || null : null, // toggle off => clear
             vatIdValid: input.vatRegistered ? vatIdValid : false, // keep DB consistent
           },
-        });
-
-        // fetch the tenant (depth:0) to get its stripeAccountId  - update business profile in Stripe:
-        const tenantDoc = await ctx.db.findByID({
-          collection: "tenants",
-          id: actualTenantId as string,
-          depth: 0,
         });
 
         const acctId =
@@ -823,8 +875,8 @@ export const authRouter = createTRPCRouter({
       const result = {
         id: actualTenantId, // ✅ ADD THIS: Include tenant ID for image uploads
         name: tenant.name || "",
-        firstName: tenant.firstName || "",
-        lastName: tenant.lastName || "",
+        firstName: currentUser.firstName || "",
+        lastName: currentUser.lastName || "",
         bio: tenant.bio || "",
         services: tenant.services || [],
         categories: categorySlugs, // Return slugs instead of ObjectIds
