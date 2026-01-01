@@ -398,23 +398,6 @@ export function VendorProfileForm() {
     })
   );
 
-  // Add mutation for updating user profile to mark onboarding as completed
-  const updateUserProfile = useMutation(
-    trpc.auth.updateUserProfile.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
-        });
-      },
-      onError: (error) => {
-        console.error("Error updating user profile:", error);
-        toast.error(
-          error.message || "Failed to update user profile. Please try again."
-        );
-      },
-    })
-  );
-
   const onSubmit: SubmitHandler<VendorFormValues> = async (values) => {
     try {
       // Prevent double submits
@@ -478,19 +461,6 @@ export function VendorProfileForm() {
           image: imageData,
         });
 
-        // Mark onboarding as completed after successful update
-        try {
-          updateUserProfile.mutate({
-            username: userProfile?.username || "",
-            email: userProfile?.email || "",
-            location: userProfile?.location || "",
-            country: userProfile?.country || "",
-            language: userProfile?.language || "en",
-          });
-        } catch (error) {
-          console.warn("Failed to mark onboarding as completed:", error);
-        }
-
         // Then invalidate/refetch to update UI
         await queryClient.invalidateQueries({
           queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
@@ -539,19 +509,6 @@ export function VendorProfileForm() {
             } finally {
               setIsUploading(false);
             }
-          }
-
-          // Step 3: Mark onboarding as completed
-          try {
-            updateUserProfile.mutate({
-              username: userProfile?.username || "",
-              email: userProfile?.email || "",
-              location: userProfile?.location || "",
-              country: userProfile?.country || "",
-              language: userProfile?.language || "en",
-            });
-          } catch (error) {
-            console.warn("Failed to mark onboarding as completed:", error);
           }
 
           toast.success("Vendor profile created. Next: set up payouts.");
