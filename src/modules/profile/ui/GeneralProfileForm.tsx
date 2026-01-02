@@ -392,7 +392,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                   </FormControl>
                   {!usernameLocked && (
                     <span className="block text-xs text-gray-500 mt-1">
-                      * cannot be changed after registration
+                      * cannot be changed after onboarding is completed
                     </span>
                   )}
                 </FormItem>
@@ -413,7 +413,6 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                       readOnly
                       disabled
                       className="bg-gray-100 cursor-not-allowed"
-                      value={userProfile?.email || ""}
                     />
                   </FormControl>
                 </FormItem>

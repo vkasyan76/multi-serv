@@ -102,6 +102,32 @@ export function VendorProfileForm() {
 
   const [vatChecked, setVatChecked] = useState(false);
 
+  // Validate VAT ID entry:
+  const handleVatValidation = async (rawVatId: string | undefined) => {
+    const raw = rawVatId?.trim();
+    if (!raw) return;
+
+    try {
+      const { iso, vat } = normalizeVat(form.getValues("country"), raw);
+      const res = await validateVat.mutateAsync({ countryCode: iso, vat });
+
+      form.setValue("vatId", composeVatWithIso(iso, vat), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.setValue("vatIdValid", !!res.valid);
+      setVatChecked(true);
+
+      return res.valid;
+    } catch (e: unknown) {
+      form.setValue("vatIdValid", false);
+      setVatChecked(true);
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`VAT validation failed: ${msg}`);
+      return false;
+    }
+  };
+
   const form = useForm<VendorFormValues>({
     mode: "onSubmit",
     resolver: zodResolver(vendorSchema) as Resolver<VendorFormValues>,
@@ -137,6 +163,7 @@ export function VendorProfileForm() {
   // Update form values when vendor profile data is available
   useEffect(() => {
     if (vendorProfile) {
+      const effectiveCountry = profileISO || vendorProfile.country || "DE";
       form.reset({
         name: vendorProfile.name || "",
         bio: vendorProfile.bio || "",
@@ -154,7 +181,7 @@ export function VendorProfileForm() {
         hourlyRate: vendorProfile.hourlyRate || 1,
         // NEW - VAT fields
         // ISO-2, matches schema default/transform
-        country: profileISO || vendorProfile.country || "DE",
+        country: effectiveCountry,
         vatRegistered: vendorProfile.vatRegistered ?? false, // keep simple
         vatId: vendorProfile.vatId || "", // only required when vatRegistered = true
         // if you persist it on the model, use vendorProfile.vatIdValid ?? false
@@ -162,7 +189,7 @@ export function VendorProfileForm() {
         // treat value from DB as already validated
         vatIdValid: !!vendorProfile.vatId && (vendorProfile.vatIdValid ?? true),
       });
-      const initCountry = vendorProfile.country || "DE";
+      const initCountry = effectiveCountry;
       initialVatRef.current =
         vendorProfile.vatRegistered && vendorProfile.vatId
           ? fullNormalize(initCountry, vendorProfile.vatId)
@@ -574,6 +601,7 @@ export function VendorProfileForm() {
 
   // Submit is disabled until validation has been run and marked valid
   const submitDisabled =
+    validateVat.isPending ||
     isUploading ||
     createVendorProfile.isPending ||
     updateVendorProfile.isPending ||
@@ -776,7 +804,7 @@ export function VendorProfileForm() {
                 render={({ field }) => (
                   <FormItem>
                     {/* keep ISO-2 in the form state */}
-                    <input type="hidden" {...field} value={field.value} />
+                    <input type="hidden" {...field} />
 
                     {/* Label row with inline helper copy */}
                     <div className="flex items-center justify-between gap-3">
@@ -866,43 +894,9 @@ export function VendorProfileForm() {
                                     setVatChecked(false);
                                     form.setValue("vatIdValid", false);
                                   }}
-                                  onBlur={async () => {
-                                    const raw = field.value?.trim();
-                                    if (!raw) return;
-                                    try {
-                                      const { iso, vat } = normalizeVat(
-                                        form.getValues("country"),
-                                        raw
-                                      );
-                                      const res = await validateVat.mutateAsync(
-                                        {
-                                          countryCode: iso,
-                                          vat,
-                                        }
-                                      );
-
-                                      form.setValue(
-                                        "vatId",
-                                        composeVatWithIso(iso, vat),
-                                        {
-                                          shouldDirty: true,
-                                          shouldValidate: true,
-                                        }
-                                      );
-                                      form.setValue("vatIdValid", !!res.valid);
-                                      setVatChecked(true);
-                                    } catch (e: unknown) {
-                                      form.setValue("vatIdValid", false);
-                                      setVatChecked(true);
-                                      const msg =
-                                        e instanceof Error
-                                          ? e.message
-                                          : String(e);
-                                      toast.error(
-                                        `VAT validation failed: ${msg}`
-                                      );
-                                    }
-                                  }}
+                                  onBlur={() =>
+                                    handleVatValidation(field.value)
+                                  }
                                 />
                               </FormControl>
                             </div>
@@ -917,38 +911,15 @@ export function VendorProfileForm() {
                                 !form.getValues("vatId")
                               }
                               onClick={async () => {
-                                try {
-                                  const { iso, vat } = normalizeVat(
-                                    form.getValues("country"),
-                                    form.getValues("vatId")!
-                                  );
-                                  const res = await validateVat.mutateAsync({
-                                    countryCode: iso,
-                                    vat,
-                                  });
-
-                                  form.setValue("vatIdValid", !!res.valid);
-                                  form.setValue(
-                                    "vatId",
-                                    composeVatWithIso(iso, vat),
-                                    {
-                                      shouldDirty: true,
-                                      shouldValidate: true,
-                                    }
-                                  );
-                                  setVatChecked(true);
-
-                                  toast[res.valid ? "success" : "error"](
-                                    res.valid
+                                const valid = await handleVatValidation(
+                                  form.getValues("vatId")
+                                );
+                                if (valid !== undefined) {
+                                  toast[valid ? "success" : "error"](
+                                    valid
                                       ? "VAT number is valid via VIES."
                                       : "VAT number is NOT valid."
                                   );
-                                } catch (e: unknown) {
-                                  form.setValue("vatIdValid", false);
-                                  setVatChecked(true);
-                                  const msg =
-                                    e instanceof Error ? e.message : String(e);
-                                  toast.error(`VAT validation failed: ${msg}`);
                                 }
                               }}
                             >
