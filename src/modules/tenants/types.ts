@@ -28,10 +28,18 @@ export type TenantWithRelations = Tenant & {
       region?: string | null;
       postalCode?: string | null;
       street?: string | null;
+      streetNumber?: string | null;
       ipDetected?: boolean;
       manuallySet?: boolean;
     };
     clerkImageUrl?: string | null; // Clerk profile image URL for fallback
+    // ✅ Phase 2
+    firstName?: string | null;
+    lastName?: string | null;
+
+    // ✅ fallback
+    username?: string | null;
+    email?: string | null;
   };
   distance?: number | null; // Distance from current user to this tenant
 };
@@ -45,6 +53,7 @@ export type UserCoordinates = {
   region: string | null;
   postalCode: string | null;
   street: string | null;
+  streetNumber: string | null;
   ipDetected?: boolean;
   manuallySet?: boolean;
 };
@@ -58,6 +67,7 @@ export type SelectedLocation = {
   region?: string | null;
   postalCode?: string | null;
   street?: string | null;
+  streetNumber?: string;
   countryISO?: string | null; // Store as ISO
   countryName?: string | null; // Display only
 };

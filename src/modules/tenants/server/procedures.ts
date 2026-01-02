@@ -9,14 +9,21 @@ import type { TenantWithRelations } from "../types";
 import { TRPCError } from "@trpc/server";
 import { headers as getHeaders } from "next/headers";
 
+type ExtendedUser = User & { clerkImageUrl?: string | null };
+
 // Helper interface for tenant user data
 interface TenantUserData {
   id: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
+  coordinates?: TenantWithRelations["user"]["coordinates"];
   clerkImageUrl?: string | null;
+
+  // ✅ NEW: provider identity fields (Phase 2)
+  firstName?: string | null;
+  lastName?: string | null;
+
+  // ✅ pragmatic fallback for UI while older users are missing names
+  username?: string | null;
+  email?: string | null;
 }
 
 export const tenantsRouter = createTRPCRouter({
@@ -227,13 +234,18 @@ export const tenantsRouter = createTRPCRouter({
             );
           }
 
+          const u = tenantUser as ExtendedUser;
+
           const userData: TenantUserData | undefined =
             tenantUser && typeof tenantUser === "object"
               ? {
                   id: tenantUser.id || "",
                   coordinates: tenantUser.coordinates || undefined,
-                  clerkImageUrl:
-                    (tenantUser as TenantUserData)?.clerkImageUrl || null,
+                  clerkImageUrl: u.clerkImageUrl ?? null,
+                  firstName: u.firstName ?? null,
+                  lastName: u.lastName ?? null,
+                  username: u.username ?? null,
+                  email: u.email ?? null,
                 }
               : undefined;
 
@@ -385,25 +397,6 @@ export const tenantsRouter = createTRPCRouter({
       ) as TenantWithRelations; // <- no `any`, no extra guards
     }),
 
-  // getMine: baseProcedure
-  //   .input(z.object({})) // no input
-  //   .query(async ({ ctx }) => {
-  //     const userId = ctx.auth?.userId;
-  //     if (!userId) {
-  //       throw new TRPCError({ code: "UNAUTHORIZED" });
-  //     }
-
-  //     // Use ctx.db (which is the payload instance) instead of importing payload
-  //     const res = await ctx.db.find({
-  //       collection: "tenants",
-  //       where: {
-  //         user: { equals: userId }, // Based on your Tenant collection structure
-  //       },
-  //       limit: 1,
-  //     });
-
-  //     return res.docs[0] ?? null;
-  //   }),
   getMine: baseProcedure.input(z.object({})).query(async ({ ctx }) => {
     const clerkUserId = ctx.userId; // "user_…"
     if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });

@@ -10,7 +10,7 @@ export const Tenants: CollectionConfig = {
   },
   admin: {
     useAsTitle: "slug",
-    defaultColumns: ["name", "slug", "firstName", "lastName", "hourlyRate"],
+    defaultColumns: ["name", "slug", "hourlyRate"],
   },
   fields: [
     {
@@ -110,22 +110,7 @@ export const Tenants: CollectionConfig = {
     },
 
     // Vendor profile fields
-    {
-      name: "firstName",
-      type: "text",
-      label: "First Name",
-      admin: {
-        description: "Vendor's first name",
-      },
-    },
-    {
-      name: "lastName",
-      type: "text",
-      label: "Last Name",
-      admin: {
-        description: "Vendor's last name",
-      },
-    },
+
     {
       name: "bio",
       type: "textarea",

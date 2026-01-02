@@ -77,6 +77,8 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
     mode: "onBlur",
     resolver: zodResolver(profileSchema),
     defaultValues: {
+      firstName: "",
+      lastName: "",
       username: "",
       email: "",
       location: "",
@@ -106,9 +108,14 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   // Determine if profile has been completed before
   const isProfileCompleted = userProfile?.onboardingCompleted || false;
 
+  const usernameLocked = isProfileCompleted; // Lock username if onboarding completed
+
   // Populate form with user data when it loads
   useEffect(() => {
     if (userProfile) {
+      form.setValue("firstName", userProfile.firstName || "");
+      form.setValue("lastName", userProfile.lastName || "");
+
       form.setValue("username", userProfile.username || "");
       form.setValue("email", userProfile.email || "");
       form.setValue("language", userProfile.language || "en");
@@ -184,6 +191,15 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         placeDetails.address_components
       );
 
+      // Check if the street number is included:
+
+      if (!(addressComponents.streetNumber ?? "").trim()) {
+        toast.error(
+          "Please choose a full street address that includes a house number."
+        );
+        return;
+      }
+
       // Single, direct state update
       const next: SelectedLocation = {
         formattedAddress: placeDetails.formatted_address,
@@ -193,6 +209,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         region: addressComponents.region ?? undefined,
         postalCode: addressComponents.postalCode ?? undefined,
         street: addressComponents.street ?? undefined,
+        streetNumber: addressComponents.streetNumber ?? undefined,
         countryISO: addressComponents.countryISO ?? undefined,
         countryName: addressComponents.countryName ?? undefined,
       };
@@ -213,6 +230,29 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   };
 
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
+    // Address check:
+    if (!isProfileCompleted) {
+      if (!selectedLocation) {
+        form.setError("location", {
+          type: "manual",
+          message: "Please select an address from the suggestions.",
+        });
+        toast.error("Please select an address from the suggestions.");
+        return;
+      }
+
+      // Ensure street number is present
+      const streetNumber = (selectedLocation.streetNumber ?? "").trim();
+      if (!streetNumber) {
+        form.setError("location", {
+          type: "manual",
+          message: "Address must include a house number.",
+        });
+        toast.error("Address must include a house number.");
+        return;
+      }
+    }
+
     // Sanitize coordinates to ensure no old data is sent
     const sanitizeCoordinates = (location: SelectedLocation | null) => {
       if (
@@ -234,6 +274,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         region: location.region ?? null,
         postalCode: location.postalCode ?? null,
         street: location.street ?? null,
+        streetNumber: location.streetNumber ?? null,
         ipDetected: false,
         manuallySet: true,
       };
@@ -250,7 +291,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
     const submission = {
       ...values,
-      coordinates,
+      ...(coordinates ? { coordinates } : {}), // If the user does not pick a new address, you do not touch stored coordinates.
       // The server will automatically set onboardingCompleted: true
     };
 
@@ -293,155 +334,200 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         <SettingsHeader title="Profile settings" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <FormField
-            name="username"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    autoComplete="off"
-                    placeholder="Enter your username"
-                    value={field.value}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="location"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Location</FormLabel>
-                <FormControl>
-                  <div className="relative">
+          {/* Left column: identity */}
+          <div className="flex flex-col gap-8">
+            <FormField
+              name="firstName"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First name</FormLabel>
+                  <FormControl>
                     <Input
                       {...field}
-                      value={locationInput}
-                      onChange={(e) => {
-                        setLocationInput(e.target.value);
-                        field.onChange(e);
-                        form.setValue("country", "");
-
-                        // NUCLEAR OPTION: Completely clear ALL coordinate data when user types
-                        // This ensures we never have stale coordinate data
-                        if (
-                          e.target.value !== selectedLocation?.formattedAddress
-                        ) {
-                          console.log(
-                            "Location input changed - clearing ALL coordinate data"
-                          );
-                          setSelectedLocation(null);
-                        }
-                      }}
-                      autoComplete="off"
-                      placeholder="Search for your address…"
+                      autoComplete="given-name"
+                      placeholder="Enter your first name"
                     />
-                    {predictions.length > 0 &&
-                      locationInput !== selectedLocation?.formattedAddress && (
-                        <ul className="absolute left-0 right-0 z-10 bg-white border rounded shadow mt-1 max-h-48 overflow-y-auto">
-                          {predictions.map((prediction) => (
-                            <li
-                              key={prediction.place_id}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => handleLocationSelect(prediction)}
-                            >
-                              {prediction.description}
-                            </li>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="lastName"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="family-name"
+                      placeholder="Enter your last name"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="username"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      placeholder="Enter your username"
+                      value={field.value}
+                      disabled={usernameLocked}
+                      className={
+                        usernameLocked
+                          ? "bg-gray-100 cursor-not-allowed"
+                          : undefined
+                      }
+                    />
+                  </FormControl>
+                  {!usernameLocked && (
+                    <span className="block text-xs text-gray-500 mt-1">
+                      * cannot be changed after onboarding is completed
+                    </span>
+                  )}
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="email"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="email"
+                      autoComplete="off"
+                      readOnly
+                      disabled
+                      className="bg-gray-100 cursor-not-allowed"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Right column: address + preferences */}
+          <div className="flex flex-col gap-8">
+            <FormField
+              name="location"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        value={locationInput}
+                        onChange={(e) => {
+                          setLocationInput(e.target.value);
+                          field.onChange(e);
+                          form.setValue("country", "");
+                          if (
+                            e.target.value !==
+                            selectedLocation?.formattedAddress
+                          ) {
+                            setSelectedLocation(null);
+                          }
+                        }}
+                        autoComplete="off"
+                        placeholder="Search for your address…"
+                      />
+                      {predictions.length > 0 &&
+                        locationInput !==
+                          selectedLocation?.formattedAddress && (
+                          <ul className="absolute left-0 right-0 z-10 bg-white border rounded shadow mt-1 max-h-48 overflow-y-auto">
+                            {predictions.map((prediction) => (
+                              <li
+                                key={prediction.place_id}
+                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                onClick={() => handleLocationSelect(prediction)}
+                              >
+                                {prediction.description}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="country"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={
+                        selectedLocation?.countryName ||
+                        userProfile?.country ||
+                        ""
+                      }
+                      readOnly
+                      disabled
+                      tabIndex={-1}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="language"
+              control={form.control}
+              render={({ field }) => {
+                const langCode = field.value ?? getInitialLanguage();
+
+                return (
+                  <FormItem>
+                    <FormLabel>Language</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={langCode}
+                        onValueChange={field.onChange}
+                        disabled={
+                          updateUserProfile.isPending ||
+                          form.formState.isSubmitting ||
+                          isLoading
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          {SUPPORTED_LANGUAGES.find((l) => l.code === langCode)
+                            ?.label ?? "English"}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SUPPORTED_LANGUAGES.map(({ code, label }) => (
+                            <SelectItem key={code} value={code}>
+                              {label}
+                            </SelectItem>
                           ))}
-                        </ul>
-                      )}
-                  </div>
-                </FormControl>
-                {/* Show subtle indicator when location is auto-populated from IP */}
-                {/* {userProfile?.coordinates?.ipDetected &&
-                  !userProfile?.coordinates?.manuallySet &&
-                  locationInput && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      📍 Auto-detected from your IP address
-                    </p>
-                  )} */}
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="email"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email address</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="email"
-                    autoComplete="off"
-                    readOnly
-                    disabled
-                    className="bg-gray-100 cursor-not-allowed"
-                    value={userProfile?.email || ""}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="country"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={
-                      selectedLocation?.countryName ||
-                      userProfile?.country ||
-                      ""
-                    }
-                    readOnly
-                    disabled
-                    tabIndex={-1}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="language"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Language</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value ?? getInitialLanguage()}
-                    onValueChange={field.onChange}
-                    disabled={
-                      updateUserProfile.isPending ||
-                      form.formState.isSubmitting ||
-                      isLoading
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      {SUPPORTED_LANGUAGES.find(
-                        (l) => l.code === (field.value ?? "en")
-                      )?.label ?? "English"}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SUPPORTED_LANGUAGES.map(({ code, label }) => (
-                        <SelectItem key={code} value={code}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormItem>
-            )}
-          />
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                );
+              }}
+            />
+          </div>
         </div>
 
         <Button

@@ -5,16 +5,19 @@ const usernameValidation = z
   .min(3, "Username must be at least 3 characters")
   .max(63, "Username must be less than 63 characters")
   .regex(
-    /^[a-z0-9][a-z0-9-]*[a-z0-9]$/,
-    "Username can only contain lowercase letters, numbers and hyphens. It must start and end with a letter or number"
+    /^[a-z0-9][a-z0-9._-]*[a-z0-9]$/i,
+    "Username can only contain letters, numbers, dots, underscores and hyphens. It must start and end with a letter or number"
   )
   .refine(
-    (val) => !val.includes("--"),
-    "Username cannot contain consecutive hyphens"
+    (val) => !/[._-]{2,}/.test(val),
+    "Username cannot contain consecutive separators (., _, -)"
   )
   .transform((val) => val.toLowerCase());
 
 export const profileSchema = z.object({
+  firstName: z.string().trim().min(2, "First name is required"),
+  lastName: z.string().trim().min(2, "Last name is required"),
+
   username: usernameValidation,
   email: z.string().email("Invalid email address"),
   location: z.string().min(3, "Please select a location"),
@@ -30,6 +33,7 @@ export const profileSchema = z.object({
       region: z.string().nullable().optional(),
       postalCode: z.string().nullable().optional(),
       street: z.string().nullable().optional(),
+      streetNumber: z.string().nullable().optional(),
       ipDetected: z.boolean().optional(),
       manuallySet: z.boolean().optional(),
     })
@@ -37,6 +41,8 @@ export const profileSchema = z.object({
 });
 
 export const PROFILE_FIELD_LABELS: Record<string, string> = {
+  firstName: "First name",
+  lastName: "Last name",
   username: "Username",
   email: "Email address",
   location: "Location",
@@ -55,11 +61,9 @@ export const vendorSchema = z
         "Business name can contain letters, numbers, hyphens, and underscores"
       )
       .transform((val) => val.toLowerCase()), // Normalize to lowercase for uniqueness
-    firstName: z.string().min(2, "First name is required"),
-    lastName: z.string().min(2, "Last name is required"),
     bio: z
       .string()
-      .max(600, "Description must be under 600 characters")
+      .max(1200, "Description must be under 1200 characters")
       .optional(),
     services: z
       .array(z.enum(["on-site", "on-line"]))
@@ -114,8 +118,6 @@ export const vendorSchema = z
 
 export const VENDOR_FIELD_LABELS = {
   name: "Business Name (letters, numbers, hyphens, underscores)",
-  firstName: "First Name",
-  lastName: "Last Name",
   bio: "Description",
   services: "Type of Service",
   website: "Website",

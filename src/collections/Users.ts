@@ -117,7 +117,20 @@ export const Users: CollectionConfig = {
         position: "sidebar",
       },
     },
-    // General profile fields
+    // General profile fields:
+    {
+      name: "firstName",
+      type: "text",
+      required: false, // optional during migration - change to true when removed from the tenants collection
+      admin: { description: "Legal/booking first name" },
+    },
+    {
+      name: "lastName",
+      type: "text",
+      required: false, // optional during migration - change to true when removed from the tenants collection
+      admin: { description: "Legal/booking last name" },
+    },
+
     {
       name: "location",
       type: "text",
@@ -218,6 +231,13 @@ export const Users: CollectionConfig = {
             description: "Street address",
           },
         },
+        {
+          name: "streetNumber",
+          type: "text",
+          label: "Street Number",
+          admin: { description: "House number from Google Places" },
+        },
+
         {
           name: "ipDetected",
           type: "checkbox",

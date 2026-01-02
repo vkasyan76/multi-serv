@@ -162,6 +162,14 @@ export interface User {
       }[]
     | null;
   /**
+   * Legal/booking first name
+   */
+  firstName?: string | null;
+  /**
+   * Legal/booking last name
+   */
+  lastName?: string | null;
+  /**
    * User's location/address
    */
   location?: string | null;
@@ -209,6 +217,10 @@ export interface User {
      * Street address
      */
     street?: string | null;
+    /**
+     * House number from Google Places
+     */
+    streetNumber?: string | null;
     /**
      * Whether coordinates were detected from IP
      */
@@ -282,14 +294,6 @@ export interface Tenant {
     | boolean
     | null;
   lastStripeSyncAt?: string | null;
-  /**
-   * Vendor's first name
-   */
-  firstName?: string | null;
-  /**
-   * Vendor's last name
-   */
-  lastName?: string | null;
   /**
    * Vendor's bio/description
    */
@@ -627,6 +631,8 @@ export interface UsersSelect<T extends boolean = true> {
         tenant?: T;
         id?: T;
       };
+  firstName?: T;
+  lastName?: T;
   location?: T;
   country?: T;
   language?: T;
@@ -641,6 +647,7 @@ export interface UsersSelect<T extends boolean = true> {
         region?: T;
         postalCode?: T;
         street?: T;
+        streetNumber?: T;
         ipDetected?: T;
         manuallySet?: T;
       };
@@ -702,8 +709,6 @@ export interface TenantsSelect<T extends boolean = true> {
   onboardingStatus?: T;
   stripeRequirements?: T;
   lastStripeSyncAt?: T;
-  firstName?: T;
-  lastName?: T;
   bio?: T;
   services?: T;
   categories?: T;

@@ -26,6 +26,7 @@ function normalizeUsername(
   // allow only a–z 0–9 . _ -  and trim separators
   const cleaned = base
     .replace(/[^a-z0-9._-]/g, "")
+    .replace(/([._-])[._-]+/g, "$1") // collapse ANY run to its first separator
     .replace(/^[._-]+|[._-]+$/g, "");
   if (cleaned.length < 3) return null; // respect your min length
   return cleaned.slice(0, 32); // optional max length

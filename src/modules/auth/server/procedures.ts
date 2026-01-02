@@ -26,6 +26,7 @@ import Stripe from "stripe";
 
 // for checking if user has accepted current terms:
 import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted";
+const PASSWORD_AUTH_ENABLED = false; // hard-disable payload auth - we rely entirely on Clerk,
 
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
@@ -57,6 +58,14 @@ export const authRouter = createTRPCRouter({
   register: baseProcedure
     .input(registerSchema)
     .mutation(async ({ ctx, input }) => {
+      // disable password auth completely:
+      if (!PASSWORD_AUTH_ENABLED) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Password auth is disabled. Please sign in with Clerk.",
+        });
+      }
+
       // find if the name was already used:
       const existingData = await ctx.db.find({
         collection: "users",
@@ -109,6 +118,14 @@ export const authRouter = createTRPCRouter({
     }),
   // Login Procedure:
   login: baseProcedure.input(loginSchema).mutation(async ({ ctx, input }) => {
+    // disable password auth completely:
+    if (!PASSWORD_AUTH_ENABLED) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Password auth is disabled. Please sign in with Clerk.",
+      });
+    }
+
     const data = await ctx.db.login({
       collection: "users",
       data: {
@@ -223,8 +240,27 @@ export const authRouter = createTRPCRouter({
 
       const currentUser = user.docs[0];
 
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
       // Check if user has accepted current terms
       assertTermsAccepted(currentUser);
+
+      // guard so vendors cannot be created without user names
+
+      const fn = (currentUser.firstName ?? "").trim();
+      const ln = (currentUser.lastName ?? "").trim();
+      if (!fn || !ln) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Please complete your General profile (first and last name) before creating a vendor profile.",
+        });
+      }
 
       // Check if user already has a tenant (vendor profile)
       if (
@@ -328,9 +364,9 @@ export const authRouter = createTRPCRouter({
 
         // Authoritative country: prefer user's profile ISO, then input, then DE
         const countryForTenant = (
-          input.country ||
           (currentUser.coordinates as UserCoordinates | undefined)
             ?.countryISO ||
+          input.country ||
           "DE"
         ).toUpperCase();
 
@@ -353,8 +389,6 @@ export const authRouter = createTRPCRouter({
             name: input.name || currentUser?.username || "",
             slug: input.name || currentUser?.username || "", // Use business name as slug for routing
             stripeAccountId: accountId,
-            firstName: input.firstName,
-            lastName: input.lastName,
             bio: input.bio,
             services: input.services,
             categories: categoryIds,
@@ -408,7 +442,11 @@ export const authRouter = createTRPCRouter({
         // 1) Try to roll back tenant if it was created
         if (tenant?.id) {
           await ctx.db
-            .delete({ collection: "tenants", id: tenant.id })
+            .delete({
+              collection: "tenants",
+              id: tenant.id,
+              overrideAccess: true,
+            })
             .then(() => {
               tenantDeleted = true;
             })
@@ -543,15 +581,36 @@ export const authRouter = createTRPCRouter({
       }
 
       try {
+        // fetch the tenant (depth:0) to get its stripeAccountId  - update business profile in Stripe:
+        const tenantDoc = await ctx.db.findByID({
+          collection: "tenants",
+          id: actualTenantId as string,
+          depth: 0,
+        });
+
+        if (!tenantDoc)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Tenant not found",
+          });
+
+        // guard agiant updating the business name:
+        if (
+          typeof tenantDoc.name === "string" &&
+          input.name !== tenantDoc.name
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Business name cannot be changed after the vendor profile is created.",
+          });
+        }
+
         // Update the tenant with vendor profile data
         const updatedTenant = await ctx.db.update({
           collection: "tenants",
           id: actualTenantId as string,
           data: {
-            name: input.name,
-            slug: input.name, // Update slug to match new business name
-            firstName: input.firstName,
-            lastName: input.lastName,
             bio: input.bio,
             services: input.services,
             categories: categoryIds, // Array of category ObjectIds
@@ -566,13 +625,6 @@ export const authRouter = createTRPCRouter({
             vatId: input.vatRegistered ? input.vatId?.trim() || null : null, // toggle off => clear
             vatIdValid: input.vatRegistered ? vatIdValid : false, // keep DB consistent
           },
-        });
-
-        // fetch the tenant (depth:0) to get its stripeAccountId  - update business profile in Stripe:
-        const tenantDoc = await ctx.db.findByID({
-          collection: "tenants",
-          id: actualTenantId as string,
-          depth: 0,
         });
 
         const acctId =
@@ -707,6 +759,8 @@ export const authRouter = createTRPCRouter({
     return {
       id: String(currentUser.id),
       clerkUserId: currentUser.clerkUserId ?? userId,
+      firstName: currentUser.firstName || "",
+      lastName: currentUser.lastName || "",
       username: currentUser.username,
       email: currentUser.email,
       location: currentUser.location || "",
@@ -723,6 +777,8 @@ export const authRouter = createTRPCRouter({
             region: (currentUser.coordinates as UserCoordinates).region,
             postalCode: (currentUser.coordinates as UserCoordinates).postalCode,
             street: (currentUser.coordinates as UserCoordinates).street,
+            streetNumber: (currentUser.coordinates as UserCoordinates)
+              .streetNumber,
             ipDetected: (currentUser.coordinates as UserCoordinates).ipDetected,
             manuallySet: (currentUser.coordinates as UserCoordinates)
               .manuallySet,
@@ -819,8 +875,8 @@ export const authRouter = createTRPCRouter({
       const result = {
         id: actualTenantId, // ✅ ADD THIS: Include tenant ID for image uploads
         name: tenant.name || "",
-        firstName: tenant.firstName || "",
-        lastName: tenant.lastName || "",
+        firstName: currentUser.firstName || "",
+        lastName: currentUser.lastName || "",
         bio: tenant.bio || "",
         services: tenant.services || [],
         categories: categorySlugs, // Return slugs instead of ObjectIds
@@ -865,24 +921,83 @@ export const authRouter = createTRPCRouter({
         throw new Error("User not found");
       }
 
-      // If user provides coordinates, mark them as manually set and preserve existing metadata
-      let updatedCoordinates = input.coordinates;
+      // check if street number is provided:
+      const onboarding = currentUser.onboardingCompleted !== true;
+
+      if (onboarding) {
+        const coords = input.coordinates;
+
+        const hasCoords =
+          coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng);
+
+        if (!hasCoords) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Please select an address from the suggestions.",
+          });
+        }
+
+        const streetNumber = (coords?.streetNumber ?? "").trim();
+        if (!streetNumber) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Address must include a house number.",
+          });
+        }
+      }
+
+      // Lock Username Logic:
+      const isLocked = currentUser.onboardingCompleted === true;
+
+      // 1) Lock username after onboarding
+      if (isLocked && input.username !== currentUser.username) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Username cannot be changed after onboarding.",
+        });
+      }
+
+      // 2) Enforce uniqueness during onboarding (only if user is allowed to edit)
+      if (!isLocked && input.username !== currentUser.username) {
+        const existing = await ctx.db.find({
+          collection: "users",
+          limit: 1,
+          where: {
+            and: [
+              { username: { equals: input.username } },
+              { id: { not_equals: currentUser.id } },
+            ],
+          },
+        });
+
+        if (existing.totalDocs > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Username already taken",
+          });
+        }
+      }
+
+      // updatedCoordinates when it’s undefined, and instead conditionally add coordinates only when you actually have valid lat/lng.
+      const data: Record<string, unknown> = {
+        firstName: input.firstName,
+        lastName: input.lastName,
+        username: input.username,
+        location: input.location,
+        country: input.country,
+        language: input.language,
+        onboardingCompleted: true,
+        geoUpdatedAt: new Date().toISOString(),
+      };
+
       if (hasValidCoordinates(input.coordinates) && input.coordinates) {
-        updatedCoordinates = replaceCoordinates(input.coordinates, true);
+        data.coordinates = replaceCoordinates(input.coordinates, true);
       }
 
       await ctx.db.update({
         collection: "users",
         id: currentUser.id as string,
-        data: {
-          username: input.username,
-          location: input.location,
-          country: input.country,
-          language: input.language,
-          coordinates: updatedCoordinates,
-          onboardingCompleted: true, // Mark onboarding as complete
-          geoUpdatedAt: new Date().toISOString(),
-        },
+        data,
       });
 
       // Update Clerk user metadata with the new username
