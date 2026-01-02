@@ -494,35 +494,38 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
             <FormField
               name="language"
               control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Language</FormLabel>
-                  <FormControl>
-                    <Select
-                      value={field.value ?? getInitialLanguage()}
-                      onValueChange={field.onChange}
-                      disabled={
-                        updateUserProfile.isPending ||
-                        form.formState.isSubmitting ||
-                        isLoading
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        {SUPPORTED_LANGUAGES.find(
-                          (l) => l.code === (field.value ?? "en")
-                        )?.label ?? "English"}
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SUPPORTED_LANGUAGES.map(({ code, label }) => (
-                          <SelectItem key={code} value={code}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const langCode = field.value ?? getInitialLanguage();
+
+                return (
+                  <FormItem>
+                    <FormLabel>Language</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={langCode}
+                        onValueChange={field.onChange}
+                        disabled={
+                          updateUserProfile.isPending ||
+                          form.formState.isSubmitting ||
+                          isLoading
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          {SUPPORTED_LANGUAGES.find((l) => l.code === langCode)
+                            ?.label ?? "English"}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SUPPORTED_LANGUAGES.map(({ code, label }) => (
+                            <SelectItem key={code} value={code}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                );
+              }}
             />
           </div>
         </div>
