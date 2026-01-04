@@ -80,7 +80,7 @@ export function CookiePreferencesDialog({
                 <Switch
                   checked={prefs.analytics}
                   onCheckedChange={(checked) =>
-                    setPrefsAction({ ...prefs, analytics: !!checked })
+                    setPrefsAction({ ...prefs, analytics: checked })
                   }
                 />
               </div>
@@ -106,7 +106,7 @@ export function CookiePreferencesDialog({
                 <Switch
                   checked={prefs.advertising}
                   onCheckedChange={(checked) =>
-                    setPrefsAction({ ...prefs, advertising: !!checked })
+                    setPrefsAction({ ...prefs, advertising: checked })
                   }
                 />
               </div>

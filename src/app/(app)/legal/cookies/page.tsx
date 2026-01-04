@@ -1,4 +1,4 @@
-import { OpenCookiePreferencesLink } from "@/modules/legal/cookies/ui/open-cookie-preferences-link";
+import { OpenCookiePreferencesButton } from "@/modules/legal/cookies/ui/open-cookie-preferences-button";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +16,9 @@ export default function CookiesPage() {
           and improve usage. You can change your choices at any time.
         </p>
 
-        <OpenCookiePreferencesLink className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-pink-400 hover:text-primary">
+        <OpenCookiePreferencesButton className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-pink-400 hover:text-black">
           Open cookie preferences
-        </OpenCookiePreferencesLink>
+        </OpenCookiePreferencesButton>
       </header>
 
       <section className="space-y-3 text-sm sm:text-base leading-7">

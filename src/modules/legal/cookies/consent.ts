@@ -1,5 +1,9 @@
 // src/modules/legal/cookies/consent.ts
-import { COOKIE_CONSENT_COOKIE, COOKIE_CONSENT_VERSION } from "@/constants";
+import {
+  COOKIE_CONSENT_COOKIE,
+  COOKIE_CONSENT_VERSION,
+  CONSENT_UPDATED_EVENT,
+} from "@/constants";
 
 export type CookieConsentPrefs = {
   analytics: boolean;
@@ -120,7 +124,7 @@ export function writeClientConsent(prefs: CookieConsentPrefs): CookieConsent {
       secure;
     // ✅ notify gates/listeners immediately
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("cookie-consent-updated"));
+      window.dispatchEvent(new Event(CONSENT_UPDATED_EVENT));
     }
   }
 
@@ -145,6 +149,6 @@ export function clearClientConsent(): void {
   }
   // ✅ notify gates/listeners immediately
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("cookie-consent-updated"));
+    window.dispatchEvent(new Event(CONSENT_UPDATED_EVENT));
   }
 }

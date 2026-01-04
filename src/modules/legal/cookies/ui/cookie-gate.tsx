@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 // In your repo this is typically: "../consent"
 import { readClientConsent } from "../consent";
 
-const CONSENT_UPDATED_EVENT = "cookie-consent-updated";
+import { CONSENT_UPDATED_EVENT } from "@/constants";
 
 type Props = {
   children: React.ReactNode;

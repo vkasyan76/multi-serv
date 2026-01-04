@@ -10,8 +10,7 @@ import {
 } from "../consent";
 import { CookieBanner } from "./cookie-banner";
 import { CookiePreferencesDialog } from "./cookie-preferences-dialog";
-
-const OPEN_COOKIE_PREFS_EVENT = "open-cookie-preferences";
+import { OPEN_COOKIE_PREFS_EVENT } from "@/constants";
 
 export function CookieConsentRoot() {
   const [mounted, setMounted] = useState(false);

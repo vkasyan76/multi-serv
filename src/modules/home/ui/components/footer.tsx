@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Facebook, Linkedin, Mail } from "lucide-react";
-import { OpenCookiePreferencesLink } from "@/modules/legal/cookies/ui/open-cookie-preferences-link";
+import { OpenCookiePreferencesButton } from "@/modules/legal/cookies/ui/open-cookie-preferences-button";
 
 export const Footer = () => {
   return (
@@ -86,9 +86,9 @@ export const Footer = () => {
             Cookies
           </Link>
 
-          <OpenCookiePreferencesLink className="hover:text-black transition-colors underline underline-offset-2">
+          <OpenCookiePreferencesButton className="hover:text-black transition-colors underline underline-offset-2">
             Cookie preferences
-          </OpenCookiePreferencesLink>
+          </OpenCookiePreferencesButton>
         </nav>
 
         {/* Copyright */}

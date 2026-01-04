@@ -18,7 +18,7 @@ import {
   type AppLang,
 } from "@/modules/profile/location-utils";
 import { CookieConsentRoot } from "@/modules/legal/cookies/ui/cookie-consent-root";
-import { VercelAnalyticsConsent } from "@/modules/legal/cookies/ui/concents/vercel-analytics-consent";
+import { VercelAnalyticsConsent } from "@/modules/legal/cookies/ui/consents/vercel-analytics-consent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

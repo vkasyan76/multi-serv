@@ -50,7 +50,7 @@ export function CookieBanner({
 
           <Button
             type="button"
-            className="w-full sm:w-auto bg-black text-white hover:bg-pink-400 hover:text-primary"
+            className="w-full sm:w-auto bg-black text-white hover:bg-pink-400 hover:text-black"
             onClick={onAcceptAllAction}
           >
             {/* TODO(i18n): translate */}
