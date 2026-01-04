@@ -69,4 +69,4 @@ export const TERMS_VERSION = "v1";
 
 // --- Cookies ---
 export const COOKIE_CONSENT_VERSION = "v1";
-export const COOKIE_CONSENT_COOKIE = "infisimo_cookie_consent";
+export const COOKIE_CONSENT_COOKIE = "infinisimo_cookie_consent";

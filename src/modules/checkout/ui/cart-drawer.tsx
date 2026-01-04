@@ -94,8 +94,8 @@ export function CartDrawer({
   const homeHref = platformHomeHref();
   const termsHref =
     homeHref === "/"
-      ? "/terms-of-use"
-      : `${homeHref.replace(/\/$/, "")}/terms-of-use`;
+      ? "/legal/terms-of-use"
+      : `${homeHref.replace(/\/$/, "")}/legal/terms-of-use`;
 
   // Pull tenant's subcategories/categories to build "Service" options
   const { data: tenant } = useQuery({

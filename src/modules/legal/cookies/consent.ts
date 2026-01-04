@@ -61,6 +61,14 @@ export function shouldShowCookieBanner(
  * These are intentionally runtime-guarded so this module can be imported server-side.
  */
 
+// Secure attribute helper
+
+function getSecureAttr(): string {
+  return typeof window !== "undefined" && window.location.protocol === "https:"
+    ? "; Secure"
+    : "";
+}
+
 function getClientCookieValue(name: string): string | null {
   if (typeof document === "undefined") return null;
   const parts = document.cookie.split(";").map((p) => p.trim());
@@ -97,10 +105,7 @@ export function writeClientConsent(prefs: CookieConsentPrefs): CookieConsent {
 
   if (typeof document !== "undefined") {
     const maxAge = MAX_AGE_DAYS * 24 * 60 * 60;
-    const secure =
-      typeof window !== "undefined" && window.location.protocol === "https:"
-        ? "; Secure"
-        : "";
+    const secure = getSecureAttr();
 
     // SameSite=Lax is generally correct for same-site subdomains
     // (your apex + tenant subdomains are same-site).
@@ -113,6 +118,10 @@ export function writeClientConsent(prefs: CookieConsentPrefs): CookieConsent {
       `; Max-Age=${maxAge}` +
       `; SameSite=Lax` +
       secure;
+    // ✅ notify gates/listeners immediately
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("cookie-consent-updated"));
+    }
   }
 
   return consent;
@@ -122,10 +131,7 @@ export function clearClientConsent(): void {
   if (typeof document === "undefined") return;
 
   // Expire now (also try with/without Domain to cover edge cases)
-  const secure =
-    typeof window !== "undefined" && window.location.protocol === "https:"
-      ? "; Secure"
-      : "";
+  const secure = getSecureAttr();
 
   document.cookie =
     `${COOKIE_CONSENT_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax` + secure;
@@ -136,5 +142,9 @@ export function clearClientConsent(): void {
       `${COOKIE_CONSENT_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax` +
       domainAttr +
       secure;
+  }
+  // ✅ notify gates/listeners immediately
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("cookie-consent-updated"));
   }
 }
