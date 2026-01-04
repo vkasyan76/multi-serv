@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Facebook, Linkedin, Mail } from "lucide-react";
+import { OpenCookiePreferencesLink } from "@/modules/legal/cookies/ui/open-cookie-preferences-link";
 
 export const Footer = () => {
   return (
@@ -60,6 +61,34 @@ export const Footer = () => {
               info@infinisimo.com
             </span>
           </a>
+        </nav>
+
+        {/* Legal / Preferences */}
+        <nav className="flex items-center gap-4 text-gray-600 text-sm">
+          <Link
+            href="/legal/terms-of-use"
+            className="hover:text-black transition-colors"
+          >
+            Terms
+          </Link>
+
+          <Link
+            href="/legal/impressum"
+            className="hover:text-black transition-colors"
+          >
+            Impressum
+          </Link>
+
+          <Link
+            href="/legal/cookies"
+            className="hover:text-black transition-colors"
+          >
+            Cookies
+          </Link>
+
+          <OpenCookiePreferencesLink className="hover:text-black transition-colors underline underline-offset-2">
+            Cookie preferences
+          </OpenCookiePreferencesLink>
         </nav>
 
         {/* Copyright */}

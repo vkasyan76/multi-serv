@@ -17,6 +17,8 @@ import {
   getAppLangFromHeaders,
   type AppLang,
 } from "@/modules/profile/location-utils";
+import { CookieConsentRoot } from "@/modules/legal/cookies/ui/cookie-consent-root";
+import { VercelAnalyticsConsent } from "@/modules/legal/cookies/ui/concents/vercel-analytics-consent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,6 +73,8 @@ export default async function RootLayout({
               <ClerkUserSync />
               <GeoBootstrap />
               {children}
+              <CookieConsentRoot />
+              <VercelAnalyticsConsent />
               <Toaster />
             </TRPCReactProvider>
           </NuqsAdapter>
