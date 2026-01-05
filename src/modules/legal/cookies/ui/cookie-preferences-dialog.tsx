@@ -124,7 +124,7 @@ export function CookiePreferencesDialog({
             </Button>
             <Button
               type="button"
-              className="bg-black text-white hover:bg-pink-400 hover:text-primary"
+              className="bg-black text-white hover:bg-pink-400 hover:text-black"
               onClick={onSaveAction}
             >
               {/* TODO(i18n): translate */}

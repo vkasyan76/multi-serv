@@ -143,6 +143,20 @@ export default function TenantContent({ slug }: { slug: string }) {
   const cartOpen = useCartStore((s) => s.open);
   const prevOpenRef = useRef(cartOpen);
 
+  // refetch profile when the cart opens and when the tab regains focus.
+  const refetchProfile = profileQ.refetch;
+  useEffect(() => {
+    if (!cartOpen) return;
+
+    // When cart opens, ensure customer snapshot is fresh
+    void refetchProfile();
+
+    // If user edits profile in another tab, refetch when coming back
+    const onFocus = () => void refetchProfile();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [cartOpen, refetchProfile]);
+
   // best-effort success handler — after redirect from Stripe Checkout
   useEffect(() => {
     if (!success || !sessionId || successHandledRef.current) return;
@@ -549,6 +563,18 @@ export default function TenantContent({ slug }: { slug: string }) {
               policyAcceptedAt={profileQ.data?.policyAcceptedAt ?? null}
               policyAcceptedVersion={
                 profileQ.data?.policyAcceptedVersion ?? null
+              }
+              customer={
+                profileQ.data
+                  ? {
+                      firstName: profileQ.data.firstName ?? null,
+                      lastName: profileQ.data.lastName ?? null,
+                      location: profileQ.data.location ?? null,
+                      country: profileQ.data.country ?? null,
+                      onboardingCompleted:
+                        profileQ.data.onboardingCompleted ?? false,
+                    }
+                  : null
               }
             />
 
