@@ -66,3 +66,9 @@ export type DisputeStatus = (typeof DISPUTE_STATUSES)[number];
 
 // --- Terms versioning ---
 export const TERMS_VERSION = "v1";
+
+// --- Cookies ---
+export const COOKIE_CONSENT_VERSION = "v1";
+export const COOKIE_CONSENT_COOKIE = "infinisimo_cookie_consent";
+export const OPEN_COOKIE_PREFS_EVENT = "open-cookie-preferences" as const;
+export const CONSENT_UPDATED_EVENT = "cookie-consent-updated" as const;
