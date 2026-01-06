@@ -186,7 +186,30 @@ export const checkoutRouter = createTRPCRouter({
         Math.round((amountCents * PLATFORM_FEE_PERCENT) / 100)
       );
 
-      // Create "pending" order
+      // --- Customer profile must be complete for snapshot/invoicing later ---
+      const firstName = (payloadUser.firstName ?? "").trim();
+      const lastName = (payloadUser.lastName ?? "").trim();
+      const location = (payloadUser.location ?? "").trim();
+      const country = (payloadUser.country ?? "").trim();
+
+      if (!firstName || !lastName || !location || !country) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Please complete your profile (name and address) before checkout.",
+        });
+      }
+
+      // --- Vendor must be onboarded (server-enforced) ---
+      // Prefer the derived snapshot status you already store from account.updated
+      if (tenant.onboardingStatus !== "completed") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Provider is not ready to take payments yet.",
+        });
+      }
+
+      // Create "pending" order.
       const order = await ctx.db.create({
         collection: "orders",
         data: {
@@ -200,6 +223,19 @@ export const checkoutRouter = createTRPCRouter({
           destination: tenant.stripeAccountId,
           // small UX grace: time window during which we consider the reservation active
           reservedUntil: addHours(new Date(), 1).toISOString(),
+          // NEW snapshots (primary capture point). Snapshot is captured at the moment your server begins checkout (best representation of “identity at transaction time”).
+          customerSnapshot: {
+            firstName,
+            lastName,
+            location,
+            country,
+            email: payloadUser.email ?? null,
+          },
+          vendorSnapshot: {
+            tenantName: tenant.name,
+            tenantSlug: tenant.slug,
+            stripeAccountId: tenant.stripeAccountId ?? null,
+          },
         },
         overrideAccess: true,
         depth: 0,
