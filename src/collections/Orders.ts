@@ -105,6 +105,35 @@ export const Orders: CollectionConfig = {
       name: "notes",
       type: "textarea",
     },
+    // NEW: Immutable identity snapshots (required)
+    {
+      name: "customerSnapshot",
+      type: "group",
+      admin: {
+        description: "Immutable customer identity captured at checkout time.",
+        readOnly: true,
+      },
+      fields: [
+        { name: "firstName", type: "text", required: true },
+        { name: "lastName", type: "text", required: true },
+        { name: "location", type: "text", required: true },
+        { name: "country", type: "text", required: true },
+        { name: "email", type: "email", required: false },
+      ],
+    },
+    {
+      name: "vendorSnapshot",
+      type: "group",
+      admin: {
+        description: "Immutable vendor identity captured at checkout time.",
+        readOnly: true,
+      },
+      fields: [
+        { name: "tenantName", type: "text", required: true },
+        { name: "tenantSlug", type: "text", required: true },
+        { name: "stripeAccountId", type: "text", required: false },
+      ],
+    },
   ],
   timestamps: true,
 };

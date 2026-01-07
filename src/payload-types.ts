@@ -474,6 +474,24 @@ export interface Order {
    */
   reservedUntil?: string | null;
   notes?: string | null;
+  /**
+   * Immutable customer identity captured at checkout time.
+   */
+  customerSnapshot: {
+    firstName: string;
+    lastName: string;
+    location: string;
+    country: string;
+    email?: string | null;
+  };
+  /**
+   * Immutable vendor identity captured at checkout time.
+   */
+  vendorSnapshot: {
+    tenantName: string;
+    tenantSlug: string;
+    stripeAccountId?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -780,6 +798,22 @@ export interface OrdersSelect<T extends boolean = true> {
   receiptUrl?: T;
   reservedUntil?: T;
   notes?: T;
+  customerSnapshot?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        location?: T;
+        country?: T;
+        email?: T;
+      };
+  vendorSnapshot?:
+    | T
+    | {
+        tenantName?: T;
+        tenantSlug?: T;
+        stripeAccountId?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

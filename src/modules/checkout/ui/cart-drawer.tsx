@@ -34,19 +34,36 @@ import { toast } from "sonner";
 import { BOOKING_CH, TERMS_VERSION } from "@/constants";
 import { platformHomeHref } from "@/lib/utils";
 import { TermsAcceptanceDialog } from "@/modules/profile/ui/terms-acceptance-dialog";
+import { CartDrawerCustomerInfo } from "@/modules/checkout/ui/cart-drawer-customer-info";
+
+import type { User } from "@/payload-types";
+
+type CustomerSnapshot = Pick<
+  User,
+  "firstName" | "lastName" | "location" | "country" | "onboardingCompleted"
+>;
 
 // all props are required: prevents accidental future usage without the tenant handoff
 type CartDrawerProps = {
   authState: boolean | null;
   policyAcceptedAt: string | null;
   policyAcceptedVersion: string | null;
+  customer: CustomerSnapshot | null; // allow "not loaded yet"
 };
 
 export function CartDrawer({
   authState,
   policyAcceptedAt,
   policyAcceptedVersion,
+  customer,
 }: CartDrawerProps) {
+  // ---- customer completeness gate (UX only; server must still snapshot on order creation) ----
+  // In Infinisimo, onboardingCompleted is set only after name + valid address selection is enforced server-side.
+  const customerReady = customer !== null;
+  const customerOk = customerReady && customer.onboardingCompleted === true;
+
+  // ------------------------------------------------------------------------------------------
+
   const open = useCartStore((s) => s.open);
   const setOpen = useCartStore((s) => s.setOpen);
   const items = useCartStore((s) => s.items);
@@ -96,6 +113,9 @@ export function CartDrawer({
     homeHref === "/"
       ? "/legal/terms-of-use"
       : `${homeHref.replace(/\/$/, "")}/legal/terms-of-use`;
+
+  const profileHref =
+    homeHref === "/" ? "/profile" : `${homeHref.replace(/\/$/, "")}/profile`;
 
   // Pull tenant's subcategories/categories to build "Service" options
   const { data: tenant } = useQuery({
@@ -174,9 +194,17 @@ export function CartDrawer({
     ...trpc.checkout.createSession.mutationOptions(),
   });
 
+  // releasing slots on failure
+  const releaseBySlotIds = useMutation({
+    ...trpc.checkout.releaseBySlotIds.mutationOptions(),
+    retry: false,
+  });
+
   // Split the “real checkout” into a helper runCheckout() that does not contain the terms gate.
   // to avoid that handleCheckout() immediately hits   setPendingCheckout(true) & setTermsOpen(true) - loop behaviour
   const runCheckout = async () => {
+    const slotIds = items.map((i) => i.id);
+    let booked = false;
     try {
       // Step 1 — reserve the slots (available -> booked)
       await bookSlots.mutateAsync({
@@ -186,18 +214,44 @@ export function CartDrawer({
         })),
       });
 
+      booked = true; // ✅ IMPORTANT: now fallback release can run
+
       // Step 2 — create the Checkout session for these slot ids
-      const res = await createSession.mutateAsync({
-        slotIds: items.map((i) => i.id),
-      });
+      const res = await createSession.mutateAsync({ slotIds });
 
       // Step 3 — send the user to Stripe
-      if (res?.url) {
-        window.location.assign(res.url);
-      } else {
-        toast.error("Could not start checkout. Please try again.");
+      if (!res?.url) {
+        throw new Error("Could not start checkout. Please try again.");
       }
+      // ✅ close only when we are actually leaving
+      setOpen(false);
+
+      window.location.assign(res.url);
     } catch (err) {
+      // NEW: if booking already happened but checkout failed before Stripe,
+      // release immediately using slot ids (no session_id available)
+      if (booked) {
+        try {
+          await releaseBySlotIds.mutateAsync({ slotIds });
+          // ✅ refresh calendar data immediately
+          await invalidateBookings();
+
+          // optional but consistent with your other path:
+          if ("BroadcastChannel" in window && tenantSlug) {
+            const ch = new BroadcastChannel(BOOKING_CH);
+            ch.postMessage({
+              type: "booking:updated",
+              tenantSlug,
+              ids: slotIds,
+              ts: Date.now(),
+            });
+            ch.close();
+          }
+        } catch {
+          // ignore, best-effort; user can retry
+        }
+      }
+
       let msg = "Checkout failed. Please try again.";
       if (err instanceof TRPCClientError) {
         msg =
@@ -206,9 +260,6 @@ export function CartDrawer({
             : err.message || msg;
       }
       toast.error(msg);
-    } finally {
-      // close the drawer for a cleaner UX
-      setOpen(false);
     }
   };
 
@@ -229,6 +280,18 @@ export function CartDrawer({
     }
     if (!hasUser) {
       toast.error("Please sign in to continue.");
+      return;
+    }
+    // customer completeness check:
+    if (!customerReady) {
+      toast.error("Please wait… loading your profile.");
+      return;
+    }
+
+    if (!customerOk) {
+      toast.error(
+        "Please complete onboarding (name and address) in your profile before checkout."
+      );
       return;
     }
 
@@ -356,24 +419,32 @@ export function CartDrawer({
         </div>
 
         <SheetFooter className="mt-3 sm:mt-4">
-          {showAcceptanceGate && (
-            <div className="mb-3 space-y-2 text-sm">
-              <div>
-                You must accept the{" "}
-                <Link
-                  className="underline font-medium"
-                  href={termsHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Terms of Use
-                </Link>{" "}
-                to continue. You can accept them when you click Checkout.
-              </div>
-            </div>
-          )}
-
           <div className="w-full pb-[env(safe-area-inset-bottom)]">
+            <CartDrawerCustomerInfo
+              hasUser={hasUser}
+              customerReady={customerReady}
+              customerOk={customerOk}
+              profileHref={profileHref}
+              customer={customer}
+            />
+
+            {showAcceptanceGate && (
+              <div className="mb-3 space-y-2 text-sm">
+                <div>
+                  You must accept the{" "}
+                  <Link
+                    className="underline font-medium"
+                    href={termsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Terms of Use
+                  </Link>{" "}
+                  to continue. You can accept them when you click Checkout.
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-base mb-3">
               <span>Total</span>
               <span className="font-semibold">
@@ -394,7 +465,9 @@ export function CartDrawer({
                   !allHaveService ||
                   isBusy ||
                   !authReady ||
-                  !hasUser
+                  !hasUser ||
+                  !customerReady || // explicit: profile still loading
+                  !customerOk
                 }
               >
                 Checkout

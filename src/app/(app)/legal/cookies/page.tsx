@@ -1,7 +1,5 @@
 import { OpenCookiePreferencesButton } from "@/modules/legal/cookies/ui/open-cookie-preferences-button";
 
-export const dynamic = "force-dynamic";
-
 export const metadata = {
   title: "Cookies",
 };
