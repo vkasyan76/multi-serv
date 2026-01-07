@@ -170,7 +170,17 @@ export default function TenantContent({ slug }: { slug: string }) {
 
     // remove the query params (?checkout=success&session_id=...)
     router.replace(pathname);
-  }, [success, sessionId, clearCart, router, pathname]);
+    // NEW: after a Stripe redirect, do one best-effort bridge/profile resync
+    // so chat/booking doesn’t hit the rare “still resolving” window.
+    (async () => {
+      try {
+        await onBridgeResync();
+        router.refresh();
+      } catch {
+        // ignore (best-effort only)
+      }
+    })();
+  }, [success, sessionId, clearCart, router, pathname, onBridgeResync]);
 
   // grey slots selection cleared when cart closes
   useEffect(() => {

@@ -423,4 +423,36 @@ export const checkoutRouter = createTRPCRouter({
 
       return { ok: true };
     }),
+
+  /** NEW: fallback when checkout fails BEFORE Stripe / no sessionId */
+  releaseBySlotIds: baseProcedure
+    .input(z.object({ slotIds: z.array(z.string().min(1)).min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      const clerkUserId = ctx.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUser = me.docs?.[0] as { id: string } | undefined;
+      if (!payloadUser) throw new TRPCError({ code: "FORBIDDEN" });
+
+      await ctx.db.update({
+        collection: "bookings",
+        where: {
+          and: [
+            { id: { in: input.slotIds } },
+            { status: { equals: "booked" } },
+            { customer: { equals: payloadUser.id } },
+          ],
+        },
+        data: { status: "available", customer: null },
+        overrideAccess: true,
+      });
+
+      return { ok: true };
+    }),
 });
