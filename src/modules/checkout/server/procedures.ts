@@ -17,9 +17,13 @@ import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-a
 // If you already have this helper in your project, keep the import.
 // Otherwise, success/cancel can use NEXT_PUBLIC_APP_URL as a fallback.
 import { generateTenantUrl } from "@/lib/utils";
+import {
+  COMMISSION_RATE_BPS_DEFAULT,
+  MAX_SLOTS_PER_BOOKING,
+} from "@/constants";
 
-// platform fee: keep simple % for now
-const PLATFORM_FEE_PERCENT = 10;
+// platform fee:
+const COMMISSION_RATE_BPS = COMMISSION_RATE_BPS_DEFAULT;
 
 // cents helper
 const toCents = (amount: number) => Math.round(amount * 100);
@@ -44,7 +48,7 @@ export const checkoutRouter = createTRPCRouter({
   createSession: baseProcedure
     .input(
       z.object({
-        slotIds: z.array(z.string().min(1)).min(1),
+        slotIds: z.array(z.string().min(1)).min(1).max(MAX_SLOTS_PER_BOOKING),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -183,7 +187,7 @@ export const checkoutRouter = createTRPCRouter({
       const amountCents = toCents(total);
       const feeCents = Math.max(
         0,
-        Math.round((amountCents * PLATFORM_FEE_PERCENT) / 100)
+        Math.round((amountCents * COMMISSION_RATE_BPS) / 10000)
       );
 
       // --- Customer profile must be complete for snapshot/invoicing later ---
@@ -214,6 +218,9 @@ export const checkoutRouter = createTRPCRouter({
         collection: "orders",
         data: {
           status: "pending",
+          // NEW required fields:
+          serviceStatus: "scheduled",
+          invoiceStatus: "none",
           user: payloadUserId,
           tenant: tenantId,
           slots: bookings.map((b) => b.id),
@@ -229,12 +236,13 @@ export const checkoutRouter = createTRPCRouter({
             lastName,
             location,
             country,
-            email: payloadUser.email ?? null,
+            // prefer undefined over null for optional fields (plays nicest with generated types)
+            email: payloadUser.email ?? undefined,
           },
           vendorSnapshot: {
             tenantName: tenant.name,
             tenantSlug: tenant.slug,
-            stripeAccountId: tenant.stripeAccountId ?? null,
+            stripeAccountId: tenant.stripeAccountId ?? undefined,
           },
         },
         overrideAccess: true,

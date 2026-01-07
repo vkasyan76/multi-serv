@@ -131,4 +131,225 @@ export const ordersRouter = createTRPCRouter({
 
       return map;
     }),
+
+  /**
+   * Vendor marks an order as "service completed".
+   * - Authorization: only the tenant owner
+   * - Mutates: orders.serviceStatus  serviceCompletedAt
+   * - Also rolls the per-slot booking.serviceStatus to "completed" (best-effort)
+   */
+  vendorMarkCompleted: baseProcedure
+    .input(z.object({ orderId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      // Clerk -> Payload user id
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: ctx.userId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // Load order (strictly)
+      const order = (await ctx.db.findByID({
+        collection: "orders",
+        id: input.orderId,
+        depth: 0,
+        overrideAccess: true,
+      })) as DocWithId<Order> | null;
+
+      if (!order) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const tenantId =
+        typeof order.tenant === "string" ? order.tenant : order.tenant?.id;
+      if (!tenantId) throw new TRPCError({ code: "BAD_REQUEST" });
+
+      // Verify tenant ownership
+      const tenant = (await ctx.db.findByID({
+        collection: "tenants",
+        id: tenantId,
+        depth: 0,
+        overrideAccess: true,
+      })) as DocWithId<Tenant> | null;
+
+      if (!tenant) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const ownerId =
+        typeof tenant.user === "string" ? tenant.user : tenant.user?.id;
+      if (!ownerId || ownerId !== payloadUserId) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      // State guard
+      if (order.serviceStatus !== "scheduled") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Order is not in scheduled state",
+        });
+      }
+
+      const nowIso = new Date().toISOString();
+
+      // Update order
+      await ctx.db.update({
+        collection: "orders",
+        id: order.id,
+        data: {
+          serviceStatus: "completed",
+          serviceCompletedAt: nowIso,
+        },
+        overrideAccess: true,
+        depth: 0,
+      });
+
+      // Best-effort: roll bookings.serviceStatus
+      const slotIds = Array.isArray(order.slots)
+        ? order.slots.filter((s): s is string => typeof s === "string")
+        : [];
+
+      if (slotIds.length > 0) {
+        await ctx.db.update({
+          collection: "bookings",
+          where: {
+            and: [
+              { id: { in: slotIds } },
+              {
+                or: [
+                  { status: { equals: "booked" } },
+                  { status: { equals: "confirmed" } },
+                ],
+              },
+            ],
+          },
+          data: { serviceStatus: "completed" },
+          overrideAccess: true,
+        });
+      }
+
+      return { ok: true };
+    }),
+
+  /**
+   * Customer accepts service delivery.
+   * - Authorization: only the order.user
+   * - Preconditions: order.serviceStatus === "completed"
+   * - Mutates: orders.serviceStatus  acceptedAt
+   */
+  customerAccept: baseProcedure
+    .input(z.object({ orderId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: ctx.userId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const order = (await ctx.db.findByID({
+        collection: "orders",
+        id: input.orderId,
+        depth: 0,
+        overrideAccess: true,
+      })) as DocWithId<Order> | null;
+
+      if (!order) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const orderUserId =
+        typeof order.user === "string" ? order.user : order.user?.id;
+
+      if (!orderUserId || orderUserId !== payloadUserId) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      if (order.serviceStatus !== "completed") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Order is not completed yet",
+        });
+      }
+
+      await ctx.db.update({
+        collection: "orders",
+        id: order.id,
+        data: {
+          serviceStatus: "accepted",
+          acceptedAt: new Date().toISOString(),
+        },
+        overrideAccess: true,
+        depth: 0,
+      });
+
+      return { ok: true };
+    }),
+
+  /**
+   * Customer disputes service delivery.
+   * - Authorization: only the order.user
+   * - Mutates: orders.serviceStatus  disputedAt
+   * - NOTE: until you add a Disputes collection, we accept a reason but don't persist it cleanly.
+   *   Your Action Plan expects a Dispute record later. :contentReference[oaicite:2]{index=2}
+   */
+  customerDispute: baseProcedure
+    .input(
+      z.object({
+        orderId: z.string().min(1),
+        reason: z.string().min(3).max(500).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const me = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: ctx.userId } },
+        limit: 1,
+        depth: 0,
+      });
+      const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const order = (await ctx.db.findByID({
+        collection: "orders",
+        id: input.orderId,
+        depth: 0,
+        overrideAccess: true,
+      })) as DocWithId<Order> | null;
+
+      if (!order) throw new TRPCError({ code: "NOT_FOUND" });
+
+      //completion guard:
+      const orderUserId =
+        typeof order.user === "string" ? order.user : order.user?.id;
+
+      if (!orderUserId || orderUserId !== payloadUserId) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      if (order.serviceStatus !== "completed") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Order is not completed yet",
+        });
+      }
+
+      await ctx.db.update({
+        collection: "orders",
+        id: order.id,
+        data: {
+          serviceStatus: "disputed",
+          disputedAt: new Date().toISOString(),
+        },
+        overrideAccess: true,
+        depth: 0,
+      });
+
+      return { ok: true };
+    }),
 });

@@ -437,6 +437,21 @@ export interface Booking {
 export interface Order {
   id: string;
   status: 'pending' | 'paid' | 'canceled' | 'refunded';
+  /**
+   * Order-level service lifecycle: scheduled → completed → accepted (or disputed).
+   */
+  serviceStatus: 'scheduled' | 'completed' | 'accepted' | 'disputed';
+  /**
+   * Invoice lifecycle: none → draft/issued → overdue/paid (or void).
+   */
+  invoiceStatus: 'none' | 'draft' | 'issued' | 'void' | 'overdue' | 'paid';
+  serviceCompletedAt?: string | null;
+  acceptedAt?: string | null;
+  disputedAt?: string | null;
+  invoiceNumber?: string | null;
+  invoiceIssuedAt?: string | null;
+  paymentDueAt?: string | null;
+  paidAt?: string | null;
   user: string | User;
   tenant: string | Tenant;
   /**
@@ -785,6 +800,15 @@ export interface BookingsSelect<T extends boolean = true> {
  */
 export interface OrdersSelect<T extends boolean = true> {
   status?: T;
+  serviceStatus?: T;
+  invoiceStatus?: T;
+  serviceCompletedAt?: T;
+  acceptedAt?: T;
+  disputedAt?: T;
+  invoiceNumber?: T;
+  invoiceIssuedAt?: T;
+  paymentDueAt?: T;
+  paidAt?: T;
   user?: T;
   tenant?: T;
   slots?: T;
