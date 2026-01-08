@@ -18,12 +18,9 @@ import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-a
 // Otherwise, success/cancel can use NEXT_PUBLIC_APP_URL as a fallback.
 import { generateTenantUrl } from "@/lib/utils";
 import {
-  COMMISSION_RATE_BPS_DEFAULT,
+  COMMISSION_RATE_BPS_DEFAULT as COMMISSION_RATE_BPS,
   MAX_SLOTS_PER_BOOKING,
 } from "@/constants";
-
-// platform fee:
-const COMMISSION_RATE_BPS = COMMISSION_RATE_BPS_DEFAULT;
 
 // cents helper
 const toCents = (amount: number) => Math.round(amount * 100);

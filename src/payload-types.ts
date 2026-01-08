@@ -405,9 +405,9 @@ export interface Booking {
   end: string;
   status: 'available' | 'booked' | 'confirmed';
   /**
-   * Service lifecycle: scheduled → completed → confirmed (or disputed).
+   * Service lifecycle: scheduled → completed → accepted (or disputed).
    */
-  serviceStatus?: ('scheduled' | 'completed' | 'confirmed' | 'disputed') | null;
+  serviceStatus?: ('scheduled' | 'completed' | 'accepted' | 'disputed') | null;
   /**
    * Payment lifecycle: unpaid → pending → paid. Meaningful after service confirmation.
    */

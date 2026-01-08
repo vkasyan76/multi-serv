@@ -11,18 +11,38 @@ type OrderWithTenantRef = Order & {
   tenant?: string | Tenant | null;
 };
 
+async function resolvePayloadUserId(
+  ctx: { db: unknown },
+  clerkUserId: string
+): Promise<string> {
+  const db = ctx.db as {
+    find: (args: {
+      collection: "users";
+      where: { clerkUserId: { equals: string } };
+      limit: number;
+      depth: number;
+    }) => Promise<{ docs?: Array<{ id?: string }> }>;
+  };
+
+  const me = await db.find({
+    collection: "users",
+    where: { clerkUserId: { equals: clerkUserId } },
+    limit: 1,
+    depth: 0,
+  });
+
+  const payloadUserId = me.docs?.[0]?.id;
+  if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+  return payloadUserId;
+}
+
 export const ordersRouter = createTRPCRouter({
   // Boolean for the navbar “My Orders”
   hasAnyPaidMine: baseProcedure.query(async ({ ctx }) => {
     if (!ctx.userId) return { hasAny: false };
 
-    const me = await ctx.db.find({
-      collection: "users",
-      where: { clerkUserId: { equals: ctx.userId } },
-      limit: 1,
-      depth: 0,
-    });
-    const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+    const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+
     if (!payloadUserId) return { hasAny: false };
 
     const found = await ctx.db.find({
@@ -45,13 +65,8 @@ export const ordersRouter = createTRPCRouter({
   listMine: baseProcedure.query(async ({ ctx }) => {
     if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-    const me = await ctx.db.find({
-      collection: "users",
-      where: { clerkUserId: { equals: ctx.userId } },
-      limit: 1,
-      depth: 0,
-    });
-    const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
+    const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+
     if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
 
     // Tell TS what comes back from Payload
@@ -144,14 +159,7 @@ export const ordersRouter = createTRPCRouter({
       if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       // Clerk -> Payload user id
-      const me = await ctx.db.find({
-        collection: "users",
-        where: { clerkUserId: { equals: ctx.userId } },
-        limit: 1,
-        depth: 0,
-      });
-      const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
-      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+      const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
 
       // Load order (strictly)
       const order = (await ctx.db.findByID({
@@ -243,14 +251,7 @@ export const ordersRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-      const me = await ctx.db.find({
-        collection: "users",
-        where: { clerkUserId: { equals: ctx.userId } },
-        limit: 1,
-        depth: 0,
-      });
-      const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
-      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+      const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
 
       const order = (await ctx.db.findByID({
         collection: "orders",
@@ -306,14 +307,7 @@ export const ordersRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-      const me = await ctx.db.find({
-        collection: "users",
-        where: { clerkUserId: { equals: ctx.userId } },
-        limit: 1,
-        depth: 0,
-      });
-      const payloadUserId = (me.docs?.[0] as { id?: string } | undefined)?.id;
-      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+      const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
 
       const order = (await ctx.db.findByID({
         collection: "orders",

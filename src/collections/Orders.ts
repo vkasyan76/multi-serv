@@ -76,7 +76,7 @@ export const Orders: CollectionConfig = {
     // Key lifecycle timestamps (new)
     { name: "serviceCompletedAt", type: "date", index: true },
     { name: "acceptedAt", type: "date", index: true },
-    { name: "disputedAt", type: "date" },
+    { name: "disputedAt", type: "date", index: true },
 
     // Invoice identifiers + timing (new)
     { name: "invoiceNumber", type: "text", index: true },
