@@ -9,7 +9,7 @@ import { signBridgeToken, verifyBridgeToken } from "@/lib/app-auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const TTL_SECONDS = 90; // Bridge cookie lifetime
+const TTL_SECONDS = 15 * 60; // Bridge cookie lifetime increase to 15 minutes for stripe
 
 function corsHeaders(origin?: string): HeadersInit {
   if (!origin) return {};
