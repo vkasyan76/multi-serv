@@ -77,6 +77,7 @@ export interface Config {
     reviews: Review;
     conversations: Conversation;
     messages: Message;
+    payment_profiles: PaymentProfile;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -97,6 +98,7 @@ export interface Config {
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
+    payment_profiles: PaymentProfilesSelect<false> | PaymentProfilesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -559,6 +561,32 @@ export interface Message {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payment_profiles".
+ */
+export interface PaymentProfile {
+  id: string;
+  user: string | User;
+  tenant: string | Tenant;
+  userTenantKey: string;
+  status: 'missing' | 'active' | 'disabled';
+  /**
+   * Connected account ID (acct_...) for this tenant.
+   */
+  stripeAccountId?: string | null;
+  stripeCustomerId?: string | null;
+  defaultPaymentMethodId?: string | null;
+  cardBrand?: string | null;
+  cardLast4?: string | null;
+  cardExpMonth?: number | null;
+  cardExpYear?: number | null;
+  setupCompletedAt?: string | null;
+  lastUsedAt?: string | null;
+  disabledAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -603,6 +631,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'messages';
         value: string | Message;
+      } | null)
+    | ({
+        relationTo: 'payment_profiles';
+        value: string | PaymentProfile;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -879,6 +911,28 @@ export interface MessagesSelect<T extends boolean = true> {
   senderUser?: T;
   text?: T;
   deletedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payment_profiles_select".
+ */
+export interface PaymentProfilesSelect<T extends boolean = true> {
+  user?: T;
+  tenant?: T;
+  userTenantKey?: T;
+  status?: T;
+  stripeAccountId?: T;
+  stripeCustomerId?: T;
+  defaultPaymentMethodId?: T;
+  cardBrand?: T;
+  cardLast4?: T;
+  cardExpMonth?: T;
+  cardExpYear?: T;
+  setupCompletedAt?: T;
+  lastUsedAt?: T;
+  disabledAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

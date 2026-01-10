@@ -18,7 +18,10 @@ import { BookingActionButton } from "./booking-action-button";
 
 import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
-import { useCartStore } from "@/modules/checkout/store/use-cart-store";
+import {
+  useCartStore,
+  type CartItem,
+} from "@/modules/checkout/store/use-cart-store";
 import { ConversationSheet } from "@/modules/conversations/ui/conversation-sheet";
 import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary";
 import { CategoryIcon } from "@/modules/categories/category-icons";
@@ -41,6 +44,9 @@ const TenantCalendar = dynamic(
     ),
   }
 );
+//  restore cart atomically (used after Stripe redirect)
+const PM_CART_KEY = "pm_cart_restore_v1";
+const PM_CART_TTL_MS = 5 * 60 * 1000;
 
 export default function TenantContent({ slug }: { slug: string }) {
   const homeHref = platformHomeHref();
@@ -142,6 +148,51 @@ export default function TenantContent({ slug }: { slug: string }) {
   };
   const cartOpen = useCartStore((s) => s.open);
   const prevOpenRef = useRef(cartOpen);
+
+  // keep the card-drawer open after Stripe redirect
+  const pmSetup = search.get("pm_setup"); // "success" | "cancel" | null
+  const setCartOpen = useCartStore((s) => s.setOpen);
+  const setCart = useCartStore((s) => s.setCart);
+  const cartLen = useCartStore((s) => s.items.length);
+
+  useEffect(() => {
+    if (!pmSetup) return;
+
+    // ✅ restore cart BEFORE opening drawer (otherwise it opens empty and may auto-close)
+    if (cartLen === 0) {
+      try {
+        const raw = sessionStorage.getItem(PM_CART_KEY);
+        if (raw) {
+          const snap = JSON.parse(raw) as {
+            tenantSlug?: string;
+            items?: CartItem[];
+            ts?: number;
+          };
+
+          const fresh =
+            typeof snap.ts === "number"
+              ? Date.now() - snap.ts < PM_CART_TTL_MS
+              : true;
+
+          if (
+            fresh &&
+            snap.tenantSlug === slug &&
+            Array.isArray(snap.items) &&
+            snap.items.length > 0
+          ) {
+            setCart(slug, snap.items);
+            setSelected(snap.items.map((i) => i.id)); // ✅ restore calendar highlight too
+          }
+
+          sessionStorage.removeItem(PM_CART_KEY);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    setCartOpen(true);
+  }, [pmSetup, cartLen, setCart, setCartOpen, slug]);
 
   // refetch profile when the cart opens and when the tab regains focus.
   const refetchProfile = profileQ.refetch;
