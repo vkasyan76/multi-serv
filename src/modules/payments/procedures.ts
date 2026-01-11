@@ -115,6 +115,29 @@ async function findProfileByUserTenantKey(
   return doc ?? null;
 }
 
+// handle the race condition gracefully (for try catch block) if the user not found in ensureProfile
+function isDuplicateKeyError(error: unknown): boolean {
+  let code: number | undefined;
+
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const raw = (error as Record<string, unknown>).code;
+    if (typeof raw === "number") code = raw;
+    else if (typeof raw === "string") {
+      const n = Number(raw);
+      if (Number.isFinite(n)) code = n;
+    }
+  }
+
+  const msg = error instanceof Error ? error.message : String(error);
+
+  // Mongo duplicate key is usually code 11000 / message contains E11000
+  return (
+    code === 11000 ||
+    msg.includes("E11000") ||
+    msg.toLowerCase().includes("duplicate key")
+  );
+}
+
 async function ensureProfile(
   ctx: { db: unknown },
   payloadUserId: string,
@@ -128,20 +151,29 @@ async function ensureProfile(
 
   const stripeAccountId = await loadTenantStripeAccountId(ctx, tenantId);
 
-  const created = (await db.create({
-    collection: "payment_profiles",
-    data: {
-      user: payloadUserId,
-      tenant: tenantId,
-      userTenantKey,
-      status: "missing",
-      stripeAccountId,
-    },
-    overrideAccess: true,
-    depth: 0,
-  })) as PaymentProfile;
+  try {
+    const created = (await db.create({
+      collection: "payment_profiles",
+      data: {
+        user: payloadUserId,
+        tenant: tenantId,
+        userTenantKey,
+        status: "missing",
+        stripeAccountId,
+      },
+      overrideAccess: true,
+      depth: 0,
+    })) as PaymentProfile;
 
-  return created;
+    return created;
+  } catch (error) {
+    // Only swallow the expected race-condition error
+    if (isDuplicateKeyError(error)) {
+      const retried = await findProfileByUserTenantKey(ctx, userTenantKey);
+      if (retried) return retried;
+    }
+    throw error;
+  }
 }
 
 // instead of hard failing, you continue with a new customer and you already persist the new stripeCustomerId right after.
@@ -326,20 +358,33 @@ export const paymentsRouter = createTRPCRouter({
         });
       }
 
-      // Minimal integrity checks (avoid someone finalizing the wrong session)
-      if (
-        session.metadata?.tenantId &&
-        session.metadata.tenantId !== input.tenantId
-      ) {
+      // Strengthen integrity checks to require metadata presence.
+
+      const md = session.metadata;
+
+      // Minimal integrity checks (avoid someone finalizing the wrong session): // Ensure session was created by our flow
+      if (!md?.tenantId || !md?.paymentProfileId || !md?.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Session missing required metadata.",
+        });
+      }
+
+      if (md.userId !== payloadUserId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Session user mismatch.",
+        });
+      }
+
+      if (md.tenantId !== input.tenantId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Session tenant mismatch.",
         });
       }
-      if (
-        session.metadata?.paymentProfileId &&
-        session.metadata.paymentProfileId !== profile.id
-      ) {
+
+      if (md.paymentProfileId !== profile.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Session profile mismatch.",
