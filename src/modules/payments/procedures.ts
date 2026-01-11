@@ -144,18 +144,22 @@ async function ensureProfile(
   return created;
 }
 
+// instead of hard failing, you continue with a new customer and you already persist the new stripeCustomerId right after.
 async function ensureStripeCustomerInConnectedAccount(
   connectedAccountId: string,
   existingCustomerId: string | null | undefined
 ): Promise<string> {
   if (existingCustomerId) {
-    await stripe.customers.retrieve(
-      existingCustomerId,
-      {},
-      { stripeAccount: connectedAccountId }
-    );
-
-    return existingCustomerId;
+    try {
+      await stripe.customers.retrieve(
+        existingCustomerId,
+        {},
+        { stripeAccount: connectedAccountId }
+      );
+      return existingCustomerId;
+    } catch {
+      // Customer missing / invalid in this connected account → create a new one
+    }
   }
 
   const customer = await stripe.customers.create(

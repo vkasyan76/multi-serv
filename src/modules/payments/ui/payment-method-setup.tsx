@@ -1,7 +1,7 @@
 // src/modules/payments/ui/payment-method-setup.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -20,6 +20,10 @@ type Props = {
 };
 
 export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
+  // prevent POST / GET race conditions for payment method status in the drawer
+  const [finalizing, setFinalizing] = useState(false);
+  const finalizedRef = useRef(false);
+
   const trpc = useTRPC();
   const router = useRouter();
   const sp = useSearchParams();
@@ -38,60 +42,79 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
     retry: false,
   });
 
+  // URL flags from Stripe return
+  const setupFlag = sp.get("pm_setup"); // "success" | "cancel" | null
+  const sessionId = sp.get("session_id");
+
+  // existing values (keep simple)
   const status = profileQ.data?.status ?? "none";
   const cardBrand = profileQ.data?.cardBrand ?? null;
   const cardLast4 = profileQ.data?.cardLast4 ?? null;
 
   const cardOnFile = status === "active";
+
+  // keep your original provider logic
   const provider = tenantName?.trim() ? tenantName.trim() : "this provider";
 
-  const titleText = cardOnFile
-    ? `Payment method for ${provider}`
-    : `Add a payment method for ${provider} to continue`;
+  // LEAN: only to avoid showing "Add payment method" while we are returning from Stripe success
+  const showFinalizing = finalizing || (setupFlag === "success" && !!sessionId);
 
-  const buttonText = cardOnFile
-    ? "Update payment method"
-    : "Add payment method";
+  const titleText = showFinalizing
+    ? "Saving payment method…"
+    : cardOnFile
+      ? `Payment method for ${provider}`
+      : `Add a payment method for ${provider} to continue`;
+
+  const buttonText = showFinalizing
+    ? "Saving…"
+    : cardOnFile
+      ? "Update payment method"
+      : "Add payment method";
 
   const busy =
+    showFinalizing ||
     profileQ.isPending ||
     createSetupSession.isPending ||
     finalizeSetup.isPending;
 
-  const setupFlag = sp.get("pm_setup");
-  // "success" | "cancel" | null
-  const sessionId = sp.get("session_id");
-
   useEffect(() => {
     if (!setupFlag) return;
-    // clean params and toast, if if you land on pm_setup=cancel.
+
     if (setupFlag === "cancel") {
       const url = new URL(window.location.href);
       url.searchParams.delete("pm_setup");
       url.searchParams.delete("session_id");
       router.replace(url.pathname + (url.search ? url.search : ""));
       toast.message("Card setup canceled.");
+
+      finalizedRef.current = false;
+      setFinalizing(false);
       return;
     }
 
     if (setupFlag !== "success" || !sessionId) return;
     if (finalizeSetup.isPending) return;
+    if (finalizedRef.current) return;
+
+    finalizedRef.current = true;
+    setFinalizing(true);
 
     (async () => {
       try {
         await finalizeSetup.mutateAsync({ tenantId, sessionId });
         await profileQ.refetch();
 
-        // clean URL
         const url = new URL(window.location.href);
         url.searchParams.delete("pm_setup");
         url.searchParams.delete("session_id");
-
         router.replace(url.pathname + (url.search ? url.search : ""));
 
         toast.success("Card saved.");
       } catch {
+        finalizedRef.current = false;
         toast.error("Could not finalize card setup.");
+      } finally {
+        setFinalizing(false);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,7 +177,8 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
 
         {/* DEV copy matching your target flow */}
         <div className="text-xs text-muted-foreground">
-          You won’t be charged unless you accept the completed service.
+          No charge at booking. You’ll be charged after service completion is
+          accepted (or auto-accepted).
         </div>
       </CardContent>
     </Card>
