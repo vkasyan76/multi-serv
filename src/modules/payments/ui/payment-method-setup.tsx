@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,13 +24,16 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
   const [finalizing, setFinalizing] = useState(false);
   const finalizedRef = useRef(false);
 
+  const qc = useQueryClient();
+
   const trpc = useTRPC();
   const router = useRouter();
   const sp = useSearchParams();
 
-  const profileQ = useQuery(
-    trpc.payments.getOrCreateProfileForTenant.queryOptions({ tenantId })
-  );
+  const profileOpts = trpc.payments.getOrCreateProfileForTenant.queryOptions({
+    tenantId,
+  });
+  const profileQ = useQuery(profileOpts);
 
   const createSetupSession = useMutation({
     ...trpc.payments.createSetupSession.mutationOptions(),
@@ -101,8 +104,13 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
 
     (async () => {
       try {
-        await finalizeSetup.mutateAsync({ tenantId, sessionId });
-        await profileQ.refetch();
+        await qc.cancelQueries({ queryKey: profileOpts.queryKey });
+
+        const updated = await finalizeSetup.mutateAsync({
+          tenantId,
+          sessionId,
+        });
+        qc.setQueryData(profileOpts.queryKey, updated);
 
         const url = new URL(window.location.href);
         url.searchParams.delete("pm_setup");

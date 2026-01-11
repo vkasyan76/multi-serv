@@ -193,8 +193,8 @@ export const paymentsRouter = createTRPCRouter({
       const userTenantKey = `${payloadUserId}:${input.tenantId}`;
       const existing = await findProfileByUserTenantKey(ctx, userTenantKey);
 
+      // no DB record created here
       if (!existing) {
-        // no DB record created here
         return {
           status: "missing",
           cardBrand: null,
@@ -433,7 +433,7 @@ export const paymentsRouter = createTRPCRouter({
       }
 
       const db = dbFrom(ctx);
-      await db.update({
+      const updated = (await db.update({
         collection: "payment_profiles",
         id: profile.id,
         data: {
@@ -447,8 +447,8 @@ export const paymentsRouter = createTRPCRouter({
         },
         overrideAccess: true,
         depth: 0,
-      });
+      })) as PaymentProfile;
 
-      return { ok: true as const };
+      return profileSummary(updated);
     }),
 });
