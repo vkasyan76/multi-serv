@@ -52,7 +52,7 @@ export const Bookings: CollectionConfig = {
       index: true,
       admin: {
         description:
-          "Service lifecycle: scheduled → completed → confirmed (or disputed).",
+          "Service lifecycle: scheduled → completed → accepted (or disputed).",
         condition: (_, siblingData) => siblingData?.status !== "available",
       },
     },

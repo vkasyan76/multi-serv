@@ -35,6 +35,7 @@ import { BOOKING_CH, TERMS_VERSION } from "@/constants";
 import { platformHomeHref } from "@/lib/utils";
 import { TermsAcceptanceDialog } from "@/modules/profile/ui/terms-acceptance-dialog";
 import { CartDrawerCustomerInfo } from "@/modules/checkout/ui/cart-drawer-customer-info";
+import { PaymentMethodSetup } from "@/modules/payments/ui/payment-method-setup";
 
 import type { User } from "@/payload-types";
 
@@ -123,6 +124,17 @@ export function CartDrawer({
     enabled: !!tenantSlug,
     staleTime: 0,
   });
+
+  // check if payment method was submitted for this tenant:
+  const paymentProfileQ = useQuery({
+    ...trpc.payments.getOrCreateProfileForTenant.queryOptions({
+      tenantId: tenant?.id ?? "",
+    }),
+    enabled: hasUser && !!tenant?.id,
+    staleTime: 0,
+  });
+
+  const paymentOk = paymentProfileQ.data?.status === "active";
 
   // Locale & currency from your location utils
   const { locale, currency } = getLocaleAndCurrency();
@@ -295,6 +307,19 @@ export function CartDrawer({
       return;
     }
 
+    // payment method check:
+    if (paymentProfileQ.isPending) {
+      toast.error("Please wait…");
+      return;
+    }
+
+    if (!paymentOk) {
+      toast.error(
+        `Please add a payment method for ${tenant?.name ?? "this provider"} to continue.`
+      );
+      return;
+    }
+
     // accept policy gate: open dialog (no page hop)
     if (showAcceptanceGate) {
       setPendingCheckout(true);
@@ -428,6 +453,16 @@ export function CartDrawer({
               customer={customer}
             />
 
+            {/* NEW: Payment method setup (only when signed in + we know tenantId) */}
+            {hasUser && tenant?.id && (
+              <div className="mt-3">
+                <PaymentMethodSetup
+                  tenantId={tenant.id}
+                  tenantName={tenant.name ?? null}
+                />
+              </div>
+            )}
+
             {showAcceptanceGate && (
               <div className="mb-3 space-y-2 text-sm">
                 <div>
@@ -467,7 +502,9 @@ export function CartDrawer({
                   !authReady ||
                   !hasUser ||
                   !customerReady || // explicit: profile still loading
-                  !customerOk
+                  !customerOk ||
+                  paymentProfileQ.isPending ||
+                  !paymentOk
                 }
               >
                 Checkout
@@ -475,7 +512,10 @@ export function CartDrawer({
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => setOpen(false)} // closes drawer → will clear due to onOpenChange
+                onClick={() => {
+                  setOpen(false);
+                  clear();
+                }} // closes drawer → will clear due to onOpenChange
                 disabled={isBusy}
               >
                 Cancel

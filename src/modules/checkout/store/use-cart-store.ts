@@ -26,6 +26,7 @@ type CartState = {
   // actions
   setOpen: (v: boolean) => void;
   clear: () => void;
+  setCart: (tenant: string | null, items: CartItem[]) => void; // restore cart atomically (used after Stripe redirect)
   add: (tenant: string, item: CartItem) => boolean; // false => cart has other tenant
   addMany: (tenant: string, items: CartItem[]) => boolean;
   remove: (slotId: string) => void;
@@ -48,7 +49,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   // ui
   setOpen: (v) => set({ open: v }),
   clear: () => set({ items: [], tenant: null, acceptedPolicy: false }),
-
+  setCart: (tenant, items) => set({ tenant, items }), // restore cart atomically (used after Stripe redirect)
   // core
   add: (tenant, item) => {
     const s = get();

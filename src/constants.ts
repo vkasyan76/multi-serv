@@ -52,7 +52,7 @@ export const DISPUTE_WINDOW_DAYS_DEFAULT = 14; // allow disputes up to N days af
 export const BOOKING_SERVICE_STATUSES = [
   "scheduled",
   "completed",
-  "confirmed",
+  "accepted",
   "disputed",
 ] as const;
 export type BookingServiceStatus = (typeof BOOKING_SERVICE_STATUSES)[number];

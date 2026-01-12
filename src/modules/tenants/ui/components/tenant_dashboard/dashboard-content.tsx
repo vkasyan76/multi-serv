@@ -8,6 +8,9 @@ import { TenantCalendarSkeleton } from "@/modules/tenants/ui/components/skeleton
 import { TenantMessagesSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-messages-skeleton";
 import Image from "next/image";
 
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
   () => import("@/modules/bookings/ui/TenantCalendar"),
@@ -43,6 +46,14 @@ function SectionTitle({ iconSrc, label }: { iconSrc: string; label: string }) {
 }
 
 export default function DashboardContent({ slug }: { slug: string }) {
+  const trpc = useTRPC();
+  const tenantQ = useQuery(trpc.tenants.getOne.queryOptions({ slug }));
+
+  const canEditCalendar =
+    tenantQ.data?.onboardingStatus === "completed" &&
+    tenantQ.data?.payoutsEnabled === true &&
+    tenantQ.data?.chargesEnabled === true;
+
   return (
     <div className="space-y-12">
       {/* CALENDAR */}
@@ -51,8 +62,23 @@ export default function DashboardContent({ slug }: { slug: string }) {
           iconSrc="/SVGs/Dashboard/Calendar_Icon.svg"
           label="Calendar"
         />
+
+        {tenantQ.data && !canEditCalendar && (
+          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            After completing the{" "}
+            <Link href="/profile?tab=payouts" className="underline font-medium">
+              payment set-up
+            </Link>{" "}
+            you’ll be able to add the slots in your calendar.
+          </div>
+        )}
+
         {/* Dashboard mode → calendar is editable */}
-        <TenantCalendar tenantSlug={slug} editable />
+        <TenantCalendar
+          tenantSlug={slug}
+          dashboardMode
+          editable={!!canEditCalendar}
+        />
       </section>
 
       {/* ORDERS (placeholder for now) */}

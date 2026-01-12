@@ -337,6 +337,38 @@ export async function POST(req: Request) {
             }
           }
 
+          // ✅ NEW: delete payment_profiles for this user (do BEFORE deleting user)
+          try {
+            const profiles = await payloadInstance.find({
+              collection: "payment_profiles",
+              where: { user: { equals: existingUser.id } },
+              limit: 100,
+              overrideAccess: true,
+            });
+
+            for (const p of profiles.docs) {
+              await payloadInstance.delete({
+                collection: "payment_profiles",
+                id: p.id,
+                overrideAccess: true,
+              });
+            }
+
+            if (profiles.docs.length > 0) {
+              console.log(
+                "Deleted",
+                profiles.docs.length,
+                "payment profile(s) for user:",
+                existingUser.id
+              );
+            }
+          } catch (e) {
+            console.warn(
+              "Payment profile cleanup skipped:",
+              (e as Error)?.message
+            );
+          }
+
           // Delete the user
           await payloadInstance.delete({
             collection: "users",

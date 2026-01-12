@@ -79,9 +79,16 @@ type Props = {
   height?: number | string; // default 520px - controls internal scroll viewport
   defaultStartHour?: number; // default 8 - used to build scrollToTime
   editable?: boolean; // default false - controls DnD and mutation features
+  dashboardMode?: boolean; // NEW: controls which query to use on dashboard
   selectForBooking?: boolean; // default false - controls if slots can be selected for booking
   selectedIds?: string[]; // default [] - list of selected booking IDs
   onToggleSelect?: (id: string) => void; // callback to toggle selection
+  onAvailabilityChange?: (v: {
+    hasAvailableSlots: boolean;
+    hasAnyAvailableSlots: boolean;
+    loading: boolean;
+    view: "day" | "week";
+  }) => void; // lets parent (tenant content) show “click to book” vs “no slots” message. Mobile sensetive.
 };
 
 type RbcEvent = {
@@ -118,9 +125,11 @@ export default function TenantCalendar({
   height = 520,
   defaultStartHour = 8,
   editable = false,
+  dashboardMode = false, // NEW for dashboard mode payments onboarding check
   selectForBooking = false,
   selectedIds = [],
   onToggleSelect,
+  onAvailabilityChange,
 }: Props) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -189,25 +198,23 @@ export default function TenantCalendar({
     []
   );
 
-  // Keep range in sync with activeView and anchor changes
+  // We keep activeView for the calendar UI, but we stop shrinking the fetch range to a single day on mobile.
   useEffect(() => {
-    if (activeView === Views.WEEK) {
-      const start = startOfDay(anchor);
-      const end = endOfDay(addDays(start, 6));
-      setRange({ start, end });
-    } else {
-      // Day view: single day range
-      const start = startOfDay(anchor);
-      const end = endOfDay(anchor);
-      setRange({ start, end });
-    }
-  }, [activeView, anchor]);
+    const start = startOfDay(anchor);
+    const end = endOfDay(addDays(start, 6)); // always fetch 7 days
+    setRange({ start, end });
+  }, [anchor]);
 
   // Keep the localizer in sync with our UI mode and anchor
   useEffect(() => {
     rolling.useRollingWeek = activeView === Views.WEEK;
     rolling.anchor = startOfDay(anchor);
   }, [activeView, anchor]);
+
+  // Load tenant (to get tenantId for creating slots)
+  const tenantQ = useQuery(
+    trpc.tenants.getOne.queryOptions({ slug: tenantSlug })
+  );
 
   // NEW: Listen for broadcast messages from other tabs
   useEffect(() => {
@@ -239,7 +246,7 @@ export default function TenantCalendar({
         );
 
         // If on dashboard, also update the mine query
-        if (editable && tenantQ.data?.id) {
+        if (dashboardMode && tenantQ.data?.id) {
           queryClient.setQueryData(
             trpc.bookings.listMine.queryKey({
               tenantId: tenantQ.data.id,
@@ -291,8 +298,15 @@ export default function TenantCalendar({
       ch.removeEventListener("message", onMsg);
       ch.close();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantSlug, queryClient, range.start, range.end]);
+  }, [
+    tenantSlug,
+    queryClient,
+    range.start,
+    range.end,
+    dashboardMode,
+    tenantQ.data?.id,
+    trpc,
+  ]);
 
   // Navigation label using the existing formatters
   const navLabel = useMemo(() => {
@@ -311,13 +325,11 @@ export default function TenantCalendar({
     return `${rngFmt.format(anchor)} — ${rngFmt.format(addDays(anchor, 6))}`;
   }, [isMobile, anchor, culture]);
 
-  // Load tenant (to get tenantId for creating slots)
-  const tenantQ = useQuery(
-    trpc.tenants.getOne.queryOptions({ slug: tenantSlug })
-  );
+  // Decide data source (dashboard vs public)
+  const useMineQuery = dashboardMode;
 
   // Load slots for the visible range - branch between dashboard and public views
-  const baseOpts = editable
+  const baseOpts = useMineQuery
     ? trpc.bookings.listMine.queryOptions({
         tenantId: tenantQ.data?.id || "",
         from: range.start.toISOString(),
@@ -336,12 +348,62 @@ export default function TenantCalendar({
     // avoid focus-triggered refetches
     refetchOnWindowFocus: false,
     // tiny payloads; 5s is smooth on dashboard, 60s is fine on public
-    refetchInterval: editable ? 5000 : 60000,
+    refetchInterval: useMineQuery ? 5000 : 60000,
     // helps avoid redundant re-fetches
     staleTime: 30_000,
-    // only enable dashboard query when we have tenantId
-    enabled: !editable || !!tenantQ.data?.id,
+    // only require tenantId when we are using listMine
+    enabled: !useMineQuery || !!tenantQ.data?.id,
   });
+
+  // Notify parent of availability changes (for massage below the calendar in the tenant content):
+
+  const viewRange = useMemo(() => {
+    if (activeView === Views.DAY) {
+      const s = startOfDay(anchor);
+      return { start: s, end: endOfDay(anchor) };
+    }
+    const s = startOfDay(anchor);
+    return { start: s, end: endOfDay(addDays(s, 6)) };
+  }, [activeView, anchor]);
+
+  const hasAnyAvailableSlots = useMemo(() => {
+    const now = nowTick;
+    return (slotsQ.data ?? []).some((b) => {
+      if (b.status !== "available") return false;
+      return new Date(b.start).getTime() > now;
+    });
+  }, [slotsQ.data, nowTick]);
+
+  const hasAvailableSlots = useMemo(() => {
+    const now = nowTick;
+    const vs = viewRange.start.getTime();
+    const ve = viewRange.end.getTime();
+
+    return (slotsQ.data ?? []).some((b) => {
+      if (b.status !== "available") return false;
+      const t = new Date(b.start).getTime();
+      return t > now && t >= vs && t <= ve;
+    });
+  }, [slotsQ.data, nowTick, viewRange]);
+
+  useEffect(() => {
+    if (!onAvailabilityChange) return;
+
+    onAvailabilityChange({
+      hasAvailableSlots,
+      hasAnyAvailableSlots,
+      view: activeView === Views.DAY ? "day" : "week",
+      loading: slotsQ.isLoading || (slotsQ.isFetching && !slotsQ.data),
+    });
+  }, [
+    onAvailabilityChange,
+    hasAvailableSlots,
+    hasAnyAvailableSlots,
+    activeView,
+    slotsQ.isLoading,
+    slotsQ.isFetching,
+    slotsQ.data,
+  ]);
 
   // Debug logging to help verify ranges and data
   useEffect(() => {
@@ -476,8 +538,8 @@ export default function TenantCalendar({
       }),
     });
 
-    // If on dashboard, also invalidate the mine query
-    if (editable && tenantQ.data?.id) {
+    // If on dashboard, also invalidate the mine query. Broadcast prune: mine query should update on dashboard even if not editable
+    if (dashboardMode && tenantQ.data?.id) {
       queryClient.invalidateQueries({
         queryKey: trpc.bookings.listMine.queryKey({
           tenantId: tenantQ.data.id,
@@ -491,7 +553,7 @@ export default function TenantCalendar({
     tenantSlug,
     range.start,
     range.end,
-    editable,
+    dashboardMode,
     tenantQ.data?.id,
     trpc.bookings.listPublicSlots,
     trpc.bookings.listMine,
@@ -640,7 +702,8 @@ export default function TenantCalendar({
     const b = event.resource; // typed as BookingWithName
     if (b.status === "available") return null; // green blocks stay clean
 
-    const who = b.customerName ?? "Booked";
+    const who = displayName(b) ?? "Booked";
+
     return <div className="rbc-dash-ev truncate">{who}</div>;
   };
 
@@ -661,7 +724,7 @@ export default function TenantCalendar({
         }
       })
       .map((b) => {
-        const bookedTitle = editable
+        const bookedTitle = dashboardMode
           ? (displayName(b as BookingWithName) ?? "Booked")
           : "Booked";
 
@@ -673,7 +736,7 @@ export default function TenantCalendar({
           resource: b as BookingWithName,
         };
       });
-  }, [slotsQ.data, nowTick, editable, displayName]);
+  }, [slotsQ.data, nowTick, dashboardMode, displayName]);
 
   // Handle slot selection (controlled - no internal state)
   const handleSlotSelect = useCallback(
@@ -767,13 +830,13 @@ export default function TenantCalendar({
         return `Available - ${dateFmt.format(e.start)}`;
       } else {
         // For booked events, show customer name on dashboard, "Booked" on public
-        const who = editable
+        const who = dashboardMode
           ? (displayName(e.resource as BookingWithName) ?? "Booked")
           : "Booked";
         return `${who} - ${dateFmt.format(e.start)}`;
       }
     },
-    [dateFmt, editable, displayName]
+    [dateFmt, dashboardMode, displayName]
   );
 
   // DnD accessors - only "available" slots can be dragged/resized
@@ -1043,7 +1106,7 @@ export default function TenantCalendar({
   return (
     <div
       ref={rootRef}
-      className={`relative w-full min-w-0 overflow-x-hidden ${editable ? "calendar--dashboard" : ""}`}
+      className={`relative w-full min-w-0 overflow-x-hidden ${dashboardMode ? "calendar--dashboard" : ""}`}
     >
       {/* Header: column on mobile, row on desktop */}
       <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -1109,7 +1172,9 @@ export default function TenantCalendar({
                   slotPropGetter={slotPropGetter} // Visually mute past hours
                   tooltipAccessor={tooltipAccessor} // Show time tooltips like italki
                   // Custom event component for dashboard to show customer names
-                  components={editable ? { event: DashboardEvent } : undefined}
+                  components={
+                    dashboardMode ? { event: DashboardEvent } : undefined
+                  }
                   // DnD props
                   draggableAccessor={draggableAccessor}
                   resizableAccessor={resizableAccessor}
@@ -1150,7 +1215,9 @@ export default function TenantCalendar({
                   slotPropGetter={slotPropGetter} // Visually mute past hours
                   tooltipAccessor={tooltipAccessor} // Show time tooltips like italki
                   // Custom event component for dashboard to show customer names
-                  components={editable ? { event: DashboardEvent } : undefined}
+                  components={
+                    dashboardMode ? { event: DashboardEvent } : undefined
+                  }
                 />
               )}
             </div>

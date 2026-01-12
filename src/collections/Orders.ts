@@ -11,18 +11,26 @@ export const Orders: CollectionConfig = {
     delete: ({ req }) => isSuperAdmin(req.user),
   },
   admin: {
+    // NOTE: keep `status` as the payment status for now (matches your current Stripe flow)
     useAsTitle: "status",
     defaultColumns: [
       "status",
+      "serviceStatus",
+      "invoiceStatus",
       "amount",
       "currency",
       "tenant",
       "user",
+      "paymentDueAt",
       "receiptUrl",
       "createdAt",
     ],
   },
   fields: [
+    /**
+     * PAYMENT STATUS (current behavior)
+     * - Keep this unchanged so your existing checkout + webhook flow continues to work.
+     */
     {
       name: "status",
       type: "select",
@@ -31,6 +39,53 @@ export const Orders: CollectionConfig = {
       options: ["pending", "paid", "canceled", "refunded"],
       index: true,
     },
+    /**
+     * SERVICE / ACCEPTANCE STATUS (new)
+     * - This tracks the pay-after-acceptance lifecycle.
+     * - It is independent from Stripe/payment.
+     */
+    {
+      name: "serviceStatus",
+      type: "select",
+      required: true,
+      defaultValue: "scheduled",
+      options: ["scheduled", "completed", "accepted", "disputed"],
+      index: true,
+      admin: {
+        description:
+          "Order-level service lifecycle: scheduled → completed → accepted (or disputed).",
+      },
+    },
+
+    /**
+     * INVOICE STATUS (new)
+     * - This tracks invoice issuance & due/overdue state.
+     */
+    {
+      name: "invoiceStatus",
+      type: "select",
+      required: true,
+      defaultValue: "none",
+      options: ["none", "draft", "issued", "void", "overdue", "paid"],
+      index: true,
+      admin: {
+        description:
+          "Invoice lifecycle: none → draft/issued → overdue/paid (or void).",
+      },
+    },
+    // Key lifecycle timestamps (new)
+    { name: "serviceCompletedAt", type: "date", index: true },
+    { name: "acceptedAt", type: "date", index: true },
+    { name: "disputedAt", type: "date", index: true },
+
+    // Invoice identifiers + timing (new)
+    { name: "invoiceNumber", type: "text", index: true },
+    { name: "invoiceIssuedAt", type: "date", index: true },
+    { name: "paymentDueAt", type: "date", index: true },
+
+    // Optional: record the moment we consider it paid (in addition to status=paid)
+    { name: "paidAt", type: "date", index: true },
+
     {
       name: "user",
       type: "relationship",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTRPC } from "@/trpc/client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation"; // for navigation after chekout
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -18,7 +18,10 @@ import { BookingActionButton } from "./booking-action-button";
 
 import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
-import { useCartStore } from "@/modules/checkout/store/use-cart-store";
+import {
+  useCartStore,
+  type CartItem,
+} from "@/modules/checkout/store/use-cart-store";
 import { ConversationSheet } from "@/modules/conversations/ui/conversation-sheet";
 import { TenantReviewSummary } from "@/modules/reviews/ui/tenant-review-summary";
 import { CategoryIcon } from "@/modules/categories/category-icons";
@@ -41,6 +44,9 @@ const TenantCalendar = dynamic(
     ),
   }
 );
+//  restore cart atomically (used after Stripe redirect)
+const PM_CART_KEY = "pm_cart_restore_v1";
+const PM_CART_TTL_MS = 5 * 60 * 1000;
 
 export default function TenantContent({ slug }: { slug: string }) {
   const homeHref = platformHomeHref();
@@ -55,6 +61,26 @@ export default function TenantContent({ slug }: { slug: string }) {
   };
 
   const [selected, setSelected] = useState<string[]>([]);
+
+  // check slots availability for message blow the calendar:
+
+  type CalendarAvail = {
+    loading: boolean;
+    hasAvailableSlots: boolean; // in the CURRENT visible view (day on mobile, week on desktop)
+    hasAnyAvailableSlots: boolean; // in the fetched window (so mobile can know “other days”)
+    view: "day" | "week";
+  };
+
+  const [calendarAvail, setCalendarAvail] = useState<CalendarAvail | null>(
+    null
+  );
+
+  const handleAvailabilityChange = useCallback((v: CalendarAvail) => {
+    setCalendarAvail(v);
+  }, []);
+
+  // Reviews & Ratings:
+
   const trpc = useTRPC();
 
   // Reviews & Ratings:
@@ -142,6 +168,51 @@ export default function TenantContent({ slug }: { slug: string }) {
   };
   const cartOpen = useCartStore((s) => s.open);
   const prevOpenRef = useRef(cartOpen);
+
+  // keep the card-drawer open after Stripe redirect
+  const pmSetup = search.get("pm_setup"); // "success" | "cancel" | null
+  const setCartOpen = useCartStore((s) => s.setOpen);
+  const setCart = useCartStore((s) => s.setCart);
+  const cartLen = useCartStore((s) => s.items.length);
+
+  useEffect(() => {
+    if (!pmSetup) return;
+
+    // ✅ restore cart BEFORE opening drawer (otherwise it opens empty and may auto-close)
+    if (cartLen === 0) {
+      try {
+        const raw = sessionStorage.getItem(PM_CART_KEY);
+        if (raw) {
+          const snap = JSON.parse(raw) as {
+            tenantSlug?: string;
+            items?: CartItem[];
+            ts?: number;
+          };
+
+          const fresh =
+            typeof snap.ts === "number"
+              ? Date.now() - snap.ts < PM_CART_TTL_MS
+              : true;
+
+          if (
+            fresh &&
+            snap.tenantSlug === slug &&
+            Array.isArray(snap.items) &&
+            snap.items.length > 0
+          ) {
+            setCart(slug, snap.items);
+            setSelected(snap.items.map((i) => i.id)); // ✅ restore calendar highlight too
+          }
+
+          sessionStorage.removeItem(PM_CART_KEY);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    setCartOpen(true);
+  }, [pmSetup, cartLen, setCart, setCartOpen, slug]);
 
   // refetch profile when the cart opens and when the tab regains focus.
   const refetchProfile = profileQ.refetch;
@@ -545,7 +616,33 @@ export default function TenantContent({ slug }: { slug: string }) {
               selectForBooking={true}
               selectedIds={selected}
               onToggleSelect={handleToggleSelect}
+              onAvailabilityChange={handleAvailabilityChange}
             />
+            {selected.length === 0 && (
+              <div className="mt-4 rounded-lg border bg-white/70 px-4 py-3 text-sm text-muted-foreground">
+                {!calendarAvail || calendarAvail.loading ? (
+                  <>Loading availability…</>
+                ) : calendarAvail.hasAvailableSlots ? (
+                  <>Click on an available slot to book.</>
+                ) : calendarAvail.view === "day" &&
+                  calendarAvail.hasAnyAvailableSlots ? (
+                  <>
+                    No slots available on this date. Use the arrows to check
+                    other days.
+                  </>
+                ) : calendarAvail.view === "week" ? (
+                  <>
+                    No free slots available this week. Use the arrows to check
+                    another week.
+                  </>
+                ) : (
+                  <>
+                    No free slots are currently available. You can contact the
+                    provider regarding availability or check back later.
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Selection controls */}
             {selected.length > 0 && (

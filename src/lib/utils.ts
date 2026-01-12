@@ -36,3 +36,38 @@ export const platformHomeHref = () =>
   process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true"
     ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}` // e.g. https://infinisimo.com
     : `/`;
+
+function stripTrailingSlash(v: string) {
+  return v.replace(/\/+$/, "");
+}
+
+/**
+ * Always returns an absolute origin (no path), e.g.
+ * - dev: http://localhost:3000
+ * - prod (no subdomains): https://infinisimo.com
+ * - prod (subdomains): https://tenantSlug.infinisimo.com
+ */
+export function getTenantOrigin(tenantSlug?: string | null) {
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const isSubdomainRoutingEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true";
+
+  // Base app URL for dev / non-subdomain mode
+  const appUrl = stripTrailingSlash(
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  );
+
+  if (isDevelopment || !isSubdomainRoutingEnabled) {
+    return appUrl;
+  }
+
+  if (!tenantSlug) {
+    // caller must provide slug in subdomain mode
+    throw new Error("tenantSlug is required when subdomain routing is enabled");
+  }
+
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+  if (!root) throw new Error("NEXT_PUBLIC_ROOT_DOMAIN missing");
+
+  return `https://${tenantSlug}.${root}`;
+}
