@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTRPC } from "@/trpc/client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation"; // for navigation after chekout
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -61,6 +61,26 @@ export default function TenantContent({ slug }: { slug: string }) {
   };
 
   const [selected, setSelected] = useState<string[]>([]);
+
+  // check slots availability for message blow the calendar:
+
+  type CalendarAvail = {
+    loading: boolean;
+    hasAvailableSlots: boolean; // in the CURRENT visible view (day on mobile, week on desktop)
+    hasAnyAvailableSlots: boolean; // in the fetched window (so mobile can know “other days”)
+    view: "day" | "week";
+  };
+
+  const [calendarAvail, setCalendarAvail] = useState<CalendarAvail | null>(
+    null
+  );
+
+  const handleAvailabilityChange = useCallback((v: CalendarAvail) => {
+    setCalendarAvail(v);
+  }, []);
+
+  // Reviews & Ratings:
+
   const trpc = useTRPC();
 
   // Reviews & Ratings:
@@ -596,7 +616,33 @@ export default function TenantContent({ slug }: { slug: string }) {
               selectForBooking={true}
               selectedIds={selected}
               onToggleSelect={handleToggleSelect}
+              onAvailabilityChange={handleAvailabilityChange}
             />
+            {selected.length === 0 && (
+              <div className="mt-4 rounded-lg border bg-white/70 px-4 py-3 text-sm text-muted-foreground">
+                {!calendarAvail || calendarAvail.loading ? (
+                  <>Loading availability…</>
+                ) : calendarAvail.hasAvailableSlots ? (
+                  <>Click on an available slot to book.</>
+                ) : calendarAvail.view === "day" &&
+                  calendarAvail.hasAnyAvailableSlots ? (
+                  <>
+                    No slots available on this date. Use the arrows to check
+                    other days.
+                  </>
+                ) : calendarAvail.view === "week" ? (
+                  <>
+                    No free slots available this week. Use the arrows to check
+                    another week.
+                  </>
+                ) : (
+                  <>
+                    No free slots are currently available. You can contact the
+                    provider regarding availability or check back later.
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Selection controls */}
             {selected.length > 0 && (

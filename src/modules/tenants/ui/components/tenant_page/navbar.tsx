@@ -138,7 +138,12 @@ export const Navbar = ({ slug }: Props) => {
             </div>
 
             {/* Right: brand */}
-            <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={process.env.NEXT_PUBLIC_APP_URL ?? "/"}
+              prefetch={false}
+              className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity"
+              aria-label="Infinisimo Home"
+            >
               <Image
                 src="/images/infinisimo_logo_illustrator.png"
                 alt="Infinisimo"
@@ -151,7 +156,7 @@ export const Navbar = ({ slug }: Props) => {
               >
                 Infinisimo
               </span>
-            </div>
+            </Link>
           </div>
 
           {/* Row 2: Centered tabs with reduced gaps and extra padding */}

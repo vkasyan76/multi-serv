@@ -83,6 +83,12 @@ type Props = {
   selectForBooking?: boolean; // default false - controls if slots can be selected for booking
   selectedIds?: string[]; // default [] - list of selected booking IDs
   onToggleSelect?: (id: string) => void; // callback to toggle selection
+  onAvailabilityChange?: (v: {
+    hasAvailableSlots: boolean;
+    hasAnyAvailableSlots: boolean;
+    loading: boolean;
+    view: "day" | "week";
+  }) => void; // lets parent (tenant content) show “click to book” vs “no slots” message. Mobile sensetive.
 };
 
 type RbcEvent = {
@@ -123,6 +129,7 @@ export default function TenantCalendar({
   selectForBooking = false,
   selectedIds = [],
   onToggleSelect,
+  onAvailabilityChange,
 }: Props) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -191,19 +198,12 @@ export default function TenantCalendar({
     []
   );
 
-  // Keep range in sync with activeView and anchor changes
+  // We keep activeView for the calendar UI, but we stop shrinking the fetch range to a single day on mobile.
   useEffect(() => {
-    if (activeView === Views.WEEK) {
-      const start = startOfDay(anchor);
-      const end = endOfDay(addDays(start, 6));
-      setRange({ start, end });
-    } else {
-      // Day view: single day range
-      const start = startOfDay(anchor);
-      const end = endOfDay(anchor);
-      setRange({ start, end });
-    }
-  }, [activeView, anchor]);
+    const start = startOfDay(anchor);
+    const end = endOfDay(addDays(start, 6)); // always fetch 7 days
+    setRange({ start, end });
+  }, [anchor]);
 
   // Keep the localizer in sync with our UI mode and anchor
   useEffect(() => {
@@ -354,6 +354,56 @@ export default function TenantCalendar({
     // only require tenantId when we are using listMine
     enabled: !useMineQuery || !!tenantQ.data?.id,
   });
+
+  // Notify parent of availability changes (for massage below the calendar in the tenant content):
+
+  const viewRange = useMemo(() => {
+    if (activeView === Views.DAY) {
+      const s = startOfDay(anchor);
+      return { start: s, end: endOfDay(anchor) };
+    }
+    const s = startOfDay(anchor);
+    return { start: s, end: endOfDay(addDays(s, 6)) };
+  }, [activeView, anchor]);
+
+  const hasAnyAvailableSlots = useMemo(() => {
+    const now = nowTick;
+    return (slotsQ.data ?? []).some((b) => {
+      if (b.status !== "available") return false;
+      return new Date(b.start).getTime() > now;
+    });
+  }, [slotsQ.data, nowTick]);
+
+  const hasAvailableSlots = useMemo(() => {
+    const now = nowTick;
+    const vs = viewRange.start.getTime();
+    const ve = viewRange.end.getTime();
+
+    return (slotsQ.data ?? []).some((b) => {
+      if (b.status !== "available") return false;
+      const t = new Date(b.start).getTime();
+      return t > now && t >= vs && t <= ve;
+    });
+  }, [slotsQ.data, nowTick, viewRange]);
+
+  useEffect(() => {
+    if (!onAvailabilityChange) return;
+
+    onAvailabilityChange({
+      hasAvailableSlots,
+      hasAnyAvailableSlots,
+      view: activeView === Views.DAY ? "day" : "week",
+      loading: slotsQ.isLoading || (slotsQ.isFetching && !slotsQ.data),
+    });
+  }, [
+    onAvailabilityChange,
+    hasAvailableSlots,
+    hasAnyAvailableSlots,
+    activeView,
+    slotsQ.isLoading,
+    slotsQ.isFetching,
+    slotsQ.data,
+  ]);
 
   // Debug logging to help verify ranges and data
   useEffect(() => {
