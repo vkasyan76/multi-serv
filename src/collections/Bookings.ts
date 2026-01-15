@@ -52,8 +52,46 @@ export const Bookings: CollectionConfig = {
       index: true,
       admin: {
         description:
-          "Service lifecycle: scheduled → completed → accepted (or disputed).",
+          "System status: scheduled → completed → accepted | disputed.",
         condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true, // <-- reduces human error: prevents admins manually flipping these and causing roll-up inconsistencies.
+      },
+    },
+
+    {
+      name: "serviceCompletedAt",
+      type: "date",
+      required: false,
+      admin: {
+        condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true,
+      },
+    },
+    {
+      name: "acceptedAt",
+      type: "date",
+      required: false,
+      admin: {
+        condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true,
+      },
+    },
+    {
+      name: "disputedAt",
+      type: "date",
+      required: false,
+      admin: {
+        condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true,
+      },
+    },
+    {
+      name: "disputeReason",
+      type: "text",
+      required: false,
+      admin: {
+        condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true,
       },
     },
 
@@ -69,6 +107,7 @@ export const Bookings: CollectionConfig = {
         description:
           "Payment lifecycle: unpaid → pending → paid. Meaningful after service confirmation.",
         condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true, // <-- reduces human error: prevents admins manually flipping these and causing roll-up inconsistencies.
       },
     },
 

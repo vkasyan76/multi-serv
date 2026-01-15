@@ -1226,7 +1226,7 @@ export default function TenantCalendar({
       </div>
 
       {/* Dashboard-specific CSS for balanced padding */}
-      {editable && (
+      {dashboardMode && (
         <style jsx global>{`
           /* Add balanced padding to the name line */
           .calendar--dashboard .ev-booked .rbc-event-content {

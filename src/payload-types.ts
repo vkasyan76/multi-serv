@@ -407,9 +407,13 @@ export interface Booking {
   end: string;
   status: 'available' | 'booked' | 'confirmed';
   /**
-   * Service lifecycle: scheduled → completed → accepted (or disputed).
+   * System status: scheduled → completed → accepted | disputed.
    */
   serviceStatus?: ('scheduled' | 'completed' | 'accepted' | 'disputed') | null;
+  serviceCompletedAt?: string | null;
+  acceptedAt?: string | null;
+  disputedAt?: string | null;
+  disputeReason?: string | null;
   /**
    * Payment lifecycle: unpaid → pending → paid. Meaningful after service confirmation.
    */
@@ -811,6 +815,10 @@ export interface BookingsSelect<T extends boolean = true> {
   end?: T;
   status?: T;
   serviceStatus?: T;
+  serviceCompletedAt?: T;
+  acceptedAt?: T;
+  disputedAt?: T;
+  disputeReason?: T;
   paymentStatus?: T;
   service?: T;
   notes?: T;
