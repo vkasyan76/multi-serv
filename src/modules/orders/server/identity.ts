@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
+// looks up the Payload users collection by clerkUserId and returns the matching Payload user id. If it can’t find one, it throws FORBIDDEN.
 export async function resolvePayloadUserId(
   ctx: { db: unknown },
   clerkUserId: string

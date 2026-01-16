@@ -7,16 +7,15 @@ import type { TRPCContext } from "@/trpc/init";
 type DocWithId<T> = T & { id: string };
 type CtxLike = Pick<TRPCContext, "db" | "userId">; // for Stage 1C queries we also need ctx.userId
 type DbOnlyCtx = Pick<TRPCContext, "db">;
+type ServiceStatus = Order["serviceStatus"];
 
 type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
-  serviceStatus: "scheduled" | "completed" | "accepted" | "disputed";
+  serviceStatus: ServiceStatus;
   disputeReason: string | null;
-  serviceSnapshot: Booking["serviceSnapshot"] | null;
+  serviceSnapshot: NonNullable<Booking["serviceSnapshot"]> | null;
 };
 
-function normalizeServiceStatus(
-  ss: unknown
-): "scheduled" | "completed" | "accepted" | "disputed" {
+function normalizeServiceStatus(ss: unknown): ServiceStatus {
   if (ss === "completed" || ss === "accepted" || ss === "disputed") return ss;
   return "scheduled";
 }
