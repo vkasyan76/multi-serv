@@ -1,9 +1,18 @@
 // src/modules/orders/server/order-rollup.ts
+import { TRPCError } from "@trpc/server";
+import { resolvePayloadUserId } from "./identity";
 import type { Booking, Order } from "@/payload-types";
 import type { TRPCContext } from "@/trpc/init";
 
 type DocWithId<T> = T & { id: string };
-type CtxLike = Pick<TRPCContext, "db">;
+type CtxLike = Pick<TRPCContext, "db" | "userId">; // for Stage 1C queries we also need ctx.userId
+type DbOnlyCtx = Pick<TRPCContext, "db">;
+
+type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
+  serviceStatus: "scheduled" | "completed" | "accepted" | "disputed";
+  disputeReason: string | null;
+  serviceSnapshot: Booking["serviceSnapshot"] | null;
+};
 
 function normalizeServiceStatus(
   ss: unknown
@@ -12,8 +21,133 @@ function normalizeServiceStatus(
   return "scheduled";
 }
 
+/**
+ * NEW: tenant resolution for "my tenant" (same strategy as tenants.getMine)
+ * Payload user id -> tenant where tenant.user == payloadUserId.
+ */
+async function resolveMyTenantId(
+  ctx: Pick<TRPCContext, "db">,
+  clerkUserId: string
+): Promise<string> {
+  const payloadUserId = await resolvePayloadUserId(ctx, clerkUserId);
+
+  const t = await ctx.db.find({
+    collection: "tenants",
+    where: { user: { equals: payloadUserId } },
+    sort: "-createdAt",
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  });
+
+  const tenantId = (t.docs?.[0] as { id?: string } | undefined)?.id;
+  if (!tenantId) throw new TRPCError({ code: "FORBIDDEN" });
+  return tenantId;
+}
+
+/**
+ * NEW: Shape trimmed to what Stage 1C UI needs (customer).
+ * Note: slots are mapped down to minimum fields to keep payload size small.
+ */
+// typed slot-mapper helper:
+function mapSlotsFromOrder(o: DocWithId<Order>): SlotLifecycleSlot[] {
+  const slotsRaw = (o.slots ?? []) as Array<string | DocWithId<Booking>>;
+
+  return (
+    slotsRaw
+      // key fix: type guard => no "b possibly null"
+      .filter((s): s is DocWithId<Booking> => typeof s !== "string")
+      .map((b) => ({
+        id: b.id,
+        start: b.start,
+        end: b.end,
+        serviceStatus: normalizeServiceStatus(b.serviceStatus),
+        disputeReason: b.disputeReason ?? null,
+        serviceSnapshot: b.serviceSnapshot ?? null,
+      }))
+  );
+}
+
+export async function listMineSlotLifecycle(ctx: CtxLike) {
+  if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+  const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+
+  const res = (await ctx.db.find({
+    collection: "orders",
+    where: {
+      and: [
+        { user: { equals: payloadUserId } },
+        { lifecycleMode: { equals: "slot" } },
+      ],
+    },
+    sort: "-createdAt",
+    limit: 25,
+    depth: 1, // populate slots (bookings)
+    overrideAccess: true,
+  })) as { docs?: Array<DocWithId<Order>> };
+
+  return (res.docs ?? []).map((o) => {
+    const slots = mapSlotsFromOrder(o);
+    return {
+      id: o.id,
+      createdAt: o.createdAt!,
+      serviceStatus: o.serviceStatus as Order["serviceStatus"],
+      lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
+      slots,
+    };
+  });
+}
+
+/**
+ * NEW: Tenant list query for Stage 1C.
+ * Returns order.user summary so tenant can see who the customer is.
+ */
+export async function listForMyTenantSlotLifecycle(ctx: CtxLike) {
+  if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+  const tenantId = await resolveMyTenantId(ctx, ctx.userId);
+
+  const res = (await ctx.db.find({
+    collection: "orders",
+    where: {
+      and: [
+        { tenant: { equals: tenantId } },
+        { lifecycleMode: { equals: "slot" } },
+      ],
+    },
+    sort: "-createdAt",
+    limit: 50,
+    depth: 1, // populate slots + user (best-effort)
+    overrideAccess: true,
+  })) as { docs?: Array<DocWithId<Order>> };
+
+  return (res.docs ?? []).map((o) => {
+    const slots = mapSlotsFromOrder(o);
+
+    const userId = typeof o.user === "string" ? o.user : o.user.id;
+
+    return {
+      id: o.id,
+      createdAt: o.createdAt!,
+      serviceStatus: o.serviceStatus as Order["serviceStatus"],
+      lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
+
+      // simplest + already available in Order type
+      userId,
+      customerSnapshot: o.customerSnapshot,
+
+      slots,
+    };
+  });
+}
+
+/**
+ * EXISTING: roll-up stays unchanged.
+ */
+
 export async function recomputeOrdersForBookingId(
-  ctx: CtxLike,
+  ctx: DbOnlyCtx,
   bookingId: string
 ) {
   const found = await ctx.db.find({

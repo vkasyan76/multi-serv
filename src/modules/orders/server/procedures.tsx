@@ -3,6 +3,11 @@ import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import type { Order, Booking, Tenant } from "@/payload-types";
 import { z } from "zod";
+import { resolvePayloadUserId } from "./identity";
+import {
+  listMineSlotLifecycle as listMineSlotLifecycleImpl,
+  listForMyTenantSlotLifecycle as listForMyTenantSlotLifecycleImpl,
+} from "./order-rollup";
 
 type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
 
@@ -10,31 +15,6 @@ type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
 type OrderWithTenantRef = Order & {
   tenant?: string | Tenant | null;
 };
-
-async function resolvePayloadUserId(
-  ctx: { db: unknown },
-  clerkUserId: string
-): Promise<string> {
-  const db = ctx.db as {
-    find: (args: {
-      collection: "users";
-      where: { clerkUserId: { equals: string } };
-      limit: number;
-      depth: number;
-    }) => Promise<{ docs?: Array<{ id?: string }> }>;
-  };
-
-  const me = await db.find({
-    collection: "users",
-    where: { clerkUserId: { equals: clerkUserId } },
-    limit: 1,
-    depth: 0,
-  });
-
-  const payloadUserId = me.docs?.[0]?.id;
-  if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
-  return payloadUserId;
-}
 
 export const ordersRouter = createTRPCRouter({
   // Boolean for the navbar “My Orders”
@@ -370,4 +350,13 @@ export const ordersRouter = createTRPCRouter({
 
       return { ok: true };
     }),
+  // Stage 1C: Customer slot-lifecycle view
+  listMineSlotLifecycle: baseProcedure.query(({ ctx }) =>
+    listMineSlotLifecycleImpl(ctx)
+  ),
+
+  // Stage 1C: Tenant slot-lifecycle view
+  listForMyTenantSlotLifecycle: baseProcedure.query(({ ctx }) =>
+    listForMyTenantSlotLifecycleImpl(ctx)
+  ),
 });
