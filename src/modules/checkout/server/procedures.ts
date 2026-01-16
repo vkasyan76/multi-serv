@@ -74,6 +74,7 @@ export const checkoutRouter = createTRPCRouter({
         where: { id: { in: input.slotIds } },
         limit: input.slotIds.length,
         depth: 0,
+        overrideAccess: true, // NEW: avoid false NOT_FOUND due to read ACL
       });
 
       const bookings = (found.docs ?? []) as Array<DocWithId<Booking>>;
@@ -214,6 +215,7 @@ export const checkoutRouter = createTRPCRouter({
       const order = await ctx.db.create({
         collection: "orders",
         data: {
+          lifecycleMode: "legacy", // NEW: keep this order out of slot-rollup world
           status: "pending",
           // NEW required fields:
           serviceStatus: "scheduled",

@@ -18,7 +18,12 @@ export async function recomputeOrdersForBookingId(
 ) {
   const found = await ctx.db.find({
     collection: "orders",
-    where: { slots: { equals: bookingId } },
+    where: {
+      and: [
+        { slots: { contains: bookingId } },
+        { lifecycleMode: { equals: "slot" } }, // NEW: only recompute new-mode orders
+      ],
+    },
     limit: 20,
     depth: 0,
     overrideAccess: true,

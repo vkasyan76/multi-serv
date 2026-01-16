@@ -189,6 +189,19 @@ export const Orders: CollectionConfig = {
         { name: "stripeAccountId", type: "text", required: false },
       ],
     },
+    // keep old legacy checkout + legacy order procedures fully intact, but fence them off - add an Order “mode flag”:
+    {
+      name: "lifecycleMode",
+      type: "select",
+      required: true,
+      defaultValue: "legacy",
+      options: ["legacy", "slot"],
+      index: true,
+      admin: {
+        description:
+          "legacy = old pay-at-booking flow; slot = new slot-lifecycle + partial invoices flow",
+      },
+    },
   ],
   timestamps: true,
 };

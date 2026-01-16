@@ -50,7 +50,6 @@ const displayNameFromUser = (
 
 export const bookingRouter = createTRPCRouter({
   // List available slots for a tenant (public + own busy)
-  // List available slots for a tenant (public + own busy)
   listPublicSlots: baseProcedure
     .input(
       z.object({

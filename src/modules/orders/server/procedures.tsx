@@ -171,6 +171,14 @@ export const ordersRouter = createTRPCRouter({
 
       if (!order) throw new TRPCError({ code: "NOT_FOUND" });
 
+      // NEW: legacy endpoints only for legacy orders
+      if (order.lifecycleMode === "slot") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This order uses slot lifecycle. Use booking-level actions.",
+        });
+      }
+
       const tenantId =
         typeof order.tenant === "string" ? order.tenant : order.tenant?.id;
       if (!tenantId) throw new TRPCError({ code: "BAD_REQUEST" });
@@ -262,6 +270,14 @@ export const ordersRouter = createTRPCRouter({
 
       if (!order) throw new TRPCError({ code: "NOT_FOUND" });
 
+      // NEW: legacy endpoints only for legacy orders
+      if (order.lifecycleMode === "slot") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This order uses slot lifecycle. Use booking-level actions.",
+        });
+      }
+
       const orderUserId =
         typeof order.user === "string" ? order.user : order.user?.id;
 
@@ -317,6 +333,14 @@ export const ordersRouter = createTRPCRouter({
       })) as DocWithId<Order> | null;
 
       if (!order) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // NEW: legacy endpoints only for legacy orders
+      if (order.lifecycleMode === "slot") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This order uses slot lifecycle. Use booking-level actions.",
+        });
+      }
 
       //completion guard:
       const orderUserId =

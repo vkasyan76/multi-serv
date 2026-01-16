@@ -513,6 +513,10 @@ export interface Order {
     tenantSlug: string;
     stripeAccountId?: string | null;
   };
+  /**
+   * legacy = old pay-at-booking flow; slot = new slot-lifecycle + partial invoices flow
+   */
+  lifecycleMode: 'legacy' | 'slot';
   updatedAt: string;
   createdAt: string;
 }
@@ -878,6 +882,7 @@ export interface OrdersSelect<T extends boolean = true> {
         tenantSlug?: T;
         stripeAccountId?: T;
       };
+  lifecycleMode?: T;
   updatedAt?: T;
   createdAt?: T;
 }
