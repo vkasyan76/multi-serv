@@ -16,7 +16,8 @@ import dynamic from "next/dynamic";
 
 import { BookingActionButton } from "./booking-action-button";
 
-import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
+// import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
+import { SlotsCartDrawer } from "@/modules/checkout/ui/slots-cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import {
   useCartStore,
@@ -42,7 +43,7 @@ const TenantCalendar = dynamic(
     loading: () => (
       <div className="h-[50vh] bg-muted animate-pulse rounded-lg" />
     ),
-  }
+  },
 );
 //  restore cart atomically (used after Stripe redirect)
 const PM_CART_KEY = "pm_cart_restore_v1";
@@ -72,7 +73,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   };
 
   const [calendarAvail, setCalendarAvail] = useState<CalendarAvail | null>(
-    null
+    null,
   );
 
   const handleAvailabilityChange = useCallback((v: CalendarAvail) => {
@@ -85,7 +86,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   // Reviews & Ratings:
   const reviewSummaryQ = useQuery(
-    trpc.reviews.summaryForTenant.queryOptions({ slug })
+    trpc.reviews.summaryForTenant.queryOptions({ slug }),
   );
 
   const reviewRating = reviewSummaryQ.data?.avgRating ?? undefined;
@@ -120,7 +121,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const scrollToCalendar = () => {
     window.dispatchEvent(
-      new CustomEvent("tenant:set-active", { detail: "booking" })
+      new CustomEvent("tenant:set-active", { detail: "booking" }),
     );
     document
       .getElementById("booking")
@@ -281,11 +282,11 @@ export default function TenantContent({ slug }: { slug: string }) {
             // Let the effect try again later (or user can refresh)
             didReleaseRef.current = false;
             toast.error(
-              "We couldn't release your checkout session. Please retry in a moment."
+              "We couldn't release your checkout session. Please retry in a moment.",
             );
             // Keep the URL params so the next run can retry
           },
-        }
+        },
       );
     }
     // deps intentionally kept to just the URL signal
@@ -300,7 +301,7 @@ export default function TenantContent({ slug }: { slug: string }) {
       // enforce selection cap
       if (prev.length >= MAX_SLOTS_PER_BOOKING) {
         toast.warning(
-          `You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`
+          `You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`,
         );
         return prev;
       }
@@ -510,7 +511,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                             <span className="truncate">{name}</span>
                           </Link>
                         );
-                      }
+                      },
                     )}
                   </div>
                 </div>
@@ -584,7 +585,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                                 <span className="truncate">{name}</span>
                               </span>
                             );
-                          }
+                          },
                         )}
                       </div>
                     </div>
@@ -665,7 +666,8 @@ export default function TenantContent({ slug }: { slug: string }) {
               </div>
             )}
 
-            <CartDrawer
+            {/* We use SlotsCartDrawer instead of CartDrawer */}
+            <SlotsCartDrawer
               authState={signedState}
               policyAcceptedAt={profileQ.data?.policyAcceptedAt ?? null}
               policyAcceptedVersion={

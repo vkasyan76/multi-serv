@@ -1,0 +1,641 @@
+[
+  {
+    "_id": "68d4f4f2e2709decd0ad905f",
+    "createdAt": "2025-09-25T07:53:22.978Z",
+    "updatedAt": "2025-09-25T07:53:23.700Z",
+    "status": "pending",
+    "user": "68cff853e779ada8f5d87610",
+    "tenant": "68cffb963376167afffa3e0e",
+    "slots": [
+      "68d1a657b41c09d9e6becf29",
+      "68d1a656b41c09d9e6becf16"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1S9nBgAZPXgIyDBp",
+    "reservedUntil": "2025-09-25T08:53:22.969Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1CX6PliA8AtQNLc8PQR7CRTYuNn9rQgBLHqViXNwIjmBnLxj67Rwx74m4"
+  },
+  {
+    "_id": "68d4f895e2709decd0ad912f",
+    "createdAt": "2025-09-25T08:08:53.257Z",
+    "updatedAt": "2025-09-25T08:09:44.940Z",
+    "status": "paid",
+    "user": "68cff853e779ada8f5d87610",
+    "tenant": "68cffb963376167afffa3e0e",
+    "slots": [
+      "68d1a654b41c09d9e6becf03"
+    ],
+    "amount": 250,
+    "currency": "eur",
+    "applicationFee": 25,
+    "destination": "acct_1S9nBgAZPXgIyDBp",
+    "reservedUntil": "2025-09-25T09:08:53.254Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1sfQZmY9u8ydGCOQIEU3GOuYIDGY3sbWwbBSJP4OGnRzZUsbJ0phBCsU6",
+    "paymentIntentId": "pi_3SBAFDA4lbsUxpcl1R6ngigs",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xUzlqVTlBNGxic1V4cGNsKMnx08YGMgY23ZCRH4U6LBaaD9Fl7wJeCmQfnoDeVYmwwsu3fIgpukhSucyzvygAy9_NX8fnjgxz90Ud?s=ap"
+  },
+  {
+    "_id": "68dfed22c3250edd1b12b54d",
+    "createdAt": "2025-10-03T15:34:58.309Z",
+    "updatedAt": "2025-10-03T15:36:50.998Z",
+    "status": "paid",
+    "user": "68cffa1b71d96c27f1068e7d",
+    "tenant": "68dfd9e691fc0a72544f73f7",
+    "slots": [
+      "68dfebfa7f7ed460d0977c81",
+      "68dfebf67f7ed460d0977c6e"
+    ],
+    "amount": 200,
+    "currency": "eur",
+    "applicationFee": 20,
+    "destination": "acct_1SE9j5PRD9Fok8sB",
+    "reservedUntil": "2025-10-03T16:34:58.299Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1rcLqj0Nc4yJoNcY3gxSqijjAYgrbbXUHgeI24sdUDiCFijEZbPks5WEk",
+    "paymentIntentId": "pi_3SEB2DPRD9Fok8sB0AReTCPu",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0U5ajVQUkQ5Rm9rOHNCKJLb_8YGMgYBFM3xUw46LBYFqQn0HWukuSyJUwwQ5GWNLQQiNz83layBVdm2_nJtEzjoxO8oKYYIv2P4?s=ap"
+  },
+  {
+    "_id": "68e0e0ab8ebcd4a6e16739f8",
+    "createdAt": "2025-10-04T08:54:03.085Z",
+    "updatedAt": "2025-10-04T08:57:23.655Z",
+    "status": "paid",
+    "user": "68cffa1b71d96c27f1068e7d",
+    "tenant": "68e0d9bc8ebcd4a6e1673743",
+    "slots": [
+      "68e0e0762caa5ceccbd682a9",
+      "68e0e0702caa5ceccbd68296"
+    ],
+    "amount": 200,
+    "currency": "eur",
+    "applicationFee": 20,
+    "destination": "acct_1SEQlRPB2xLO0GsK",
+    "reservedUntil": "2025-10-04T09:54:03.080Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1wyUjJFDHTQ5pYSA3chPspmqXLmrpbnFXp51xgsaw9pGDY4fi0eDlIO7m",
+    "paymentIntentId": "pi_3SERHDPB2xLO0GsK233JM4ex",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0VRbFJQQjJ4TE8wR3NLKPPCg8cGMgaPth6zAfs6LBYuLS2HN2AIRKivPMWIVs_tPxxd-iM4FoVQc-UVtVG11acCrzPIUABrW63P?s=ap"
+  },
+  {
+    "_id": "68e141f457885465e9172c44",
+    "createdAt": "2025-10-04T15:49:08.338Z",
+    "updatedAt": "2025-10-04T15:50:56.913Z",
+    "status": "paid",
+    "user": "68cfee0f71d96c27f1068c4a",
+    "tenant": "68e0d9bc8ebcd4a6e1673743",
+    "slots": [
+      "68e0e0792caa5ceccbd682bc"
+    ],
+    "amount": 100,
+    "currency": "eur",
+    "applicationFee": 10,
+    "destination": "acct_1SEQlRPB2xLO0GsK",
+    "reservedUntil": "2025-10-04T16:49:08.330Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a12f2E9WNMtZh2hRijvHxCYyfa0S83ic5e9ZPUkGGB8PO32SsyWQ8f30in",
+    "paymentIntentId": "pi_3SEXjSPB2xLO0GsK068XrLPP",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0VRbFJQQjJ4TE8wR3NLKOCEhccGMgbZPuBy-Y46LBYts_S4YgsbPCFBRuBxYzCOGKlsOgIxHRSbtsCFprfWWT2u9_oBN2K48ple?s=ap"
+  },
+  {
+    "_id": "68e1446a57885465e9172e5a",
+    "createdAt": "2025-10-04T15:59:38.022Z",
+    "updatedAt": "2025-10-04T16:03:17.059Z",
+    "status": "paid",
+    "user": "68cff853e779ada8f5d87610",
+    "tenant": "68e0d9bc8ebcd4a6e1673743",
+    "slots": [
+      "68e143dcb85ceb1737f77327",
+      "68e143d8b85ceb1737f77308"
+    ],
+    "amount": 200,
+    "currency": "eur",
+    "applicationFee": 20,
+    "destination": "acct_1SEQlRPB2xLO0GsK",
+    "reservedUntil": "2025-10-04T16:59:38.019Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1Dh90pXCdQienzLfd6q1IsJZZdQ3ZVdiy88cVt57TRSVYiqJYZHkBfVQC",
+    "paymentIntentId": "pi_3SEXvMPB2xLO0GsK1JeqEGuP",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0VRbFJQQjJ4TE8wR3NLKMSKhccGMgbAMkQAl_g6LBYnKOywz_XiZi7Qo05r_gR3kLmPS_h3Fwmeik1cE51coWnv8aFRLgTQVV0E?s=ap"
+  },
+  {
+    "_id": "68fe87d8bb3a736561979c34",
+    "createdAt": "2025-10-26T20:43:04.831Z",
+    "updatedAt": "2025-10-26T20:43:57.874Z",
+    "status": "canceled",
+    "user": "68fb9659ba5ef44e87fc3732",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "68fcfee0ae8866f065db0c44"
+    ],
+    "amount": 100,
+    "currency": "eur",
+    "applicationFee": 10,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-10-26T21:43:04.820Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1Du8N6ntcWWxGPqLLYEUPEoa5HLcDGVUnTDXtfSrIfKDRV352s12N3lt2"
+  },
+  {
+    "_id": "68ffb3c67a8b0c6318f9f0c1",
+    "createdAt": "2025-10-27T18:02:46.879Z",
+    "updatedAt": "2025-10-27T18:03:50.063Z",
+    "status": "paid",
+    "user": "68fb9659ba5ef44e87fc3732",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "68fcfee2ae8866f065db0c5d"
+    ],
+    "amount": 100,
+    "currency": "eur",
+    "applicationFee": 10,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-10-27T19:02:46.868Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a18NsG6Mhpao2TCT9hSzRuIJ5U4WmwtNT4RhCSyLDAepUpUKyBQVQWQUtV",
+    "paymentIntentId": "pi_3SMulbPGW8zo3mf30AduSyE4",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKIXo_scGMgYK1NMrS2c6LBYdpa9Xnsb0gI3OqqJYr8nRgRpUWHX25jh3s2mkqAbn4GkatbWDN0eMbdNB?s=ap"
+  },
+  {
+    "_id": "6901159f3c175cf5919ce2e8",
+    "createdAt": "2025-10-28T19:12:31.900Z",
+    "updatedAt": "2025-10-28T19:14:20.904Z",
+    "status": "paid",
+    "user": "68f9397c48b78144bb7c3e9a",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "69011513fb8f69a92e4c738d",
+      "69011510fb8f69a92e4c7376"
+    ],
+    "amount": 200,
+    "currency": "eur",
+    "applicationFee": 20,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-10-28T20:12:31.888Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a18HusJZXI5hLRDUDOXLaeZJ75gwfdtameutInWP84U4jl5Sy5DmfhuB86",
+    "paymentIntentId": "pi_3SNILQPGW8zo3mf31fiUtPMe",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKIyshMgGMgbuiNDbc7E6LBZsVAUasCLhmXDcpyNvEbqxiUWgSKIjVhTNTG8qeeOCh5kC2iqgEEc6PsRs?s=ap"
+  },
+  {
+    "_id": "691f76d86baf3698b0cff6d5",
+    "createdAt": "2025-11-20T20:15:20.462Z",
+    "updatedAt": "2025-11-20T20:16:53.771Z",
+    "status": "paid",
+    "user": "68e0d6ef95fd9009322934b5",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "691f7378708c4df10bd1c460"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-11-20T21:15:20.453Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1PTymXO7xxRzS1NpUdPH3p5HJPk48dW1bK1HFXhLRbuhXAOXPezqIQqy4",
+    "paymentIntentId": "pi_3SVeHYPGW8zo3mf320LIyUxb",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKLXu_cgGMgYZo4WQpfo6LBZ4EjxjDHVNjvRsvv-i8U9bZR9-TtSG96VMAcY7mB25GjCmdFtE00ESjegH?s=ap"
+  },
+  {
+    "_id": "693b52d1b29f6461670bbd2a",
+    "createdAt": "2025-12-11T23:25:05.435Z",
+    "updatedAt": "2025-12-11T23:25:19.833Z",
+    "status": "canceled",
+    "user": "68e0d6ef95fd9009322934b5",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "693b23fed16d586dc2378127"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-12T00:25:05.425Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1JsRbxVdqVZcqwub1ezWL0BWuonSJkbDf8ULMttOurO2tdmOm4zGlnNbl"
+  },
+  {
+    "_id": "693b53205b37038f942f544f",
+    "createdAt": "2025-12-11T23:26:24.099Z",
+    "updatedAt": "2025-12-11T23:26:34.081Z",
+    "status": "canceled",
+    "user": "68e0d6ef95fd9009322934b5",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "693b23fed16d586dc2378127"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-12T00:26:24.081Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a182LTrLkZopvhO5ns8QSuy9RxUNyrmTbsjiXSgkiS7daS51BU16EYcADa"
+  },
+  {
+    "_id": "693c8c2eed3d7714b372fefd",
+    "createdAt": "2025-12-12T21:42:06.184Z",
+    "updatedAt": "2025-12-12T21:42:14.921Z",
+    "status": "canceled",
+    "user": "68fb9659ba5ef44e87fc3732",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "693b2400d16d586dc237813a"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-12T22:42:06.174Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1Vz8VdrcxhMB3t5FdOJsVYcf8Geei4vgVMKgz8tGhI0YE8WnclXs206d1"
+  },
+  {
+    "_id": "693c967318a92dec4e7cf115",
+    "createdAt": "2025-12-12T22:25:55.941Z",
+    "updatedAt": "2025-12-13T22:25:57.901Z",
+    "status": "canceled",
+    "user": "68fb9659ba5ef44e87fc3732",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "693b23fed16d586dc2378127"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-12T23:25:55.933Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1jijB2dFnVPqaM2P4oD5Gz92a7fyqgy6fR8vZNj5DiI22iWucsL6Wwg72"
+  },
+  {
+    "_id": "69410497f8616ed6d841b93b",
+    "createdAt": "2025-12-16T07:04:55.189Z",
+    "updatedAt": "2025-12-16T07:05:19.624Z",
+    "status": "canceled",
+    "user": "68fb9659ba5ef44e87fc3732",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "693b2405d16d586dc2378155"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-16T08:04:55.183Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1JnIRKOnBsaLTkmSKiLa0MgmflWuLmZ22RR6aAzGRamMyI9bjyXoQV9Jk"
+  },
+  {
+    "_id": "694db0240391de4434bd6c08",
+    "createdAt": "2025-12-25T21:44:04.619Z",
+    "updatedAt": "2025-12-25T21:44:33.529Z",
+    "status": "canceled",
+    "user": "68fb9659ba5ef44e87fc3732",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "694daff6f1191871cd2884c4"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-25T22:44:04.601Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1YwigCPziBcLIJ7KuaTwBUdgcivuPiAZnr3vNkhZHYNyXT4vRlz1XvUA9"
+  },
+  {
+    "_id": "695035d174be3ddafe524dc5",
+    "createdAt": "2025-12-27T19:38:57.061Z",
+    "updatedAt": "2025-12-27T19:39:58.077Z",
+    "status": "paid",
+    "user": "68e0d6ef95fd9009322934b5",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "694daff6f1191871cd2884c4"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-27T20:38:57.052Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1QTb7UNEO7jVQHPdl8TA1Wa6piBxFxAhQODfeD0Xcj7ZIe0gaokXCv0la",
+    "paymentIntentId": "pi_3Sj3L8PGW8zo3mf32qW25D5c",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKI3swMoGMgbWhHXVer86LBbN56AjyVO9wtdc-w03GwekViR0lqOgDAhnAc-Jiv72OMjVdbJNg9hUxxtO?s=ap"
+  },
+  {
+    "_id": "6952397fa553b198c03725fa",
+    "createdAt": "2025-12-29T08:19:11.425Z",
+    "updatedAt": "2025-12-29T08:22:56.198Z",
+    "status": "paid",
+    "user": "691a0afc935bb8a2a83bb9b9",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "694daff8f1191871cd2884d7"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-29T09:19:11.416Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1DWUt5qQoaJ7584lcllxqNj7Rf3rxUJfitOfNIq8ZDJQauT1raUW6zAcs",
+    "paymentIntentId": "pi_3Sjbj2PGW8zo3mf31U1NGDGg",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKN_0yMoGMgYC_SqEbec6LBYdJWrKw3huEDajkxP9rwfq4PcoupBj80KrI6sV_upItSyIpOSpEYQAHuwq?s=ap"
+  },
+  {
+    "_id": "6952997ce422fbc7228db054",
+    "createdAt": "2025-12-29T15:08:44.304Z",
+    "updatedAt": "2025-12-29T15:09:06.141Z",
+    "status": "canceled",
+    "user": "6952992be422fbc7228daedc",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "694daff9f1191871cd2884f2"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-29T16:08:44.298Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1XS779nCbPTibxJIp8hhSWjlSMclRe7DuMfUlulvgGAVznINMigXC2xl0"
+  },
+  {
+    "_id": "695299aae422fbc7228db0e4",
+    "createdAt": "2025-12-29T15:09:30.124Z",
+    "updatedAt": "2025-12-29T15:09:42.830Z",
+    "status": "canceled",
+    "user": "6952992be422fbc7228daedc",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "694daff9f1191871cd2884f2"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-29T16:09:30.120Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1lBlzCtRMKxpEi891LU1WSB6upYXSgJkZKCnF2LUW0n3tjuvEioqI1Li7"
+  },
+  {
+    "_id": "6952cedbe2b7d943fd478bda",
+    "createdAt": "2025-12-29T18:56:27.849Z",
+    "updatedAt": "2025-12-29T18:57:19.074Z",
+    "status": "paid",
+    "user": "6952ccac87ecd0111d43ddd5",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "694daff9f1191871cd2884f2"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-29T19:56:27.845Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1O29XL0Yy0JvuAlcNSDeJofpx6qkzPU1OhHw0yQligmhvbKOrMFnUwxdn",
+    "paymentIntentId": "pi_3SjlcxPGW8zo3mf30WwI0aNn",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKI6ey8oGMgapTeqePS06LBbe2XO9XvqNpHTm5RGs7y1g-l5idn3BVDiFh7-Pqk7vLRDvmutRR0C_Wrhw?s=ap"
+  },
+  {
+    "_id": "69537d93afdcdaeeab27261a",
+    "createdAt": "2025-12-30T07:21:55.462Z",
+    "updatedAt": "2025-12-30T07:25:21.741Z",
+    "status": "paid",
+    "user": "69537d5595a9e22994b7f763",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "694db001f1191871cd288532"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2025-12-30T08:21:55.457Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1LdPJgMxwSDPjohOvtViAOAYrhpGbX8CNiFRLSuwX8QbzzN85QERODsbx",
+    "paymentIntentId": "pi_3SjxIsPGW8zo3mf32VHm0JCK",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKOH8zcoGMgbGwOblRuw6LBZhGqz8ivc88d02rXayNr-RWJk7YOk6vS_cLDyj1CKZ3xhXaTXZu6DuHSYx?s=ap"
+  },
+  {
+    "_id": "695cb8cf21e8b6df3c14576c",
+    "createdAt": "2026-01-06T07:25:03.646Z",
+    "updatedAt": "2026-01-06T07:26:22.012Z",
+    "status": "paid",
+    "user": "68fb9659ba5ef44e87fc3732",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "695b63442108c8bb89f81f3b"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2026-01-06T08:25:03.638Z",
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1qvslIVgbi6UCYxw0OpxswKzqk7cCOJZtwNjfpwzVCbqF05dQyX8tCK4P",
+    "paymentIntentId": "pi_3SmUefPGW8zo3mf31ypVFfMM",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKJ3y8soGMgaUsiS9eJo6LBYH9K6e6f8qJjAF-SLrWh6iZAmACWUGAXO4IHow4KBXAtsXKpSbUzpwM9XN?s=ap"
+  },
+  {
+    "_id": "695e06f1b4622e78dabed40e",
+    "createdAt": "2026-01-07T07:10:41.927Z",
+    "updatedAt": "2026-01-07T07:11:53.455Z",
+    "status": "paid",
+    "user": "68fb9659ba5ef44e87fc3732",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "695b633b2108c8bb89f81efa"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2026-01-07T08:10:41.921Z",
+    "customerSnapshot": {
+      "firstName": "Valentyn",
+      "lastName": "Kasyan",
+      "location": "Kaiserstraße, 60 Frankfurt am Main, Germany",
+      "country": "Germany",
+      "email": "valentyn.kasyan@gmail.com"
+    },
+    "vendorSnapshot": {
+      "tenantName": "react_jedi",
+      "tenantSlug": "react_jedi",
+      "stripeAccountId": "acct_1SL8T8PGW8zo3mf3"
+    },
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1wxn9b5UuG12hQ1h5ipBvyD85xwqgoW4O7o5zFnyQEOCbfIxyzthg77k9",
+    "paymentIntentId": "pi_3SmquDPGW8zo3mf31TB02qzK",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKLmO-MoGMgZXhb0RkFc6LBaMziDXg485QnoAkys-cXYpf5DmrDjusFUBvFAXTkaJuDlCz7gEkaWLC9y4?s=ap"
+  },
+  {
+    "_id": "695e0cb411fc6f374df89a75",
+    "createdAt": "2026-01-07T07:35:16.726Z",
+    "updatedAt": "2026-01-07T07:36:17.963Z",
+    "status": "paid",
+    "user": "695e059a0418a0b3619bae27",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "695b633e2108c8bb89f81f0d"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2026-01-07T08:35:16.714Z",
+    "customerSnapshot": {
+      "firstName": "Yuri",
+      "lastName": "Gagarin",
+      "location": "Südliche Ringstraße 10, 63225 Langen (Hessen), Germany",
+      "country": "Germany",
+      "email": "info.infinisimo@gmail.com"
+    },
+    "vendorSnapshot": {
+      "tenantName": "react_jedi",
+      "tenantSlug": "react_jedi",
+      "stripeAccountId": "acct_1SL8T8PGW8zo3mf3"
+    },
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1l9CL7Ge4iUXSq4tx7S8qPB8MM0QdnwjMyvDeM0CcJuZ8OO1Su1IlBiP6",
+    "paymentIntentId": "pi_3SmrHqPGW8zo3mf32dmSMwJq",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKPGZ-MoGMgacsF9xTWA6LBZwZGMREsLcrgALDi4l476r-9b7SSOaAyU6RQY5Eelk3nYwvI4R3BFi0GGS?s=ap"
+  },
+  {
+    "_id": "695e30b27c581980ee9bb3af",
+    "createdAt": "2026-01-07T10:08:50.036Z",
+    "updatedAt": "2026-01-07T10:10:25.918Z",
+    "status": "paid",
+    "user": "68e0d6ef95fd9009322934b5",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "695b634b2108c8bb89f81f69"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2026-01-07T11:08:50.025Z",
+    "customerSnapshot": {
+      "firstName": "Valentyn",
+      "lastName": "Kasyan",
+      "location": "Friedberger Str. 37, 63452 Hanau, Germany",
+      "country": "Germany",
+      "email": "valentyn@kasyan.de"
+    },
+    "vendorSnapshot": {
+      "tenantName": "react_jedi",
+      "tenantSlug": "react_jedi",
+      "stripeAccountId": "acct_1SL8T8PGW8zo3mf3"
+    },
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1vwhpt1HLbqcyjKCiZxy5zFHHutjANUE0fX210qN6VvOhJPPVrCBs0yVx",
+    "paymentIntentId": "pi_3SmtgzPGW8zo3mf32QSMUbvA",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKJHi-MoGMgZhAkaNrJ46LBZuvqULh-3Vg00hvKd8ru6wzBB9Mv213ctlQYsDd-1sOVeZhDCQ9-bPL8tY?s=ap"
+  },
+  {
+    "_id": "695eb94d9e3a0b0751b47594",
+    "createdAt": "2026-01-07T19:51:42.001Z",
+    "updatedAt": "2026-01-07T19:52:33.074Z",
+    "status": "paid",
+    "user": "695e059a0418a0b3619bae27",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "695b636a2108c8bb89f81fff"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2026-01-07T20:51:41.988Z",
+    "customerSnapshot": {
+      "firstName": "Yuri",
+      "lastName": "Gagarin",
+      "location": "Südliche Ringstraße 10, 63225 Langen (Hessen), Germany",
+      "country": "Germany",
+      "email": "info.infinisimo@gmail.com"
+    },
+    "vendorSnapshot": {
+      "tenantName": "react_jedi",
+      "tenantSlug": "react_jedi",
+      "stripeAccountId": "acct_1SL8T8PGW8zo3mf3"
+    },
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1SJT6mvyTn0OHVJI7OKWQPAPPBgU7luRLFCBd9WL0uHxbepgzReOOk6d3",
+    "paymentIntentId": "pi_3Sn2mLPGW8zo3mf31TnwCb6r",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKIDz-soGMgY8r9pGgZE6LBYmQjsQD2DwM2Vu12MY6pGcUJBKS65lLzIK5KRHzY2RLjwV_OVZAP3sSOat?s=ap"
+  },
+  {
+    "_id": "695eb9aa9e3a0b0751b4760e",
+    "createdAt": "2026-01-07T19:53:14.747Z",
+    "updatedAt": "2026-01-07T19:53:58.858Z",
+    "status": "paid",
+    "user": "695e059a0418a0b3619bae27",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "695b63652108c8bb89f81fec"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 50,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2026-01-07T20:53:14.742Z",
+    "customerSnapshot": {
+      "firstName": "Yuri",
+      "lastName": "Gagarin",
+      "location": "Südliche Ringstraße 10, 63225 Langen (Hessen), Germany",
+      "country": "Germany",
+      "email": "info.infinisimo@gmail.com"
+    },
+    "vendorSnapshot": {
+      "tenantName": "react_jedi",
+      "tenantSlug": "react_jedi",
+      "stripeAccountId": "acct_1SL8T8PGW8zo3mf3"
+    },
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1Sjj2bZT80zQOAzFXcLIg4pwQHy7KtPnhKHLprYmIF4fZimWEVG3vPiA0",
+    "paymentIntentId": "pi_3Sn2njPGW8zo3mf30TFeB2Br",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKNbz-soGMgYRM7IOpEI6LBYG2LOdbJRRuB4ipsEi1W22HB8RP_PIBGuf5iyor8_sOMH9ilcS4u7sLn-L?s=ap"
+  },
+  {
+    "_id": "6963a7cfae6ab96ec2769a43",
+    "createdAt": "2026-01-11T13:38:23.873Z",
+    "updatedAt": "2026-01-11T13:39:27.242Z",
+    "status": "paid",
+    "serviceStatus": "scheduled",
+    "invoiceStatus": "none",
+    "user": "68fb9659ba5ef44e87fc3732",
+    "tenant": "68f93bcdd92573e3bd8063a6",
+    "slots": [
+      "695b63552108c8bb89f81f90"
+    ],
+    "amount": 500,
+    "currency": "eur",
+    "applicationFee": 25,
+    "destination": "acct_1SL8T8PGW8zo3mf3",
+    "reservedUntil": "2026-01-11T14:38:23.865Z",
+    "customerSnapshot": {
+      "firstName": "Valentyn",
+      "lastName": "Kasyan",
+      "location": "Kaiserstraße, 60 Frankfurt am Main, Germany",
+      "country": "Germany",
+      "email": "valentyn.kasyan@gmail.com"
+    },
+    "vendorSnapshot": {
+      "tenantName": "react_jedi",
+      "tenantSlug": "react_jedi",
+      "stripeAccountId": "acct_1SL8T8PGW8zo3mf3"
+    },
+    "__v": 0,
+    "checkoutSessionId": "cs_test_a1vp2e7c0wqjTE4hh2pxGJAjCMDkW0kFvrYnDzxNb4fTg5AGHEKgiOzPen",
+    "paymentIntentId": "pi_3SoOrTPGW8zo3mf30YUJXIld",
+    "receiptUrl": "https://pay.stripe.com/receipts/invoices/CAcaFwoVYWNjdF8xU0w4VDhQR1c4em8zbWYzKI7QjssGMgZsUD4L3dc6LBYZRtjhmfuK2qlWMx6nX8dVC1V3xzfVMlMuansfNpNeC6yAmUfN1ADRBSJ4?s=ap"
+  }
+]

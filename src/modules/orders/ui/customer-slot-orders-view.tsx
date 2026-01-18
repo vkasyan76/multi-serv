@@ -1,0 +1,49 @@
+"use client";
+
+import Link from "next/link";
+import { Home } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { CustomerOrdersLifecycleView } from "@/modules/orders/ui/customer-orders-lifecycle-view";
+
+export function CustomerSlotOrdersView() {
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Top bar */}
+      <nav className="bg-white w-full border-b">
+        <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 h-14 sm:h-16 flex items-center justify-end gap-3">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/"
+                  className="p-2 rounded-full hover:bg-muted"
+                  aria-label="Home"
+                >
+                  <Home className="h-7 w-7" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Home</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </nav>
+
+      {/* Header */}
+      <header className="bg-[#F4F4F0] py-8 border-b">
+        <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex flex-col gap-y-2">
+          <h1 className="text-[32px] font-medium">My Orders</h1>
+        </div>
+      </header>
+
+      {/* Content */}
+      <section className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10">
+        <CustomerOrdersLifecycleView />
+      </section>
+    </div>
+  );
+}

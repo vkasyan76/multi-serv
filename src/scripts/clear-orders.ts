@@ -1,6 +1,8 @@
 // src/scripts/clear-orders.ts
 import "dotenv/config";
 import { MongoClient, type Filter, type Document } from "mongodb";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 // 1) Read envs into a temp var
 const rawUri =
@@ -39,10 +41,11 @@ if (args.includes("--unpaid")) {
   filter = {};
 } else {
   console.log(
-    "Usage: clear-orders.ts [--unpaid | --paid | --all]\n" +
+    "Usage: clear-orders.ts [--unpaid | --paid | --all] [--backup]\n" +
       "  --unpaid  Delete only pending/canceled orders\n" +
       "  --paid    Delete only paid orders\n" +
-      "  --all     Delete ALL orders"
+      "  --all     Delete ALL orders\n" +
+      "  --backup  Save matching orders to tmp/orders-backup-<ts>.json before deleting",
   );
   process.exit(1);
 }
@@ -56,11 +59,21 @@ async function run() {
 
     const before = await col.countDocuments({});
     const target = await col.countDocuments(filter);
+
+    // optional backup
+    if (args.includes("--backup")) {
+      const docs = await col.find(filter).toArray();
+      await mkdir("tmp", { recursive: true });
+      const file = join("tmp", `orders-backup-${Date.now()}.json`);
+      await writeFile(file, JSON.stringify(docs, null, 2), "utf8");
+      console.log(`✅ Backup written: ${file} (${docs.length} docs)`);
+    }
+
     const res = await col.deleteMany(filter);
     const after = await col.countDocuments({});
 
     console.log(
-      `DB=${dbName} | Filter=${JSON.stringify(filter)} | Deleted=${res.deletedCount} (target=${target}) | before=${before} -> after=${after}`
+      `DB=${dbName} | Filter=${JSON.stringify(filter)} | Deleted=${res.deletedCount} (target=${target}) | before=${before} -> after=${after}`,
     );
   } finally {
     // ensure the connection is closed even if something throws

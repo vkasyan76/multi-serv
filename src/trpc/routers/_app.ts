@@ -18,6 +18,7 @@ import { conversationsRouter } from "@/modules/conversations/server/procedures";
 import { messagesRouter } from "@/modules/messages/server/procedures";
 import { legalRouter } from "@/modules/legal/server/procedures";
 import { paymentsRouter } from "@/modules/payments/procedures";
+import { slotCheckoutRouter } from "@/modules/checkout/server/slot-procedures";
 
 export const appRouter = createTRPCRouter({
   // hello: baseProcedure
@@ -38,6 +39,7 @@ export const appRouter = createTRPCRouter({
   categories: categoriesRouter,
   bookings: bookingRouter,
   checkout: checkoutRouter,
+  slotCheckout: slotCheckoutRouter,
   orders: ordersRouter,
   reviews: reviewsRouter,
   conversations: conversationsRouter,

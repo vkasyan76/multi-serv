@@ -16,6 +16,7 @@
     "db:upsert:categories-new-only": "node --loader ts-node/esm ./src/scripts/categories.ts -- --new-only",
     "db:clear:bookings": "node --loader ts-node/esm ./src/scripts/clear-bookings.ts",
     "db:clear:orders:all": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --all",
+    "db:clear:orders:all:backup": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --all --backup",
     "db:clear:orders:unpaid": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --unpaid",
     "orders:cancel-stale": "node --loader ts-node/esm ./src/scripts/cancel-stale-orders.ts",
     "db:prune:categories:dry": "node --loader ts-node/esm ./src/scripts/categories-prune-unused.ts -- --dry-run",

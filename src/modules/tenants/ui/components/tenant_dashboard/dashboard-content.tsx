@@ -10,6 +10,7 @@ import Image from "next/image";
 
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { TenantOrdersLifecycleView } from "@/modules/orders/ui/tenant-orders-lifecycle-view";
 
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
@@ -17,15 +18,15 @@ const TenantCalendar = dynamic(
   {
     ssr: false,
     loading: () => <TenantCalendarSkeleton />,
-  }
+  },
 );
 
 const TenantMessagesSection = dynamic(
   () =>
     import("@/modules/conversations/ui/tenant-messages-section").then(
-      (m) => m.TenantMessagesSection
+      (m) => m.TenantMessagesSection,
     ),
-  { ssr: false, loading: () => <TenantMessagesSkeleton /> }
+  { ssr: false, loading: () => <TenantMessagesSkeleton /> },
 );
 
 function SectionTitle({ iconSrc, label }: { iconSrc: string; label: string }) {
@@ -81,18 +82,13 @@ export default function DashboardContent({ slug }: { slug: string }) {
         />
       </section>
 
-      {/* ORDERS (placeholder for now) */}
+      {/* ORDERS */}
       <section id="orders" className="scroll-mt-28 sm:scroll-mt-32">
         <SectionTitle
           iconSrc="/SVGs/Dashboard/Orders_Icon.svg"
           label="Orders"
         />
-        <div className="rounded-lg border bg-white p-5">
-          <p className="text-muted-foreground">
-            Orders table will appear here. We’ll query <code>orders</code> for
-            this tenant and show status, total, receipt, and created date.
-          </p>
-        </div>
+        <TenantOrdersLifecycleView />
       </section>
 
       {/* MESSAGES (placeholder for now) */}
