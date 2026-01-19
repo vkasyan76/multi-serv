@@ -31,7 +31,7 @@ export type BookingWithName = DocWithId<Booking> & {
 
 // Derive a human display name from a populated customer ref
 const displayNameFromUser = (
-  u: User | string | null | undefined
+  u: User | string | null | undefined,
 ): string | null => {
   if (!u || typeof u === "string") return null;
 
@@ -56,7 +56,7 @@ export const bookingRouter = createTRPCRouter({
         tenantSlug: z.string(),
         from: z.string().datetime(),
         to: z.string().datetime(),
-      })
+      }),
     )
     .query(async ({ input, ctx }): Promise<Array<DocWithId<Booking>>> => {
       // Find tenant by slug
@@ -130,7 +130,7 @@ export const bookingRouter = createTRPCRouter({
         tenantId: z.string(),
         from: z.string().datetime(),
         to: z.string().datetime(),
-      })
+      }),
     )
     .query(async ({ input, ctx }): Promise<Array<BookingWithName>> => {
       const clerkUserId = ctx.userId;
@@ -211,7 +211,7 @@ export const bookingRouter = createTRPCRouter({
         .refine((v) => new Date(v.start) < new Date(v.end), {
           message: "start must be before end",
           path: ["end"],
-        })
+        }),
     )
     .mutation(async ({ input, ctx }): Promise<DocWithId<Booking>> => {
       const clerkUserId = ctx.userId;
@@ -485,7 +485,7 @@ export const bookingRouter = createTRPCRouter({
         .refine((v) => new Date(v.start) < new Date(v.end), {
           message: "start must be before end",
           path: ["end"],
-        })
+        }),
     )
     .mutation(async ({ input, ctx }): Promise<DocWithId<Booking>> => {
       const clerkUserId = ctx.userId;
@@ -614,10 +614,10 @@ export const bookingRouter = createTRPCRouter({
               bookingId: z.string(),
               // require a non-empty string (service is mandatory)
               serviceId: z.string().min(1),
-            })
+            }),
           )
           .min(1),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }): Promise<BookSlotsResult> => {
       // 0) auth → payload user
@@ -670,7 +670,7 @@ export const bookingRouter = createTRPCRouter({
       // 4) summary
       // requested & was seen as bookable, but didn’t get updated → lost the race
       const raceLost = ids.filter(
-        (id) => seenIds.has(id) && !bookedIds.includes(id)
+        (id) => seenIds.has(id) && !bookedIds.includes(id),
       );
       // requested & never seen as bookable in snapshot (past / already taken)
       const neverSeen = ids.filter((id) => !seenIds.has(id));
@@ -741,7 +741,25 @@ export const bookingRouter = createTRPCRouter({
 
       // Treat missing as "scheduled"
       const ss = (b.serviceStatus ?? "scheduled") as string;
-      const nowIso = new Date().toISOString();
+      const now = new Date();
+      const nowIso = now.toISOString();
+      const endMs = new Date(b.end).getTime();
+
+      // only confirmed slots can be marked completed:
+      if (b.status !== "confirmed") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Slot is not confirmed yet.",
+        });
+      }
+
+      // only past slots can be marked completed:
+      if (!Number.isFinite(endMs) || endMs > now.getTime()) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Slot has not ended yet.",
+        });
+      }
 
       // Idempotency: already completed → ok (optionally backfill timestamp)
       if (ss === "completed") {
@@ -877,7 +895,7 @@ export const bookingRouter = createTRPCRouter({
       z.object({
         bookingId: z.string().min(1),
         reason: z.string().min(1).max(500).optional(),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       const clerkUserId = ctx.userId;
