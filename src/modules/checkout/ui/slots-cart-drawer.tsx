@@ -16,10 +16,8 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
-
 import { useTRPC } from "@/trpc/client";
 import { TRPCClientError } from "@trpc/client";
-
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Select,
@@ -29,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
-const NONE = "__none__";
+
 import { toast } from "sonner";
 import { BOOKING_CH, TERMS_VERSION } from "@/constants";
 import { platformHomeHref } from "@/lib/utils";
@@ -38,6 +36,7 @@ import { CartDrawerCustomerInfo } from "@/modules/checkout/ui/cart-drawer-custom
 import { PaymentMethodSetup } from "@/modules/payments/ui/payment-method-setup";
 
 import type { User } from "@/payload-types";
+const NONE = "__none__";
 
 type CustomerSnapshot = Pick<
   User,
@@ -194,12 +193,20 @@ export function SlotsCartDrawer({
   });
 
   const runCheckout = async () => {
-    const slotIds = items.map((i) => i.id);
+    const cartItems = items.slice();
+    if (cartItems.length === 0) return;
+
+    if (cartItems.some((i) => !i.serviceId)) {
+      toast.error("Please select a service for every slot.");
+      return;
+    }
+
+    const slotIds = cartItems.map((i) => i.id);
     let booked = false;
 
     try {
       await bookSlots.mutateAsync({
-        items: items.map((i) => ({
+        items: cartItems.map((i) => ({
           bookingId: i.id,
           serviceId: i.serviceId as string,
         })),

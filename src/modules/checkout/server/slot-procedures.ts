@@ -181,6 +181,8 @@ export const slotCheckoutRouter = createTRPCRouter({
         Math.round((amountCents * COMMISSION_RATE_BPS) / 10000),
       );
 
+      const slotIds = bookings.map((b) => b.id);
+
       // Create slot-mode order (NO STRIPE FIELDS)
       const order = await ctx.db.create({
         collection: "orders",
@@ -196,7 +198,7 @@ export const slotCheckoutRouter = createTRPCRouter({
 
           user: payloadUserId,
           tenant: tenantId,
-          slots: bookings.map((b) => b.id),
+          slots: slotIds,
 
           // Store amount + fee for later (invoice calc consistency).
           amount: amountCents,
@@ -226,22 +228,74 @@ export const slotCheckoutRouter = createTRPCRouter({
       // IMPORTANT: since there is NO payment, bookings must become confirmed now.
       // Also set serviceStatus/paymentStatus for Stage-1 tracking.
       // (You already planned: confirmed + serviceStatus=scheduled + paymentStatus=unpaid)
-      await ctx.db.update({
-        collection: "bookings",
-        where: {
-          and: [
-            { id: { in: bookings.map((b) => b.id) } },
-            { status: { equals: "booked" } },
-            { customer: { equals: payloadUserId } },
-          ],
-        },
-        data: {
-          status: "confirmed",
-          serviceStatus: "scheduled",
-          paymentStatus: "unpaid",
-        },
-        overrideAccess: true,
-      });
+      let updatedCount: number | null = null;
+
+      try {
+        const updateRes = await ctx.db.update({
+          collection: "bookings",
+          where: {
+            and: [
+              { id: { in: slotIds } },
+              { status: { equals: "booked" } },
+              { customer: { equals: payloadUserId } },
+            ],
+          },
+          data: {
+            status: "confirmed",
+            serviceStatus: "scheduled",
+            paymentStatus: "unpaid",
+          },
+          overrideAccess: true,
+        });
+
+        // prevent creattion of orphant orders if some slots were not updated:
+        updatedCount = Array.isArray(updateRes?.docs)
+          ? updateRes.docs.length
+          : null;
+
+        if (updatedCount === null) {
+          const verify = await ctx.db.find({
+            collection: "bookings",
+            where: {
+              and: [
+                { id: { in: slotIds } },
+                { status: { equals: "confirmed" } },
+                { customer: { equals: payloadUserId } },
+              ],
+            },
+            limit: slotIds.length,
+            depth: 0,
+            overrideAccess: true,
+          });
+
+          updatedCount = verify.docs?.length ?? 0;
+        }
+      } catch (err) {
+        try {
+          await ctx.db.update({
+            collection: "orders",
+            id: order.id,
+            data: { status: "canceled" },
+            overrideAccess: true,
+          });
+        } catch {}
+
+        throw err;
+      }
+
+      if (updatedCount !== slotIds.length) {
+        await ctx.db.update({
+          collection: "orders",
+          id: order.id,
+          data: { status: "canceled" },
+          overrideAccess: true,
+        });
+
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Some slots changed while checking out. Please try again.",
+        });
+      }
 
       return { ok: true, orderId: order.id };
     }),

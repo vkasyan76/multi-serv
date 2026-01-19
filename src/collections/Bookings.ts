@@ -2,10 +2,7 @@ import type { CollectionConfig } from "payload";
 
 import { isSuperAdmin } from "../lib/access.ts";
 
-import {
-  BOOKING_SERVICE_STATUSES,
-  BOOKING_PAYMENT_STATUSES,
-} from "@/constants";
+import { SERVICE_STATUSES, BOOKING_PAYMENT_STATUSES } from "@/constants";
 
 export const Bookings: CollectionConfig = {
   slug: "bookings",
@@ -46,7 +43,7 @@ export const Bookings: CollectionConfig = {
     {
       name: "serviceStatus",
       type: "select",
-      options: [...BOOKING_SERVICE_STATUSES],
+      options: [...SERVICE_STATUSES],
       defaultValue: "scheduled",
       required: false, // keep false for Phase 0 (avoid breaking existing docs)
       index: true,

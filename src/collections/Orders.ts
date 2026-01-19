@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { isSuperAdmin } from "../lib/access.ts";
+import { SERVICE_STATUSES } from "@/constants";
 
 export const Orders: CollectionConfig = {
   slug: "orders",
@@ -49,7 +50,7 @@ export const Orders: CollectionConfig = {
       type: "select",
       required: true,
       defaultValue: "scheduled",
-      options: ["scheduled", "completed", "accepted", "disputed"],
+      options: [...SERVICE_STATUSES],
       index: true,
       admin: {
         description:

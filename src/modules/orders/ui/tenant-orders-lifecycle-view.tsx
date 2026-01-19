@@ -24,7 +24,7 @@ export function TenantOrdersLifecycleView() {
   if (orders.length === 0) {
     return (
       <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        As soon as you receieve any orders from your customers, they will appear
+        As soon as you receive any orders from your customers, they will appear
         in this section.
       </div>
     );
