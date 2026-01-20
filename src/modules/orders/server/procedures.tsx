@@ -331,10 +331,17 @@ export const ordersRouter = createTRPCRouter({
     listMineSlotLifecycleImpl(ctx),
   ),
 
-  // Stage 1C: Tenant slot-lifecycle view
-  listForMyTenantSlotLifecycle: baseProcedure.query(({ ctx }) =>
-    listForMyTenantSlotLifecycleImpl(ctx),
-  ),
+  // Stage 1C: Tenant slot-lifecycle view imported from the order-rollup.Tenant orders lifecycle with pagination.
+  listForMyTenantSlotLifecycle: baseProcedure
+    .input(
+      z
+        .object({
+          page: z.number().int().min(1).optional(),
+          limit: z.number().int().min(1).max(100).optional(),
+        })
+        .optional(),
+    )
+    .query(({ ctx, input }) => listForMyTenantSlotLifecycleImpl(ctx, input)),
   // check if customer has any orders:
   // NEW: show Orders button for slot-lifecycle orders (any status) - above we have hasAnyPaidMine
   hasAnyMineSlotLifecycle: baseProcedure.query(async ({ ctx }) => {

@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { resolvePayloadUserId } from "./identity";
 import type { Booking, Order } from "@/payload-types";
 import type { TRPCContext } from "@/trpc/init";
+import { DEFAULT_LIMIT } from "@/constants";
 
 type DocWithId<T> = T & { id: string };
 type CtxLike = Pick<TRPCContext, "db" | "userId">; // for Stage 1C queries we also need ctx.userId
@@ -26,7 +27,7 @@ function normalizeServiceStatus(ss: unknown): ServiceStatus {
  */
 async function resolveMyTenantId(
   ctx: Pick<TRPCContext, "db">,
-  clerkUserId: string
+  clerkUserId: string,
 ): Promise<string> {
   const payloadUserId = await resolvePayloadUserId(ctx, clerkUserId);
 
@@ -100,12 +101,20 @@ export async function listMineSlotLifecycle(ctx: CtxLike) {
 
 /**
  * NEW: Tenant list query for Stage 1C.
- * Returns order.user summary so tenant can see who the customer is.
+ * Returns paginated order.user summary so tenant can see who the customer is.
+ * Pagination is done at the DB level (Payload find supports page/limit + metadata).
+ * We sort by -createdAt for stable paging; UI can re-sort within the page if needed.
  */
-export async function listForMyTenantSlotLifecycle(ctx: CtxLike) {
+export async function listForMyTenantSlotLifecycle(
+  ctx: CtxLike,
+  input?: { page?: number; limit?: number },
+) {
   if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
   const tenantId = await resolveMyTenantId(ctx, ctx.userId);
+
+  const page = Math.max(input?.page ?? 1, 1);
+  const limit = Math.min(Math.max(input?.limit ?? DEFAULT_LIMIT, 1), 100);
 
   const res = (await ctx.db.find({
     collection: "orders",
@@ -116,12 +125,20 @@ export async function listForMyTenantSlotLifecycle(ctx: CtxLike) {
       ],
     },
     sort: "-createdAt",
-    limit: 50,
+    page,
+    limit,
     depth: 1, // populate slots + user (best-effort)
     overrideAccess: true,
-  })) as { docs?: Array<DocWithId<Order>> };
+  })) as {
+    docs?: Array<DocWithId<Order>>;
+    page?: number;
+    totalPages?: number;
+    totalDocs?: number;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+  };
 
-  return (res.docs ?? []).map((o) => {
+  const items = (res.docs ?? []).map((o) => {
     const slots = mapSlotsFromOrder(o);
 
     const userId = typeof o.user === "string" ? o.user : o.user.id;
@@ -139,6 +156,15 @@ export async function listForMyTenantSlotLifecycle(ctx: CtxLike) {
       slots,
     };
   });
+
+  return {
+    items,
+    page: res.page ?? page,
+    totalPages: res.totalPages ?? 1,
+    totalDocs: res.totalDocs ?? items.length,
+    hasNextPage: res.hasNextPage ?? false,
+    hasPrevPage: res.hasPrevPage ?? false,
+  };
 }
 
 /**
@@ -147,7 +173,7 @@ export async function listForMyTenantSlotLifecycle(ctx: CtxLike) {
 
 export async function recomputeOrdersForBookingId(
   ctx: DbOnlyCtx,
-  bookingId: string
+  bookingId: string,
 ) {
   const found = await ctx.db.find({
     collection: "orders",
@@ -188,7 +214,7 @@ export async function recomputeOrdersForBookingId(
     const anyDisputed = statuses.includes("disputed");
     const allAccepted = statuses.every((s) => s === "accepted");
     const allCompleted = statuses.every(
-      (s) => s === "completed" || s === "accepted"
+      (s) => s === "completed" || s === "accepted",
     );
 
     const next = anyDisputed

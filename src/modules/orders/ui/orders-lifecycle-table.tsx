@@ -1,6 +1,5 @@
 "use client";
-
-import * as React from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
@@ -29,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Booking, Order } from "@/payload-types";
+import { toast } from "sonner";
 
 type Mode = "customer" | "tenant";
 
@@ -157,25 +157,30 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 }
 
 export function OrdersLifecycleTable({ mode, orders }: Props) {
-  const [open, setOpen] = React.useState<Record<string, boolean>>({});
-  const [sort, setSort] = React.useState<{ key: SortKey; dir: SortDir }>({
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
     key: "date",
-    dir: "asc",
+    dir: "desc",
   });
   const trpc = useTRPC();
   const qc = useQueryClient();
   const nowMs = Date.now();
 
+  // Invalidate list query broadly so all pages refresh after a slot status mutation.
   const markSlotCompleted = useMutation({
     ...trpc.bookings.vendorMarkCompleted.mutationOptions(),
     onSuccess: async () => {
+      toast.success("Slot marked as completed.");
       await qc.invalidateQueries({
         queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
       });
     },
+    onError: (err) => {
+      toast.error(err.message || "Failed to update slot.");
+    },
   });
 
-  const sortedOrders = React.useMemo(() => {
+  const sortedOrders = useMemo(() => {
     const list = [...(orders ?? [])];
 
     list.sort((a, b) => {
@@ -239,177 +244,183 @@ export function OrdersLifecycleTable({ mode, orders }: Props) {
     <div className="max-h-[70vh] overflow-auto rounded-lg border bg-background">
       <Table>
         <TableHeader className="sticky top-0 z-10 bg-background border-b">
-        <TableRow>
-          <TableHead className="w-11" />
-          <TableHead>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="px-0"
-              onClick={() => toggleSort("name")}
-            >
-              {mode === "customer" ? "Provider" : "Customer"}
-              <SortIcon active={sort.key === "name"} dir={sort.dir} />
-            </Button>
-          </TableHead>
-          <TableHead>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="px-0"
-              onClick={() => toggleSort("date")}
-            >
-              Date range
-              <SortIcon active={sort.key === "date"} dir={sort.dir} />
-            </Button>
-          </TableHead>
-          <TableHead>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="px-0"
-              onClick={() => toggleSort("status")}
-            >
-              Status
-              <SortIcon active={sort.key === "status"} dir={sort.dir} />
-            </Button>
-          </TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
+          <TableRow>
+            <TableHead className="w-11" />
+            <TableHead>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0"
+                onClick={() => toggleSort("name")}
+              >
+                {mode === "customer" ? "Provider" : "Customer"}
+                <SortIcon active={sort.key === "name"} dir={sort.dir} />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0"
+                onClick={() => toggleSort("date")}
+              >
+                Date range
+                <SortIcon active={sort.key === "date"} dir={sort.dir} />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0"
+                onClick={() => toggleSort("status")}
+              >
+                Status
+                <SortIcon active={sort.key === "status"} dir={sort.dir} />
+              </Button>
+            </TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
 
-      <TableBody>
-        {(sortedOrders ?? []).map((o) => {
-          const isOpen = !!open[o.id];
-          const range = getDateRange(o.slots ?? []);
+        <TableBody>
+          {(sortedOrders ?? []).map((o) => {
+            const isOpen = !!open[o.id];
+            const range = getDateRange(o.slots ?? []);
 
-          const label =
-            mode === "customer"
-              ? getProviderLabel(o)
-              : getCustomerLabel(o as OrdersLifecycleTenantRow);
+            const label =
+              mode === "customer"
+                ? getProviderLabel(o)
+                : getCustomerLabel(o as OrdersLifecycleTenantRow);
 
-          return (
-            <React.Fragment key={o.id}>
-              {/* summary row */}
-              <TableRow>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => toggle(o.id)}
-                    aria-label={isOpen ? "Collapse order" : "Expand order"}
-                  >
-                    {isOpen ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TableCell>
-
-                <TableCell className="font-medium">{label}</TableCell>
-                <TableCell>{range}</TableCell>
-
-                <TableCell>
-                  <Badge variant={statusBadgeVariant(o.serviceStatus)}>
-                    {o.serviceStatus}
-                  </Badge>
-                </TableCell>
-
-                <TableCell className="text-right text-muted-foreground">
-                  {/* Stage 2 keeps this empty; Stage 3 will add buttons */}—
-                </TableCell>
-              </TableRow>
-
-              {/* expanded panel */}
-              {isOpen && (
+            return (
+              <Fragment key={o.id}>
+                {/* summary row */}
                 <TableRow>
-                  <TableCell colSpan={5} className="bg-muted/30">
-                    <div className="py-2">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date/time</TableHead>
-                            <TableHead>Service</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">
-                              Actions
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggle(o.id)}
+                      aria-label={isOpen ? "Collapse order" : "Expand order"}
+                    >
+                      {isOpen ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableCell>
 
-                        <TableBody>
-                          {(o.slots ?? []).map((s) => {
-                            const endMs = new Date(s.end ?? s.start).getTime();
-                            const canCompleteNow =
-                              Number.isFinite(endMs) && endMs <= nowMs;
-                            const isScheduled = s.serviceStatus === "scheduled";
-                            const showSelect = mode === "tenant" && isScheduled;
-                            const disableSelect =
-                              !canCompleteNow || markSlotCompleted.isPending;
+                  <TableCell className="font-medium">{label}</TableCell>
+                  <TableCell>{range}</TableCell>
 
-                            return (
-                              <TableRow key={s.id}>
-                                <TableCell>{formatDateTime(s.start)}</TableCell>
-                                <TableCell>
-                                  {s.serviceSnapshot?.serviceName ?? "—"}
-                                </TableCell>
-                                <TableCell>
-                                  {showSelect ? (
-                                    <Select
-                                      value={s.serviceStatus}
-                                      onValueChange={(value) => {
-                                        if (value !== "completed") return;
-                                        if (disableSelect) return;
-                                        markSlotCompleted.mutate({
-                                          bookingId: s.id,
-                                        });
-                                      }}
-                                      disabled={disableSelect}
-                                    >
-                                      <SelectTrigger className="w-40">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="scheduled">
-                                          scheduled
-                                        </SelectItem>
-                                        <SelectItem value="completed">
-                                          completed
-                                        </SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  ) : (
-                                    <Badge
-                                      variant={statusBadgeVariant(
-                                        s.serviceStatus,
-                                      )}
-                                    >
-                                      {s.serviceStatus}
-                                    </Badge>
-                                  )}
-                                  {s.serviceStatus === "disputed" &&
-                                  s.disputeReason ? (
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                      {s.disputeReason}
-                                    </div>
-                                  ) : null}
-                                </TableCell>
-                                <TableCell className="text-right text-muted-foreground">
-                                  {/* Stage 3 adds per-slot actions */}—
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
+                  <TableCell>
+                    <Badge variant={statusBadgeVariant(o.serviceStatus)}>
+                      {o.serviceStatus}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell className="text-right text-muted-foreground">
+                    {/* Stage 2 keeps this empty; Stage 3 will add buttons */}—
                   </TableCell>
                 </TableRow>
-              )}
-            </React.Fragment>
-          );
-        })}
+
+                {/* expanded panel */}
+                {isOpen && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="bg-muted/30">
+                      <div className="py-2">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date/time</TableHead>
+                              <TableHead>Service</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">
+                                Actions
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+
+                          <TableBody>
+                            {(o.slots ?? []).map((s) => {
+                              const endMs = new Date(
+                                s.end ?? s.start,
+                              ).getTime();
+                              const canCompleteNow =
+                                Number.isFinite(endMs) && endMs <= nowMs;
+                              const isScheduled =
+                                s.serviceStatus === "scheduled";
+                              const showSelect =
+                                mode === "tenant" && isScheduled;
+                              const disableSelect =
+                                !canCompleteNow || markSlotCompleted.isPending;
+
+                              return (
+                                <TableRow key={s.id}>
+                                  <TableCell>
+                                    {formatDateTime(s.start)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {s.serviceSnapshot?.serviceName ?? "—"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {showSelect ? (
+                                      <Select
+                                        value={s.serviceStatus}
+                                        onValueChange={(value) => {
+                                          if (value !== "completed") return;
+                                          if (disableSelect) return;
+                                          markSlotCompleted.mutate({
+                                            bookingId: s.id,
+                                          });
+                                        }}
+                                        disabled={disableSelect}
+                                      >
+                                        <SelectTrigger className="w-40">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="scheduled">
+                                            scheduled
+                                          </SelectItem>
+                                          <SelectItem value="completed">
+                                            completed
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <Badge
+                                        variant={statusBadgeVariant(
+                                          s.serviceStatus,
+                                        )}
+                                      >
+                                        {s.serviceStatus}
+                                      </Badge>
+                                    )}
+                                    {s.serviceStatus === "disputed" &&
+                                    s.disputeReason ? (
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {s.disputeReason}
+                                      </div>
+                                    ) : null}
+                                  </TableCell>
+                                  <TableCell className="text-right text-muted-foreground">
+                                    {/* Stage 3 adds per-slot actions */}—
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
