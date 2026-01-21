@@ -28,6 +28,12 @@ import { getLocaleAndCurrency } from "@/modules/profile/location-utils";
 import CalendarNav from "@/modules/bookings/ui/CalendarNav";
 import { CalendarLegend } from "./CalendarLegend";
 import { BOOKING_CH } from "@/constants";
+import {
+  AVAILABLE_STATUS_META,
+  getServiceStatusColorHex,
+  getServiceStatusLabel,
+  normalizeServiceStatus,
+} from "./service-status";
 
 import {
   rbcLocalizer,
@@ -83,6 +89,7 @@ type Props = {
   selectForBooking?: boolean; // default false - controls if slots can be selected for booking
   selectedIds?: string[]; // default [] - list of selected booking IDs
   onToggleSelect?: (id: string) => void; // callback to toggle selection
+  onReady?: () => void; // signals parent once calendar is mounted
   onAvailabilityChange?: (v: {
     hasAvailableSlots: boolean;
     hasAnyAvailableSlots: boolean;
@@ -129,6 +136,7 @@ export default function TenantCalendar({
   selectForBooking = false,
   selectedIds = [],
   onToggleSelect,
+  onReady,
   onAvailabilityChange,
 }: Props) {
   const trpc = useTRPC();
@@ -142,7 +150,7 @@ export default function TenantCalendar({
   // Get culture from profile utility (consistent with rest of app)
   const culture = useMemo(
     () => getCultureFromProfile(getLocaleAndCurrency),
-    []
+    [],
   );
 
   // Get Intl formatters for tooltips (consistent with RBC localization)
@@ -179,12 +187,14 @@ export default function TenantCalendar({
     return () => clearInterval(id);
   }, []);
 
+  const readySentRef = useRef(false);
+
   /** Future-only (with optional lead time) */
   const canCreateAt = useCallback(
     (start: Date) => {
       return start.getTime() >= nowTick + LEAD_MS;
     },
-    [nowTick]
+    [nowTick],
   );
 
   // Snap to hour, enforce 1h duration, disallow 23:00 starts
@@ -195,7 +205,7 @@ export default function TenantCalendar({
       const e = addHours(s, 1);
       return { s, e };
     },
-    []
+    [],
   );
 
   // We keep activeView for the calendar UI, but we stop shrinking the fetch range to a single day on mobile.
@@ -213,7 +223,7 @@ export default function TenantCalendar({
 
   // Load tenant (to get tenantId for creating slots)
   const tenantQ = useQuery(
-    trpc.tenants.getOne.queryOptions({ slug: tenantSlug })
+    trpc.tenants.getOne.queryOptions({ slug: tenantSlug }),
   );
 
   // NEW: Listen for broadcast messages from other tabs
@@ -242,7 +252,7 @@ export default function TenantCalendar({
             from: range.start.toISOString(),
             to: range.end.toISOString(),
           }),
-          (prev: Booking[] | undefined) => prev?.filter((b) => b.id !== d.id)
+          (prev: Booking[] | undefined) => prev?.filter((b) => b.id !== d.id),
         );
 
         // If on dashboard, also update the mine query
@@ -254,7 +264,7 @@ export default function TenantCalendar({
               to: range.end.toISOString(),
             }),
             (prev: BookingWithName[] | undefined) =>
-              prev?.filter((b) => b.id !== d.id)
+              prev?.filter((b) => b.id !== d.id),
           );
         }
       }
@@ -275,8 +285,8 @@ export default function TenantCalendar({
           queryClient.setQueryData<BookingWithName[]>(
             key,
             arr.map((b) =>
-              b.id === d.id ? { ...b, start: d.start, end: d.end } : b
-            )
+              b.id === d.id ? { ...b, start: d.start, end: d.end } : b,
+            ),
           );
         }
       }
@@ -327,6 +337,7 @@ export default function TenantCalendar({
 
   // Decide data source (dashboard vs public)
   const useMineQuery = dashboardMode;
+  const isPublic = !useMineQuery; // a key for always re-fetch the slots when the calendar mounts, and treat cached data as immediately stale (avoids showing empty calendar in the tenant public page)
 
   // Load slots for the visible range - branch between dashboard and public views
   const baseOpts = useMineQuery
@@ -349,11 +360,31 @@ export default function TenantCalendar({
     refetchOnWindowFocus: false,
     // tiny payloads; 5s is smooth on dashboard, 60s is fine on public
     refetchInterval: useMineQuery ? 5000 : 60000,
-    // helps avoid redundant re-fetches
-    staleTime: 30_000,
+    // Public tenant pages can mount before auth settles; don't stick to an empty cache.
+    refetchOnMount: isPublic ? "always" : false,
+    staleTime: isPublic ? 0 : 30_000,
     // only require tenantId when we are using listMine
     enabled: !useMineQuery || !!tenantQ.data?.id,
   });
+
+  useEffect(() => {
+    if (!onReady || readySentRef.current) return;
+    if (tenantQ.isError) {
+      readySentRef.current = true;
+      onReady();
+      return;
+    }
+    if (!tenantQ.data) return;
+    if (!slotsQ.isSuccess && !slotsQ.isError) return;
+    readySentRef.current = true;
+    onReady();
+  }, [
+    onReady,
+    tenantQ.isError,
+    tenantQ.data,
+    slotsQ.isSuccess,
+    slotsQ.isError,
+  ]);
 
   // Notify parent of availability changes (for massage below the calendar in the tenant content):
 
@@ -413,13 +444,13 @@ export default function TenantCalendar({
         "Calendar range - UTC:",
         range.start.toISOString(),
         "to",
-        range.end.toISOString()
+        range.end.toISOString(),
       );
       console.log("Slots returned:", slotsQ.data?.length || 0);
 
       // Debug customer names for booked slots
       const oneBooked = (slotsQ.data ?? []).find(
-        (b) => b.status !== "available"
+        (b) => b.status !== "available",
       );
       if (oneBooked) {
         console.log("Booked sample:", {
@@ -445,7 +476,7 @@ export default function TenantCalendar({
         return bs < e && be > s;
       });
     },
-    [slotsQ.data]
+    [slotsQ.data],
   );
 
   // Double-click detection helpers
@@ -521,10 +552,10 @@ export default function TenantCalendar({
       const e = end.getTime();
       return items.some(
         (b: BookingWithName) =>
-          new Date(b.start).getTime() === s && new Date(b.end).getTime() === e
+          new Date(b.start).getTime() === s && new Date(b.end).getTime() === e,
       );
     },
-    [slotsQ.data]
+    [slotsQ.data],
   );
 
   // Query invalidation helper - invalidate both query types
@@ -634,7 +665,7 @@ export default function TenantCalendar({
         if (!data) continue;
         queryClient.setQueryData<BookingWithName[]>(
           key,
-          data.map((b) => (b.id === bookingId ? { ...b, start, end } : b))
+          data.map((b) => (b.id === bookingId ? { ...b, start, end } : b)),
         );
       }
 
@@ -702,7 +733,8 @@ export default function TenantCalendar({
     const b = event.resource; // typed as BookingWithName
     if (b.status === "available") return null; // green blocks stay clean
 
-    const who = displayName(b) ?? "Booked";
+    // Show customer name in the tenat dashboard and service status on public calendar
+    const who = displayName(b) ?? getServiceStatusLabel(b.serviceStatus);
 
     return <div className="rbc-dash-ev truncate">{who}</div>;
   };
@@ -724,13 +756,17 @@ export default function TenantCalendar({
         }
       })
       .map((b) => {
-        const bookedTitle = dashboardMode
-          ? (displayName(b as BookingWithName) ?? "Booked")
-          : "Booked";
+        const statusLabel = getServiceStatusLabel(b.serviceStatus);
+        const eventTitle =
+          b.status === "available"
+            ? ""
+            : dashboardMode
+              ? (displayName(b as BookingWithName) ?? statusLabel)
+              : statusLabel;
 
         return {
           id: b.id,
-          title: b.status === "available" ? "" : bookedTitle,
+          title: eventTitle,
           start: new Date(b.start),
           end: new Date(b.end),
           resource: b as BookingWithName,
@@ -747,7 +783,7 @@ export default function TenantCalendar({
 
       onToggleSelect(event.id);
     },
-    [selectForBooking, onToggleSelect]
+    [selectForBooking, onToggleSelect],
   );
 
   // Color-code events and tag by status for CSS styling
@@ -770,23 +806,27 @@ export default function TenantCalendar({
         return {
           className: "ev-available",
           style: {
-            backgroundColor: "#86efac",
+            backgroundColor: AVAILABLE_STATUS_META.hex,
             border: "none",
             color: "#111827",
           },
         };
       } else {
+        const status = normalizeServiceStatus(event.resource.serviceStatus);
+        const labelColor = status === "accepted" ? "#ffffff" : "#111827";
         return {
-          className: "ev-booked",
+          className: `ev-status ev-${status}`,
           style: {
-            backgroundColor: "#fbbf24",
+            backgroundColor: getServiceStatusColorHex(
+              event.resource.serviceStatus,
+            ),
             border: "none",
-            color: "#111827",
+            color: labelColor,
           },
         };
       }
     },
-    [selectForBooking, selectedIds]
+    [selectForBooking, selectedIds],
   );
 
   // Visually mute past hours and disable 23:00 slots
@@ -819,7 +859,7 @@ export default function TenantCalendar({
 
       return {};
     },
-    [nowTick]
+    [nowTick],
   );
 
   // Localized tooltip - concise format without time duplication
@@ -829,20 +869,21 @@ export default function TenantCalendar({
         // Just show day and status (time already shown by RBC)
         return `Available - ${dateFmt.format(e.start)}`;
       } else {
-        // For booked events, show customer name on dashboard, "Booked" on public
+        // For booked events, show customer name on dashboard, status on public
+        const statusLabel = getServiceStatusLabel(e.resource.serviceStatus);
         const who = dashboardMode
-          ? (displayName(e.resource as BookingWithName) ?? "Booked")
-          : "Booked";
+          ? (displayName(e.resource as BookingWithName) ?? statusLabel)
+          : statusLabel;
         return `${who} - ${dateFmt.format(e.start)}`;
       }
     },
-    [dateFmt, dashboardMode, displayName]
+    [dateFmt, dashboardMode, displayName],
   );
 
   // DnD accessors - only "available" slots can be dragged/resized
   const draggableAccessor = useCallback(
     (e: RbcEvent): boolean => e.resource.status === "available",
-    []
+    [],
   );
   const resizableAccessor = draggableAccessor;
 
@@ -869,7 +910,7 @@ export default function TenantCalendar({
         // Error handled by mutation onError
       }
     },
-    [moveSlot, canCreateAt, existingHasRangeExcluding, normalizeHourMove]
+    [moveSlot, canCreateAt, existingHasRangeExcluding, normalizeHourMove],
   );
 
   // Resize handler (we still normalize to 1h; if later you allow variable lengths, use `end` from args)
@@ -895,7 +936,7 @@ export default function TenantCalendar({
         // Error handled by mutation onError
       }
     },
-    [moveSlot, canCreateAt, existingHasRangeExcluding, normalizeHourMove]
+    [moveSlot, canCreateAt, existingHasRangeExcluding, normalizeHourMove],
   );
 
   // Handle slot selection - single-then-double logic
@@ -1005,7 +1046,7 @@ export default function TenantCalendar({
       existingHasRange,
       canCreateAt,
       isMobile,
-    ]
+    ],
   );
 
   // Handle double-click on existing event to remove slot (immediate action)
@@ -1041,7 +1082,7 @@ export default function TenantCalendar({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectForBooking, removeSlot]
+    [selectForBooking, removeSlot],
   );
 
   // Handle single-click event selection for removal or booking
@@ -1092,7 +1133,13 @@ export default function TenantCalendar({
         inFlightEventIds.current.delete(event.id);
       }
     },
-    [selectForBooking, onToggleSelect, handleSlotSelect, isMutating, removeSlot]
+    [
+      selectForBooking,
+      onToggleSelect,
+      handleSlotSelect,
+      isMutating,
+      removeSlot,
+    ],
   );
 
   if (tenantQ.isLoading) {
@@ -1228,19 +1275,36 @@ export default function TenantCalendar({
       {/* Dashboard-specific CSS for balanced padding */}
       {dashboardMode && (
         <style jsx global>{`
-          /* Add balanced padding to the name line */
-          .calendar--dashboard .ev-booked .rbc-event-content {
-            padding: 4px 6px; /* top/bottom + left/right */
-            display: flex;
-            align-items: center; /* vertically center the single line */
+          /* Match the old dashboard styling for booked slots */
+          .calendar--dashboard .ev-status.rbc-event {
+            padding: 0 !important;
+            overflow: hidden;
           }
-          /* Optional: a little space between label (time) and content (name) */
-          .calendar--dashboard .ev-booked .rbc-event-label {
-            margin-bottom: 2px;
+          .calendar--dashboard .ev-status .rbc-event-label {
+            padding: 3px 6px 0;
+            margin: 0;
+            line-height: 1.15;
+            font-size: 12px;
           }
-          /* If your custom content uses a helper class */
-          .calendar--dashboard .rbc-dash-ev {
-            line-height: 1.1;
+          .calendar--dashboard .ev-status .rbc-event-content {
+            padding: 1px 6px 3px;
+            font-weight: 600;
+            font-size: 12px;
+            line-height: 1.15;
+            color: #ffffff;
+          }
+        `}</style>
+      )}
+      {!dashboardMode && (
+        <style jsx global>{`
+          .ev-status .rbc-event-content {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 11px;
+            line-height: 1rem;
+          }
+          .ev-status.ev-accepted .rbc-event-label {
+            color: #ffffff;
           }
         `}</style>
       )}

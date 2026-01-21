@@ -9,6 +9,13 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useTRPC } from "@/trpc/client";
+import { BOOKING_CH } from "@/constants";
+import type { NormalizedServiceStatus } from "@/modules/bookings/ui/service-status";
+import {
+  normalizeServiceStatus,
+  SERVICE_STATUS_COLORS,
+  SERVICE_STATUS_LABELS,
+} from "@/modules/bookings/ui/service-status";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,9 +69,40 @@ type Props = {
 type SortKey = "date" | "name" | "status";
 type SortDir = "asc" | "desc";
 
-function statusBadgeVariant(s: ServiceStatus) {
-  // keep it simple (you can style variants later)
-  return s === "disputed" ? "destructive" : "secondary";
+function statusTextClass(s: NormalizedServiceStatus) {
+  return s === "accepted" ? "text-white" : "text-slate-900";
+}
+
+function StatusBadge({ value }: { value: ServiceStatus }) {
+  const st = normalizeServiceStatus(value);
+  return (
+    <Badge
+      variant="secondary"
+      className={`border-0 ${SERVICE_STATUS_COLORS[st].className} ${statusTextClass(st)}`}
+    >
+      {SERVICE_STATUS_LABELS[st]}
+    </Badge>
+  );
+}
+
+function StatusSelectItem({
+  value,
+  disabled,
+}: {
+  value: NormalizedServiceStatus;
+  disabled?: boolean;
+}) {
+  return (
+    <SelectItem value={value} disabled={disabled}>
+      <span className="flex items-center gap-2">
+        <span
+          className={`inline-block h-2 w-2 shrink-0 rounded-full ${SERVICE_STATUS_COLORS[value].className}`}
+          aria-hidden="true"
+        />
+        {SERVICE_STATUS_LABELS[value]}
+      </span>
+    </SelectItem>
+  );
 }
 
 function formatDateTime(iso: string) {
@@ -166,17 +204,87 @@ export function OrdersLifecycleTable({ mode, orders }: Props) {
   const qc = useQueryClient();
   const nowMs = Date.now();
 
+  const findTenantSlugForBooking = (bookingId: string) => {
+    for (const order of orders ?? []) {
+      const match = order.slots?.find((slot) => slot.id === bookingId);
+      const slug = match?.serviceSnapshot?.tenantSlug;
+      if (slug) return slug;
+    }
+    return undefined;
+  };
+
+  // updating the calendar when service status changes:
+  const broadcastBookingUpdated = (tenantSlug: string, bookingId: string) => {
+    if (typeof window === "undefined" || !("BroadcastChannel" in window)) {
+      return;
+    }
+    try {
+      const ch = new BroadcastChannel(BOOKING_CH);
+      ch.postMessage({
+        type: "booking:updated",
+        tenantSlug,
+        ids: [bookingId],
+        ts: Date.now(),
+      });
+      ch.close();
+    } catch {}
+  };
+
   // Invalidate list query broadly so all pages refresh after a slot status mutation.
   const markSlotCompleted = useMutation({
     ...trpc.bookings.vendorMarkCompleted.mutationOptions(),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
       toast.success("Slot marked as completed.");
+      if (mode === "tenant") {
+        const tenantSlug = findTenantSlugForBooking(variables.bookingId);
+        if (tenantSlug) {
+          broadcastBookingUpdated(tenantSlug, variables.bookingId);
+        }
+      }
       await qc.invalidateQueries({
         queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
       });
     },
     onError: (err) => {
       toast.error(err.message || "Failed to update slot.");
+    },
+  });
+
+  const acceptSlot = useMutation({
+    ...trpc.bookings.customerAcceptSlot.mutationOptions(),
+    onSuccess: async (_data, variables) => {
+      toast.success("Slot accepted.");
+      if (mode === "customer") {
+        const tenantSlug = findTenantSlugForBooking(variables.bookingId);
+        if (tenantSlug) {
+          broadcastBookingUpdated(tenantSlug, variables.bookingId);
+        }
+      }
+      await qc.invalidateQueries({
+        queryKey: trpc.orders.listMineSlotLifecycle.queryKey(),
+      });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to accept slot.");
+    },
+  });
+
+  const disputeSlot = useMutation({
+    ...trpc.bookings.customerDisputeSlot.mutationOptions(),
+    onSuccess: async (_data, variables) => {
+      toast.success("Dispute submitted.");
+      if (mode === "customer") {
+        const tenantSlug = findTenantSlugForBooking(variables.bookingId);
+        if (tenantSlug) {
+          broadcastBookingUpdated(tenantSlug, variables.bookingId);
+        }
+      }
+      await qc.invalidateQueries({
+        queryKey: trpc.orders.listMineSlotLifecycle.queryKey(),
+      });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to dispute slot.");
     },
   });
 
@@ -316,9 +424,7 @@ export function OrdersLifecycleTable({ mode, orders }: Props) {
                   <TableCell>{range}</TableCell>
 
                   <TableCell>
-                    <Badge variant={statusBadgeVariant(o.serviceStatus)}>
-                      {o.serviceStatus}
-                    </Badge>
+                    <StatusBadge value={o.serviceStatus} />
                   </TableCell>
 
                   <TableCell className="text-right text-muted-foreground">
@@ -352,10 +458,15 @@ export function OrdersLifecycleTable({ mode, orders }: Props) {
                                 Number.isFinite(endMs) && endMs <= nowMs;
                               const isScheduled =
                                 s.serviceStatus === "scheduled";
-                              const showSelect =
+                              const showTenantSelect =
                                 mode === "tenant" && isScheduled;
-                              const disableSelect =
+                              const disableTenantSelect =
                                 !canCompleteNow || markSlotCompleted.isPending;
+                              const showCustomerSelect =
+                                mode === "customer" &&
+                                s.serviceStatus === "completed";
+                              const disableCustomerSelect =
+                                acceptSlot.isPending || disputeSlot.isPending;
 
                               return (
                                 <TableRow key={s.id}>
@@ -366,38 +477,65 @@ export function OrdersLifecycleTable({ mode, orders }: Props) {
                                     {s.serviceSnapshot?.serviceName ?? "—"}
                                   </TableCell>
                                   <TableCell>
-                                    {showSelect ? (
+                                    {showTenantSelect ? (
                                       <Select
                                         value={s.serviceStatus}
                                         onValueChange={(value) => {
                                           if (value !== "completed") return;
-                                          if (disableSelect) return;
+                                          if (disableTenantSelect) return;
                                           markSlotCompleted.mutate({
                                             bookingId: s.id,
                                           });
                                         }}
-                                        disabled={disableSelect}
+                                        disabled={disableTenantSelect}
                                       >
                                         <SelectTrigger className="w-40">
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="scheduled">
-                                            scheduled
-                                          </SelectItem>
-                                          <SelectItem value="completed">
-                                            completed
-                                          </SelectItem>
+                                          <StatusSelectItem value="scheduled" />
+                                          <StatusSelectItem value="completed" />
+                                        </SelectContent>
+                                      </Select>
+                                    ) : showCustomerSelect ? (
+                                      <Select
+                                        value={s.serviceStatus}
+                                        onValueChange={(value) => {
+                                          if (value === "accepted") {
+                                            acceptSlot.mutate({
+                                              bookingId: s.id,
+                                            });
+                                            return;
+                                          }
+                                          if (value === "disputed") {
+                                            const reason = window
+                                              .prompt(
+                                                "Reason for dispute (optional)",
+                                              )
+                                              ?.trim();
+                                            if (reason === undefined) return;
+                                            disputeSlot.mutate({
+                                              bookingId: s.id,
+                                              reason: reason || undefined,
+                                            });
+                                          }
+                                        }}
+                                        disabled={disableCustomerSelect}
+                                      >
+                                        <SelectTrigger className="w-40">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <StatusSelectItem
+                                            value="completed"
+                                            disabled
+                                          />
+                                          <StatusSelectItem value="accepted" />
+                                          <StatusSelectItem value="disputed" />
                                         </SelectContent>
                                       </Select>
                                     ) : (
-                                      <Badge
-                                        variant={statusBadgeVariant(
-                                          s.serviceStatus,
-                                        )}
-                                      >
-                                        {s.serviceStatus}
-                                      </Badge>
+                                      <StatusBadge value={s.serviceStatus} />
                                     )}
                                     {s.serviceStatus === "disputed" &&
                                     s.disputeReason ? (
