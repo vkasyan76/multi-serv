@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { Home } from "lucide-react";
 import {
   Tooltip,
@@ -9,8 +10,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CustomerOrdersLifecycleView } from "@/modules/orders/ui/customer-orders-lifecycle-view";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import {
+  type AppLang,
+  getInitialLanguage,
+  normalizeToSupported,
+} from "@/modules/profile/location-utils";
 
 export function CustomerSlotOrdersView() {
+  const trpc = useTRPC();
+  const profileQ = useQuery(trpc.auth.getUserProfile.queryOptions());
+  const appLang: AppLang = useMemo(() => {
+    const profileLang = profileQ.data?.language;
+    if (profileLang) return normalizeToSupported(profileLang);
+    return getInitialLanguage();
+  }, [profileQ.data?.language]);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Top bar */}
@@ -42,7 +58,7 @@ export function CustomerSlotOrdersView() {
 
       {/* Content */}
       <section className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10">
-        <CustomerOrdersLifecycleView />
+        <CustomerOrdersLifecycleView appLang={appLang} />
       </section>
     </div>
   );

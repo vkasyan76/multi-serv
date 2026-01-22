@@ -188,6 +188,9 @@ export default function TenantCalendar({
   }, []);
 
   const readySentRef = useRef(false);
+  useEffect(() => {
+    readySentRef.current = false;
+  }, [tenantSlug]);
 
   /** Future-only (with optional lead time) */
   const canCreateAt = useCallback(

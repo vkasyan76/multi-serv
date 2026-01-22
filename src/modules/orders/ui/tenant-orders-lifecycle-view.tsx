@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DEFAULT_LIMIT } from "@/constants";
 import { useTRPC } from "@/trpc/client";
 import { OrdersLifecycleTable } from "./orders-lifecycle-table";
+import { type AppLang, getInitialLanguage } from "@/modules/profile/location-utils";
 
 function pageWindow(current: number, total: number, size = 5) {
   const half = Math.floor(size / 2);
@@ -15,7 +16,7 @@ function pageWindow(current: number, total: number, size = 5) {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
-export function TenantOrdersLifecycleView() {
+export function TenantOrdersLifecycleView({ appLang }: { appLang?: AppLang }) {
   const trpc = useTRPC();
   const [page, setPage] = useState(1);
   const q = useQuery(
@@ -54,9 +55,15 @@ export function TenantOrdersLifecycleView() {
 
   const pages = totalPages > 1 ? pageWindow(page, totalPages, 5) : [];
 
+  const effectiveLang: AppLang = appLang ?? getInitialLanguage();
+
   return (
     <div className="space-y-3">
-      <OrdersLifecycleTable mode="tenant" orders={items} />
+      <OrdersLifecycleTable
+        mode="tenant"
+        orders={items}
+        appLang={effectiveLang}
+      />
 
       {totalPages > 1 ? (
         <div className="flex items-center justify-center gap-2">

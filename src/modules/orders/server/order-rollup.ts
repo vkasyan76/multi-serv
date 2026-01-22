@@ -93,6 +93,7 @@ export async function listMineSlotLifecycle(ctx: CtxLike) {
       id: o.id,
       createdAt: o.createdAt!,
       serviceStatus: o.serviceStatus as Order["serviceStatus"],
+      invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
       lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
       slots,
     };
@@ -147,6 +148,7 @@ export async function listForMyTenantSlotLifecycle(
       id: o.id,
       createdAt: o.createdAt!,
       serviceStatus: o.serviceStatus as Order["serviceStatus"],
+      invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
       lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
 
       // simplest + already available in Order type

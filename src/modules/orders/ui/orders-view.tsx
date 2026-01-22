@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useTRPC } from "@/trpc/client";
 import { Home, ExternalLink, MoreHorizontal } from "lucide-react";
 import {
@@ -35,8 +36,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Order, Booking } from "@/payload-types";
 
 import {
+  type AppLang,
   formatCurrency,
   formatDateForLocale,
+  getInitialLanguage,
+  getLocaleAndCurrency,
+  normalizeToSupported,
 } from "@/modules/profile/location-utils";
 
 type SlotRow = {
@@ -56,6 +61,18 @@ export function OrdersView() {
 
   // 1) Consistent: gate orders query by tRPC session (same as search-input.tsx)
   const session = useQuery(trpc.auth.session.queryOptions());
+  const profileQ = useQuery({
+    ...trpc.auth.getUserProfile.queryOptions(),
+    enabled: !!session.data?.user?.id,
+  });
+
+  const appLang: AppLang = useMemo(() => {
+    const profileLang = profileQ.data?.language;
+    if (profileLang) return normalizeToSupported(profileLang);
+    return getInitialLanguage();
+  }, [profileQ.data?.language]);
+
+  const { locale } = getLocaleAndCurrency(appLang);
 
   const q = useQuery({
     ...trpc.orders.listMine.queryOptions(),
@@ -134,7 +151,7 @@ export function OrdersView() {
         ) : slotRows.length === 0 ? (
           <EmptyState />
         ) : (
-          <OrdersTable rows={slotRows} />
+          <OrdersTable rows={slotRows} appLang={appLang} locale={locale} />
         )}
       </section>
     </div>
@@ -143,31 +160,39 @@ export function OrdersView() {
 
 /* ---------- Presentational pieces ---------- */
 
-function OrdersTable({ rows }: { rows: SlotRow[] }) {
+function OrdersTable({
+  rows,
+  appLang,
+  locale,
+}: {
+  rows: SlotRow[];
+  appLang: AppLang;
+  locale: string;
+}) {
   const whenLabel = (startISO: string) => {
     const date = formatDateForLocale(startISO, {
       weekday: "short",
       day: "numeric",
       month: "short",
       year: "numeric",
-    });
+    }, appLang);
 
-    const start = new Date(startISO).toLocaleTimeString(undefined, {
+    const start = new Intl.DateTimeFormat(locale, {
       hour: "2-digit",
       minute: "2-digit",
-    });
+    }).format(new Date(startISO));
     return `${date} ${start}`;
   };
 
   // date on small screens
   const whenLabelShort = (startISO: string) => {
     const d = new Date(startISO);
-    const date = d.toLocaleDateString(undefined, {
+    const date = d.toLocaleDateString(locale, {
       year: "2-digit",
       month: "2-digit",
       day: "2-digit",
     });
-    const time = d.toLocaleTimeString(undefined, {
+    const time = d.toLocaleTimeString(locale, {
       hour: "2-digit",
       minute: "2-digit",
     });
