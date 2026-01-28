@@ -74,6 +74,7 @@ export interface Config {
     tags: Tag;
     bookings: Booking;
     orders: Order;
+    invoices: Invoice;
     reviews: Review;
     conversations: Conversation;
     messages: Message;
@@ -95,6 +96,7 @@ export interface Config {
     tags: TagsSelect<false> | TagsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    invoices: InvoicesSelect<false> | InvoicesSelect<true>;
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
@@ -522,6 +524,67 @@ export interface Order {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices".
+ */
+export interface Invoice {
+  id: string;
+  order: string | Order;
+  tenant: string | Tenant;
+  customer: string | User;
+  status: 'draft' | 'issued' | 'overdue' | 'paid' | 'void';
+  currency: string;
+  /**
+   * Subtotal in minor units (cents).
+   */
+  amountSubtotalCents: number;
+  /**
+   * VAT amount in minor units (cents).
+   */
+  vatAmountCents: number;
+  /**
+   * Total in minor units (cents).
+   */
+  amountTotalCents: number;
+  sellerCountryISO: string;
+  sellerVatRegistered: boolean;
+  sellerVatId?: string | null;
+  /**
+   * VAT rate in basis points (e.g. 1900 = 19%).
+   */
+  vatRateBps: number;
+  sellerLegalName: string;
+  sellerAddressLine1: string;
+  sellerCity: string;
+  sellerPostal: string;
+  sellerEmail?: string | null;
+  buyerName: string;
+  buyerAddressLine1: string;
+  buyerCity: string;
+  buyerPostal: string;
+  buyerCountryISO: string;
+  buyerEmail?: string | null;
+  vatPolicy?: string | null;
+  lineItems?:
+    | {
+        slotId: string;
+        title: string;
+        qty: number;
+        unitAmountCents: number;
+        amountCents: number;
+        start: string;
+        end?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  stripeCheckoutSessionId?: string | null;
+  stripePaymentIntentId?: string | null;
+  issuedAt?: string | null;
+  paidAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "reviews".
  */
 export interface Review {
@@ -627,6 +690,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: string | Order;
+      } | null)
+    | ({
+        relationTo: 'invoices';
+        value: string | Invoice;
       } | null)
     | ({
         relationTo: 'reviews';
@@ -883,6 +950,54 @@ export interface OrdersSelect<T extends boolean = true> {
         stripeAccountId?: T;
       };
   lifecycleMode?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices_select".
+ */
+export interface InvoicesSelect<T extends boolean = true> {
+  order?: T;
+  tenant?: T;
+  customer?: T;
+  status?: T;
+  currency?: T;
+  amountSubtotalCents?: T;
+  vatAmountCents?: T;
+  amountTotalCents?: T;
+  sellerCountryISO?: T;
+  sellerVatRegistered?: T;
+  sellerVatId?: T;
+  vatRateBps?: T;
+  sellerLegalName?: T;
+  sellerAddressLine1?: T;
+  sellerCity?: T;
+  sellerPostal?: T;
+  sellerEmail?: T;
+  buyerName?: T;
+  buyerAddressLine1?: T;
+  buyerCity?: T;
+  buyerPostal?: T;
+  buyerCountryISO?: T;
+  buyerEmail?: T;
+  vatPolicy?: T;
+  lineItems?:
+    | T
+    | {
+        slotId?: T;
+        title?: T;
+        qty?: T;
+        unitAmountCents?: T;
+        amountCents?: T;
+        start?: T;
+        end?: T;
+        id?: T;
+      };
+  stripeCheckoutSessionId?: T;
+  stripePaymentIntentId?: T;
+  issuedAt?: T;
+  paidAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

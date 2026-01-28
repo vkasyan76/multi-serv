@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Home } from "lucide-react";
 import {
   Tooltip,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { CustomerOrdersLifecycleView } from "@/modules/orders/ui/customer-orders-lifecycle-view";
 import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type AppLang,
   getInitialLanguage,
@@ -20,12 +21,48 @@ import {
 
 export function CustomerSlotOrdersView() {
   const trpc = useTRPC();
+  const qc = useQueryClient();
   const profileQ = useQuery(trpc.auth.getUserProfile.queryOptions());
   const appLang: AppLang = useMemo(() => {
     const profileLang = profileQ.data?.language;
     if (profileLang) return normalizeToSupported(profileLang);
     return getInitialLanguage();
   }, [profileQ.data?.language]);
+
+  const router = useRouter();
+  const search = useSearchParams();
+  const invoiceSuccess = search.get("invoice") === "success";
+  const sessionId = search.get("session_id") || "";
+
+  const finalizeInvoice = useMutation({
+    ...trpc.invoices.finalizeFromSession.mutationOptions(),
+  });
+
+  const finalizeOnceRef = useRef(false);
+
+  useEffect(() => {
+    if (!invoiceSuccess || !sessionId || finalizeOnceRef.current) return;
+    finalizeOnceRef.current = true;
+
+    finalizeInvoice.mutate(
+      { sessionId },
+      {
+        onSuccess: async () => {
+          await qc.invalidateQueries({
+            queryKey: trpc.orders.listMineSlotLifecycle.queryKey(),
+          });
+          await qc.invalidateQueries({
+            queryKey: trpc.invoices.getForOrder.queryKey(),
+          });
+          router.replace("/orders");
+        },
+        onError: () => {
+          // allow retry on next render if needed
+          finalizeOnceRef.current = false;
+        },
+      },
+    );
+  }, [invoiceSuccess, sessionId, finalizeInvoice, qc, router, trpc.orders]);
 
   return (
     <div className="min-h-screen bg-white">

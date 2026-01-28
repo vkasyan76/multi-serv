@@ -1,13 +1,15 @@
-﻿"use client";
+"use client";
 import { Fragment, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   ChevronDown,
   ChevronRight,
+  MoreHorizontal,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 import { BOOKING_CH } from "@/constants";
 import type { NormalizedServiceStatus } from "@/modules/bookings/ui/service-status";
@@ -31,6 +33,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   TableBody,
   TableCell,
@@ -264,6 +273,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   });
   const trpc = useTRPC();
   const qc = useQueryClient();
+  const router = useRouter();
   const nowMs = Date.now();
 
   const findTenantSlugForBooking = (bookingId: string) => {
@@ -350,6 +360,35 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     },
   });
 
+  // Tenant issues invoice for an accepted order (pay-after-acceptance flow).
+  const issueInvoice = useMutation({
+    ...trpc.invoices.issueForOrder.mutationOptions(),
+    onSuccess: async () => {
+      toast.success("Invoice issued.");
+      await qc.invalidateQueries({
+        queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
+      });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to issue invoice.");
+    },
+  });
+
+  // Customer starts Stripe Checkout to pay an issued invoice.
+  const createInvoiceCheckout = useMutation({
+    ...trpc.invoices.createCheckoutSession.mutationOptions(),
+    onSuccess: (data) => {
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error("Checkout URL missing.");
+      }
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to start checkout.");
+    },
+  });
+
   const sortedOrders = useMemo(() => {
     const list = [...(orders ?? [])];
 
@@ -400,6 +439,60 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
 
     return list;
   }, [orders, sort, mode]);
+
+  // Customer-only: fetch payable invoice ids per order so the Pay button can work.
+  const invoiceQueries = useQueries({
+    queries:
+      mode === "customer"
+        ? (sortedOrders ?? []).map((o) => ({
+            ...trpc.invoices.getForOrder.queryOptions({ orderId: o.id }),
+            enabled: ["issued", "overdue"].includes(
+              String(o.invoiceStatus ?? ""),
+            ),
+          }))
+        : [],
+  });
+
+  const invoiceByOrderId = useMemo(() => {
+    if (mode !== "customer") return {};
+    const map: Record<string, { id: string; status: string | null }> = {};
+    (sortedOrders ?? []).forEach((o, idx) => {
+      const data = invoiceQueries[idx]?.data as
+        | { id: string; status: string | null }
+        | null
+        | undefined;
+      const isPayable = ["issued", "overdue"].includes(
+        String(o.invoiceStatus ?? ""),
+      );
+      if (isPayable && data?.id) map[o.id] = data;
+    });
+    return map;
+  }, [invoiceQueries, sortedOrders, mode]);
+
+  const goViewInvoice = async (orderId: string) => {
+    try {
+      const invoice = await qc.fetchQuery(
+        trpc.invoices.getLatestForOrderAnyStatus.queryOptions({ orderId }),
+      );
+      if (!invoice?.id) {
+        toast.error("No invoice found for this order yet.");
+        return;
+      }
+      router.push(`/invoices/${invoice.id}`);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to open invoice.";
+      toast.error(message);
+    }
+  };
+
+  const goWriteReview = (orderId: string, tenantSlug?: string) => {
+    if (!tenantSlug) {
+      toast.error("Missing tenant slug for review.");
+      return;
+    }
+    router.push(`/tenants/${tenantSlug}/reviews/new?order=${orderId}`);
+  };
 
   function toggleSort(key: SortKey) {
     setSort((prev) =>
@@ -486,6 +579,26 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               mode === "customer"
                 ? getProviderLabel(o)
                 : getCustomerLabel(o as OrdersLifecycleTenantRow);
+            const payableInvoice =
+              mode === "customer" ? invoiceByOrderId[o.id] : null;
+            const canRequestPayment =
+              mode === "tenant" &&
+              o.serviceStatus === "accepted" &&
+              o.invoiceStatus === "none";
+            const canPay =
+              mode === "customer" &&
+              ["issued", "overdue"].includes(String(o.invoiceStatus ?? "")) &&
+              !!payableInvoice?.id;
+            const canViewInvoice =
+              o.invoiceStatus != null && o.invoiceStatus !== "none";
+            const requestPaymentTooltip =
+              o.serviceStatus !== "accepted"
+                ? "You can request payment after user acceptance."
+                : "Invoice already issued.";
+            const tenantSlug =
+              o.slots
+                ?.find((s) => s.serviceSnapshot?.tenantSlug)
+                ?.serviceSnapshot?.tenantSlug ?? undefined;
 
             return (
               <Fragment key={o.id}>
@@ -519,37 +632,80 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                   <TableCell className="text-right">
                     <div className="flex justify-end items-center gap-2">
                       {mode === "tenant" ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="inline-flex w-full max-w-[140px]">
-                              <Button
-                                size="sm"
-                                variant="neubrutalism"
-                                className="w-full"
-                                disabled={o.serviceStatus !== "accepted"}
-                              >
-                                Request payment
-                              </Button>
-                            </span>
-                          </TooltipTrigger>
-                          {o.serviceStatus !== "accepted" ? (
-                            <TooltipContent side="top" sideOffset={6}>
-                              You can request payment after user acceptance.
-                            </TooltipContent>
-                          ) : null}
-                        </Tooltip>
+                        o.invoiceStatus === "none" ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex w-full max-w-[140px]">
+                                <Button
+                                  size="sm"
+                                  variant="neubrutalism"
+                                  className="w-full"
+                                  onClick={() => {
+                                    if (!canRequestPayment) return;
+                                    issueInvoice.mutate({ orderId: o.id });
+                                  }}
+                                  disabled={
+                                    !canRequestPayment ||
+                                    issueInvoice.isPending
+                                  }
+                                >
+                                  Request payment
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {!canRequestPayment ? (
+                              <TooltipContent side="top" sideOffset={6}>
+                                {requestPaymentTooltip}
+                              </TooltipContent>
+                            ) : null}
+                          </Tooltip>
+                        ) : null
                       ) : (
-                        <span className="inline-flex w-full max-w-[140px]">
-                          <Button
-                            size="sm"
-                            variant="neubrutalism"
-                            className="w-full"
-                          >
-                            Pay
-                          </Button>
-                        </span>
+                        canPay ? (
+                          <span className="inline-flex w-full max-w-[140px]">
+                            <Button
+                              size="sm"
+                              variant="neubrutalism"
+                              className="w-full"
+                              onClick={() => {
+                                createInvoiceCheckout.mutate({
+                                  invoiceId: payableInvoice.id,
+                                });
+                              }}
+                              disabled={createInvoiceCheckout.isPending}
+                            >
+                              Pay
+                            </Button>
+                          </span>
+                        ) : null
                       )}
-                      <span aria-hidden="true" className="inline-block w-5" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => goViewInvoice(o.id)}
+                            disabled={!canViewInvoice}
+                          >
+                            View invoice
+                          </DropdownMenuItem>
+                          {mode === "customer" ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => goWriteReview(o.id, tenantSlug)}
+                                disabled={!tenantSlug}
+                              >
+                                Write a review
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
