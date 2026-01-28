@@ -1,4 +1,4 @@
-import type { CollectionConfig, PayloadRequest, Where } from "payload";
+import type { CollectionConfig, PayloadRequest } from "payload";
 import { isSuperAdmin } from "../lib/access.ts";
 
 type RelValue = string | { id?: string } | null | undefined;
@@ -15,16 +15,11 @@ function relId(value: RelValue): string | null {
 
 async function syncOrderInvoiceCache(req: PayloadRequest, orderId: string) {
   // Recompute order.invoiceStatus based on all invoices for this order.
-  const orderMatchFilters: Where[] = [
-    { order: { equals: orderId } },
-    ({ order: { equals: { id: orderId } } } as unknown as Where),
-  ];
-
   const res = await req.payload.find({
     collection: "invoices",
     where: {
       and: [
-        { or: orderMatchFilters },
+        { order: { equals: orderId } },
         { status: { in: ["draft", "issued", "overdue", "paid", "void"] } },
       ],
     },
@@ -91,7 +86,7 @@ export const Invoices: CollectionConfig = {
           roles: req.user?.roles ?? null,
         });
       }
-      return isSuperAdmin(req.user);
+      return process.env.NODE_ENV !== "production" && isSuperAdmin(req.user);
     },
   },
   admin: {

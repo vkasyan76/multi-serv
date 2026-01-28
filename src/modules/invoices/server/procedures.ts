@@ -4,7 +4,6 @@ import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { resolvePayloadUserId } from "@/modules/orders/server/identity";
 import type { Booking, Invoice, Order, Tenant, User } from "@/payload-types";
-import type { Where } from "payload";
 import type { Stripe } from "stripe";
 import { stripe } from "@/lib/stripe";
 import { resolveVatRateBps } from "./vat-rates";
@@ -67,16 +66,11 @@ async function recomputeOrderInvoiceCache(ctx: TRPCContext, orderId: string) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
   }
 
-  const orderMatchFilters: Where[] = [
-    { order: { equals: orderId } },
-    { order: { equals: { id: orderId } } } as unknown as Where,
-  ];
-
   const res = await ctx.db.find({
     collection: "invoices",
     where: {
       and: [
-        { or: orderMatchFilters },
+        { order: { equals: orderId } },
         { status: { in: ["draft", "issued", "overdue", "paid", "void"] } },
       ],
     },
@@ -421,6 +415,18 @@ export const invoicesRouter = createTRPCRouter({
       await requireSuperAdmin(ctx);
       await recomputeOrderInvoiceCache(ctx, input.orderId);
       return { ok: true };
+    }),
+  /**
+   * Dev/admin: recompute multiple orders (fixes stale invoiceStatus in bulk).
+   */
+  reconcileManyOrderInvoiceCaches: baseProcedure
+    .input(z.object({ orderIds: z.array(z.string().min(1)).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      await requireSuperAdmin(ctx);
+      for (const id of input.orderIds) {
+        await recomputeOrderInvoiceCache(ctx, id);
+      }
+      return { ok: true, count: input.orderIds.length };
     }),
   /**
    * Tenant issues an invoice for a slot-lifecycle order.
