@@ -27,6 +27,7 @@ type WebhookOrder = Pick<Order, "id" | "status">;
 type WebhookInvoice = {
   id: string;
   status?: string | null;
+  paidAt?: string | null;
   order?: string | { id: string } | null;
 };
 
@@ -108,6 +109,11 @@ export async function POST(req: Request) {
 
           if (!invoice) return NextResponse.json({ ok: true }, { status: 200 });
 
+          const paidAt =
+            invoice.status !== "paid"
+              ? new Date().toISOString()
+              : invoice.paidAt ?? undefined;
+
           if (invoice.status !== "paid") {
             await payload.update({
               collection: "invoices",
@@ -115,7 +121,7 @@ export async function POST(req: Request) {
               data: {
                 status: "paid",
                 stripePaymentIntentId: piId ?? undefined,
-                paidAt: new Date().toISOString(),
+                paidAt: paidAt!,
               },
               overrideAccess: true,
             });
@@ -131,7 +137,7 @@ export async function POST(req: Request) {
               id: orderId,
               data: {
                 invoiceStatus: "paid",
-                paidAt: new Date().toISOString(),
+                ...(paidAt ? { paidAt } : {}),
               },
               overrideAccess: true,
             });

@@ -18,6 +18,7 @@ import {
   getInitialLanguage,
   normalizeToSupported,
 } from "@/modules/profile/location-utils";
+import { toast } from "sonner";
 
 export function CustomerSlotOrdersView() {
   const trpc = useTRPC();
@@ -59,6 +60,7 @@ export function CustomerSlotOrdersView() {
         onError: () => {
           // allow retry on next render if needed
           finalizeOnceRef.current = false;
+          toast.error("Failed to finalize invoice. Please try again.");
         },
       },
     );

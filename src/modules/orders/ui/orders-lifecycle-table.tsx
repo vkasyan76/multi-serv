@@ -47,6 +47,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import type { Booking, Order } from "@/payload-types";
 import {
   type AppLang,
@@ -275,6 +285,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   const qc = useQueryClient();
   const router = useRouter();
   const nowMs = Date.now();
+  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
+  const [pendingDisputeId, setPendingDisputeId] = useState<string | null>(null);
+  const [disputeReason, setDisputeReason] = useState("");
 
   const findTenantSlugForBooking = (bookingId: string) => {
     for (const order of orders ?? []) {
@@ -345,6 +358,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     ...trpc.bookings.customerDisputeSlot.mutationOptions(),
     onSuccess: async (_data, variables) => {
       toast.success("Dispute submitted.");
+      setDisputeDialogOpen(false);
+      setPendingDisputeId(null);
+      setDisputeReason("");
       if (mode === "customer") {
         const tenantSlug = findTenantSlugForBooking(variables.bookingId);
         if (tenantSlug) {
@@ -506,6 +522,21 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     setOpen((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
+  const openDisputeDialog = (bookingId: string) => {
+    setPendingDisputeId(bookingId);
+    setDisputeReason("");
+    setDisputeDialogOpen(true);
+  };
+
+  const submitDispute = () => {
+    if (!pendingDisputeId || disputeSlot.isPending) return;
+    const reason = disputeReason.trim();
+    disputeSlot.mutate({
+      bookingId: pendingDisputeId,
+      reason: reason ? reason : undefined,
+    });
+  };
+
   return (
     <div className="relative max-h-[70vh] overflow-auto rounded-lg border bg-background">
       <table className="w-full caption-bottom text-sm table-fixed">
@@ -591,10 +622,12 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               !!payableInvoice?.id;
             const canViewInvoice =
               o.invoiceStatus != null && o.invoiceStatus !== "none";
+            const canWriteReview = o.invoiceStatus === "paid";
             const requestPaymentTooltip =
               o.serviceStatus !== "accepted"
                 ? "You can request payment after user acceptance."
                 : "Invoice already issued.";
+            const reviewTooltip = "You can write a review after payment.";
             const tenantSlug =
               o.slots
                 ?.find((s) => s.serviceSnapshot?.tenantSlug)
@@ -696,12 +729,29 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                           {mode === "customer" ? (
                             <>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => goWriteReview(o.id, tenantSlug)}
-                                disabled={!tenantSlug}
-                              >
-                                Write a review
-                              </DropdownMenuItem>
+                              {canWriteReview ? (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    goWriteReview(o.id, tenantSlug)
+                                  }
+                                  disabled={!tenantSlug}
+                                >
+                                  Write a review
+                                </DropdownMenuItem>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="block w-full">
+                                      <DropdownMenuItem disabled>
+                                        Write a review
+                                      </DropdownMenuItem>
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" sideOffset={6}>
+                                    {reviewTooltip}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
                             </>
                           ) : null}
                         </DropdownMenuContent>
@@ -753,7 +803,8 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                 !canCompleteNow || markSlotCompleted.isPending;
                               const showCustomerSelect =
                                 mode === "customer" &&
-                                normalizedStatus === "completed";
+                                (normalizedStatus === "completed" ||
+                                  normalizedStatus === "disputed");
                               const disableCustomerSelect =
                                 acceptSlot.isPending || disputeSlot.isPending;
 
@@ -799,16 +850,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                               return;
                                             }
                                             if (value === "disputed") {
-                                              const reason = window
-                                                .prompt(
-                                                  "Reason for dispute (optional)",
-                                                )
-                                                ?.trim();
-                                              if (reason === undefined) return;
-                                              disputeSlot.mutate({
-                                                bookingId: s.id,
-                                                reason: reason || undefined,
-                                              });
+                                              openDisputeDialog(s.id);
                                             }
                                           }}
                                           disabled={disableCustomerSelect}
@@ -852,6 +894,49 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
           })}
         </TableBody>
       </table>
+      <Dialog
+        open={disputeDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setDisputeDialogOpen(false);
+            setPendingDisputeId(null);
+            setDisputeReason("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dispute this slot?</DialogTitle>
+            <DialogDescription>
+              You can add an optional reason. This helps the provider understand
+              what needs fixing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="dispute-reason">Reason (optional)</Label>
+            <Textarea
+              id="dispute-reason"
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+              placeholder="Share what went wrong..."
+              rows={4}
+              maxLength={500}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDisputeDialogOpen(false)}
+              disabled={disputeSlot.isPending}
+            >
+              Cancel
+            </Button>
+            <Button onClick={submitDispute} disabled={disputeSlot.isPending}>
+              {disputeSlot.isPending ? "Submitting..." : "Submit dispute"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

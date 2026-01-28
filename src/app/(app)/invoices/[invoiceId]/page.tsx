@@ -1,8 +1,11 @@
 import { caller } from "@/trpc/server";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { getPayload } from "payload";
+import config from "@payload-config";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { DownloadPdfButton } from "./DownloadPdfButton";
+import { InvoiceTopBar } from "./InvoiceTopBar";
 import {
   Table,
   TableBody,
@@ -14,6 +17,9 @@ import {
 import {
   formatCurrency,
   getAppLangFromHeaders,
+  countryNameFromCode,
+  formatDateForLocale,
+  getLocaleAndCurrency,
 } from "@/modules/profile/location-utils";
 
 export const dynamic = "force-dynamic";
@@ -45,16 +51,95 @@ const Page = async ({
 
   if (!invoice) notFound();
 
+  const payload = await getPayload({ config });
+  const tenantId =
+    typeof invoice.tenant === "string"
+      ? invoice.tenant
+      : invoice.tenant?.id ?? null;
+  const tenant =
+    tenantId
+      ? await payload.findByID({
+          collection: "tenants",
+          id: tenantId,
+          depth: 2,
+          overrideAccess: true,
+        })
+      : null;
+  const tenantName =
+    typeof tenant?.name === "string" && tenant.name.trim()
+      ? tenant.name.trim()
+      : tenant?.slug ?? invoice.sellerLegalName ?? "Service Provider";
+  const tenantSlug =
+    typeof tenant?.slug === "string" && tenant.slug.trim()
+      ? tenant.slug.trim()
+      : null;
+  const tenantAvatarUrl =
+    typeof tenant?.image === "object" && tenant?.image?.url
+      ? tenant.image.url
+      : null;
+  const tenantUser =
+    typeof tenant?.user === "object" && tenant?.user
+      ? tenant.user
+      : null;
+  const providerFullName = [tenantUser?.firstName, tenantUser?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const providerName =
+    providerFullName || invoice.sellerLegalName || "Service Provider";
   const appLang = getAppLangFromHeaders(await headers());
+  const { locale } = getLocaleAndCurrency(appLang);
   const currency = (invoice.currency ?? "eur").toUpperCase();
+  const sellerCountry =
+    countryNameFromCode(invoice.sellerCountryISO, appLang) ??
+    invoice.sellerCountryISO ??
+    "";
+  const buyerCountry =
+    countryNameFromCode(invoice.buyerCountryISO, appLang) ??
+    invoice.buyerCountryISO ??
+    "";
 
   const subtotalMajor = Number(invoice.amountSubtotalCents ?? 0) / 100;
   const vatMajor = Number(invoice.vatAmountCents ?? 0) / 100;
   const totalMajor = Number(invoice.amountTotalCents ?? 0) / 100;
   const vatRate = Number(invoice.vatRateBps ?? 0) / 100;
 
+  const formatSlotDateTime = (start?: string | null, end?: string | null) => {
+    if (!start) return "";
+    const startDate = new Date(start);
+    const startLabel = formatDateForLocale(
+      startDate,
+      { year: "numeric", month: "short", day: "numeric" },
+      appLang
+    );
+    const timeFmt = new Intl.DateTimeFormat(locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const startTime = timeFmt.format(startDate);
+    if (!end) return `${startLabel}, ${startTime}`;
+    const endDate = new Date(end);
+    const endTime = timeFmt.format(endDate);
+    const sameDay =
+      startDate.getFullYear() === endDate.getFullYear() &&
+      startDate.getMonth() === endDate.getMonth() &&
+      startDate.getDate() === endDate.getDate();
+    if (sameDay) return `${startLabel}, ${startTime} \u2013 ${endTime}`;
+    const endLabel = formatDateForLocale(
+      endDate,
+      { year: "numeric", month: "short", day: "numeric" },
+      appLang
+    );
+    return `${startLabel}, ${startTime} \u2013 ${endLabel}, ${endTime}`;
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <InvoiceTopBar
+        tenantSlug={tenantSlug}
+        tenantName={tenantName}
+        tenantAvatarUrl={tenantAvatarUrl}
+      />
       <header className="bg-[#F4F4F0] py-8 border-b">
         <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex items-center justify-between">
           <div>
@@ -75,32 +160,34 @@ const Page = async ({
       <section className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10 space-y-8">
         <div className="flex flex-col gap-6 md:flex-row md:justify-between">
           <div>
-            <h2 className="text-sm uppercase text-muted-foreground">Seller</h2>
+            <h2 className="text-sm uppercase text-muted-foreground">
+              Service Provider
+            </h2>
             <div className="mt-2 text-sm">
-              <div className="font-medium">{invoice.sellerLegalName}</div>
+              <div className="font-medium">{providerName}</div>
               <div>{invoice.sellerAddressLine1}</div>
               <div>
                 {invoice.sellerPostal} {invoice.sellerCity}
               </div>
-              <div>{invoice.sellerCountryISO}</div>
-              {invoice.sellerVatId ? (
-                <div>VAT ID: {invoice.sellerVatId}</div>
-              ) : null}
+              <div>{sellerCountry}</div>
               {invoice.sellerEmail ? (
                 <div>{invoice.sellerEmail}</div>
+              ) : null}
+              {invoice.sellerVatId ? (
+                <div>VAT ID: {invoice.sellerVatId}</div>
               ) : null}
             </div>
           </div>
 
           <div>
-            <h2 className="text-sm uppercase text-muted-foreground">Buyer</h2>
+            <h2 className="text-sm uppercase text-muted-foreground">Client</h2>
             <div className="mt-2 text-sm">
               <div className="font-medium">{invoice.buyerName}</div>
               <div>{invoice.buyerAddressLine1}</div>
               <div>
                 {invoice.buyerPostal} {invoice.buyerCity}
               </div>
-              <div>{invoice.buyerCountryISO}</div>
+              <div>{buyerCountry}</div>
               {invoice.buyerEmail ? (
                 <div>{invoice.buyerEmail}</div>
               ) : null}
@@ -113,13 +200,13 @@ const Page = async ({
               <div>
                 Issued:{" "}
                 {invoice.issuedAt
-                  ? new Date(invoice.issuedAt).toLocaleDateString()
+                  ? formatDateForLocale(invoice.issuedAt, {}, appLang)
                   : "—"}
               </div>
               <div>
                 Paid:{" "}
                 {invoice.paidAt
-                  ? new Date(invoice.paidAt).toLocaleDateString()
+                  ? formatDateForLocale(invoice.paidAt, {}, appLang)
                   : "—"}
               </div>
               <div>Currency: {currency}</div>
@@ -132,16 +219,21 @@ const Page = async ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-                <TableHead className="text-right">Unit</TableHead>
+                <TableHead>Service</TableHead>
+                <TableHead className="text-right">Hours</TableHead>
+                <TableHead className="text-right">Hourly Rate</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {(invoice.lineItems ?? []).map((li, idx) => (
                 <TableRow key={`${li.slotId}-${idx}`}>
-                  <TableCell>{li.title}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{li.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatSlotDateTime(li.start, li.end)}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">{li.qty}</TableCell>
                   <TableCell className="text-right">
                     {formatCurrency(Number(li.unitAmountCents ?? 0) / 100, currency, appLang)}
@@ -169,9 +261,7 @@ const Page = async ({
             <span>{formatCurrency(totalMajor, currency, appLang)}</span>
           </div>
           <div className="pt-4">
-            <Button variant="outline" disabled>
-              Download PDF (coming soon)
-            </Button>
+            <DownloadPdfButton invoiceId={invoiceId} />
           </div>
         </div>
       </section>

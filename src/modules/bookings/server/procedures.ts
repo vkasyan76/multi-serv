@@ -863,8 +863,8 @@ export const bookingRouter = createTRPCRouter({
         return { ok: true };
       }
 
-      // Strict transition: must be completed
-      if (ss !== "completed") {
+      // Allow accept from completed or disputed
+      if (ss !== "completed" && ss !== "disputed") {
         throw new TRPCError({
           code: "CONFLICT",
           message: `Cannot accept from serviceStatus=${ss}`,
@@ -874,7 +874,12 @@ export const bookingRouter = createTRPCRouter({
       await ctx.db.update({
         collection: "bookings",
         id: input.bookingId,
-        data: { serviceStatus: "accepted", acceptedAt: nowIso },
+        data: {
+          serviceStatus: "accepted",
+          acceptedAt: nowIso,
+          disputedAt: null,
+          disputeReason: null,
+        },
         overrideAccess: true,
         depth: 0,
       });
