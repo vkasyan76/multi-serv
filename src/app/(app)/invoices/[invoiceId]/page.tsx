@@ -29,9 +29,9 @@ const statusClass: Record<string, string> = {
 const Page = async ({
   params,
 }: {
-  params: { invoiceId: string };
+  params: Promise<{ invoiceId: string }>;
 }) => {
-  const { invoiceId } = params;
+  const { invoiceId } = await params;
   if (!invoiceId) notFound();
 
   let invoice: Awaited<ReturnType<typeof caller.invoices.getById>> | null =

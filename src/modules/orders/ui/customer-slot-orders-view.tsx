@@ -62,7 +62,15 @@ export function CustomerSlotOrdersView() {
         },
       },
     );
-  }, [invoiceSuccess, sessionId, finalizeInvoice, qc, router, trpc.orders]);
+  }, [
+    invoiceSuccess,
+    sessionId,
+    finalizeInvoice,
+    qc,
+    router,
+    trpc.orders,
+    trpc.invoices,
+  ]);
 
   return (
     <div className="min-h-screen bg-white">
