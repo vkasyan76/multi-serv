@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useTRPC } from "@/trpc/client";
-import { Home, ExternalLink, MoreHorizontal } from "lucide-react";
+import { Home, ExternalLink, MoreHorizontal, Info } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -135,7 +135,26 @@ export function OrdersView() {
       {/* Header */}
       <header className="bg-[#F4F4F0] py-8 border-b">
         <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex flex-col gap-y-2">
-          <h1 className="text-[32px] font-medium">My Orders</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[32px] font-medium">My Orders</h1>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground hover:text-foreground"
+                    aria-label="Order flow info"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={6}>
+                  Provider marks the service completed - you accept/dispute - you
+                  pay when requested.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           {/* <p className="font-medium text-muted-foreground">
             Paid / refunded orders
           </p> */}

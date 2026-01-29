@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Booking, Order } from "@/payload-types";
 import {
   type AppLang,
@@ -937,6 +938,31 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+export function OrdersLifecycleSkeleton() {
+  return (
+    <div className="relative max-h-[70vh] overflow-auto rounded-lg border bg-background p-4 space-y-4">
+      <div className="grid grid-cols-6 gap-4">
+        <Skeleton className="h-4" />
+        <Skeleton className="h-4" />
+        <Skeleton className="h-4" />
+        <Skeleton className="h-4" />
+        <Skeleton className="h-4" />
+        <Skeleton className="h-4" />
+      </div>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="grid grid-cols-6 gap-4">
+          <Skeleton className="h-5" />
+          <Skeleton className="h-5" />
+          <Skeleton className="h-5" />
+          <Skeleton className="h-5" />
+          <Skeleton className="h-5" />
+          <Skeleton className="h-5" />
+        </div>
+      ))}
     </div>
   );
 }

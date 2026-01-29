@@ -5,7 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_LIMIT } from "@/constants";
 import { useTRPC } from "@/trpc/client";
-import { OrdersLifecycleTable } from "./orders-lifecycle-table";
+import {
+  OrdersLifecycleSkeleton,
+  OrdersLifecycleTable,
+} from "./orders-lifecycle-table";
 import { type AppLang, getInitialLanguage } from "@/modules/profile/location-utils";
 
 function pageWindow(current: number, total: number, size = 5) {
@@ -19,12 +22,15 @@ function pageWindow(current: number, total: number, size = 5) {
 export function TenantOrdersLifecycleView({ appLang }: { appLang?: AppLang }) {
   const trpc = useTRPC();
   const [page, setPage] = useState(1);
-  const q = useQuery(
-    trpc.orders.listForMyTenantSlotLifecycle.queryOptions({
+  const q = useQuery({
+    ...trpc.orders.listForMyTenantSlotLifecycle.queryOptions({
       page,
       limit: DEFAULT_LIMIT,
     }),
-  );
+    refetchInterval: 10000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+  });
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
@@ -42,7 +48,7 @@ export function TenantOrdersLifecycleView({ appLang }: { appLang?: AppLang }) {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
-  if (q.isLoading) return <div>Loading…</div>;
+  if (q.isLoading) return <OrdersLifecycleSkeleton />;
   if (q.isError) return <div>Failed to load orders.</div>;
   if (items.length === 0) {
     return (
@@ -111,3 +117,4 @@ export function TenantOrdersLifecycleView({ appLang }: { appLang?: AppLang }) {
     </div>
   );
 }
+
