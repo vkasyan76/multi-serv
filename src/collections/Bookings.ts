@@ -2,10 +2,7 @@ import type { CollectionConfig } from "payload";
 
 import { isSuperAdmin } from "../lib/access.ts";
 
-import {
-  BOOKING_SERVICE_STATUSES,
-  BOOKING_PAYMENT_STATUSES,
-} from "@/constants";
+import { SERVICE_STATUSES, BOOKING_PAYMENT_STATUSES } from "@/constants";
 
 export const Bookings: CollectionConfig = {
   slug: "bookings",
@@ -46,14 +43,52 @@ export const Bookings: CollectionConfig = {
     {
       name: "serviceStatus",
       type: "select",
-      options: [...BOOKING_SERVICE_STATUSES],
+      options: [...SERVICE_STATUSES],
       defaultValue: "scheduled",
       required: false, // keep false for Phase 0 (avoid breaking existing docs)
       index: true,
       admin: {
         description:
-          "Service lifecycle: scheduled → completed → accepted (or disputed).",
+          "System status: scheduled → completed → accepted | disputed.",
         condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true, // <-- reduces human error: prevents admins manually flipping these and causing roll-up inconsistencies.
+      },
+    },
+
+    {
+      name: "serviceCompletedAt",
+      type: "date",
+      required: false,
+      admin: {
+        condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true,
+      },
+    },
+    {
+      name: "acceptedAt",
+      type: "date",
+      required: false,
+      admin: {
+        condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true,
+      },
+    },
+    {
+      name: "disputedAt",
+      type: "date",
+      required: false,
+      admin: {
+        condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true,
+      },
+    },
+    {
+      name: "disputeReason",
+      type: "text",
+      required: false,
+      admin: {
+        condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true,
       },
     },
 
@@ -69,6 +104,7 @@ export const Bookings: CollectionConfig = {
         description:
           "Payment lifecycle: unpaid → pending → paid. Meaningful after service confirmation.",
         condition: (_, siblingData) => siblingData?.status !== "available",
+        readOnly: true, // <-- reduces human error: prevents admins manually flipping these and causing roll-up inconsistencies.
       },
     },
 

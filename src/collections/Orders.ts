@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { isSuperAdmin } from "../lib/access.ts";
+import { SERVICE_STATUSES } from "@/constants";
 
 export const Orders: CollectionConfig = {
   slug: "orders",
@@ -49,7 +50,7 @@ export const Orders: CollectionConfig = {
       type: "select",
       required: true,
       defaultValue: "scheduled",
-      options: ["scheduled", "completed", "accepted", "disputed"],
+      options: [...SERVICE_STATUSES],
       index: true,
       admin: {
         description:
@@ -188,6 +189,19 @@ export const Orders: CollectionConfig = {
         { name: "tenantSlug", type: "text", required: true },
         { name: "stripeAccountId", type: "text", required: false },
       ],
+    },
+    // keep old legacy checkout + legacy order procedures fully intact, but fence them off - add an Order “mode flag”:
+    {
+      name: "lifecycleMode",
+      type: "select",
+      required: true,
+      defaultValue: "legacy",
+      options: ["legacy", "slot"],
+      index: true,
+      admin: {
+        description:
+          "legacy = old pay-at-booking flow; slot = new slot-lifecycle + partial invoices flow",
+      },
     },
   ],
   timestamps: true,

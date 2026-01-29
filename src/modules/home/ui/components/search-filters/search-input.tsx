@@ -47,7 +47,7 @@ export const SearchInput = ({
   // show Orders button only for users with paid/refunded orders - not “sticky”
   // show Orders button only for users with paid/refunded orders - not “sticky”
   const hasOrdersQ = useQuery({
-    ...trpc.orders.hasAnyPaidMine.queryOptions(),
+    ...trpc.orders.hasAnyMineSlotLifecycle.queryOptions(),
     enabled: isSignedIn && !!session.data?.user?.id, // <- add isSignedIn gate
     staleTime: 0,
     gcTime: 0,
@@ -98,7 +98,7 @@ export const SearchInput = ({
                 // but send empty string immediately to clear the filter
                 limitUrlUpdates:
                   e.target.value === "" ? undefined : debounce(400),
-              }
+              },
             )
           }
           onKeyDown={(e) => {
@@ -111,7 +111,7 @@ export const SearchInput = ({
                 }),
                 {
                   // default rate limit (no extra debounce)
-                }
+                },
               );
             }
           }}

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useTRPC } from "@/trpc/client";
-import { Home, ExternalLink, MoreHorizontal } from "lucide-react";
+import { Home, ExternalLink, MoreHorizontal, Info } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -35,8 +36,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Order, Booking } from "@/payload-types";
 
 import {
+  type AppLang,
   formatCurrency,
   formatDateForLocale,
+  getInitialLanguage,
+  getLocaleAndCurrency,
+  normalizeToSupported,
 } from "@/modules/profile/location-utils";
 
 type SlotRow = {
@@ -56,6 +61,18 @@ export function OrdersView() {
 
   // 1) Consistent: gate orders query by tRPC session (same as search-input.tsx)
   const session = useQuery(trpc.auth.session.queryOptions());
+  const profileQ = useQuery({
+    ...trpc.auth.getUserProfile.queryOptions(),
+    enabled: !!session.data?.user?.id,
+  });
+
+  const appLang: AppLang = useMemo(() => {
+    const profileLang = profileQ.data?.language;
+    if (profileLang) return normalizeToSupported(profileLang);
+    return getInitialLanguage();
+  }, [profileQ.data?.language]);
+
+  const { locale } = getLocaleAndCurrency(appLang);
 
   const q = useQuery({
     ...trpc.orders.listMine.queryOptions(),
@@ -118,7 +135,26 @@ export function OrdersView() {
       {/* Header */}
       <header className="bg-[#F4F4F0] py-8 border-b">
         <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex flex-col gap-y-2">
-          <h1 className="text-[32px] font-medium">My Orders</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[32px] font-medium">My Orders</h1>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground hover:text-foreground"
+                    aria-label="Order flow info"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={6}>
+                  Provider marks the service completed - you accept/dispute - you
+                  pay when requested.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           {/* <p className="font-medium text-muted-foreground">
             Paid / refunded orders
           </p> */}
@@ -134,7 +170,7 @@ export function OrdersView() {
         ) : slotRows.length === 0 ? (
           <EmptyState />
         ) : (
-          <OrdersTable rows={slotRows} />
+          <OrdersTable rows={slotRows} appLang={appLang} locale={locale} />
         )}
       </section>
     </div>
@@ -143,31 +179,39 @@ export function OrdersView() {
 
 /* ---------- Presentational pieces ---------- */
 
-function OrdersTable({ rows }: { rows: SlotRow[] }) {
+function OrdersTable({
+  rows,
+  appLang,
+  locale,
+}: {
+  rows: SlotRow[];
+  appLang: AppLang;
+  locale: string;
+}) {
   const whenLabel = (startISO: string) => {
     const date = formatDateForLocale(startISO, {
       weekday: "short",
       day: "numeric",
       month: "short",
       year: "numeric",
-    });
+    }, appLang);
 
-    const start = new Date(startISO).toLocaleTimeString(undefined, {
+    const start = new Intl.DateTimeFormat(locale, {
       hour: "2-digit",
       minute: "2-digit",
-    });
+    }).format(new Date(startISO));
     return `${date} ${start}`;
   };
 
   // date on small screens
   const whenLabelShort = (startISO: string) => {
     const d = new Date(startISO);
-    const date = d.toLocaleDateString(undefined, {
+    const date = d.toLocaleDateString(locale, {
       year: "2-digit",
       month: "2-digit",
       day: "2-digit",
     });
-    const time = d.toLocaleTimeString(undefined, {
+    const time = d.toLocaleTimeString(locale, {
       hour: "2-digit",
       minute: "2-digit",
     });

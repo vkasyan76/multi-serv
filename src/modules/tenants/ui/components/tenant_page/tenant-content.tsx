@@ -16,7 +16,8 @@ import dynamic from "next/dynamic";
 
 import { BookingActionButton } from "./booking-action-button";
 
-import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
+// import { CartDrawer } from "@/modules/checkout/ui/cart-drawer";
+import { SlotsCartDrawer } from "@/modules/checkout/ui/slots-cart-drawer";
 import { getHourlyRateCents } from "@/modules/checkout/cart-utils";
 import {
   useCartStore,
@@ -39,10 +40,8 @@ const TenantCalendar = dynamic(
   () => import("@/modules/bookings/ui/TenantCalendar"),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-[50vh] bg-muted animate-pulse rounded-lg" />
-    ),
-  }
+    loading: () => null,
+  },
 );
 //  restore cart atomically (used after Stripe redirect)
 const PM_CART_KEY = "pm_cart_restore_v1";
@@ -61,6 +60,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   };
 
   const [selected, setSelected] = useState<string[]>([]);
+  const [calendarReady, setCalendarReady] = useState(false); // for showing skeleton when the calendar is loading due to dynamic import
 
   // check slots availability for message blow the calendar:
 
@@ -72,12 +72,20 @@ export default function TenantContent({ slug }: { slug: string }) {
   };
 
   const [calendarAvail, setCalendarAvail] = useState<CalendarAvail | null>(
-    null
+    null,
   );
 
   const handleAvailabilityChange = useCallback((v: CalendarAvail) => {
     setCalendarAvail(v);
   }, []);
+
+  const handleCalendarReady = useCallback(() => {
+    setCalendarReady(true);
+  }, []);
+
+  useEffect(() => {
+    setCalendarReady(false);
+  }, [slug]);
 
   // Reviews & Ratings:
 
@@ -85,7 +93,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   // Reviews & Ratings:
   const reviewSummaryQ = useQuery(
-    trpc.reviews.summaryForTenant.queryOptions({ slug })
+    trpc.reviews.summaryForTenant.queryOptions({ slug }),
   );
 
   const reviewRating = reviewSummaryQ.data?.avgRating ?? undefined;
@@ -120,7 +128,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const scrollToCalendar = () => {
     window.dispatchEvent(
-      new CustomEvent("tenant:set-active", { detail: "booking" })
+      new CustomEvent("tenant:set-active", { detail: "booking" }),
     );
     document
       .getElementById("booking")
@@ -159,9 +167,6 @@ export default function TenantContent({ slug }: { slug: string }) {
       toast.error("Sign in to contact this provider.");
     }
   };
-
-  // Clear selections on unmount
-  useEffect(() => () => setSelected([]), []);
 
   const handleClearSelection = () => {
     setSelected([]);
@@ -281,11 +286,11 @@ export default function TenantContent({ slug }: { slug: string }) {
             // Let the effect try again later (or user can refresh)
             didReleaseRef.current = false;
             toast.error(
-              "We couldn't release your checkout session. Please retry in a moment."
+              "We couldn't release your checkout session. Please retry in a moment.",
             );
             // Keep the URL params so the next run can retry
           },
-        }
+        },
       );
     }
     // deps intentionally kept to just the URL signal
@@ -300,7 +305,7 @@ export default function TenantContent({ slug }: { slug: string }) {
       // enforce selection cap
       if (prev.length >= MAX_SLOTS_PER_BOOKING) {
         toast.warning(
-          `You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`
+          `You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`,
         );
         return prev;
       }
@@ -510,7 +515,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                             <span className="truncate">{name}</span>
                           </Link>
                         );
-                      }
+                      },
                     )}
                   </div>
                 </div>
@@ -584,7 +589,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                                 <span className="truncate">{name}</span>
                               </span>
                             );
-                          }
+                          },
                         )}
                       </div>
                     </div>
@@ -610,14 +615,21 @@ export default function TenantContent({ slug }: { slug: string }) {
               <span>Booking</span>
             </h2>
 
-            <TenantCalendar
-              tenantSlug={slug}
-              editable={false}
-              selectForBooking={true}
-              selectedIds={selected}
-              onToggleSelect={handleToggleSelect}
-              onAvailabilityChange={handleAvailabilityChange}
-            />
+            <div className="relative min-h-[50vh]">
+              <TenantCalendar
+                key={slug}
+                tenantSlug={slug}
+                editable={false}
+                selectForBooking={true}
+                selectedIds={selected}
+                onToggleSelect={handleToggleSelect}
+                onAvailabilityChange={handleAvailabilityChange}
+                onReady={handleCalendarReady}
+              />
+              {!calendarReady && (
+                <div className="absolute inset-0 z-10 rounded-lg bg-muted animate-pulse pointer-events-none" />
+              )}
+            </div>
             {selected.length === 0 && (
               <div className="mt-4 rounded-lg border bg-white/70 px-4 py-3 text-sm text-muted-foreground">
                 {!calendarAvail || calendarAvail.loading ? (
@@ -665,7 +677,8 @@ export default function TenantContent({ slug }: { slug: string }) {
               </div>
             )}
 
-            <CartDrawer
+            {/* We use SlotsCartDrawer instead of CartDrawer */}
+            <SlotsCartDrawer
               authState={signedState}
               policyAcceptedAt={profileQ.data?.policyAcceptedAt ?? null}
               policyAcceptedVersion={

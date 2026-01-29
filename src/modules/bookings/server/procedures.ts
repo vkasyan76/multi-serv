@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { isBefore, addHours, startOfHour, isEqual } from "date-fns";
 import type { Booking, Tenant, User } from "@/payload-types";
+import type { Where } from "payload";
 
 import {
   uniqueIds,
@@ -10,6 +11,7 @@ import {
   type CartItem,
   bulkBookIndividually,
 } from "./book-slot-helpers";
+import { recomputeOrdersForBookingId } from "@/modules/orders/server/order-rollup";
 
 // Payload returns docs with an id. Make that explicit.
 type DocWithId<T> = T & { id: string };
@@ -29,7 +31,7 @@ export type BookingWithName = DocWithId<Booking> & {
 
 // Derive a human display name from a populated customer ref
 const displayNameFromUser = (
-  u: User | string | null | undefined
+  u: User | string | null | undefined,
 ): string | null => {
   if (!u || typeof u === "string") return null;
 
@@ -47,14 +49,14 @@ const displayNameFromUser = (
 };
 
 export const bookingRouter = createTRPCRouter({
-  // List available slots for a tenant (public)
+  // List available slots for a tenant (public + own busy)
   listPublicSlots: baseProcedure
     .input(
       z.object({
         tenantSlug: z.string(),
         from: z.string().datetime(),
         to: z.string().datetime(),
-      })
+      }),
     )
     .query(async ({ input, ctx }): Promise<Array<DocWithId<Booking>>> => {
       // Find tenant by slug
@@ -68,26 +70,54 @@ export const bookingRouter = createTRPCRouter({
       const tenantId = tenants.docs[0]?.id;
       if (!tenantId) return [];
 
-      // Find overlapping bookings with inclusive boundaries
-      const res = (await ctx.db.find({
-        collection: "bookings",
-        where: {
+      // If logged in, map Clerk -> Payload user id (optional)
+      let payloadUserId: string | null = null;
+
+      const clerkUserId = ctx.userId;
+      if (clerkUserId) {
+        const me = (await ctx.db.find({
+          collection: "users",
+          where: { clerkUserId: { equals: clerkUserId } },
+          limit: 1,
+          depth: 0,
+        })) as { docs: Array<DocWithId<User>> };
+
+        payloadUserId = me.docs[0]?.id ?? null;
+      }
+
+      // Build WHERE: available for everyone + own busy only
+      const or: Where[] = [{ status: { equals: "available" } }];
+
+      if (payloadUserId) {
+        or.push({
           and: [
-            { tenant: { equals: tenantId } },
-            { start: { less_than_equal: input.to } },
-            { end: { greater_than_equal: input.from } },
+            { customer: { equals: payloadUserId } },
             {
               or: [
-                { status: { equals: "available" } },
                 { status: { equals: "booked" } },
                 { status: { equals: "confirmed" } },
               ],
             },
           ],
-        },
+        });
+      }
+
+      const where: Where = {
+        and: [
+          { tenant: { equals: tenantId } },
+          { start: { less_than_equal: input.to } },
+          { end: { greater_than_equal: input.from } },
+          { or },
+        ],
+      };
+
+      const res = (await ctx.db.find({
+        collection: "bookings",
+        where,
         sort: "start",
         limit: 1000,
         depth: 0,
+        overrideAccess: true, // IMPORTANT: bypass bookings read ACL so we can fetch own busy
       })) as { docs: Array<DocWithId<Booking>> };
 
       return res.docs;
@@ -100,7 +130,7 @@ export const bookingRouter = createTRPCRouter({
         tenantId: z.string(),
         from: z.string().datetime(),
         to: z.string().datetime(),
-      })
+      }),
     )
     .query(async ({ input, ctx }): Promise<Array<BookingWithName>> => {
       const clerkUserId = ctx.userId;
@@ -181,7 +211,7 @@ export const bookingRouter = createTRPCRouter({
         .refine((v) => new Date(v.start) < new Date(v.end), {
           message: "start must be before end",
           path: ["end"],
-        })
+        }),
     )
     .mutation(async ({ input, ctx }): Promise<DocWithId<Booking>> => {
       const clerkUserId = ctx.userId;
@@ -267,6 +297,7 @@ export const bookingRouter = createTRPCRouter({
         },
         limit: 1,
         depth: 0,
+        overrideAccess: true,
       });
       if (overlap.docs.length) {
         throw new TRPCError({ code: "CONFLICT", message: "Overlapping slot" });
@@ -347,6 +378,8 @@ export const bookingRouter = createTRPCRouter({
           status: "booked",
           customer: payloadUserId,
           service: input.serviceId,
+          serviceStatus: "scheduled", // NEW (safe even if field is optional)
+          paymentStatus: "unpaid", // NEW
           serviceSnapshot: {
             serviceName: serviceDoc?.name ?? null,
             serviceSlug: serviceDoc?.slug ?? null,
@@ -452,7 +485,7 @@ export const bookingRouter = createTRPCRouter({
         .refine((v) => new Date(v.start) < new Date(v.end), {
           message: "start must be before end",
           path: ["end"],
-        })
+        }),
     )
     .mutation(async ({ input, ctx }): Promise<DocWithId<Booking>> => {
       const clerkUserId = ctx.userId;
@@ -581,10 +614,10 @@ export const bookingRouter = createTRPCRouter({
               bookingId: z.string(),
               // require a non-empty string (service is mandatory)
               serviceId: z.string().min(1),
-            })
+            }),
           )
           .min(1),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }): Promise<BookSlotsResult> => {
       // 0) auth → payload user
@@ -637,7 +670,7 @@ export const bookingRouter = createTRPCRouter({
       // 4) summary
       // requested & was seen as bookable, but didn’t get updated → lost the race
       const raceLost = ids.filter(
-        (id) => seenIds.has(id) && !bookedIds.includes(id)
+        (id) => seenIds.has(id) && !bookedIds.includes(id),
       );
       // requested & never seen as bookable in snapshot (past / already taken)
       const neverSeen = ids.filter((id) => !seenIds.has(id));
@@ -648,5 +681,308 @@ export const bookingRouter = createTRPCRouter({
         invalidIds: [], // keep empty unless you add an existence check
         updated: bookedIds.length,
       };
+    }),
+  /**
+   * Stage 1: Vendor marks a slot completed (post-service)
+   * Rules:
+   * - only tenant owner
+   * - booking.status !== "available"
+   * - booking.serviceStatus is "scheduled" (or missing -> treat as "scheduled")
+   */
+  vendorMarkCompleted: baseProcedure
+    .input(z.object({ bookingId: z.string().min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      const clerkUserId = ctx.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      // Clerk -> Payload user
+      const me = (await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      })) as { docs: Array<DocWithId<User>> };
+
+      const payloadUserId = me.docs[0]?.id;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // Load booking
+      const b = (await ctx.db.findByID({
+        collection: "bookings",
+        id: input.bookingId,
+        depth: 0,
+        overrideAccess: true,
+      })) as Booking | null;
+
+      if (!b)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Slot not found" });
+      if (b.status === "available")
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot complete an available slot",
+        });
+
+      // Ownership: tenant owner only
+      const tenantId = typeof b.tenant === "string" ? b.tenant : b.tenant?.id;
+      if (!tenantId)
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Bad tenant ref" });
+
+      const tenant = (await ctx.db.findByID({
+        collection: "tenants",
+        id: tenantId,
+        depth: 0,
+        overrideAccess: true,
+      })) as Tenant | null;
+
+      const ownerId =
+        typeof tenant?.user === "string" ? tenant.user : tenant?.user?.id;
+      if (!ownerId || ownerId !== payloadUserId)
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your tenant" });
+
+      // Treat missing as "scheduled"
+      const ss = (b.serviceStatus ?? "scheduled") as string;
+      const now = new Date();
+      const nowIso = now.toISOString();
+      const endMs = new Date(b.end).getTime();
+
+      // only confirmed slots can be marked completed:
+      if (b.status !== "confirmed") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Slot is not confirmed yet.",
+        });
+      }
+
+      // only past slots can be marked completed:
+      if (!Number.isFinite(endMs) || endMs > now.getTime()) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Slot has not ended yet.",
+        });
+      }
+
+      // Idempotency: already completed → ok (optionally backfill timestamp)
+      if (ss === "completed") {
+        if (!b.serviceCompletedAt) {
+          await ctx.db.update({
+            collection: "bookings",
+            id: input.bookingId,
+            data: { serviceCompletedAt: nowIso },
+            overrideAccess: true,
+            depth: 0,
+          });
+
+          await recomputeOrdersForBookingId(ctx, input.bookingId);
+        }
+
+        return { ok: true };
+      }
+
+      // Strict transition
+      if (ss !== "scheduled") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Cannot mark completed from serviceStatus=${ss}`,
+        });
+      }
+
+      // Update booking (+ timestamp)
+      await ctx.db.update({
+        collection: "bookings",
+        id: input.bookingId,
+        data: { serviceStatus: "completed", serviceCompletedAt: nowIso },
+        overrideAccess: true,
+        depth: 0,
+      });
+
+      // Roll-up order(s) that include this slot
+      await recomputeOrdersForBookingId(ctx, input.bookingId);
+
+      return { ok: true };
+    }),
+
+  /**
+   * Stage 1: Customer accepts a completed slot
+   * Rules:
+   * - only booking.customer
+   * - only if serviceStatus === "completed"
+   */
+  customerAcceptSlot: baseProcedure
+    .input(z.object({ bookingId: z.string().min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      const clerkUserId = ctx.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const me = (await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      })) as { docs: Array<DocWithId<User>> };
+
+      const payloadUserId = me.docs[0]?.id;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const b = (await ctx.db.findByID({
+        collection: "bookings",
+        id: input.bookingId,
+        depth: 0,
+        overrideAccess: true,
+      })) as Booking | null;
+
+      if (!b)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Slot not found" });
+      if (b.status === "available")
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot accept an available slot",
+        });
+
+      const customerId =
+        typeof b.customer === "string" ? b.customer : b.customer?.id;
+      if (!customerId || customerId !== payloadUserId)
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
+
+      const ss = (b.serviceStatus ?? "scheduled") as string;
+      const nowIso = new Date().toISOString();
+
+      // Idempotency: already accepted → ok (backfill timestamp if missing)
+      if (ss === "accepted") {
+        if (!b.acceptedAt) {
+          await ctx.db.update({
+            collection: "bookings",
+            id: input.bookingId,
+            data: { acceptedAt: nowIso },
+            overrideAccess: true,
+            depth: 0,
+          });
+        }
+
+        await recomputeOrdersForBookingId(ctx, input.bookingId);
+        return { ok: true };
+      }
+
+      // Allow accept from completed or disputed
+      if (ss !== "completed" && ss !== "disputed") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Cannot accept from serviceStatus=${ss}`,
+        });
+      }
+
+      await ctx.db.update({
+        collection: "bookings",
+        id: input.bookingId,
+        data: {
+          serviceStatus: "accepted",
+          acceptedAt: nowIso,
+          disputedAt: null,
+          disputeReason: null,
+        },
+        overrideAccess: true,
+        depth: 0,
+      });
+
+      await recomputeOrdersForBookingId(ctx, input.bookingId);
+
+      return { ok: true };
+    }),
+
+  /**
+   * Stage 1: Customer disputes a completed slot
+   * Rules:
+   * - only booking.customer
+   * - only if serviceStatus === "completed"  (strict MVP)
+   */
+  customerDisputeSlot: baseProcedure
+    .input(
+      z.object({
+        bookingId: z.string().min(1),
+        reason: z.string().min(1).max(500).optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const clerkUserId = ctx.userId;
+      if (!clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const me = (await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: clerkUserId } },
+        limit: 1,
+        depth: 0,
+      })) as { docs: Array<DocWithId<User>> };
+
+      const payloadUserId = me.docs[0]?.id;
+      if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const b = (await ctx.db.findByID({
+        collection: "bookings",
+        id: input.bookingId,
+        depth: 0,
+        overrideAccess: true,
+      })) as Booking | null;
+
+      if (!b)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Slot not found" });
+      if (b.status === "available")
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot dispute an available slot",
+        });
+
+      const customerId =
+        typeof b.customer === "string" ? b.customer : b.customer?.id;
+      if (!customerId || customerId !== payloadUserId)
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
+
+      const ss = (b.serviceStatus ?? "scheduled") as string;
+      const nowIso = new Date().toISOString();
+
+      // Idempotency: already disputed → ok (backfill timestamp/reason if missing)
+      if (ss === "disputed") {
+        const patch: Partial<Pick<Booking, "disputedAt" | "disputeReason">> =
+          {};
+
+        if (!b.disputedAt) patch.disputedAt = nowIso;
+        if (input.reason && !b.disputeReason)
+          patch.disputeReason = input.reason;
+
+        if (Object.keys(patch).length) {
+          await ctx.db.update({
+            collection: "bookings",
+            id: input.bookingId,
+            data: patch,
+            overrideAccess: true,
+            depth: 0,
+          });
+        }
+
+        await recomputeOrdersForBookingId(ctx, input.bookingId);
+        return { ok: true };
+      }
+
+      // Strict transition: must be completed
+      if (ss !== "completed") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Cannot dispute from serviceStatus=${ss}`,
+        });
+      }
+
+      await ctx.db.update({
+        collection: "bookings",
+        id: input.bookingId,
+        data: {
+          serviceStatus: "disputed",
+          disputedAt: nowIso,
+          disputeReason: input.reason ?? null,
+        },
+        overrideAccess: true,
+        depth: 0,
+      });
+
+      await recomputeOrdersForBookingId(ctx, input.bookingId);
+
+      return { ok: true };
     }),
 });

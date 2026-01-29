@@ -162,6 +162,8 @@ export async function bulkBookIndividually(opts: {
         status: "booked",
         customer: payloadUserId,
         service: it.serviceId,
+        serviceStatus: "scheduled",
+        paymentStatus: "unpaid",
         serviceSnapshot,
       },
       overrideAccess: true,

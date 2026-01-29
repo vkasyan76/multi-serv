@@ -72,6 +72,7 @@ export const Navbar = ({ slug }: Props) => {
                 <TooltipTrigger asChild>
                   <Link
                     href={process.env.NEXT_PUBLIC_APP_URL ?? "/"}
+                    prefetch={false}
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                     aria-label="Infinisimo Home"
                   >

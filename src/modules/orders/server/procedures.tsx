@@ -3,6 +3,11 @@ import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import type { Order, Booking, Tenant } from "@/payload-types";
 import { z } from "zod";
+import { resolvePayloadUserId } from "./identity";
+import {
+  listMineSlotLifecycle as listMineSlotLifecycleImpl,
+  listForMyTenantSlotLifecycle as listForMyTenantSlotLifecycleImpl,
+} from "./order-rollup";
 
 type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
 
@@ -11,56 +16,7 @@ type OrderWithTenantRef = Order & {
   tenant?: string | Tenant | null;
 };
 
-async function resolvePayloadUserId(
-  ctx: { db: unknown },
-  clerkUserId: string
-): Promise<string> {
-  const db = ctx.db as {
-    find: (args: {
-      collection: "users";
-      where: { clerkUserId: { equals: string } };
-      limit: number;
-      depth: number;
-    }) => Promise<{ docs?: Array<{ id?: string }> }>;
-  };
-
-  const me = await db.find({
-    collection: "users",
-    where: { clerkUserId: { equals: clerkUserId } },
-    limit: 1,
-    depth: 0,
-  });
-
-  const payloadUserId = me.docs?.[0]?.id;
-  if (!payloadUserId) throw new TRPCError({ code: "FORBIDDEN" });
-  return payloadUserId;
-}
-
 export const ordersRouter = createTRPCRouter({
-  // Boolean for the navbar “My Orders”
-  hasAnyPaidMine: baseProcedure.query(async ({ ctx }) => {
-    if (!ctx.userId) return { hasAny: false };
-
-    const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
-
-    if (!payloadUserId) return { hasAny: false };
-
-    const found = await ctx.db.find({
-      collection: "orders",
-      where: {
-        and: [
-          { user: { equals: payloadUserId } },
-          { status: { in: ["paid", "refunded"] } },
-        ],
-      },
-      limit: 1,
-      depth: 0,
-      overrideAccess: true,
-    });
-
-    return { hasAny: (found.docs?.length ?? 0) > 0 };
-  }),
-
   // Optional list for an Orders page
   listMine: baseProcedure.query(async ({ ctx }) => {
     if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -104,7 +60,7 @@ export const ordersRouter = createTRPCRouter({
     .input(
       z.object({
         tenantIds: z.array(z.string()).min(1),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -115,7 +71,7 @@ export const ordersRouter = createTRPCRouter({
           and: [
             { tenant: { in: input.tenantIds } },
             // Count fulfilled orders – adjust statuses if you want only "paid"
-            { status: { in: ["paid", "refunded"] } },
+            // { status: { in: ["paid", "refunded"] } },  // show all orders regardless of status
           ],
         },
         limit: 1000,
@@ -170,6 +126,14 @@ export const ordersRouter = createTRPCRouter({
       })) as DocWithId<Order> | null;
 
       if (!order) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // NEW: legacy endpoints only for legacy orders
+      if (order.lifecycleMode === "slot") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This order uses slot lifecycle. Use booking-level actions.",
+        });
+      }
 
       const tenantId =
         typeof order.tenant === "string" ? order.tenant : order.tenant?.id;
@@ -262,6 +226,14 @@ export const ordersRouter = createTRPCRouter({
 
       if (!order) throw new TRPCError({ code: "NOT_FOUND" });
 
+      // NEW: legacy endpoints only for legacy orders
+      if (order.lifecycleMode === "slot") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This order uses slot lifecycle. Use booking-level actions.",
+        });
+      }
+
       const orderUserId =
         typeof order.user === "string" ? order.user : order.user?.id;
 
@@ -302,7 +274,7 @@ export const ordersRouter = createTRPCRouter({
       z.object({
         orderId: z.string().min(1),
         reason: z.string().min(3).max(500).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -317,6 +289,14 @@ export const ordersRouter = createTRPCRouter({
       })) as DocWithId<Order> | null;
 
       if (!order) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // NEW: legacy endpoints only for legacy orders
+      if (order.lifecycleMode === "slot") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This order uses slot lifecycle. Use booking-level actions.",
+        });
+      }
 
       //completion guard:
       const orderUserId =
@@ -346,4 +326,67 @@ export const ordersRouter = createTRPCRouter({
 
       return { ok: true };
     }),
+  // Stage 1C: Customer slot-lifecycle view
+  listMineSlotLifecycle: baseProcedure.query(({ ctx }) =>
+    listMineSlotLifecycleImpl(ctx),
+  ),
+
+  // Stage 1C: Tenant slot-lifecycle view imported from the order-rollup.Tenant orders lifecycle with pagination.
+  listForMyTenantSlotLifecycle: baseProcedure
+    .input(
+      z
+        .object({
+          page: z.number().int().min(1).optional(),
+          limit: z.number().int().min(1).max(100).optional(),
+        })
+        .optional(),
+    )
+    .query(({ ctx, input }) => listForMyTenantSlotLifecycleImpl(ctx, input)),
+  // check if customer has any orders:
+  // NEW: show Orders button for slot-lifecycle orders (any status) - above we have hasAnyPaidMine
+  hasAnyMineSlotLifecycle: baseProcedure.query(async ({ ctx }) => {
+    if (!ctx.userId) return { hasAny: false };
+
+    const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+    if (!payloadUserId) return { hasAny: false };
+
+    const found = await ctx.db.find({
+      collection: "orders",
+      where: {
+        and: [
+          { user: { equals: payloadUserId } },
+          { lifecycleMode: { equals: "slot" } },
+        ],
+      },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    return { hasAny: (found.docs?.length ?? 0) > 0 };
+  }),
+
+  // Boolean for paid orders (legacy booking-lifecycle) & will be used for reviews:
+  hasAnyPaidMine: baseProcedure.query(async ({ ctx }) => {
+    if (!ctx.userId) return { hasAny: false };
+
+    const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+
+    if (!payloadUserId) return { hasAny: false };
+
+    const found = await ctx.db.find({
+      collection: "orders",
+      where: {
+        and: [
+          { user: { equals: payloadUserId } },
+          { status: { in: ["paid", "refunded"] } },
+        ],
+      },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    return { hasAny: (found.docs?.length ?? 0) > 0 };
+  }),
 });

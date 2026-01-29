@@ -24,6 +24,12 @@ const devLog = (...args: unknown[]) => {
  */
 
 type WebhookOrder = Pick<Order, "id" | "status">;
+type WebhookInvoice = {
+  id: string;
+  status?: string | null;
+  paidAt?: string | null;
+  order?: string | { id: string } | null;
+};
 
 const paymentIntentIdOf = (s: Stripe.Checkout.Session): string | null => {
   if (typeof s.payment_intent === "string") return s.payment_intent;
@@ -72,6 +78,73 @@ export async function POST(req: Request) {
        */
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+
+        // ✅ Invoice payments (pay-after-acceptance flow)
+        const invoiceId = (session.metadata?.invoiceId ?? null) as
+          | string
+          | null;
+        if (invoiceId) {
+          const piId = paymentIntentIdOf(session);
+          let invoice: WebhookInvoice | undefined;
+
+          const byId = await payload.find({
+            collection: "invoices",
+            where: { id: { equals: invoiceId } },
+            limit: 1,
+            depth: 0,
+            overrideAccess: true,
+          });
+          invoice = byId.docs?.[0] as WebhookInvoice | undefined;
+
+          if (!invoice) {
+            const bySession = await payload.find({
+              collection: "invoices",
+              where: { stripeCheckoutSessionId: { equals: session.id } },
+              limit: 1,
+              depth: 0,
+              overrideAccess: true,
+            });
+            invoice = bySession.docs?.[0] as WebhookInvoice | undefined;
+          }
+
+          if (!invoice) return NextResponse.json({ ok: true }, { status: 200 });
+
+          const paidAt =
+            invoice.status !== "paid"
+              ? new Date().toISOString()
+              : invoice.paidAt ?? undefined;
+
+          if (invoice.status !== "paid") {
+            await payload.update({
+              collection: "invoices",
+              id: invoice.id,
+              data: {
+                status: "paid",
+                stripePaymentIntentId: piId ?? undefined,
+                paidAt: paidAt!,
+              },
+              overrideAccess: true,
+            });
+          }
+
+          const orderId =
+            typeof invoice.order === "string"
+              ? invoice.order
+              : invoice.order?.id;
+          if (orderId) {
+            await payload.update({
+              collection: "orders",
+              id: orderId,
+              data: {
+                invoiceStatus: "paid",
+                ...(paidAt ? { paidAt } : {}),
+              },
+              overrideAccess: true,
+            });
+          }
+
+          return NextResponse.json({ ok: true }, { status: 200 });
+        }
 
         // Metadata we attached when creating the Checkout Session:
         // - orderId: our pending order document id

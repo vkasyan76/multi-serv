@@ -5,7 +5,7 @@ import {
   CANCELLATION_WINDOW_HOURS,
   COMMISSION_RATE_BPS_DEFAULT,
   DISPUTE_WINDOW_DAYS_DEFAULT,
-  BOOKING_SERVICE_STATUSES,
+  SERVICE_STATUSES,
   BOOKING_PAYMENT_STATUSES,
 } from "@/constants";
 import { TermsConsent } from "./terms-consent";
@@ -56,7 +56,7 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
           <div className="space-y-2">
             <p className="font-medium">Service status (system values):</p>
             <ul className="list-disc pl-6">
-              {BOOKING_SERVICE_STATUSES.map((s) => (
+              {SERVICE_STATUSES.map((s) => (
                 <li key={s}>{s}</li>
               ))}
             </ul>

@@ -3,6 +3,11 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ExternalLink } from "lucide-react";
 import { TenantCalendarSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-calendar-skeleton";
 import { TenantMessagesSkeleton } from "@/modules/tenants/ui/components/skeletons/tenant-messages-skeleton";
@@ -10,6 +15,13 @@ import Image from "next/image";
 
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { TenantOrdersLifecycleView } from "@/modules/orders/ui/tenant-orders-lifecycle-view";
+import {
+  type AppLang,
+  getInitialLanguage,
+  normalizeToSupported,
+} from "@/modules/profile/location-utils";
 
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
@@ -17,19 +29,27 @@ const TenantCalendar = dynamic(
   {
     ssr: false,
     loading: () => <TenantCalendarSkeleton />,
-  }
+  },
 );
 
 const TenantMessagesSection = dynamic(
   () =>
     import("@/modules/conversations/ui/tenant-messages-section").then(
-      (m) => m.TenantMessagesSection
+      (m) => m.TenantMessagesSection,
     ),
-  { ssr: false, loading: () => <TenantMessagesSkeleton /> }
+  { ssr: false, loading: () => <TenantMessagesSkeleton /> },
 );
 
-function SectionTitle({ iconSrc, label }: { iconSrc: string; label: string }) {
-  return (
+function SectionTitle({
+  iconSrc,
+  label,
+  tooltip,
+}: {
+  iconSrc: string;
+  label: string;
+  tooltip?: string;
+}) {
+  const heading = (
     <h2 className="text-lg sm:text-xl font-semibold mb-3 inline-flex items-center gap-2">
       <Image
         src={iconSrc}
@@ -43,11 +63,27 @@ function SectionTitle({ iconSrc, label }: { iconSrc: string; label: string }) {
       <span>{label}</span>
     </h2>
   );
+
+  if (!tooltip) return heading;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{heading}</TooltipTrigger>
+      <TooltipContent side="top">{tooltip}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 export default function DashboardContent({ slug }: { slug: string }) {
   const trpc = useTRPC();
   const tenantQ = useQuery(trpc.tenants.getOne.queryOptions({ slug }));
+  const profileQ = useQuery(trpc.auth.getUserProfile.queryOptions());
+
+  const appLang: AppLang = useMemo(() => {
+    const profileLang = profileQ.data?.language;
+    if (profileLang) return normalizeToSupported(profileLang);
+    return getInitialLanguage();
+  }, [profileQ.data?.language]);
 
   const canEditCalendar =
     tenantQ.data?.onboardingStatus === "completed" &&
@@ -61,6 +97,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
         <SectionTitle
           iconSrc="/SVGs/Dashboard/Calendar_Icon.svg"
           label="Calendar"
+          tooltip="Click to add/remove available slots."
         />
 
         {tenantQ.data && !canEditCalendar && (
@@ -81,18 +118,14 @@ export default function DashboardContent({ slug }: { slug: string }) {
         />
       </section>
 
-      {/* ORDERS (placeholder for now) */}
+      {/* ORDERS */}
       <section id="orders" className="scroll-mt-28 sm:scroll-mt-32">
         <SectionTitle
           iconSrc="/SVGs/Dashboard/Orders_Icon.svg"
           label="Orders"
+          tooltip="Mark slots as completed, then issue invoices after client acceptance."
         />
-        <div className="rounded-lg border bg-white p-5">
-          <p className="text-muted-foreground">
-            Orders table will appear here. We’ll query <code>orders</code> for
-            this tenant and show status, total, receipt, and created date.
-          </p>
-        </div>
+        <TenantOrdersLifecycleView appLang={appLang} />
       </section>
 
       {/* MESSAGES (placeholder for now) */}
