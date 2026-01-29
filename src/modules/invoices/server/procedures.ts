@@ -145,6 +145,14 @@ function paymentIntentIdOf(s: Stripe.Checkout.Session): string | null {
   return null;
 }
 
+function isSessionMissingError(err: unknown): boolean {
+  const e = err as { type?: string; code?: string; statusCode?: number };
+  if (e?.code === "resource_missing") return true;
+  if (e?.type === "StripeInvalidRequestError") return true;
+  if (e?.statusCode === 404) return true;
+  return false;
+}
+
 function relId(input: unknown): string | undefined {
   if (!input) return undefined;
   if (typeof input === "string") return input;
@@ -695,13 +703,6 @@ export const invoicesRouter = createTRPCRouter({
         });
       }
 
-      if (invoice.stripeCheckoutSessionId) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Checkout already created for this invoice.",
-        });
-      }
-
       const tenantId = relId(invoice.tenant);
       if (!tenantId) throw new TRPCError({ code: "BAD_REQUEST" });
 
@@ -718,6 +719,45 @@ export const invoicesRouter = createTRPCRouter({
           code: "BAD_REQUEST",
           message: "Tenant missing Stripe account.",
         });
+      }
+
+      // Allow retries if a previous Checkout Session was abandoned/expired.
+      // This prevents a permanent "unpayable" invoice when users close Checkout.
+      if (invoice.stripeCheckoutSessionId) {
+        let existingPaid = false;
+
+        try {
+          const existingSession = await stripe.checkout.sessions.retrieve(
+            invoice.stripeCheckoutSessionId,
+            undefined,
+            { stripeAccount: tenant.stripeAccountId as string },
+          );
+
+          // If Stripe reports it as paid, block creating a new one.
+          existingPaid = existingSession.payment_status === "paid";
+        } catch (err) {
+          if (!isSessionMissingError(err)) {
+            // Transient/5xx/rate-limit errors should not trigger a new session.
+            // Log in dev so we can debug without blocking production with noisy logs.
+            if (process.env.NODE_ENV !== "production") {
+              console.error("[stripe] session retrieve failed", err);
+            }
+
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Payment provider error. Please try again.",
+            });
+          }
+          // If the session is missing/expired, allow creating a fresh session
+          // and overwrite the stored id.
+        }
+
+        if (existingPaid) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Invoice already paid.",
+          });
+        }
       }
 
       const totalCents = Number(invoice.amountTotalCents ?? 0);

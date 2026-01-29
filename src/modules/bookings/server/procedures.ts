@@ -856,10 +856,9 @@ export const bookingRouter = createTRPCRouter({
             overrideAccess: true,
             depth: 0,
           });
-
-          await recomputeOrdersForBookingId(ctx, input.bookingId);
         }
 
+        await recomputeOrdersForBookingId(ctx, input.bookingId);
         return { ok: true };
       }
 
@@ -956,10 +955,9 @@ export const bookingRouter = createTRPCRouter({
             overrideAccess: true,
             depth: 0,
           });
-
-          await recomputeOrdersForBookingId(ctx, input.bookingId);
         }
 
+        await recomputeOrdersForBookingId(ctx, input.bookingId);
         return { ok: true };
       }
 

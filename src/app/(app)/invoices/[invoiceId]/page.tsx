@@ -4,8 +4,8 @@ import { headers } from "next/headers";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { Badge } from "@/components/ui/badge";
-import { DownloadPdfButton } from "./DownloadPdfButton";
-import { InvoiceTopBar } from "./InvoiceTopBar";
+import { DownloadPdfButton } from "../../../../modules/invoices/ui/DownloadPdfButton";
+import { InvoiceTopBar } from "../../../../modules/invoices/ui/InvoiceTopBar";
 import {
   Table,
   TableBody,
@@ -32,11 +32,7 @@ const statusClass: Record<string, string> = {
   void: "bg-slate-200 text-slate-900",
 };
 
-const Page = async ({
-  params,
-}: {
-  params: Promise<{ invoiceId: string }>;
-}) => {
+const Page = async ({ params }: { params: Promise<{ invoiceId: string }> }) => {
   const { invoiceId } = await params;
   if (!invoiceId) notFound();
 
@@ -55,20 +51,19 @@ const Page = async ({
   const tenantId =
     typeof invoice.tenant === "string"
       ? invoice.tenant
-      : invoice.tenant?.id ?? null;
-  const tenant =
-    tenantId
-      ? await payload.findByID({
-          collection: "tenants",
-          id: tenantId,
-          depth: 2,
-          overrideAccess: true,
-        })
-      : null;
+      : (invoice.tenant?.id ?? null);
+  const tenant = tenantId
+    ? await payload.findByID({
+        collection: "tenants",
+        id: tenantId,
+        depth: 2,
+        overrideAccess: true,
+      })
+    : null;
   const tenantName =
     typeof tenant?.name === "string" && tenant.name.trim()
       ? tenant.name.trim()
-      : tenant?.slug ?? invoice.sellerLegalName ?? "Service Provider";
+      : (tenant?.slug ?? invoice.sellerLegalName ?? "Service Provider");
   const tenantSlug =
     typeof tenant?.slug === "string" && tenant.slug.trim()
       ? tenant.slug.trim()
@@ -78,9 +73,7 @@ const Page = async ({
       ? tenant.image.url
       : null;
   const tenantUser =
-    typeof tenant?.user === "object" && tenant?.user
-      ? tenant.user
-      : null;
+    typeof tenant?.user === "object" && tenant?.user ? tenant.user : null;
   const providerFullName = [tenantUser?.firstName, tenantUser?.lastName]
     .filter(Boolean)
     .join(" ")
@@ -110,7 +103,7 @@ const Page = async ({
     const startLabel = formatDateForLocale(
       startDate,
       { year: "numeric", month: "short", day: "numeric" },
-      appLang
+      appLang,
     );
     const timeFmt = new Intl.DateTimeFormat(locale, {
       hour: "2-digit",
@@ -128,7 +121,7 @@ const Page = async ({
     const endLabel = formatDateForLocale(
       endDate,
       { year: "numeric", month: "short", day: "numeric" },
-      appLang
+      appLang,
     );
     return `${startLabel}, ${startTime} \u2013 ${endLabel}, ${endTime}`;
   };
@@ -144,9 +137,7 @@ const Page = async ({
         <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex items-center justify-between">
           <div>
             <h1 className="text-[28px] font-medium">Invoice</h1>
-            <p className="text-sm text-muted-foreground">
-              {invoice.id}
-            </p>
+            <p className="text-sm text-muted-foreground">{invoice.id}</p>
           </div>
           <Badge
             variant="secondary"
@@ -170,9 +161,7 @@ const Page = async ({
                 {invoice.sellerPostal} {invoice.sellerCity}
               </div>
               <div>{sellerCountry}</div>
-              {invoice.sellerEmail ? (
-                <div>{invoice.sellerEmail}</div>
-              ) : null}
+              {invoice.sellerEmail ? <div>{invoice.sellerEmail}</div> : null}
               {invoice.sellerVatId ? (
                 <div>VAT ID: {invoice.sellerVatId}</div>
               ) : null}
@@ -188,9 +177,7 @@ const Page = async ({
                 {invoice.buyerPostal} {invoice.buyerCity}
               </div>
               <div>{buyerCountry}</div>
-              {invoice.buyerEmail ? (
-                <div>{invoice.buyerEmail}</div>
-              ) : null}
+              {invoice.buyerEmail ? <div>{invoice.buyerEmail}</div> : null}
             </div>
           </div>
 
@@ -236,10 +223,18 @@ const Page = async ({
                   </TableCell>
                   <TableCell className="text-right">{li.qty}</TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(Number(li.unitAmountCents ?? 0) / 100, currency, appLang)}
+                    {formatCurrency(
+                      Number(li.unitAmountCents ?? 0) / 100,
+                      currency,
+                      appLang,
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(Number(li.amountCents ?? 0) / 100, currency, appLang)}
+                    {formatCurrency(
+                      Number(li.amountCents ?? 0) / 100,
+                      currency,
+                      appLang,
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
