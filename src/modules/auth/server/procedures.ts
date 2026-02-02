@@ -93,6 +93,8 @@ export const authRouter = createTRPCRouter({
           email: input.email,
           username: input.username,
           // No tenants array initially - will be added when user becomes vendor
+          // emailDeliverabilityStatus field:
+          emailDeliverabilityStatus: "ok",
         },
       });
 
@@ -198,12 +200,12 @@ export const authRouter = createTRPCRouter({
         await updateClerkUserMetadata(
           userId!,
           existingUser.id as string,
-          existingUser.username // now narrowed to `string`
+          existingUser.username, // now narrowed to `string`
         );
       } else {
         if (process.env.NODE_ENV !== "production") {
           console.log(
-            "syncClerkUser: username is null/empty; skipping Clerk metadata update"
+            "syncClerkUser: username is null/empty; skipping Clerk metadata update",
           );
         }
       }
@@ -352,7 +354,7 @@ export const authRouter = createTRPCRouter({
               tenantName: input.name ?? "",
             },
           },
-          { idempotencyKey: `acct_create:${currentUser.id}:card+transfers:v2` }
+          { idempotencyKey: `acct_create:${currentUser.id}:card+transfers:v2` },
         ));
 
         if (!accountId) {
@@ -471,7 +473,7 @@ export const authRouter = createTRPCRouter({
           // Heads-up: tenant rollback failed but Stripe account exists; state is intentionally left consistent.
           console.warn(
             "[createVendorProfile] Orphan risk: tenant rollback failed; keeping Stripe account",
-            { accountId: accountId.slice(0, 8) + "…", tenantId: tenant.id }
+            { accountId: accountId.slice(0, 8) + "…", tenantId: tenant.id },
           );
         }
 
@@ -740,7 +742,7 @@ export const authRouter = createTRPCRouter({
       // Return null instead of throwing - this stops the infinite spinner
       console.log(
         "getUserProfile: No user found for clerkUserId:",
-        mask(userId)
+        mask(userId),
       );
       return null;
     }
@@ -751,7 +753,7 @@ export const authRouter = createTRPCRouter({
       // Return null instead of throwing - this stops the infinite spinner
       console.log(
         "getUserProfile: User document is null for clerkUserId:",
-        mask(userId)
+        mask(userId),
       );
       return null;
     }
@@ -841,7 +843,7 @@ export const authRouter = createTRPCRouter({
       if (tenant.categories && tenant.categories.length > 0) {
         // Extract just the IDs from the category objects
         const categoryIds = tenant.categories.map((cat) =>
-          typeof cat === "object" && cat.id ? cat.id : cat
+          typeof cat === "object" && cat.id ? cat.id : cat,
         );
 
         const categoryDocs = await ctx.db.find({
@@ -859,7 +861,7 @@ export const authRouter = createTRPCRouter({
       if (tenant.subcategories && tenant.subcategories.length > 0) {
         // Extract just the IDs from the subcategory objects
         const subcategoryIds = tenant.subcategories.map((sub) =>
-          typeof sub === "object" && sub.id ? sub.id : sub
+          typeof sub === "object" && sub.id ? sub.id : sub,
         );
 
         const subcategoryDocs = await ctx.db.find({
@@ -1005,12 +1007,12 @@ export const authRouter = createTRPCRouter({
         await updateClerkUserMetadata(
           userId!,
           currentUser.id,
-          input.username || undefined
+          input.username || undefined,
         );
       } else {
         if (process.env.NODE_ENV !== "production") {
           console.log(
-            "updateUserProfile: currentUser.id is null/empty; skipping Clerk metadata update"
+            "updateUserProfile: currentUser.id is null/empty; skipping Clerk metadata update",
           );
         }
       }
@@ -1034,7 +1036,7 @@ export const authRouter = createTRPCRouter({
         // NEW: Optional top-level fields
         country: z.string().optional(), // top-level display name
         language: z.string().optional(), // consider narrowing server-side
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.userId;
@@ -1076,7 +1078,7 @@ export const authRouter = createTRPCRouter({
       if (hasManual || (doneOnboarding && haveCoords)) {
         if (process.env.NODE_ENV !== "production") {
           console.log(
-            `Geo update skipped for ${String(userId).slice(0, 8)}… (manual or completed)`
+            `Geo update skipped for ${String(userId).slice(0, 8)}… (manual or completed)`,
           );
         }
         return { success: true, stored: false, coordinates: existing };
@@ -1153,7 +1155,7 @@ export const authRouter = createTRPCRouter({
 
       if (process.env.NODE_ENV !== "production") {
         console.log(
-          `Geo update for user ${mask(userId)}: stored=${changed}, countryISO=${merged.countryISO ?? "unknown"}`
+          `Geo update for user ${mask(userId)}: stored=${changed}, countryISO=${merged.countryISO ?? "unknown"}`,
         );
       }
 
@@ -1188,11 +1190,11 @@ export const authRouter = createTRPCRouter({
 
       const returnUrl = new URL(
         "/profile?tab=payouts&onboarding=done",
-        base
+        base,
       ).toString();
       const refreshUrl = new URL(
         "/profile?tab=payouts&resume=1",
-        base
+        base,
       ).toString();
 
       const link = await stripe.accountLinks.create({
@@ -1324,7 +1326,7 @@ export const authRouter = createTRPCRouter({
 
     const bump = (
       rows: Stripe.Balance.Available[] | Stripe.Balance.Pending[],
-      key: keyof Totals
+      key: keyof Totals,
     ) => {
       for (const { amount, currency } of rows) {
         const k = currency.toLowerCase();
