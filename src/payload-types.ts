@@ -79,6 +79,7 @@ export interface Config {
     conversations: Conversation;
     messages: Message;
     payment_profiles: PaymentProfile;
+    email_event_logs: EmailEventLog;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -101,6 +102,7 @@ export interface Config {
     conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
     payment_profiles: PaymentProfilesSelect<false> | PaymentProfilesSelect<true>;
+    email_event_logs: EmailEventLogsSelect<false> | EmailEventLogsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -248,6 +250,22 @@ export interface User {
   bookingBlocked?: boolean | null;
   bookingBlockedReason?: string | null;
   bookingBlockedAt?: string | null;
+  /**
+   * Email send status for this user.
+   */
+  emailDeliverabilityStatus: 'ok' | 'soft_suppressed' | 'hard_suppressed';
+  /**
+   * Why the current deliverability status was set.
+   */
+  emailDeliverabilityReason?: ('complaint' | 'bounce_transient' | 'bounce_permanent' | 'manual') | null;
+  /**
+   * For soft suppression, resume email sends after this timestamp.
+   */
+  emailDeliverabilityRetryAfter?: string | null;
+  /**
+   * Last time deliverability status changed.
+   */
+  emailDeliverabilityUpdatedAt?: string | null;
   policyAcceptedVersion?: string | null;
   policyAcceptedAt?: string | null;
   updatedAt: string;
@@ -658,6 +676,37 @@ export interface PaymentProfile {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email_event_logs".
+ */
+export interface EmailEventLog {
+  id: string;
+  /**
+   * Domain event key, e.g. invoice.issued.customer
+   */
+  eventType: string;
+  entityType: 'order' | 'booking' | 'invoice' | 'message';
+  entityId: string;
+  /**
+   * Optional: link to the Payload user recipient.
+   */
+  recipientUser?: (string | null) | User;
+  toEmail: string;
+  dedupeKey: string;
+  provider: 'resend';
+  /**
+   * Message id returned by the provider.
+   */
+  providerMessageId?: string | null;
+  status: 'pending' | 'sent' | 'failed' | 'skipped';
+  /**
+   * Optional error details for failed sends.
+   */
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -710,6 +759,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'payment_profiles';
         value: string | PaymentProfile;
+      } | null)
+    | ({
+        relationTo: 'email_event_logs';
+        value: string | EmailEventLog;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -796,6 +849,10 @@ export interface UsersSelect<T extends boolean = true> {
   bookingBlocked?: T;
   bookingBlockedReason?: T;
   bookingBlockedAt?: T;
+  emailDeliverabilityStatus?: T;
+  emailDeliverabilityReason?: T;
+  emailDeliverabilityRetryAfter?: T;
+  emailDeliverabilityUpdatedAt?: T;
   policyAcceptedVersion?: T;
   policyAcceptedAt?: T;
   updatedAt?: T;
@@ -1061,6 +1118,24 @@ export interface PaymentProfilesSelect<T extends boolean = true> {
   setupCompletedAt?: T;
   lastUsedAt?: T;
   disabledAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email_event_logs_select".
+ */
+export interface EmailEventLogsSelect<T extends boolean = true> {
+  eventType?: T;
+  entityType?: T;
+  entityId?: T;
+  recipientUser?: T;
+  toEmail?: T;
+  dedupeKey?: T;
+  provider?: T;
+  providerMessageId?: T;
+  status?: T;
+  error?: T;
   updatedAt?: T;
   createdAt?: T;
 }

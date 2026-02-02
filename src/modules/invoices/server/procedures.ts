@@ -7,6 +7,8 @@ import type { Booking, Invoice, Order, Tenant, User } from "@/payload-types";
 import type { Stripe } from "stripe";
 import { stripe } from "@/lib/stripe";
 import { resolveVatRateBps } from "./vat-rates";
+import { sendDomainEmail } from "@/modules/email/events";
+import type { EmailDeliverability } from "@/modules/email/types";
 
 type DocWithId<T> = T & { id: string };
 
@@ -137,6 +139,41 @@ function displayName(user: DocWithId<User>): string {
   const last = (user.lastName ?? "").trim();
   const full = `${first} ${last}`.trim();
   return full || (user.username ?? "").trim() || (user.email ?? "").trim();
+}
+
+function toEmailDeliverability(user: DocWithId<User>): EmailDeliverability {
+  // These fields are newly added in Payload and may lag in generated TS types.
+  const deliverability = user as User & {
+    emailDeliverabilityStatus?: unknown;
+    emailDeliverabilityReason?: unknown;
+    emailDeliverabilityRetryAfter?: unknown;
+  };
+
+  const retryAfterRaw = deliverability.emailDeliverabilityRetryAfter;
+  const isDate = (value: unknown): value is Date => value instanceof Date;
+
+  return {
+    status:
+      typeof deliverability.emailDeliverabilityStatus === "string"
+        ? (deliverability.emailDeliverabilityStatus as
+            | "ok"
+            | "soft_suppressed"
+            | "hard_suppressed")
+        : undefined,
+    reason:
+      typeof deliverability.emailDeliverabilityReason === "string"
+        ? (deliverability.emailDeliverabilityReason as
+            | "complaint"
+            | "bounce_transient"
+            | "bounce_permanent"
+            | "manual")
+        : undefined,
+    retryAfter:
+      typeof retryAfterRaw === "string" ||
+      (typeof retryAfterRaw === "object" && isDate(retryAfterRaw))
+        ? retryAfterRaw
+        : undefined,
+  };
 }
 
 function paymentIntentIdOf(s: Stripe.Checkout.Session): string | null {
@@ -528,6 +565,35 @@ export const invoicesRouter = createTRPCRouter({
       const existingInvoice =
         (existing.docs?.[0] as InvoiceDoc | undefined) ?? null;
       if (existingInvoice) {
+        // Retry-safe trigger: dedupeKey prevents duplicate email sends.
+        if (buyerUser.email) {
+          try {
+            await sendDomainEmail({
+              db: ctx.db,
+              eventType: "invoice.issued.customer",
+              entityType: "invoice",
+              entityId: existingInvoice.id,
+              recipientUserId: customerId,
+              toEmail: buyerUser.email,
+              deliverability: toEmailDeliverability(buyerUser),
+              data: {
+                customerName: displayName(buyerUser),
+                invoiceId: existingInvoice.id,
+                orderId: order.id,
+                amountTotalCents: Number(existingInvoice.amountTotalCents ?? 0),
+                currency: String(existingInvoice.currency ?? "eur"),
+                invoiceUrl: toAbsolute(`/invoices/${existingInvoice.id}`),
+              },
+            });
+          } catch (err) {
+            if (process.env.NODE_ENV !== "production") {
+              console.error(
+                "[email] invoice.issued.customer existing failed",
+                err,
+              );
+            }
+          }
+        }
         await recomputeOrderInvoiceCache(ctx, order.id);
         return existingInvoice;
       }
@@ -668,6 +734,34 @@ export const invoicesRouter = createTRPCRouter({
         overrideAccess: true,
         depth: 0,
       });
+
+      // MVP email hook: notify customer when invoice is issued.
+      // Keep non-blocking so invoice creation never fails because of email.
+      if (buyerUser.email) {
+        try {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "invoice.issued.customer",
+            entityType: "invoice",
+            entityId: created.id,
+            recipientUserId: customerId,
+            toEmail: buyerUser.email,
+            deliverability: toEmailDeliverability(buyerUser),
+            data: {
+              customerName: displayName(buyerUser),
+              invoiceId: created.id,
+              orderId: order.id,
+              amountTotalCents: grossTotalCents,
+              currency,
+              invoiceUrl: toAbsolute(`/invoices/${created.id}`),
+            },
+          });
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error("[email] invoice.issued.customer failed", err);
+          }
+        }
+      }
 
       return created;
     }),

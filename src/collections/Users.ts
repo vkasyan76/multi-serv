@@ -307,6 +307,66 @@ export const Users: CollectionConfig = {
         position: "sidebar",
       },
     },
+    // Email deliverability safety fields:
+    // we suppress addresses that complaint/bounce to protect sender reputation.
+    // suppression is reversible by setting status back to "ok" in admin.
+    {
+      name: "emailDeliverabilityStatus",
+      type: "select",
+      required: false,
+      defaultValue: "ok",
+      options: ["ok", "soft_suppressed", "hard_suppressed"],
+      index: true,
+      // System-managed field (webhooks/admin), not user-editable.
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
+      admin: {
+        position: "sidebar",
+        description: "Email send status for this user.",
+      },
+    },
+    {
+      name: "emailDeliverabilityReason",
+      type: "select",
+      options: [
+        "complaint",
+        "bounce_transient",
+        "bounce_permanent",
+        "manual",
+      ],
+      // Keep deliverability metadata trusted (super-admin only).
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
+      admin: {
+        position: "sidebar",
+        description: "Why the current deliverability status was set.",
+      },
+    },
+    {
+      name: "emailDeliverabilityRetryAfter",
+      type: "date",
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
+      admin: {
+        position: "sidebar",
+        description:
+          "For soft suppression, resume email sends after this timestamp.",
+      },
+    },
+    {
+      name: "emailDeliverabilityUpdatedAt",
+      type: "date",
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
+      admin: {
+        position: "sidebar",
+        description: "Last time deliverability status changed.",
+      },
+    },
 
     // Legal compliance fields
     {
