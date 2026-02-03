@@ -12,15 +12,14 @@ import {
 } from "@react-email/components";
 import { render } from "@react-email/render";
 
-type InvoiceIssuedCustomerTemplateProps = {
-  customerName?: string;
+type InvoiceIssuedTenantTemplateProps = {
   tenantName?: string;
-  tenantSlug?: string;
+  customerName?: string;
   invoiceId: string;
   orderId?: string;
   amountTotalCents: number;
   currency: string;
-  ordersUrl: string;
+  invoiceUrl: string;
   services?: string[];
   dateRangeStart?: string;
   dateRangeEnd?: string;
@@ -28,7 +27,6 @@ type InvoiceIssuedCustomerTemplateProps = {
 };
 
 function formatAmount(amountTotalCents: number, currency: string) {
-  // Keep formatting deterministic for email rendering.
   const amountMajor = amountTotalCents / 100;
   const code = (currency || "EUR").toUpperCase();
 
@@ -81,19 +79,12 @@ function formatDateRangeUtc(
   return startStr === endStr ? startStr : `${startStr} - ${endStr}`;
 }
 
-function formatTenantLabel(tenantSlug?: string, tenantName?: string) {
-  const slug = (tenantSlug ?? "").trim();
-  const name = (tenantName ?? "").trim();
-  if (slug && name) return `${slug} (${name})`;
-  return slug || name || "the tenant";
-}
-
-function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
+function InvoiceIssuedTenantEmail(props: InvoiceIssuedTenantTemplateProps) {
   const amount = formatAmount(props.amountTotalCents, props.currency);
-  const greeting = props.customerName?.trim()
-    ? `Dear ${props.customerName.trim()},`
+  const greeting = props.tenantName?.trim()
+    ? `Dear ${props.tenantName.trim()},`
     : "Dear,";
-  const tenantLabel = formatTenantLabel(props.tenantSlug, props.tenantName);
+  const customerName = (props.customerName ?? "your customer").trim();
   const dateRange = formatDateRangeUtc(
     props.dateRangeStart,
     props.dateRangeEnd,
@@ -106,7 +97,7 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
   return (
     <Html>
       <Head />
-      <Preview>Payment request from {tenantLabel}.</Preview>
+      <Preview>Payment request sent to {customerName}.</Preview>
       <Body style={{ backgroundColor: "#f6f7f8", padding: "24px 0" }}>
         <Container
           style={{
@@ -118,12 +109,13 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
           }}
         >
           <Heading style={{ margin: "0 0 16px", fontSize: "24px" }}>
-            Payment Request
+            Payment Request Sent
           </Heading>
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
           <Text style={{ margin: "0 0 8px" }}>
-            {tenantLabel} requested payment for the services below
-            {dateRange ? `, carried out ${dateRange}` : ""}.
+            Your payment request was sent to {customerName} for the services
+            below
+            {dateRange ? ` (${dateRange})` : ""}.
           </Text>
           {services.length ? (
             <Section style={{ margin: "8px 0 16px" }}>
@@ -147,7 +139,7 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
           </Text>
           <Section style={{ margin: "20px 0 8px" }}>
             <Button
-              href={props.ordersUrl}
+              href={props.invoiceUrl}
               style={{
                 backgroundColor: "#111827",
                 color: "#ffffff",
@@ -156,7 +148,7 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
                 textDecoration: "none",
               }}
             >
-              View & Pay
+              View Invoice
             </Button>
           </Section>
         </Container>
@@ -165,10 +157,9 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
   );
 }
 
-export async function renderInvoiceIssuedCustomerTemplate(
+export async function renderInvoiceIssuedTenantTemplate(
   data: Record<string, unknown>,
 ) {
-  // Template data comes from domain events, so parse defensively.
   const invoiceId = String(data.invoiceId ?? "");
   const orderId =
     data.orderId == null || data.orderId === ""
@@ -176,13 +167,11 @@ export async function renderInvoiceIssuedCustomerTemplate(
       : String(data.orderId);
   const amountTotalCents = Number(data.amountTotalCents ?? 0);
   const currency = String(data.currency ?? "eur");
-  const ordersUrl = String(data.ordersUrl ?? "");
-  const customerName =
-    data.customerName == null ? undefined : String(data.customerName);
+  const invoiceUrl = String(data.invoiceUrl ?? "");
   const tenantName =
     data.tenantName == null ? undefined : String(data.tenantName);
-  const tenantSlug =
-    data.tenantSlug == null ? undefined : String(data.tenantSlug);
+  const customerName =
+    data.customerName == null ? undefined : String(data.customerName);
   const servicesRaw = data.services;
   const services = Array.isArray(servicesRaw)
     ? servicesRaw.map((s) => String(s)).filter(Boolean)
@@ -192,19 +181,19 @@ export async function renderInvoiceIssuedCustomerTemplate(
   const dateRangeEnd =
     data.dateRangeEnd == null ? undefined : String(data.dateRangeEnd);
   const locale = data.locale == null ? undefined : String(data.locale);
-  const tenantLabel = formatTenantLabel(tenantSlug, tenantName);
 
-  const subject = `Payment request from ${tenantLabel}`;
+  const subject = customerName
+    ? `Payment request sent to ${customerName}`
+    : "Payment request sent";
   const html = await render(
-    <InvoiceIssuedCustomerEmail
-      customerName={customerName}
+    <InvoiceIssuedTenantEmail
       tenantName={tenantName}
-      tenantSlug={tenantSlug}
+      customerName={customerName}
       invoiceId={invoiceId}
       orderId={orderId}
       amountTotalCents={amountTotalCents}
       currency={currency}
-      ordersUrl={ordersUrl}
+      invoiceUrl={invoiceUrl}
       services={services}
       dateRangeStart={dateRangeStart}
       dateRangeEnd={dateRangeEnd}
@@ -214,16 +203,16 @@ export async function renderInvoiceIssuedCustomerTemplate(
   const amount = formatAmount(amountTotalCents, currency);
   const dateRange = formatDateRangeUtc(dateRangeStart, dateRangeEnd, locale);
   const text = [
-    customerName ? `Dear ${customerName},` : "Dear,",
+    tenantName ? `Dear ${tenantName},` : "Dear,",
     "",
-    `${tenantLabel} requested payment for the services below${dateRange ? `, carried out ${dateRange}` : ""}.`,
+    `Your payment request was sent to ${customerName ?? "your customer"} for the services below${dateRange ? ` (${dateRange})` : ""}.`,
     "",
     ...services.map((service) => `- ${service}`),
     `Invoice: ${invoiceId}`,
     orderId ? `Order: ${orderId}` : "",
     `Total: ${amount}`,
     "",
-    `View & Pay: ${ordersUrl}`,
+    `View Invoice: ${invoiceUrl}`,
   ]
     .filter(Boolean)
     .join("\n");

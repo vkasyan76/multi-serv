@@ -1,6 +1,10 @@
 import { Resend } from "resend";
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return new Response("Not found", { status: 404 });
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {

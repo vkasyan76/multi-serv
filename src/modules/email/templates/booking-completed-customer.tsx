@@ -12,35 +12,17 @@ import {
 } from "@react-email/components";
 import { render } from "@react-email/render";
 
-type InvoiceIssuedCustomerTemplateProps = {
+type BookingCompletedCustomerTemplateProps = {
   customerName?: string;
   tenantName?: string;
   tenantSlug?: string;
-  invoiceId: string;
-  orderId?: string;
-  amountTotalCents: number;
-  currency: string;
+  bookingId: string;
   ordersUrl: string;
   services?: string[];
   dateRangeStart?: string;
   dateRangeEnd?: string;
   locale?: string;
 };
-
-function formatAmount(amountTotalCents: number, currency: string) {
-  // Keep formatting deterministic for email rendering.
-  const amountMajor = amountTotalCents / 100;
-  const code = (currency || "EUR").toUpperCase();
-
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: code,
-    }).format(amountMajor);
-  } catch {
-    return `${amountMajor.toFixed(2)} ${code}`;
-  }
-}
 
 function toLocaleTag(language?: string) {
   switch ((language ?? "").toLowerCase()) {
@@ -88,8 +70,9 @@ function formatTenantLabel(tenantSlug?: string, tenantName?: string) {
   return slug || name || "the tenant";
 }
 
-function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
-  const amount = formatAmount(props.amountTotalCents, props.currency);
+function BookingCompletedCustomerEmail(
+  props: BookingCompletedCustomerTemplateProps,
+) {
   const greeting = props.customerName?.trim()
     ? `Dear ${props.customerName.trim()},`
     : "Dear,";
@@ -106,7 +89,7 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
   return (
     <Html>
       <Head />
-      <Preview>Payment request from {tenantLabel}.</Preview>
+      <Preview>Action required: confirm service from {tenantLabel}.</Preview>
       <Body style={{ backgroundColor: "#f6f7f8", padding: "24px 0" }}>
         <Container
           style={{
@@ -118,12 +101,13 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
           }}
         >
           <Heading style={{ margin: "0 0 16px", fontSize: "24px" }}>
-            Payment Request
+            Service Completed
           </Heading>
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
           <Text style={{ margin: "0 0 8px" }}>
-            {tenantLabel} requested payment for the services below
-            {dateRange ? `, carried out ${dateRange}` : ""}.
+            {tenantLabel} marked the service below as completed
+            {dateRange ? ` (${dateRange})` : ""}. Please confirm or dispute from
+            your orders.
           </Text>
           {services.length ? (
             <Section style={{ margin: "8px 0 16px" }}>
@@ -134,16 +118,8 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
               </ul>
             </Section>
           ) : null}
-          <Text style={{ margin: "0 0 8px" }}>
-            <strong>Invoice:</strong> {props.invoiceId}
-          </Text>
-          {props.orderId ? (
-            <Text style={{ margin: "0 0 8px" }}>
-              <strong>Order:</strong> {props.orderId}
-            </Text>
-          ) : null}
           <Text style={{ margin: "0 0 20px" }}>
-            <strong>Total:</strong> {amount}
+            <strong>Booking:</strong> {props.bookingId}
           </Text>
           <Section style={{ margin: "20px 0 8px" }}>
             <Button
@@ -156,7 +132,7 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
                 textDecoration: "none",
               }}
             >
-              View & Pay
+              View Orders
             </Button>
           </Section>
         </Container>
@@ -165,17 +141,10 @@ function InvoiceIssuedCustomerEmail(props: InvoiceIssuedCustomerTemplateProps) {
   );
 }
 
-export async function renderInvoiceIssuedCustomerTemplate(
+export async function renderBookingCompletedCustomerTemplate(
   data: Record<string, unknown>,
 ) {
-  // Template data comes from domain events, so parse defensively.
-  const invoiceId = String(data.invoiceId ?? "");
-  const orderId =
-    data.orderId == null || data.orderId === ""
-      ? undefined
-      : String(data.orderId);
-  const amountTotalCents = Number(data.amountTotalCents ?? 0);
-  const currency = String(data.currency ?? "eur");
+  const bookingId = String(data.bookingId ?? "");
   const ordersUrl = String(data.ordersUrl ?? "");
   const customerName =
     data.customerName == null ? undefined : String(data.customerName);
@@ -194,16 +163,13 @@ export async function renderInvoiceIssuedCustomerTemplate(
   const locale = data.locale == null ? undefined : String(data.locale);
   const tenantLabel = formatTenantLabel(tenantSlug, tenantName);
 
-  const subject = `Payment request from ${tenantLabel}`;
+  const subject = `Action required: confirm service from ${tenantLabel}`;
   const html = await render(
-    <InvoiceIssuedCustomerEmail
+    <BookingCompletedCustomerEmail
       customerName={customerName}
       tenantName={tenantName}
       tenantSlug={tenantSlug}
-      invoiceId={invoiceId}
-      orderId={orderId}
-      amountTotalCents={amountTotalCents}
-      currency={currency}
+      bookingId={bookingId}
       ordersUrl={ordersUrl}
       services={services}
       dateRangeStart={dateRangeStart}
@@ -211,19 +177,16 @@ export async function renderInvoiceIssuedCustomerTemplate(
       locale={locale}
     />,
   );
-  const amount = formatAmount(amountTotalCents, currency);
   const dateRange = formatDateRangeUtc(dateRangeStart, dateRangeEnd, locale);
   const text = [
     customerName ? `Dear ${customerName},` : "Dear,",
     "",
-    `${tenantLabel} requested payment for the services below${dateRange ? `, carried out ${dateRange}` : ""}.`,
+    `${tenantLabel} marked the service below as completed${dateRange ? ` (${dateRange})` : ""}. Please confirm or dispute from your orders.`,
     "",
     ...services.map((service) => `- ${service}`),
-    `Invoice: ${invoiceId}`,
-    orderId ? `Order: ${orderId}` : "",
-    `Total: ${amount}`,
+    `Booking: ${bookingId}`,
     "",
-    `View & Pay: ${ordersUrl}`,
+    `View Orders: ${ordersUrl}`,
   ]
     .filter(Boolean)
     .join("\n");

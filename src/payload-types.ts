@@ -253,7 +253,7 @@ export interface User {
   /**
    * Email send status for this user.
    */
-  emailDeliverabilityStatus: 'ok' | 'soft_suppressed' | 'hard_suppressed';
+  emailDeliverabilityStatus?: ('ok' | 'soft_suppressed' | 'hard_suppressed') | null;
   /**
    * Why the current deliverability status was set.
    */

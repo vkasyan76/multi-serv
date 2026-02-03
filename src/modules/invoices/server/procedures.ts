@@ -21,6 +21,7 @@ type InvoiceDoc = {
   currency?: string | null;
   amountTotalCents?: number | null;
   stripeCheckoutSessionId?: string | null;
+  lineItems?: LineItem[] | null;
 };
 
 type LineItem = {
@@ -142,37 +143,10 @@ function displayName(user: DocWithId<User>): string {
 }
 
 function toEmailDeliverability(user: DocWithId<User>): EmailDeliverability {
-  // These fields are newly added in Payload and may lag in generated TS types.
-  const deliverability = user as User & {
-    emailDeliverabilityStatus?: unknown;
-    emailDeliverabilityReason?: unknown;
-    emailDeliverabilityRetryAfter?: unknown;
-  };
-
-  const retryAfterRaw = deliverability.emailDeliverabilityRetryAfter;
-  const isDate = (value: unknown): value is Date => value instanceof Date;
-
   return {
-    status:
-      typeof deliverability.emailDeliverabilityStatus === "string"
-        ? (deliverability.emailDeliverabilityStatus as
-            | "ok"
-            | "soft_suppressed"
-            | "hard_suppressed")
-        : undefined,
-    reason:
-      typeof deliverability.emailDeliverabilityReason === "string"
-        ? (deliverability.emailDeliverabilityReason as
-            | "complaint"
-            | "bounce_transient"
-            | "bounce_permanent"
-            | "manual")
-        : undefined,
-    retryAfter:
-      typeof retryAfterRaw === "string" ||
-      (typeof retryAfterRaw === "object" && isDate(retryAfterRaw))
-        ? retryAfterRaw
-        : undefined,
+    status: user.emailDeliverabilityStatus ?? undefined,
+    reason: user.emailDeliverabilityReason ?? undefined,
+    retryAfter: user.emailDeliverabilityRetryAfter ?? undefined,
   };
 }
 
@@ -287,6 +261,42 @@ function buildLineItems(params: {
   }
 
   return { items: rawItems, subtotalCents: rawSum };
+}
+
+function extractServiceNames(items?: LineItem[] | null): string[] {
+  if (!items?.length) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    const name = (item.title ?? "").trim();
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    out.push(name);
+  }
+  return out;
+}
+
+function extractDateRange(items?: LineItem[] | null) {
+  if (!items?.length) return null;
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  for (const item of items) {
+    const startMs = Date.parse(item.start);
+    const endMs = Date.parse(item.end ?? item.start);
+    if (Number.isFinite(startMs)) {
+      min = Math.min(min, startMs);
+    }
+    if (Number.isFinite(endMs)) {
+      max = Math.max(max, endMs);
+    } else if (Number.isFinite(startMs)) {
+      max = Math.max(max, startMs);
+    }
+  }
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  return {
+    start: new Date(min).toISOString(),
+    end: new Date(max).toISOString(),
+  };
 }
 
 export const invoicesRouter = createTRPCRouter({
@@ -548,6 +558,13 @@ export const invoicesRouter = createTRPCRouter({
         });
       }
 
+      const tenantName = displayName(tenantUser);
+      const customerName = displayName(buyerUser);
+      const tenantSlug = typeof tenant.slug === "string" ? tenant.slug : "";
+      const customerLocale = buyerUser.language ?? "en";
+      const tenantLocale = tenantUser.language ?? "en";
+      const ordersUrl = toAbsolute("/orders");
+
       // Idempotency: return existing issued/paid invoice if present.
       const existing = await ctx.db.find({
         collection: "invoices",
@@ -565,6 +582,10 @@ export const invoicesRouter = createTRPCRouter({
       const existingInvoice =
         (existing.docs?.[0] as InvoiceDoc | undefined) ?? null;
       if (existingInvoice) {
+        const existingItems = existingInvoice.lineItems ?? [];
+        const existingServices = extractServiceNames(existingItems);
+        const existingDateRange = extractDateRange(existingItems);
+
         // Retry-safe trigger: dedupeKey prevents duplicate email sends.
         if (buyerUser.email) {
           try {
@@ -577,12 +598,18 @@ export const invoicesRouter = createTRPCRouter({
               toEmail: buyerUser.email,
               deliverability: toEmailDeliverability(buyerUser),
               data: {
-                customerName: displayName(buyerUser),
+                customerName,
+                tenantName,
+                tenantSlug,
                 invoiceId: existingInvoice.id,
                 orderId: order.id,
                 amountTotalCents: Number(existingInvoice.amountTotalCents ?? 0),
                 currency: String(existingInvoice.currency ?? "eur"),
-                invoiceUrl: toAbsolute(`/invoices/${existingInvoice.id}`),
+                ordersUrl,
+                services: existingServices,
+                dateRangeStart: existingDateRange?.start,
+                dateRangeEnd: existingDateRange?.end,
+                locale: customerLocale,
               },
             });
           } catch (err) {
@@ -594,6 +621,38 @@ export const invoicesRouter = createTRPCRouter({
             }
           }
         }
+
+        if (tenantUser.email) {
+          try {
+            await sendDomainEmail({
+              db: ctx.db,
+              eventType: "invoice.issued.tenant",
+              entityType: "invoice",
+              entityId: existingInvoice.id,
+              recipientUserId: ownerId,
+              toEmail: tenantUser.email,
+              deliverability: toEmailDeliverability(tenantUser),
+              data: {
+                tenantName,
+                customerName,
+                invoiceId: existingInvoice.id,
+                orderId: order.id,
+                amountTotalCents: Number(existingInvoice.amountTotalCents ?? 0),
+                currency: String(existingInvoice.currency ?? "eur"),
+                invoiceUrl: toAbsolute(`/invoices/${existingInvoice.id}`),
+                services: existingServices,
+                dateRangeStart: existingDateRange?.start,
+                dateRangeEnd: existingDateRange?.end,
+                locale: tenantLocale,
+              },
+            });
+          } catch (err) {
+            if (process.env.NODE_ENV !== "production") {
+              console.error("[email] invoice.issued.tenant existing failed", err);
+            }
+          }
+        }
+
         await recomputeOrderInvoiceCache(ctx, order.id);
         return existingInvoice;
       }
@@ -642,6 +701,8 @@ export const invoicesRouter = createTRPCRouter({
         tenantHourlyRate: tenantRate,
         targetTotalCents: orderAmountCents,
       });
+      const serviceNames = extractServiceNames(items);
+      const dateRange = extractDateRange(items);
 
       if (!items.length || subtotalCents <= 0) {
         throw new TRPCError({
@@ -748,17 +809,54 @@ export const invoicesRouter = createTRPCRouter({
             toEmail: buyerUser.email,
             deliverability: toEmailDeliverability(buyerUser),
             data: {
-              customerName: displayName(buyerUser),
+              customerName,
+              tenantName,
+              tenantSlug,
               invoiceId: created.id,
               orderId: order.id,
               amountTotalCents: grossTotalCents,
               currency,
-              invoiceUrl: toAbsolute(`/invoices/${created.id}`),
+              ordersUrl,
+              services: serviceNames,
+              dateRangeStart: dateRange?.start,
+              dateRangeEnd: dateRange?.end,
+              locale: customerLocale,
             },
           });
         } catch (err) {
           if (process.env.NODE_ENV !== "production") {
             console.error("[email] invoice.issued.customer failed", err);
+          }
+        }
+      }
+
+      if (tenantUser.email) {
+        try {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "invoice.issued.tenant",
+            entityType: "invoice",
+            entityId: created.id,
+            recipientUserId: ownerId,
+            toEmail: tenantUser.email,
+            deliverability: toEmailDeliverability(tenantUser),
+            data: {
+              tenantName,
+              customerName,
+              invoiceId: created.id,
+              orderId: order.id,
+              amountTotalCents: grossTotalCents,
+              currency,
+              invoiceUrl: toAbsolute(`/invoices/${created.id}`),
+              services: serviceNames,
+              dateRangeStart: dateRange?.start,
+              dateRangeEnd: dateRange?.end,
+              locale: tenantLocale,
+            },
+          });
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error("[email] invoice.issued.tenant failed", err);
           }
         }
       }

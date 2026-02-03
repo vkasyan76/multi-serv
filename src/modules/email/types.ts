@@ -39,6 +39,7 @@ export type SendEmailArgs = {
   html: string;
   text?: string;
   deliverability?: EmailDeliverability;
+  headers?: Record<string, string>;
 };
 
 export type ResolvedEmailEvent = {

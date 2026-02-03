@@ -7,6 +7,10 @@ import type {
   SendDomainEmailArgs,
 } from "./types";
 import { renderInvoiceIssuedCustomerTemplate } from "./templates/invoice-issued-customer";
+import { renderInvoiceIssuedTenantTemplate } from "./templates/invoice-issued-tenant";
+import { renderBookingCompletedCustomerTemplate } from "./templates/booking-completed-customer";
+import { renderBookingAcceptedTenantTemplate } from "./templates/booking-accepted-tenant";
+import { renderBookingDisputedTenantTemplate } from "./templates/booking-disputed-tenant";
 
 type TemplateRenderer = (data: Record<string, unknown>) => Promise<{
   subject: string;
@@ -99,6 +103,10 @@ export async function sendDomainEmail(input: SendDomainEmailArgs) {
       html: event.html,
       text: event.text,
       deliverability: event.deliverability,
+      headers: {
+        "X-Infinisimo-Dedupe-Key": event.dedupeKey,
+        "X-Infinisimo-Event-Type": event.eventType,
+      },
     });
 
     // Finalize reserved log row with the actual provider/policy result.
@@ -140,4 +148,17 @@ export async function sendDomainEmail(input: SendDomainEmailArgs) {
 registerEmailTemplate(
   "invoice.issued.customer",
   renderInvoiceIssuedCustomerTemplate,
+);
+registerEmailTemplate("invoice.issued.tenant", renderInvoiceIssuedTenantTemplate);
+registerEmailTemplate(
+  "booking.completed.customer",
+  renderBookingCompletedCustomerTemplate,
+);
+registerEmailTemplate(
+  "booking.accepted.tenant",
+  renderBookingAcceptedTenantTemplate,
+);
+registerEmailTemplate(
+  "booking.disputed.tenant",
+  renderBookingDisputedTenantTemplate,
 );

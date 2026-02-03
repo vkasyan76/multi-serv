@@ -4,6 +4,8 @@ import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { isBefore, addHours, startOfHour, isEqual } from "date-fns";
 import type { Booking, Tenant, User } from "@/payload-types";
 import type { Where } from "payload";
+import { sendDomainEmail } from "@/modules/email/events";
+import type { EmailDeliverability } from "@/modules/email/types";
 
 import {
   uniqueIds,
@@ -35,18 +37,34 @@ const displayNameFromUser = (
 ): string | null => {
   if (!u || typeof u === "string") return null;
 
-  // avoid `any` while still allowing fields that may not exist on generated User type yet
-  const named = u as User & { firstName?: unknown; lastName?: unknown };
-
-  const first =
-    typeof named.firstName === "string" ? named.firstName.trim() : "";
-  const last = typeof named.lastName === "string" ? named.lastName.trim() : "";
+  const first = (u.firstName ?? "").trim();
+  const last = (u.lastName ?? "").trim();
 
   if (first && last) return `${first} ${last}`;
   if (first) return first;
 
   return u.username ?? u.email ?? null;
 };
+
+function toEmailDeliverability(user: DocWithId<User>): EmailDeliverability {
+  return {
+    status: user.emailDeliverabilityStatus ?? undefined,
+    reason: user.emailDeliverabilityReason ?? undefined,
+    retryAfter: user.emailDeliverabilityRetryAfter ?? undefined,
+  };
+}
+
+function toAbsolute(urlOrPath: string) {
+  const base = (
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ).replace(/\/+$/, "");
+  return /^https?:\/\//i.test(urlOrPath) ? urlOrPath : `${base}${urlOrPath}`;
+}
+
+function serviceListFromBooking(b: Booking): string[] {
+  const name = b.serviceSnapshot?.serviceName ?? "";
+  return name ? [name] : [];
+}
 
 export const bookingRouter = createTRPCRouter({
   // List available slots for a tenant (public + own busy)
@@ -733,11 +751,70 @@ export const bookingRouter = createTRPCRouter({
         depth: 0,
         overrideAccess: true,
       })) as Tenant | null;
+      if (!tenant) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      }
 
       const ownerId =
         typeof tenant?.user === "string" ? tenant.user : tenant?.user?.id;
       if (!ownerId || ownerId !== payloadUserId)
         throw new TRPCError({ code: "FORBIDDEN", message: "Not your tenant" });
+
+      const customerId =
+        typeof b.customer === "string" ? b.customer : b.customer?.id;
+      const [tenantUser, customerUser] = await Promise.all([
+        ctx.db.findByID({
+          collection: "users",
+          id: ownerId,
+          depth: 0,
+          overrideAccess: true,
+        }) as Promise<DocWithId<User> | null>,
+        customerId
+          ? (ctx.db.findByID({
+              collection: "users",
+              id: customerId,
+              depth: 0,
+              overrideAccess: true,
+            }) as Promise<DocWithId<User> | null>)
+          : Promise.resolve(null),
+      ]);
+
+      const tenantName =
+        displayNameFromUser(tenantUser ?? null) ?? tenant.name ?? "";
+      const tenantSlug = typeof tenant.slug === "string" ? tenant.slug : "";
+      const customerName = displayNameFromUser(customerUser ?? null) ?? "";
+      const ordersUrl = toAbsolute("/orders");
+      const services = serviceListFromBooking(b);
+
+      const sendCompletedEmail = async () => {
+        if (!customerUser || !customerUser.email || !customerId) return;
+        try {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "booking.completed.customer",
+            entityType: "booking",
+            entityId: input.bookingId,
+            recipientUserId: customerId,
+            toEmail: customerUser.email,
+            deliverability: toEmailDeliverability(customerUser),
+            data: {
+              customerName,
+              tenantName,
+              tenantSlug,
+              bookingId: input.bookingId,
+              ordersUrl,
+              services,
+              dateRangeStart: b.start,
+              dateRangeEnd: b.end ?? undefined,
+              locale: customerUser.language ?? "en",
+            },
+          });
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error("[email] booking.completed.customer failed", err);
+          }
+        }
+      };
 
       // Treat missing as "scheduled"
       const ss = (b.serviceStatus ?? "scheduled") as string;
@@ -775,6 +852,7 @@ export const bookingRouter = createTRPCRouter({
           await recomputeOrdersForBookingId(ctx, input.bookingId);
         }
 
+        await sendCompletedEmail();
         return { ok: true };
       }
 
@@ -798,6 +876,7 @@ export const bookingRouter = createTRPCRouter({
       // Roll-up order(s) that include this slot
       await recomputeOrdersForBookingId(ctx, input.bookingId);
 
+      await sendCompletedEmail();
       return { ok: true };
     }),
 
@@ -846,6 +925,77 @@ export const bookingRouter = createTRPCRouter({
       const ss = (b.serviceStatus ?? "scheduled") as string;
       const nowIso = new Date().toISOString();
 
+      const tenantId = typeof b.tenant === "string" ? b.tenant : b.tenant?.id;
+      if (!tenantId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Bad tenant ref" });
+      }
+
+      const tenant = (await ctx.db.findByID({
+        collection: "tenants",
+        id: tenantId,
+        depth: 0,
+        overrideAccess: true,
+      })) as Tenant | null;
+      if (!tenant) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      }
+
+      const ownerId =
+        typeof tenant.user === "string" ? tenant.user : tenant.user?.id;
+      if (!ownerId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Bad tenant owner" });
+      }
+
+      const [tenantUser, customerUser] = await Promise.all([
+        ctx.db.findByID({
+          collection: "users",
+          id: ownerId,
+          depth: 0,
+          overrideAccess: true,
+        }) as Promise<DocWithId<User> | null>,
+        ctx.db.findByID({
+          collection: "users",
+          id: customerId,
+          depth: 0,
+          overrideAccess: true,
+        }) as Promise<DocWithId<User> | null>,
+      ]);
+
+      const tenantName =
+        displayNameFromUser(tenantUser ?? null) ?? tenant.name ?? "";
+      const customerName = displayNameFromUser(customerUser ?? null) ?? "";
+      const dashboardUrl = toAbsolute("/dashboard");
+      const services = serviceListFromBooking(b);
+
+      const sendAcceptedEmail = async () => {
+        if (!tenantUser || !tenantUser.email) return;
+        try {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "booking.accepted.tenant",
+            entityType: "booking",
+            entityId: input.bookingId,
+            recipientUserId: ownerId,
+            toEmail: tenantUser.email,
+            deliverability: toEmailDeliverability(tenantUser),
+            data: {
+              tenantName,
+              customerName,
+              bookingId: input.bookingId,
+              dashboardUrl,
+              services,
+              dateRangeStart: b.start,
+              dateRangeEnd: b.end ?? undefined,
+              locale: tenantUser.language ?? "en",
+            },
+          });
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error("[email] booking.accepted.tenant failed", err);
+          }
+        }
+      };
+
       // Idempotency: already accepted → ok (backfill timestamp if missing)
       if (ss === "accepted") {
         if (!b.acceptedAt) {
@@ -859,11 +1009,12 @@ export const bookingRouter = createTRPCRouter({
         }
 
         await recomputeOrdersForBookingId(ctx, input.bookingId);
+        await sendAcceptedEmail();
         return { ok: true };
       }
 
-      // Allow accept from completed or disputed
-      if (ss !== "completed" && ss !== "disputed") {
+      // Strict MVP: only accept after vendor marks completed.
+      if (ss !== "completed") {
         throw new TRPCError({
           code: "CONFLICT",
           message: `Cannot accept from serviceStatus=${ss}`,
@@ -885,6 +1036,7 @@ export const bookingRouter = createTRPCRouter({
 
       await recomputeOrdersForBookingId(ctx, input.bookingId);
 
+      await sendAcceptedEmail();
       return { ok: true };
     }),
 
@@ -939,6 +1091,79 @@ export const bookingRouter = createTRPCRouter({
       const nowIso = new Date().toISOString();
 
       // Idempotency: already disputed → ok (backfill timestamp/reason if missing)
+      const tenantId = typeof b.tenant === "string" ? b.tenant : b.tenant?.id;
+      if (!tenantId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Bad tenant ref" });
+      }
+
+      const tenant = (await ctx.db.findByID({
+        collection: "tenants",
+        id: tenantId,
+        depth: 0,
+        overrideAccess: true,
+      })) as Tenant | null;
+      if (!tenant) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      }
+
+      const ownerId =
+        typeof tenant.user === "string" ? tenant.user : tenant.user?.id;
+      if (!ownerId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Bad tenant owner" });
+      }
+
+      const [tenantUser, customerUser] = await Promise.all([
+        ctx.db.findByID({
+          collection: "users",
+          id: ownerId,
+          depth: 0,
+          overrideAccess: true,
+        }) as Promise<DocWithId<User> | null>,
+        ctx.db.findByID({
+          collection: "users",
+          id: customerId,
+          depth: 0,
+          overrideAccess: true,
+        }) as Promise<DocWithId<User> | null>,
+      ]);
+
+      const tenantName =
+        displayNameFromUser(tenantUser ?? null) ?? tenant.name ?? "";
+      const customerName = displayNameFromUser(customerUser ?? null) ?? "";
+      const dashboardUrl = toAbsolute("/dashboard");
+      const services = serviceListFromBooking(b);
+      const disputeReason = input.reason ?? b.disputeReason ?? undefined;
+
+      const sendDisputedEmail = async () => {
+        if (!tenantUser || !tenantUser.email) return;
+        try {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "booking.disputed.tenant",
+            entityType: "booking",
+            entityId: input.bookingId,
+            recipientUserId: ownerId,
+            toEmail: tenantUser.email,
+            deliverability: toEmailDeliverability(tenantUser),
+            data: {
+              tenantName,
+              customerName,
+              bookingId: input.bookingId,
+              dashboardUrl,
+              services,
+              dateRangeStart: b.start,
+              dateRangeEnd: b.end ?? undefined,
+              disputeReason,
+              locale: tenantUser.language ?? "en",
+            },
+          });
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error("[email] booking.disputed.tenant failed", err);
+          }
+        }
+      };
+
       if (ss === "disputed") {
         const patch: Partial<Pick<Booking, "disputedAt" | "disputeReason">> =
           {};
@@ -958,6 +1183,7 @@ export const bookingRouter = createTRPCRouter({
         }
 
         await recomputeOrdersForBookingId(ctx, input.bookingId);
+        await sendDisputedEmail();
         return { ok: true };
       }
 
@@ -983,6 +1209,7 @@ export const bookingRouter = createTRPCRouter({
 
       await recomputeOrdersForBookingId(ctx, input.bookingId);
 
+      await sendDisputedEmail();
       return { ok: true };
     }),
 });
