@@ -8,9 +8,9 @@ import type {
 } from "./types";
 import { renderInvoiceIssuedCustomerTemplate } from "./templates/invoice-issued-customer";
 import { renderInvoiceIssuedTenantTemplate } from "./templates/invoice-issued-tenant";
-import { renderBookingCompletedCustomerTemplate } from "./templates/booking-completed-customer";
-import { renderBookingAcceptedTenantTemplate } from "./templates/booking-accepted-tenant";
-import { renderBookingDisputedTenantTemplate } from "./templates/booking-disputed-tenant";
+import { renderOrderCompletedCustomerTemplate } from "./templates/order-completed-customer";
+import { renderOrderAcceptedTenantTemplate } from "./templates/order-accepted-tenant";
+import { renderOrderDisputedTenantTemplate } from "./templates/order-disputed-tenant";
 
 type TemplateRenderer = (data: Record<string, unknown>) => Promise<{
   subject: string;
@@ -151,14 +151,14 @@ registerEmailTemplate(
 );
 registerEmailTemplate("invoice.issued.tenant", renderInvoiceIssuedTenantTemplate);
 registerEmailTemplate(
-  "booking.completed.customer",
-  renderBookingCompletedCustomerTemplate,
+  "order.completed.customer",
+  renderOrderCompletedCustomerTemplate,
 );
 registerEmailTemplate(
-  "booking.accepted.tenant",
-  renderBookingAcceptedTenantTemplate,
+  "order.accepted.tenant",
+  renderOrderAcceptedTenantTemplate,
 );
 registerEmailTemplate(
-  "booking.disputed.tenant",
-  renderBookingDisputedTenantTemplate,
+  "order.disputed.tenant",
+  renderOrderDisputedTenantTemplate,
 );

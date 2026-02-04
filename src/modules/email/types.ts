@@ -3,10 +3,9 @@ import type { Payload } from "payload";
 export type EmailEventType =
   | "order.created.customer"
   | "order.created.tenant"
-  | "booking.completed.customer"
-  | "booking.completed.tenant"
-  | "booking.accepted.tenant"
-  | "booking.disputed.tenant"
+  | "order.completed.customer"
+  | "order.accepted.tenant"
+  | "order.disputed.tenant"
   | "invoice.issued.customer"
   | "invoice.issued.tenant"
   | "invoice.paid.customer"
