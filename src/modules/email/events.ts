@@ -8,6 +8,8 @@ import type {
 } from "./types";
 import { renderInvoiceIssuedCustomerTemplate } from "./templates/invoice-issued-customer";
 import { renderInvoiceIssuedTenantTemplate } from "./templates/invoice-issued-tenant";
+import { renderOrderCreatedCustomerTemplate } from "./templates/order-created-customer";
+import { renderOrderCreatedTenantTemplate } from "./templates/order-created-tenant";
 import { renderOrderCompletedCustomerTemplate } from "./templates/order-completed-customer";
 import { renderOrderAcceptedTenantTemplate } from "./templates/order-accepted-tenant";
 import { renderOrderDisputedTenantTemplate } from "./templates/order-disputed-tenant";
@@ -150,6 +152,11 @@ registerEmailTemplate(
   renderInvoiceIssuedCustomerTemplate,
 );
 registerEmailTemplate("invoice.issued.tenant", renderInvoiceIssuedTenantTemplate);
+registerEmailTemplate(
+  "order.created.customer",
+  renderOrderCreatedCustomerTemplate,
+);
+registerEmailTemplate("order.created.tenant", renderOrderCreatedTenantTemplate);
 registerEmailTemplate(
   "order.completed.customer",
   renderOrderCompletedCustomerTemplate,

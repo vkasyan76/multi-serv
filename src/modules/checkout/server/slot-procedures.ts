@@ -5,6 +5,8 @@ import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import type { Booking, Tenant, User } from "@/payload-types";
 import { addHours } from "date-fns";
 import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted";
+import { sendDomainEmail } from "@/modules/email/events";
+import type { EmailDeliverability } from "@/modules/email/types";
 import {
   COMMISSION_RATE_BPS_DEFAULT as COMMISSION_RATE_BPS,
   MAX_SLOTS_PER_BOOKING,
@@ -12,8 +14,64 @@ import {
 
 type DocWithId<T> = T & { id: string };
 
-// cents helper (kept: you still want amounts stored on the order, for later invoicing)
+// Cents helper (kept: you still want amounts stored on the order, for later invoicing).
 const toCents = (amount: number) => Math.round(amount * 100);
+
+// Helper: normalize user deliverability for email sends.
+function toEmailDeliverability(user: User): EmailDeliverability {
+  return {
+    status: user.emailDeliverabilityStatus ?? undefined,
+    reason: user.emailDeliverabilityReason ?? undefined,
+    retryAfter: user.emailDeliverabilityRetryAfter ?? undefined,
+  };
+}
+
+// Helper: build absolute URLs for email CTAs (prefer server APP_URL).
+function toAbsolute(path: string) {
+  const base =
+    process.env.APP_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "http://localhost:3000";
+  return new URL(path, base).toString();
+}
+
+// Helper: compact list of service names for emails.
+function extractServiceNames(slots: Array<DocWithId<Booking>>): string[] {
+  const names = slots
+    .map((slot) => slot.serviceSnapshot?.serviceName ?? null)
+    .filter((name): name is string => typeof name === "string")
+    .map((name) => name.trim())
+    .filter(Boolean);
+  return Array.from(new Set(names));
+}
+
+// Helper: compute a single date range across all slots (UTC).
+function extractDateRange(slots: Array<DocWithId<Booking>>) {
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  let minStart: string | undefined;
+  let maxEnd: string | undefined;
+
+  for (const slot of slots) {
+    const startMs = Date.parse(slot.start ?? "");
+    const endMsRaw = Date.parse(slot.end ?? slot.start ?? "");
+    if (!Number.isFinite(startMs)) continue;
+
+    if (startMs < min) {
+      min = startMs;
+      minStart = slot.start;
+    }
+
+    const endMs = Number.isFinite(endMsRaw) ? endMsRaw : startMs;
+    if (endMs > max) {
+      max = endMs;
+      maxEnd = slot.end ?? slot.start;
+    }
+  }
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  return { start: minStart, end: maxEnd ?? minStart };
+}
 
 export const slotCheckoutRouter = createTRPCRouter({
   /**
@@ -295,6 +353,84 @@ export const slotCheckoutRouter = createTRPCRouter({
           code: "CONFLICT",
           message: "Some slots changed while checking out. Please try again.",
         });
+      }
+
+      // Phase D: order.created emails are sent only on insert, after slots are confirmed.
+      const ordersUrl = toAbsolute("/orders");
+      const dashboardUrl = toAbsolute("/dashboard");
+      const services = extractServiceNames(bookings);
+      const dateRange = extractDateRange(bookings);
+      const customerName = `${firstName} ${lastName}`.trim();
+      const tenantSlug = typeof tenant.slug === "string" ? tenant.slug : "";
+      const tenantName = typeof tenant.name === "string" ? tenant.name : "";
+
+      // Customer notification: order created (best-effort, non-blocking).
+      if (payloadUser.email) {
+        try {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "order.created.customer",
+            entityType: "order",
+            entityId: order.id,
+            recipientUserId: payloadUserId,
+            toEmail: payloadUser.email,
+            deliverability: toEmailDeliverability(payloadUser),
+            data: {
+              tenantName,
+              tenantSlug,
+              customerName,
+              orderId: order.id,
+              ordersUrl,
+              services,
+              dateRangeStart: dateRange?.start,
+              dateRangeEnd: dateRange?.end ?? undefined,
+              locale: payloadUser.language ?? "en",
+            },
+          });
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error("[email] order.created.customer failed", err);
+          }
+        }
+      }
+
+      // Tenant notification: order created (best-effort, non-blocking).
+      const ownerId = typeof tenant.user === "string" ? tenant.user : tenant.user?.id;
+      if (ownerId) {
+        const tenantUser = (await ctx.db.findByID({
+          collection: "users",
+          id: ownerId,
+          depth: 0,
+          overrideAccess: true,
+        })) as DocWithId<User> | null;
+
+        if (tenantUser?.email) {
+          try {
+            await sendDomainEmail({
+              db: ctx.db,
+              eventType: "order.created.tenant",
+              entityType: "order",
+              entityId: order.id,
+              recipientUserId: ownerId,
+              toEmail: tenantUser.email,
+              deliverability: toEmailDeliverability(tenantUser),
+              data: {
+                tenantName,
+                customerName,
+                orderId: order.id,
+                dashboardUrl,
+                services,
+                dateRangeStart: dateRange?.start,
+                dateRangeEnd: dateRange?.end ?? undefined,
+                locale: tenantUser.language ?? "en",
+              },
+            });
+          } catch (err) {
+            if (process.env.NODE_ENV !== "production") {
+              console.error("[email] order.created.tenant failed", err);
+            }
+          }
+        }
       }
 
       return { ok: true, orderId: order.id };
