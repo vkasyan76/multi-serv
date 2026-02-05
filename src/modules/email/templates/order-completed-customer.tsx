@@ -25,7 +25,11 @@ type OrderCompletedCustomerTemplateProps = {
 };
 
 function toLocaleTag(language?: string) {
-  switch ((language ?? "").toLowerCase()) {
+  const normalized = (language ?? "").trim();
+  if (normalized && /[-_]/.test(normalized)) {
+    return normalized.replace("_", "-");
+  }
+  switch (normalized.toLowerCase()) {
     case "de":
       return "de-DE";
     case "fr":
