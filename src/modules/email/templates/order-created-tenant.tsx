@@ -99,7 +99,7 @@ function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
           </Heading>
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
           <Text style={{ margin: "0 0 8px" }}>
-            A new order is scheduled in your calendar
+            A new order from {customerName} is scheduled in your calendar
             {dateRange ? ` (${dateRange})` : ""}.
           </Text>
           {services.length ? (
@@ -170,7 +170,7 @@ export async function renderOrderCreatedTenantTemplate(
   const text = [
     tenantName ? `Dear ${tenantName},` : "Dear,",
     "",
-    `A new order is scheduled in your calendar${dateRange ? ` (${dateRange})` : ""}.`,
+    `A new order from ${customerName ?? "a customer"} is scheduled in your calendar${dateRange ? ` (${dateRange})` : ""}.`,
     "",
     ...services.map((service) => `- ${service}`),
     `Order: ${orderId}`,

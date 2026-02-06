@@ -189,7 +189,7 @@ export async function renderOrderCreatedCustomerTemplate(
     "",
     `View Orders: ${ordersUrl}`,
   ]
-    .filter(Boolean)
+    .filter((value) => value !== undefined && value !== null)
     .join("\n");
 
   return { subject, html, text };

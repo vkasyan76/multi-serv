@@ -201,7 +201,7 @@ export async function renderInvoicePaidTenantTemplate(
   const text = [
     tenantName ? `Dear ${tenantName},` : "Dear,",
     "",
-    `${customerName ?? "Your customer"} paid the invoice below.`,
+    `${customerName?.trim() || "Your customer"} paid the invoice below.`,
     `Invoice: ${invoiceId}`,
     orderId ? `Order: ${orderId}` : undefined,
     dateRange ? `Service date: ${dateRange}` : undefined,
