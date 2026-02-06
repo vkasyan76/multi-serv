@@ -20,6 +20,8 @@ type InvoicePaidTenantTemplateProps = {
   amountTotalCents: number;
   currency: string;
   dashboardUrl: string;
+  dateRangeStart?: string;
+  dateRangeEnd?: string;
   locale?: string;
 };
 
@@ -62,21 +64,49 @@ function formatAmount(
   }
 }
 
+function formatDateRangeUtc(
+  startIso?: string,
+  endIso?: string,
+  language?: string,
+) {
+  if (!startIso && !endIso) return null;
+  const startMs = Date.parse(startIso ?? "");
+  const endMs = Date.parse(endIso ?? startIso ?? "");
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return null;
+
+  const fmt = new Intl.DateTimeFormat(toLocaleTag(language), {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+
+  const startStr = fmt.format(new Date(startMs));
+  const endStr = fmt.format(new Date(endMs));
+  return startStr === endStr ? startStr : `${startStr} - ${endStr}`;
+}
+
 function InvoicePaidTenantEmail(props: InvoicePaidTenantTemplateProps) {
   const greeting = props.tenantName?.trim()
     ? `Dear ${props.tenantName.trim()},`
     : "Dear,";
-  const customerName = (props.customerName ?? "your customer").trim();
+  const customerName =
+    (props.customerName ?? "").trim() || "your customer";
   const amount = formatAmount(
     props.amountTotalCents,
     props.currency,
+    props.locale,
+  );
+  const dateRange = formatDateRangeUtc(
+    props.dateRangeStart,
+    props.dateRangeEnd,
     props.locale,
   );
 
   return (
     <Html>
       <Head />
-      <Preview>Invoice paid by {customerName}.</Preview>
+      <Preview>Payment received from {customerName}.</Preview>
       <Body style={{ backgroundColor: "#f6f7f8", padding: "24px 0" }}>
         <Container
           style={{
@@ -88,7 +118,7 @@ function InvoicePaidTenantEmail(props: InvoicePaidTenantTemplateProps) {
           }}
         >
           <Heading style={{ margin: "0 0 16px", fontSize: "24px" }}>
-            Invoice paid
+            Payment received
           </Heading>
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
           <Text style={{ margin: "0 0 8px" }}>
@@ -100,6 +130,11 @@ function InvoicePaidTenantEmail(props: InvoicePaidTenantTemplateProps) {
           {props.orderId ? (
             <Text style={{ margin: "0 0 8px" }}>
               <strong>Order:</strong> {props.orderId}
+            </Text>
+          ) : null}
+          {dateRange ? (
+            <Text style={{ margin: "0 0 8px" }}>
+              <strong>Service date:</strong> {dateRange}
             </Text>
           ) : null}
           <Text style={{ margin: "0 0 20px" }}>
@@ -140,11 +175,13 @@ export async function renderInvoicePaidTenantTemplate(
     data.tenantName == null ? undefined : String(data.tenantName);
   const customerName =
     data.customerName == null ? undefined : String(data.customerName);
+  const dateRangeStart =
+    data.dateRangeStart == null ? undefined : String(data.dateRangeStart);
+  const dateRangeEnd =
+    data.dateRangeEnd == null ? undefined : String(data.dateRangeEnd);
   const locale = data.locale == null ? undefined : String(data.locale);
 
-  const subject = customerName
-    ? `Invoice paid by ${customerName}`
-    : `Invoice ${invoiceId} paid`;
+  const subject = "Payment received";
   const html = await render(
     <InvoicePaidTenantEmail
       tenantName={tenantName}
@@ -154,16 +191,20 @@ export async function renderInvoicePaidTenantTemplate(
       amountTotalCents={amountTotalCents}
       currency={currency}
       dashboardUrl={dashboardUrl}
+      dateRangeStart={dateRangeStart}
+      dateRangeEnd={dateRangeEnd}
       locale={locale}
     />,
   );
   const amount = formatAmount(amountTotalCents, currency, locale);
+  const dateRange = formatDateRangeUtc(dateRangeStart, dateRangeEnd, locale);
   const text = [
     tenantName ? `Dear ${tenantName},` : "Dear,",
     "",
     `${customerName ?? "Your customer"} paid the invoice below.`,
     `Invoice: ${invoiceId}`,
     orderId ? `Order: ${orderId}` : undefined,
+    dateRange ? `Service date: ${dateRange}` : undefined,
     `Total: ${amount}`,
     "",
     `View Dashboard: ${dashboardUrl}`,

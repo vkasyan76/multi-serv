@@ -20,6 +20,8 @@ type InvoicePaidCustomerTemplateProps = {
   amountTotalCents: number;
   currency: string;
   ordersUrl: string;
+  dateRangeStart?: string;
+  dateRangeEnd?: string;
   locale?: string;
 };
 
@@ -62,6 +64,28 @@ function formatAmount(
   }
 }
 
+function formatDateRangeUtc(
+  startIso?: string,
+  endIso?: string,
+  language?: string,
+) {
+  if (!startIso && !endIso) return null;
+  const startMs = Date.parse(startIso ?? "");
+  const endMs = Date.parse(endIso ?? startIso ?? "");
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return null;
+
+  const fmt = new Intl.DateTimeFormat(toLocaleTag(language), {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+
+  const startStr = fmt.format(new Date(startMs));
+  const endStr = fmt.format(new Date(endMs));
+  return startStr === endStr ? startStr : `${startStr} - ${endStr}`;
+}
+
 function InvoicePaidCustomerEmail(props: InvoicePaidCustomerTemplateProps) {
   const greeting = props.customerName?.trim()
     ? `Dear ${props.customerName.trim()},`
@@ -71,12 +95,18 @@ function InvoicePaidCustomerEmail(props: InvoicePaidCustomerTemplateProps) {
     props.currency,
     props.locale,
   );
-  const tenantName = (props.tenantName ?? "the provider").trim();
+  const tenantName =
+    (props.tenantName ?? "").trim() || "the provider";
+  const dateRange = formatDateRangeUtc(
+    props.dateRangeStart,
+    props.dateRangeEnd,
+    props.locale,
+  );
 
   return (
     <Html>
       <Head />
-      <Preview>Payment received for your invoice.</Preview>
+      <Preview>Your payment was processed.</Preview>
       <Body style={{ backgroundColor: "#f6f7f8", padding: "24px 0" }}>
         <Container
           style={{
@@ -88,11 +118,11 @@ function InvoicePaidCustomerEmail(props: InvoicePaidCustomerTemplateProps) {
           }}
         >
           <Heading style={{ margin: "0 0 16px", fontSize: "24px" }}>
-            Payment received
+            Payment processed
           </Heading>
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
           <Text style={{ margin: "0 0 8px" }}>
-            Your payment to {tenantName} was received.
+            Your payment to {tenantName} was processed.
           </Text>
           <Text style={{ margin: "0 0 8px" }}>
             <strong>Invoice:</strong> {props.invoiceId}
@@ -100,6 +130,11 @@ function InvoicePaidCustomerEmail(props: InvoicePaidCustomerTemplateProps) {
           {props.orderId ? (
             <Text style={{ margin: "0 0 8px" }}>
               <strong>Order:</strong> {props.orderId}
+            </Text>
+          ) : null}
+          {dateRange ? (
+            <Text style={{ margin: "0 0 8px" }}>
+              <strong>Service date:</strong> {dateRange}
             </Text>
           ) : null}
           <Text style={{ margin: "0 0 20px" }}>
@@ -140,9 +175,13 @@ export async function renderInvoicePaidCustomerTemplate(
     data.customerName == null ? undefined : String(data.customerName);
   const tenantName =
     data.tenantName == null ? undefined : String(data.tenantName);
+  const dateRangeStart =
+    data.dateRangeStart == null ? undefined : String(data.dateRangeStart);
+  const dateRangeEnd =
+    data.dateRangeEnd == null ? undefined : String(data.dateRangeEnd);
   const locale = data.locale == null ? undefined : String(data.locale);
 
-  const subject = `Payment received for invoice ${invoiceId}`;
+  const subject = "Your payment was processed";
   const html = await render(
     <InvoicePaidCustomerEmail
       customerName={customerName}
@@ -152,16 +191,20 @@ export async function renderInvoicePaidCustomerTemplate(
       amountTotalCents={amountTotalCents}
       currency={currency}
       ordersUrl={ordersUrl}
+      dateRangeStart={dateRangeStart}
+      dateRangeEnd={dateRangeEnd}
       locale={locale}
     />,
   );
   const amount = formatAmount(amountTotalCents, currency, locale);
+  const dateRange = formatDateRangeUtc(dateRangeStart, dateRangeEnd, locale);
   const text = [
     customerName ? `Dear ${customerName},` : "Dear,",
     "",
-    `Your payment to ${tenantName ?? "the provider"} was received.`,
+    `Your payment to ${tenantName ?? "the provider"} was processed.`,
     `Invoice: ${invoiceId}`,
     orderId ? `Order: ${orderId}` : undefined,
+    dateRange ? `Service date: ${dateRange}` : undefined,
     `Total: ${amount}`,
     "",
     `View Orders: ${ordersUrl}`,

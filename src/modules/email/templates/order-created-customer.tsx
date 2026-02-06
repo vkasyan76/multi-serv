@@ -91,7 +91,7 @@ function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
   return (
     <Html>
       <Head />
-      <Preview>Order received from {tenantLabel}.</Preview>
+      <Preview>Order received by {tenantLabel}.</Preview>
       <Body style={{ backgroundColor: "#f6f7f8", padding: "24px 0" }}>
         <Container
           style={{
@@ -107,8 +107,8 @@ function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
           </Heading>
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
           <Text style={{ margin: "0 0 8px" }}>
-            Your order with {tenantLabel} has been created
-            {dateRange ? ` (${dateRange})` : ""}.
+            Your order was received by {tenantLabel}
+            {dateRange ? ` and is scheduled for ${dateRange}` : ""}.
           </Text>
           {services.length ? (
             <Section style={{ margin: "8px 0 16px" }}>
@@ -164,7 +164,7 @@ export async function renderOrderCreatedCustomerTemplate(
   const locale = data.locale == null ? undefined : String(data.locale);
   const tenantLabel = formatTenantLabel(tenantSlug, tenantName);
 
-  const subject = `Order received from ${tenantLabel}`;
+  const subject = `Order received by ${tenantLabel}`;
   const html = await render(
     <OrderCreatedCustomerEmail
       customerName={customerName}
@@ -182,7 +182,7 @@ export async function renderOrderCreatedCustomerTemplate(
   const text = [
     customerName ? `Dear ${customerName},` : "Dear,",
     "",
-    `Your order with ${tenantLabel} has been created${dateRange ? ` (${dateRange})` : ""}.`,
+    `Your order was received by ${tenantLabel}${dateRange ? ` and is scheduled for ${dateRange}` : ""}.`,
     "",
     ...services.map((service) => `- ${service}`),
     `Order: ${orderId}`,

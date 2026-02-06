@@ -83,7 +83,7 @@ function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
   return (
     <Html>
       <Head />
-      <Preview>New order from {customerName}.</Preview>
+      <Preview>New order scheduled in your calendar.</Preview>
       <Body style={{ backgroundColor: "#f6f7f8", padding: "24px 0" }}>
         <Container
           style={{
@@ -95,11 +95,11 @@ function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
           }}
         >
           <Heading style={{ margin: "0 0 16px", fontSize: "24px" }}>
-            New order
+            New order scheduled
           </Heading>
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
           <Text style={{ margin: "0 0 8px" }}>
-            You received a new order from {customerName}
+            A new order is scheduled in your calendar
             {dateRange ? ` (${dateRange})` : ""}.
           </Text>
           {services.length ? (
@@ -153,9 +153,7 @@ export async function renderOrderCreatedTenantTemplate(
     data.dateRangeEnd == null ? undefined : String(data.dateRangeEnd);
   const locale = data.locale == null ? undefined : String(data.locale);
 
-  const subject = customerName
-    ? `New order from ${customerName}`
-    : "New order received";
+  const subject = "New order scheduled in your calendar";
   const html = await render(
     <OrderCreatedTenantEmail
       tenantName={tenantName}
@@ -172,7 +170,7 @@ export async function renderOrderCreatedTenantTemplate(
   const text = [
     tenantName ? `Dear ${tenantName},` : "Dear,",
     "",
-    `You received a new order from ${customerName ?? "a customer"}${dateRange ? ` (${dateRange})` : ""}.`,
+    `A new order is scheduled in your calendar${dateRange ? ` (${dateRange})` : ""}.`,
     "",
     ...services.map((service) => `- ${service}`),
     `Order: ${orderId}`,

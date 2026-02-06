@@ -65,6 +65,7 @@ async function resolveEmailEvent(
 
 function isDuplicateDedupeError(err: unknown) {
   const e = err as { code?: unknown; message?: unknown };
+  // MongoDB duplicate key detection (code 11000 / "duplicate key")
   return (
     e?.code === 11000 ||
     e?.code === "11000" ||
