@@ -134,17 +134,22 @@ export async function sendDomainEmail(input: SendDomainEmailArgs) {
 
     return result;
   } catch (err) {
-    await input.db.update({
-      collection: "email_event_logs",
-      id: logId,
-      data: {
-        status: "failed",
-        error: err instanceof Error ? err.message : "unknown_error",
-      },
-      overrideAccess: true,
-      depth: 0,
-    });
-    throw err;
+    const originalErr = err;
+    try {
+      await input.db.update({
+        collection: "email_event_logs",
+        id: logId,
+        data: {
+          status: "failed",
+          error: err instanceof Error ? err.message : "unknown_error",
+        },
+        overrideAccess: true,
+        depth: 0,
+      });
+    } catch {
+      // Best-effort update; don't mask the original send error.
+    }
+    throw originalErr;
   }
 }
 

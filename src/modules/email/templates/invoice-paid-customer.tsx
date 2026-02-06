@@ -44,11 +44,16 @@ function toLocaleTag(language?: string) {
   }
 }
 
-function formatAmount(amountTotalCents: number, currency: string) {
+function formatAmount(
+  amountTotalCents: number,
+  currency: string,
+  locale?: string,
+) {
   const amountMajor = amountTotalCents / 100;
   const code = (currency || "EUR").toUpperCase();
+  const localeTag = toLocaleTag(locale);
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(localeTag, {
       style: "currency",
       currency: code,
     }).format(amountMajor);
@@ -61,7 +66,11 @@ function InvoicePaidCustomerEmail(props: InvoicePaidCustomerTemplateProps) {
   const greeting = props.customerName?.trim()
     ? `Dear ${props.customerName.trim()},`
     : "Dear,";
-  const amount = formatAmount(props.amountTotalCents, props.currency);
+  const amount = formatAmount(
+    props.amountTotalCents,
+    props.currency,
+    props.locale,
+  );
   const tenantName = (props.tenantName ?? "the provider").trim();
 
   return (
@@ -146,7 +155,7 @@ export async function renderInvoicePaidCustomerTemplate(
       locale={locale}
     />,
   );
-  const amount = formatAmount(amountTotalCents, currency);
+  const amount = formatAmount(amountTotalCents, currency, locale);
   const text = [
     customerName ? `Dear ${customerName},` : "Dear,",
     "",
@@ -157,7 +166,7 @@ export async function renderInvoicePaidCustomerTemplate(
     "",
     `View Orders: ${ordersUrl}`,
   ]
-    .filter(Boolean)
+    .filter((value) => value !== undefined && value !== null)
     .join("\n");
 
   return { subject, html, text };

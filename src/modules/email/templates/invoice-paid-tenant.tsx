@@ -44,11 +44,16 @@ function toLocaleTag(language?: string) {
   }
 }
 
-function formatAmount(amountTotalCents: number, currency: string) {
+function formatAmount(
+  amountTotalCents: number,
+  currency: string,
+  locale?: string,
+) {
   const amountMajor = amountTotalCents / 100;
   const code = (currency || "EUR").toUpperCase();
+  const localeTag = toLocaleTag(locale);
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(localeTag, {
       style: "currency",
       currency: code,
     }).format(amountMajor);
@@ -62,7 +67,11 @@ function InvoicePaidTenantEmail(props: InvoicePaidTenantTemplateProps) {
     ? `Dear ${props.tenantName.trim()},`
     : "Dear,";
   const customerName = (props.customerName ?? "your customer").trim();
-  const amount = formatAmount(props.amountTotalCents, props.currency);
+  const amount = formatAmount(
+    props.amountTotalCents,
+    props.currency,
+    props.locale,
+  );
 
   return (
     <Html>
@@ -148,7 +157,7 @@ export async function renderInvoicePaidTenantTemplate(
       locale={locale}
     />,
   );
-  const amount = formatAmount(amountTotalCents, currency);
+  const amount = formatAmount(amountTotalCents, currency, locale);
   const text = [
     tenantName ? `Dear ${tenantName},` : "Dear,",
     "",
@@ -159,7 +168,7 @@ export async function renderInvoicePaidTenantTemplate(
     "",
     `View Dashboard: ${dashboardUrl}`,
   ]
-    .filter(Boolean)
+    .filter((value) => value !== undefined && value !== null)
     .join("\n");
 
   return { subject, html, text };
