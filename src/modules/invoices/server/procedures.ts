@@ -22,6 +22,10 @@ type InvoiceDoc = {
   amountTotalCents?: number | null;
   stripeCheckoutSessionId?: string | null;
   lineItems?: LineItem[] | null;
+  buyerEmail?: string | null;
+  buyerName?: string | null;
+  sellerEmail?: string | null;
+  sellerLegalName?: string | null;
 };
 
 type LineItem = {
@@ -1123,6 +1127,60 @@ export const invoicesRouter = createTRPCRouter({
           overrideAccess: true,
           depth: 0,
         });
+      }
+
+      // Phase E fallback: send invoice.paid emails after paid transition.
+      try {
+        const customerEmail = invoice.buyerEmail ?? undefined;
+        const tenantEmail = invoice.sellerEmail ?? undefined;
+        const customerName = (invoice.buyerName ?? "").trim() || undefined;
+        const tenantName = (invoice.sellerLegalName ?? "").trim() || undefined;
+        const ordersUrl = toAbsolute("/orders");
+        const dashboardUrl = toAbsolute("/dashboard");
+
+        if (customerEmail) {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "invoice.paid.customer",
+            entityType: "invoice",
+            entityId: invoice.id,
+            recipientUserId: customerId,
+            toEmail: customerEmail,
+            data: {
+              customerName,
+              tenantName,
+              invoiceId: invoice.id,
+              orderId: orderId ?? undefined,
+              amountTotalCents: Number(invoice.amountTotalCents ?? 0),
+              currency: String(invoice.currency ?? "eur"),
+              ordersUrl,
+            },
+          });
+        }
+
+        if (tenantEmail) {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "invoice.paid.tenant",
+            entityType: "invoice",
+            entityId: invoice.id,
+            // Tenant email uses snapshot address; owner user id may not be available here.
+            toEmail: tenantEmail,
+            data: {
+              tenantName,
+              customerName,
+              invoiceId: invoice.id,
+              orderId: orderId ?? undefined,
+              amountTotalCents: Number(invoice.amountTotalCents ?? 0),
+              currency: String(invoice.currency ?? "eur"),
+              dashboardUrl,
+            },
+          });
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[email] invoice.paid finalize failed", err);
+        }
       }
 
       return { ok: true };
