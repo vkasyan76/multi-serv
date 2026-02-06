@@ -161,7 +161,7 @@ export async function renderInvoicePaidCustomerTemplate(
     "",
     `Your payment to ${tenantName ?? "the provider"} was received.`,
     `Invoice: ${invoiceId}`,
-    orderId ? `Order: ${orderId}` : "",
+    orderId ? `Order: ${orderId}` : undefined,
     `Total: ${amount}`,
     "",
     `View Orders: ${ordersUrl}`,

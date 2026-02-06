@@ -67,6 +67,7 @@ function isDuplicateDedupeError(err: unknown) {
   const e = err as { code?: unknown; message?: unknown };
   return (
     e?.code === 11000 ||
+    e?.code === "11000" ||
     String(e?.message ?? "").toLowerCase().includes("duplicate key")
   );
 }
