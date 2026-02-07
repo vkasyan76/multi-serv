@@ -15,6 +15,8 @@ import { renderOrderCreatedTenantTemplate } from "./templates/order-created-tena
 import { renderOrderCompletedCustomerTemplate } from "./templates/order-completed-customer";
 import { renderOrderAcceptedTenantTemplate } from "./templates/order-accepted-tenant";
 import { renderOrderDisputedTenantTemplate } from "./templates/order-disputed-tenant";
+import { renderMessageReceivedCustomerTemplate } from "./templates/message-received-customer";
+import { renderMessageReceivedTenantTemplate } from "./templates/message-received-tenant";
 
 type TemplateRenderer = (data: Record<string, unknown>) => Promise<{
   subject: string;
@@ -179,4 +181,13 @@ registerEmailTemplate(
 registerEmailTemplate(
   "order.disputed.tenant",
   renderOrderDisputedTenantTemplate,
+);
+// Phase F: message notifications
+registerEmailTemplate(
+  "message.received.customer",
+  renderMessageReceivedCustomerTemplate,
+);
+registerEmailTemplate(
+  "message.received.tenant",
+  renderMessageReceivedTenantTemplate,
 );

@@ -2,10 +2,44 @@ import { clerkProcedure, createTRPCRouter } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { Where } from "payload";
-import type { Message } from "@payload-types";
+import type { Message, User } from "@payload-types";
+import { sendDomainEmail } from "@/modules/email/events";
+import { generateTenantUrl } from "@/lib/utils";
 
 const getRelId = (v: unknown) =>
   typeof v === "string" ? v : ((v as { id?: string } | null)?.id ?? null);
+
+// Absolute URL for email CTAs (APP_URL -> NEXT_PUBLIC_APP_URL -> localhost).
+const toAbsolute = (path: string) => {
+  const base =
+    process.env.APP_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "http://localhost:3000";
+  return new URL(path, base).toString();
+};
+
+// Deliverability status for suppression checks (same policy as other email sends).
+const toEmailDeliverability = (user: User | null | undefined) => {
+  if (!user) return undefined;
+  return {
+    status: user.emailDeliverabilityStatus ?? undefined,
+    reason: user.emailDeliverabilityReason ?? undefined,
+    retryAfter: user.emailDeliverabilityRetryAfter ?? undefined,
+  };
+};
+
+// Consistent display name fallback: first/last -> username -> email.
+const displayNameFromUser = (user: User | null | undefined) => {
+  if (!user) return "Someone";
+  const first = (user.firstName ?? "").trim();
+  const last = (user.lastName ?? "").trim();
+  const full = `${first} ${last}`.trim();
+  if (full) return full;
+  const username = (user.username ?? "").trim();
+  if (username) return username;
+  const email = (user.email ?? "").trim();
+  return email || "Someone";
+};
 
 export const messagesRouter = createTRPCRouter({
   send: clerkProcedure
@@ -90,6 +124,73 @@ export const messagesRouter = createTRPCRouter({
         depth: 0,
         overrideAccess: true,
       });
+
+      // Phase F: debounced message notifications (max 1 / 10m / convo / recipient).
+      try {
+        const recipientUserId =
+          senderRole === "customer" ? tenantUserId : customerId;
+        const eventType =
+          senderRole === "customer"
+            ? "message.received.tenant"
+            : "message.received.customer";
+
+        if (recipientUserId) {
+          const recipient = (await ctx.db.findByID({
+            collection: "users",
+            id: recipientUserId,
+            depth: 0,
+            overrideAccess: true,
+          })) as User | null;
+
+          const toEmail = (recipient?.email ?? "").trim();
+          if (toEmail) {
+            const WINDOW_MS = 10 * 60 * 1000;
+            const windowKey = Math.floor(Date.now() / WINDOW_MS);
+            // Debounce by windowed entityId; dedupeKey collapses repeats.
+            const windowedEntityId = `conversation:${convo.id}:window:${windowKey}`;
+
+            // Customer CTA -> tenant public page (subdomain in prod).
+            let ctaUrl = toAbsolute("/");
+            if (eventType === "message.received.customer") {
+              const tenantId = getRelId(convo.tenant);
+              if (tenantId) {
+                const tenant = await ctx.db.findByID({
+                  collection: "tenants",
+                  id: tenantId,
+                  depth: 0,
+                  overrideAccess: true,
+                });
+                const slug =
+                  typeof tenant?.slug === "string" ? tenant.slug : null;
+                if (slug) ctaUrl = toAbsolute(generateTenantUrl(slug));
+              }
+            } else {
+              // Tenant CTA -> messages section in dashboard.
+              ctaUrl = toAbsolute("/dashboard#messages");
+            }
+
+            await sendDomainEmail({
+              db: ctx.db,
+              eventType,
+              entityType: "message",
+              entityId: windowedEntityId,
+              recipientUserId,
+              toEmail,
+              deliverability: toEmailDeliverability(recipient),
+              data: {
+                // Greeting uses recipient name; "from" uses sender name.
+                recipientName: displayNameFromUser(recipient),
+                senderName: displayNameFromUser(me as User),
+                messagePreview: String(msg.text ?? "").slice(0, 240),
+                ctaUrl,
+              },
+            });
+          }
+        }
+      } catch (err) {
+        // Non-blocking by design, but log for visibility.
+        console.warn("[email] message.received send failed", err);
+      }
 
       return msg;
     }),
