@@ -48,22 +48,37 @@ function MessageReceivedTenantEmail(props: MessageReceivedTenantTemplateProps) {
             You received a new message from <strong>{from}</strong>.
           </Text>
           {preview ? (
-            <Text style={{ margin: "12px 0 20px", whiteSpace: "pre-wrap" }}>
-              {preview}
-            </Text>
+            <Section
+              style={{
+                backgroundColor: "#FEF3C7",
+                borderRadius: "8px",
+                padding: "12px 14px",
+                margin: "12px 0 16px",
+              }}
+            >
+              <Text style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+                “{preview}”
+              </Text>
+            </Section>
           ) : null}
+          <Text style={{ margin: "0 0 8px", fontSize: "12px", color: "#6b7280" }}>
+            Click below to reply:
+          </Text>
           <Section style={{ margin: "20px 0 8px" }}>
             <Button
               href={props.ctaUrl}
               style={{
                 backgroundColor: "#111827",
-                color: "#ffffff",
                 borderRadius: "8px",
                 padding: "12px 18px",
                 textDecoration: "none",
+                display: "inline-block",
+                fontWeight: 600,
               }}
             >
-              Open Messages
+              <span style={{ color: "#ffffff", textDecoration: "none" }}>
+                Open Messages
+              </span>
             </Button>
           </Section>
         </Container>
