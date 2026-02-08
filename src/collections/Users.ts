@@ -50,6 +50,17 @@ export const Users: CollectionConfig = {
       }),
     },
   },
+  hooks: {
+    beforeChange: [
+      ({ data }) => {
+        // Normalize email to lowercase to keep user lookup consistent (webhooks/dedupe).
+        if (typeof data.email === "string") {
+          data.email = data.email.trim().toLowerCase();
+        }
+        return data;
+      },
+    ],
+  },
   fields: [
     // Email added by default
     // Add more fields as needed
