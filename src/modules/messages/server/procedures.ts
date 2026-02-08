@@ -135,12 +135,14 @@ export const messagesRouter = createTRPCRouter({
             : "message.received.customer";
 
         if (recipientUserId) {
-          const recipient = (await ctx.db.findByID({
+          const recipientRes = await ctx.db.find({
             collection: "users",
-            id: recipientUserId,
+            limit: 1,
+            where: { id: { equals: recipientUserId } },
             depth: 0,
             overrideAccess: true,
-          })) as User | null;
+          });
+          const recipient = (recipientRes.docs[0] as User) ?? null;
 
           const toEmail = (recipient?.email ?? "").trim();
           if (toEmail) {

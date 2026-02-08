@@ -95,7 +95,12 @@ export async function renderMessageReceivedTenantTemplate(
   const senderName =
     data.senderName == null ? undefined : String(data.senderName);
   const messagePreview = String(data.messagePreview ?? "");
-  const ctaUrl = String(data.ctaUrl ?? "");
+  const ctaUrl = String(data.ctaUrl ?? "").trim();
+  if (!ctaUrl) {
+    throw new Error(
+      "ctaUrl is required for message-received-tenant template",
+    );
+  }
 
   const subject = senderName
     ? `New message from ${senderName}`
