@@ -111,6 +111,9 @@ export const Tenants: CollectionConfig = {
     {
       name: "emailNotifiedPayoutsEnabledAt",
       type: "date",
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
       admin: {
         position: "sidebar",
         description: "When the payouts-enabled email was sent.",

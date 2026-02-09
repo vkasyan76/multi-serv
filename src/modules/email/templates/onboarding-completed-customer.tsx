@@ -70,7 +70,12 @@ export async function renderOnboardingCompletedCustomerTemplate(
 ) {
   const customerName =
     data.customerName == null ? undefined : String(data.customerName);
-  const ctaUrl = String(data.ctaUrl ?? "");
+  const ctaUrl = String(data.ctaUrl ?? "").trim();
+  if (!ctaUrl) {
+    throw new Error(
+      "ctaUrl is required for onboarding-completed-customer template",
+    );
+  }
 
   const subject = "Profile completed";
   const html = await render(

@@ -68,7 +68,10 @@ export async function renderPayoutsEnabledTenantTemplate(
 ) {
   const tenantName =
     data.tenantName == null ? undefined : String(data.tenantName);
-  const ctaUrl = String(data.ctaUrl ?? "");
+  const ctaUrl = String(data.ctaUrl ?? "").trim();
+  if (!ctaUrl) {
+    throw new Error("ctaUrl is required for payouts-enabled-tenant template");
+  }
 
   const subject = "Payouts enabled";
   const html = await render(

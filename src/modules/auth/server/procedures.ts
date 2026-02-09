@@ -1087,7 +1087,9 @@ export const authRouter = createTRPCRouter({
               toEmail,
               deliverability: toEmailDeliverability(currentUser),
               data: {
-                customerName: displayNameFromUser(currentUser),
+                customerName:
+                  `${(input.firstName ?? "").trim()} ${(input.lastName ?? "").trim()}`.trim() ||
+                  displayNameFromUser(currentUser),
                 ctaUrl: toAbsolute("/profile?tab=general"),
               },
             });

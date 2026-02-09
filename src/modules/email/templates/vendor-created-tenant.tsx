@@ -44,7 +44,7 @@ function VendorCreatedTenantEmail(props: VendorCreatedTenantTemplateProps) {
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
           <Text style={{ margin: "0 0 20px" }}>
             Your provider profile {slug ? `(${slug}) ` : ""}is ready. You can
-            now start selling services.
+            now start offering services.
           </Text>
           <Section style={{ margin: "20px 0 8px" }}>
             <Button
@@ -73,7 +73,10 @@ export async function renderVendorCreatedTenantTemplate(
     data.recipientName == null ? undefined : String(data.recipientName);
   const tenantSlug =
     data.tenantSlug == null ? undefined : String(data.tenantSlug);
-  const ctaUrl = String(data.ctaUrl ?? "");
+  const ctaUrl = String(data.ctaUrl ?? "").trim();
+  if (!ctaUrl) {
+    throw new Error("ctaUrl is required for vendor-created-tenant template");
+  }
 
   const subject = "Provider profile created";
   const html = await render(
@@ -87,7 +90,7 @@ export async function renderVendorCreatedTenantTemplate(
   const text = [
     recipientName ? `Dear ${recipientName},` : "Hello,",
     "",
-    `Your provider profile${tenantSlug ? ` (${tenantSlug})` : ""} is ready. You can now start offering services and use the calendar.`,
+    `Your provider profile${tenantSlug ? ` (${tenantSlug})` : ""} is ready. You can now start offering services.`,
     "",
     `Open provider profile: ${ctaUrl}`,
   ]

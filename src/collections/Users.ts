@@ -289,6 +289,9 @@ export const Users: CollectionConfig = {
         position: "sidebar",
         description: "When the customer onboarding email was sent.",
       },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
     },
     {
       name: "emailNotifiedVendorCreatedAt",
@@ -296,6 +299,9 @@ export const Users: CollectionConfig = {
       admin: {
         position: "sidebar",
         description: "When the vendor profile created email was sent.",
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
       },
     },
     {
