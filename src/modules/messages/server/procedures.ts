@@ -156,12 +156,14 @@ export const messagesRouter = createTRPCRouter({
             if (eventType === "message.received.customer") {
               const tenantId = getRelId(convo.tenant);
               if (tenantId) {
-                const tenant = await ctx.db.findByID({
+                const tenantRes = await ctx.db.find({
                   collection: "tenants",
-                  id: tenantId,
+                  limit: 1,
+                  where: { id: { equals: tenantId } },
                   depth: 0,
                   overrideAccess: true,
                 });
+                const tenant = tenantRes.docs[0] ?? null;
                 const slug =
                   typeof tenant?.slug === "string" ? tenant.slug : null;
                 if (slug) ctaUrl = toAbsolute(generateTenantUrl(slug));

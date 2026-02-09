@@ -23,7 +23,7 @@ function MessageReceivedTenantEmail(props: MessageReceivedTenantTemplateProps) {
   const greeting = props.recipientName?.trim()
     ? `Dear ${props.recipientName.trim()},`
     : "Dear,";
-  const from = (props.senderName ?? "a customer").trim();
+  const from = props.senderName?.trim() || "a customer";
   const preview = (props.messagePreview ?? "").trim();
 
   return (
@@ -102,8 +102,9 @@ export async function renderMessageReceivedTenantTemplate(
     );
   }
 
-  const subject = senderName
-    ? `New message from ${senderName}`
+  const safeSenderName = senderName?.trim() || undefined;
+  const subject = safeSenderName
+    ? `New message from ${safeSenderName}`
     : "New message received";
   const html = await render(
     <MessageReceivedTenantEmail
@@ -117,7 +118,7 @@ export async function renderMessageReceivedTenantTemplate(
   const text = [
     recipientName ? `Dear ${recipientName},` : "Dear,",
     "",
-    `You received a new message from ${senderName ?? "a customer"}.`,
+    `You received a new message from ${safeSenderName || "a customer"}.`,
     "",
     messagePreview ? `Preview: ${messagePreview}` : undefined,
     "",

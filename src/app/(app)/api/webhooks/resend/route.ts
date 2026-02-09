@@ -91,13 +91,20 @@ export async function POST(req: Request) {
     });
 
     for (const doc of found.docs) {
-      await payload.update({
-        collection: "users",
-        id: doc.id,
-        data: patch,
-        overrideAccess: true,
-        depth: 0,
-      });
+      try {
+        await payload.update({
+          collection: "users",
+          id: doc.id,
+          data: patch,
+          overrideAccess: true,
+          depth: 0,
+        });
+      } catch (err) {
+        console.error(
+          `[resend-webhook] failed to update user ${doc.id} (${email})`,
+          err,
+        );
+      }
     }
   };
 
