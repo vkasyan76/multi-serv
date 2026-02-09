@@ -368,7 +368,7 @@ export async function recomputeOrdersForBookingId(
       }) as Promise<DocWithId<User> | null>,
     ]);
 
-    if (!tenant || !customerUser || !customerUser.email) continue;
+    if (!tenant) continue;
 
     // Shared email payload pieces.
     const tenantSlug =
@@ -389,6 +389,7 @@ export async function recomputeOrdersForBookingId(
     const disputeReason = extractDisputeReason(slots);
 
     if (next === "completed") {
+      if (!customerUser?.email) continue;
       // Customer notification: service completed (confirm/dispute).
       try {
         await sendDomainEmail({
