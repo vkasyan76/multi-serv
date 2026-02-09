@@ -108,6 +108,14 @@ export const Tenants: CollectionConfig = {
       type: "date",
       admin: { readOnly: true },
     },
+    {
+      name: "emailNotifiedPayoutsEnabledAt",
+      type: "date",
+      admin: {
+        position: "sidebar",
+        description: "When the payouts-enabled email was sent.",
+      },
+    },
 
     // Vendor profile fields
 

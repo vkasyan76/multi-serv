@@ -283,6 +283,22 @@ export const Users: CollectionConfig = {
       },
     },
     {
+      name: "emailNotifiedCustomerOnboardingAt",
+      type: "date",
+      admin: {
+        position: "sidebar",
+        description: "When the customer onboarding email was sent.",
+      },
+    },
+    {
+      name: "emailNotifiedVendorCreatedAt",
+      type: "date",
+      admin: {
+        position: "sidebar",
+        description: "When the vendor profile created email was sent.",
+      },
+    },
+    {
       name: "geoUpdatedAt",
       type: "date",
       label: "Geolocation Updated At",

@@ -17,6 +17,9 @@ import { renderOrderAcceptedTenantTemplate } from "./templates/order-accepted-te
 import { renderOrderDisputedTenantTemplate } from "./templates/order-disputed-tenant";
 import { renderMessageReceivedCustomerTemplate } from "./templates/message-received-customer";
 import { renderMessageReceivedTenantTemplate } from "./templates/message-received-tenant";
+import { renderOnboardingCompletedCustomerTemplate } from "./templates/onboarding-completed-customer";
+import { renderVendorCreatedTenantTemplate } from "./templates/vendor-created-tenant";
+import { renderPayoutsEnabledTenantTemplate } from "./templates/payouts-enabled-tenant";
 
 type TemplateRenderer = (data: Record<string, unknown>) => Promise<{
   subject: string;
@@ -190,4 +193,14 @@ registerEmailTemplate(
 registerEmailTemplate(
   "message.received.tenant",
   renderMessageReceivedTenantTemplate,
+);
+// Onboarding milestone notifications
+registerEmailTemplate(
+  "onboarding.completed.customer",
+  renderOnboardingCompletedCustomerTemplate,
+);
+registerEmailTemplate("vendor.created.tenant", renderVendorCreatedTenantTemplate);
+registerEmailTemplate(
+  "payouts.enabled.tenant",
+  renderPayoutsEnabledTenantTemplate,
 );

@@ -241,6 +241,14 @@ export interface User {
    */
   onboardingCompleted?: boolean | null;
   /**
+   * When the customer onboarding email was sent.
+   */
+  emailNotifiedCustomerOnboardingAt?: string | null;
+  /**
+   * When the vendor profile created email was sent.
+   */
+  emailNotifiedVendorCreatedAt?: string | null;
+  /**
    * When the user's geolocation was last updated
    */
   geoUpdatedAt?: string | null;
@@ -316,6 +324,10 @@ export interface Tenant {
     | boolean
     | null;
   lastStripeSyncAt?: string | null;
+  /**
+   * When the payouts-enabled email was sent.
+   */
+  emailNotifiedPayoutsEnabledAt?: string | null;
   /**
    * Vendor's bio/description
    */
@@ -684,7 +696,7 @@ export interface EmailEventLog {
    * Domain event key, e.g. invoice.issued.customer
    */
   eventType: string;
-  entityType: 'order' | 'booking' | 'invoice' | 'message';
+  entityType: 'order' | 'booking' | 'invoice' | 'message' | 'user' | 'tenant';
   entityId: string;
   /**
    * Optional: link to the Payload user recipient.
@@ -845,6 +857,8 @@ export interface UsersSelect<T extends boolean = true> {
         manuallySet?: T;
       };
   onboardingCompleted?: T;
+  emailNotifiedCustomerOnboardingAt?: T;
+  emailNotifiedVendorCreatedAt?: T;
   geoUpdatedAt?: T;
   bookingBlocked?: T;
   bookingBlockedReason?: T;
@@ -906,6 +920,7 @@ export interface TenantsSelect<T extends boolean = true> {
   onboardingStatus?: T;
   stripeRequirements?: T;
   lastStripeSyncAt?: T;
+  emailNotifiedPayoutsEnabledAt?: T;
   bio?: T;
   services?: T;
   categories?: T;

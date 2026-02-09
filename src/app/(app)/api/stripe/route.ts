@@ -6,7 +6,7 @@ import config from "@payload-config";
 import { stripe } from "@/lib/stripe";
 import { parseSlotIdsCsv } from "@/modules/checkout/server/types";
 import { sendDomainEmail } from "@/modules/email/events";
-import type { Order } from "@/payload-types";
+import type { Order, User } from "@/payload-types";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body access
 
@@ -54,6 +54,12 @@ const toAbsolute = (path: string) => {
     "http://localhost:3000";
   return new URL(path, base).toString();
 };
+
+const toEmailDeliverability = (user: User) => ({
+  status: user.emailDeliverabilityStatus ?? undefined,
+  reason: user.emailDeliverabilityReason ?? undefined,
+  retryAfter: user.emailDeliverabilityRetryAfter ?? undefined,
+});
 
 export async function POST(req: Request) {
   // Payload instance – used to read/update your collections atomically
@@ -436,12 +442,26 @@ export async function POST(req: Request) {
               ? "restricted"
               : "in_progress";
 
-        await payload.update({
+        const tenantRes = await payload.find({
           collection: "tenants",
           where: { stripeAccountId: { equals: acct.id } },
+          limit: 1,
+          overrideAccess: true,
+          depth: 0,
+        });
+        const tenant = tenantRes.docs[0];
+        if (!tenant) break;
+
+        const becameCompleted =
+          tenant.onboardingStatus !== "completed" &&
+          onboardingStatus === "completed";
+
+        await payload.update({
+          collection: "tenants",
+          id: tenant.id,
           data: {
             stripeDetailsSubmitted: acct.details_submitted,
-            // NEW snapshot fields
+            // Stripe snapshot fields
             chargesEnabled,
             payoutsEnabled,
             stripeRequirements: requirementsDue,
@@ -450,6 +470,54 @@ export async function POST(req: Request) {
           },
           overrideAccess: true,
         });
+
+        // Milestone email: payouts enabled (webhook is the canonical source).
+        if (becameCompleted && !tenant.emailNotifiedPayoutsEnabledAt) {
+          try {
+            const ownerId =
+              typeof tenant.user === "string" ? tenant.user : tenant.user?.id;
+            if (ownerId) {
+              const ownerRes = await payload.find({
+                collection: "users",
+                where: { id: { equals: ownerId } },
+                limit: 1,
+                overrideAccess: true,
+                depth: 0,
+              });
+              const owner = ownerRes.docs[0] as User | undefined;
+              const toEmail = (owner?.email ?? "").trim();
+
+              if (toEmail) {
+                await sendDomainEmail({
+                  db: payload,
+                  eventType: "payouts.enabled.tenant",
+                  entityType: "tenant",
+                  entityId: String(tenant.id),
+                  recipientUserId: String(ownerId),
+                  toEmail,
+                  deliverability: owner
+                    ? toEmailDeliverability(owner)
+                    : undefined,
+                  data: {
+                    tenantName: tenant.name ?? undefined,
+                    ctaUrl: toAbsolute("/profile?tab=payouts"),
+                  },
+                });
+
+                await payload.update({
+                  collection: "tenants",
+                  id: tenant.id,
+                  data: {
+                    emailNotifiedPayoutsEnabledAt: new Date().toISOString(),
+                  },
+                  overrideAccess: true,
+                });
+              }
+            }
+          } catch (err) {
+            console.warn("[email] payouts.enabled.tenant failed", err);
+          }
+        }
         break;
       }
 

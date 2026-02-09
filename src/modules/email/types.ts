@@ -1,6 +1,9 @@
 import type { Payload } from "payload";
 
 export type EmailEventType =
+  | "onboarding.completed.customer"
+  | "vendor.created.tenant"
+  | "payouts.enabled.tenant"
   | "order.created.customer"
   | "order.created.tenant"
   | "order.completed.customer"
@@ -13,7 +16,13 @@ export type EmailEventType =
   | "message.received.customer"
   | "message.received.tenant";
 
-export type EntityType = "order" | "booking" | "invoice" | "message";
+export type EntityType =
+  | "order"
+  | "booking"
+  | "invoice"
+  | "message"
+  | "user"
+  | "tenant";
 
 export type EmailDeliverabilityStatus =
   | "ok"

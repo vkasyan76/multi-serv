@@ -35,7 +35,7 @@ export const EmailEventLogs: CollectionConfig = {
       name: "entityType",
       type: "select",
       required: true,
-      options: ["order", "booking", "invoice", "message"],
+      options: ["order", "booking", "invoice", "message", "user", "tenant"],
       index: true,
     },
     {
