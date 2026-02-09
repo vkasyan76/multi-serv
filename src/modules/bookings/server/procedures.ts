@@ -35,12 +35,8 @@ const displayNameFromUser = (
 ): string | null => {
   if (!u || typeof u === "string") return null;
 
-  // avoid `any` while still allowing fields that may not exist on generated User type yet
-  const named = u as User & { firstName?: unknown; lastName?: unknown };
-
-  const first =
-    typeof named.firstName === "string" ? named.firstName.trim() : "";
-  const last = typeof named.lastName === "string" ? named.lastName.trim() : "";
+  const first = (u.firstName ?? "").trim();
+  const last = (u.lastName ?? "").trim();
 
   if (first && last) return `${first} ${last}`;
   if (first) return first;
@@ -733,6 +729,9 @@ export const bookingRouter = createTRPCRouter({
         depth: 0,
         overrideAccess: true,
       })) as Tenant | null;
+      if (!tenant) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      }
 
       const ownerId =
         typeof tenant?.user === "string" ? tenant.user : tenant?.user?.id;
@@ -846,6 +845,8 @@ export const bookingRouter = createTRPCRouter({
       const ss = (b.serviceStatus ?? "scheduled") as string;
       const nowIso = new Date().toISOString();
 
+
+
       // Idempotency: already accepted → ok (backfill timestamp if missing)
       if (ss === "accepted") {
         if (!b.acceptedAt) {
@@ -862,8 +863,8 @@ export const bookingRouter = createTRPCRouter({
         return { ok: true };
       }
 
-      // Allow accept from completed or disputed
-      if (ss !== "completed" && ss !== "disputed") {
+      // Strict MVP: only accept after vendor marks completed.
+      if (ss !== "completed") {
         throw new TRPCError({
           code: "CONFLICT",
           message: `Cannot accept from serviceStatus=${ss}`,
@@ -939,6 +940,8 @@ export const bookingRouter = createTRPCRouter({
       const nowIso = new Date().toISOString();
 
       // Idempotency: already disputed → ok (backfill timestamp/reason if missing)
+
+
       if (ss === "disputed") {
         const patch: Partial<Pick<Booking, "disputedAt" | "disputeReason">> =
           {};

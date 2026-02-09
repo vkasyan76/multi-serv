@@ -7,6 +7,8 @@ import type { Booking, Invoice, Order, Tenant, User } from "@/payload-types";
 import type { Stripe } from "stripe";
 import { stripe } from "@/lib/stripe";
 import { resolveVatRateBps } from "./vat-rates";
+import { sendDomainEmail } from "@/modules/email/events";
+import type { EmailDeliverability } from "@/modules/email/types";
 
 type DocWithId<T> = T & { id: string };
 
@@ -19,6 +21,11 @@ type InvoiceDoc = {
   currency?: string | null;
   amountTotalCents?: number | null;
   stripeCheckoutSessionId?: string | null;
+  lineItems?: LineItem[] | null;
+  buyerEmail?: string | null;
+  buyerName?: string | null;
+  sellerEmail?: string | null;
+  sellerLegalName?: string | null;
 };
 
 type LineItem = {
@@ -139,6 +146,14 @@ function displayName(user: DocWithId<User>): string {
   return full || (user.username ?? "").trim() || (user.email ?? "").trim();
 }
 
+function toEmailDeliverability(user: DocWithId<User>): EmailDeliverability {
+  return {
+    status: user.emailDeliverabilityStatus ?? undefined,
+    reason: user.emailDeliverabilityReason ?? undefined,
+    retryAfter: user.emailDeliverabilityRetryAfter ?? undefined,
+  };
+}
+
 function paymentIntentIdOf(s: Stripe.Checkout.Session): string | null {
   if (typeof s.payment_intent === "string") return s.payment_intent;
   if (s.payment_intent) return (s.payment_intent as Stripe.PaymentIntent).id;
@@ -250,6 +265,42 @@ function buildLineItems(params: {
   }
 
   return { items: rawItems, subtotalCents: rawSum };
+}
+
+function extractServiceNames(items?: LineItem[] | null): string[] {
+  if (!items?.length) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    const name = (item.title ?? "").trim();
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    out.push(name);
+  }
+  return out;
+}
+
+function extractDateRange(items?: LineItem[] | null) {
+  if (!items?.length) return null;
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  for (const item of items) {
+    const startMs = Date.parse(item.start);
+    const endMs = Date.parse(item.end ?? item.start);
+    if (Number.isFinite(startMs)) {
+      min = Math.min(min, startMs);
+    }
+    if (Number.isFinite(endMs)) {
+      max = Math.max(max, endMs);
+    } else if (Number.isFinite(startMs)) {
+      max = Math.max(max, startMs);
+    }
+  }
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  return {
+    start: new Date(min).toISOString(),
+    end: new Date(max).toISOString(),
+  };
 }
 
 export const invoicesRouter = createTRPCRouter({
@@ -511,6 +562,13 @@ export const invoicesRouter = createTRPCRouter({
         });
       }
 
+      const tenantName = displayName(tenantUser);
+      const customerName = displayName(buyerUser);
+      const tenantSlug = typeof tenant.slug === "string" ? tenant.slug : "";
+      const customerLocale = buyerUser.language ?? "en";
+      const tenantLocale = tenantUser.language ?? "en";
+      const ordersUrl = toAbsolute("/orders");
+
       // Idempotency: return existing issued/paid invoice if present.
       const existing = await ctx.db.find({
         collection: "invoices",
@@ -528,6 +586,77 @@ export const invoicesRouter = createTRPCRouter({
       const existingInvoice =
         (existing.docs?.[0] as InvoiceDoc | undefined) ?? null;
       if (existingInvoice) {
+        const existingItems = existingInvoice.lineItems ?? [];
+        const existingServices = extractServiceNames(existingItems);
+        const existingDateRange = extractDateRange(existingItems);
+
+        // Retry-safe trigger: dedupeKey prevents duplicate email sends.
+        if (buyerUser.email) {
+          try {
+            await sendDomainEmail({
+              db: ctx.db,
+              eventType: "invoice.issued.customer",
+              entityType: "invoice",
+              entityId: existingInvoice.id,
+              recipientUserId: customerId,
+              toEmail: buyerUser.email,
+              deliverability: toEmailDeliverability(buyerUser),
+              data: {
+                customerName,
+                tenantName,
+                tenantSlug,
+                invoiceId: existingInvoice.id,
+                orderId: order.id,
+                amountTotalCents: Number(existingInvoice.amountTotalCents ?? 0),
+                currency: String(existingInvoice.currency ?? "eur"),
+                ordersUrl,
+                services: existingServices,
+                dateRangeStart: existingDateRange?.start,
+                dateRangeEnd: existingDateRange?.end,
+                locale: customerLocale,
+              },
+            });
+          } catch (err) {
+            if (process.env.NODE_ENV !== "production") {
+              console.error(
+                "[email] invoice.issued.customer existing failed",
+                err,
+              );
+            }
+          }
+        }
+
+        if (tenantUser.email) {
+          try {
+            await sendDomainEmail({
+              db: ctx.db,
+              eventType: "invoice.issued.tenant",
+              entityType: "invoice",
+              entityId: existingInvoice.id,
+              recipientUserId: ownerId,
+              toEmail: tenantUser.email,
+              deliverability: toEmailDeliverability(tenantUser),
+              data: {
+                tenantName,
+                customerName,
+                invoiceId: existingInvoice.id,
+                orderId: order.id,
+                amountTotalCents: Number(existingInvoice.amountTotalCents ?? 0),
+                currency: String(existingInvoice.currency ?? "eur"),
+                invoiceUrl: toAbsolute(`/invoices/${existingInvoice.id}`),
+                services: existingServices,
+                dateRangeStart: existingDateRange?.start,
+                dateRangeEnd: existingDateRange?.end,
+                locale: tenantLocale,
+              },
+            });
+          } catch (err) {
+            if (process.env.NODE_ENV !== "production") {
+              console.error("[email] invoice.issued.tenant existing failed", err);
+            }
+          }
+        }
+
         await recomputeOrderInvoiceCache(ctx, order.id);
         return existingInvoice;
       }
@@ -576,6 +705,8 @@ export const invoicesRouter = createTRPCRouter({
         tenantHourlyRate: tenantRate,
         targetTotalCents: orderAmountCents,
       });
+      const serviceNames = extractServiceNames(items);
+      const dateRange = extractDateRange(items);
 
       if (!items.length || subtotalCents <= 0) {
         throw new TRPCError({
@@ -668,6 +799,71 @@ export const invoicesRouter = createTRPCRouter({
         overrideAccess: true,
         depth: 0,
       });
+
+      // MVP email hook: notify customer when invoice is issued.
+      // Keep non-blocking so invoice creation never fails because of email.
+      if (buyerUser.email) {
+        try {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "invoice.issued.customer",
+            entityType: "invoice",
+            entityId: created.id,
+            recipientUserId: customerId,
+            toEmail: buyerUser.email,
+            deliverability: toEmailDeliverability(buyerUser),
+            data: {
+              customerName,
+              tenantName,
+              tenantSlug,
+              invoiceId: created.id,
+              orderId: order.id,
+              amountTotalCents: grossTotalCents,
+              currency,
+              ordersUrl,
+              services: serviceNames,
+              dateRangeStart: dateRange?.start,
+              dateRangeEnd: dateRange?.end,
+              locale: customerLocale,
+            },
+          });
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error("[email] invoice.issued.customer failed", err);
+          }
+        }
+      }
+
+      if (tenantUser.email) {
+        try {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "invoice.issued.tenant",
+            entityType: "invoice",
+            entityId: created.id,
+            recipientUserId: ownerId,
+            toEmail: tenantUser.email,
+            deliverability: toEmailDeliverability(tenantUser),
+            data: {
+              tenantName,
+              customerName,
+              invoiceId: created.id,
+              orderId: order.id,
+              amountTotalCents: grossTotalCents,
+              currency,
+              invoiceUrl: toAbsolute(`/invoices/${created.id}`),
+              services: serviceNames,
+              dateRangeStart: dateRange?.start,
+              dateRangeEnd: dateRange?.end,
+              locale: tenantLocale,
+            },
+          });
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error("[email] invoice.issued.tenant failed", err);
+          }
+        }
+      }
 
       return created;
     }),
@@ -931,6 +1127,60 @@ export const invoicesRouter = createTRPCRouter({
           overrideAccess: true,
           depth: 0,
         });
+      }
+
+      // Phase E fallback: send invoice.paid emails after paid transition.
+      try {
+        const customerEmail = invoice.buyerEmail ?? undefined;
+        const tenantEmail = invoice.sellerEmail ?? undefined;
+        const customerName = (invoice.buyerName ?? "").trim() || undefined;
+        const tenantName = (invoice.sellerLegalName ?? "").trim() || undefined;
+        const ordersUrl = toAbsolute("/orders");
+        const dashboardUrl = toAbsolute("/dashboard");
+
+        if (customerEmail) {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "invoice.paid.customer",
+            entityType: "invoice",
+            entityId: invoice.id,
+            recipientUserId: customerId,
+            toEmail: customerEmail,
+            data: {
+              customerName,
+              tenantName,
+              invoiceId: invoice.id,
+              orderId: orderId ?? undefined,
+              amountTotalCents: Number(invoice.amountTotalCents ?? 0),
+              currency: String(invoice.currency ?? "eur"),
+              ordersUrl,
+            },
+          });
+        }
+
+        if (tenantEmail) {
+          await sendDomainEmail({
+            db: ctx.db,
+            eventType: "invoice.paid.tenant",
+            entityType: "invoice",
+            entityId: invoice.id,
+            // Tenant email uses snapshot address; owner user id may not be available here.
+            toEmail: tenantEmail,
+            data: {
+              tenantName,
+              customerName,
+              invoiceId: invoice.id,
+              orderId: orderId ?? undefined,
+              amountTotalCents: Number(invoice.amountTotalCents ?? 0),
+              currency: String(invoice.currency ?? "eur"),
+              dashboardUrl,
+            },
+          });
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[email] invoice.paid finalize failed", err);
+        }
       }
 
       return { ok: true };

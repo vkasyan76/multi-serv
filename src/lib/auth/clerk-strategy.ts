@@ -75,6 +75,7 @@ export async function getUser({
         email,
         username,
         roles: ["user"],
+        emailDeliverabilityStatus: "ok",
       },
     });
   } else {

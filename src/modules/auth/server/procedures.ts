@@ -16,12 +16,14 @@ import { updateClerkUserMetadata } from "@/lib/auth/updateClerkMetadata";
 import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
 import { z } from "zod";
 import type { UserCoordinates } from "@/modules/tenants/types";
+import type { User } from "@/payload-types";
 import {
   hasValidCoordinates,
   replaceCoordinates,
 } from "@/modules/profile/location-utils";
 import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
 import { normalizeVat } from "@/modules/profile/vat-validation-utils";
+import { sendDomainEmail } from "@/modules/email/events";
 import Stripe from "stripe";
 
 // for checking if user has accepted current terms:
@@ -30,6 +32,33 @@ const PASSWORD_AUTH_ENABLED = false; // hard-disable payload auth - we rely enti
 
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
+
+// Email CTA URLs (prefer server APP_URL).
+const toAbsolute = (path: string) => {
+  const base =
+    process.env.APP_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "http://localhost:3000";
+  return new URL(path, base).toString();
+};
+
+const toEmailDeliverability = (user: User) => ({
+  status: user.emailDeliverabilityStatus ?? undefined,
+  reason: user.emailDeliverabilityReason ?? undefined,
+  retryAfter: user.emailDeliverabilityRetryAfter ?? undefined,
+});
+
+const displayNameFromUser = (user: User | null | undefined) => {
+  if (!user) return "Someone";
+  const first = (user.firstName ?? "").trim();
+  const last = (user.lastName ?? "").trim();
+  const full = `${first} ${last}`.trim();
+  if (full) return full;
+  const username = (user.username ?? "").trim();
+  if (username) return username;
+  const email = (user.email ?? "").trim();
+  return email || "Someone";
+};
 
 // strip ISO prefix and separators from VAT for VIES check
 
@@ -93,6 +122,8 @@ export const authRouter = createTRPCRouter({
           email: input.email,
           username: input.username,
           // No tenants array initially - will be added when user becomes vendor
+          // emailDeliverabilityStatus field:
+          emailDeliverabilityStatus: "ok",
         },
       });
 
@@ -198,12 +229,12 @@ export const authRouter = createTRPCRouter({
         await updateClerkUserMetadata(
           userId!,
           existingUser.id as string,
-          existingUser.username // now narrowed to `string`
+          existingUser.username, // now narrowed to `string`
         );
       } else {
         if (process.env.NODE_ENV !== "production") {
           console.log(
-            "syncClerkUser: username is null/empty; skipping Clerk metadata update"
+            "syncClerkUser: username is null/empty; skipping Clerk metadata update",
           );
         }
       }
@@ -352,7 +383,7 @@ export const authRouter = createTRPCRouter({
               tenantName: input.name ?? "",
             },
           },
-          { idempotencyKey: `acct_create:${currentUser.id}:card+transfers:v2` }
+          { idempotencyKey: `acct_create:${currentUser.id}:card+transfers:v2` },
         ));
 
         if (!accountId) {
@@ -423,6 +454,42 @@ export const authRouter = createTRPCRouter({
           overrideAccess: true, // Bypass access control to ensure tenant creation
         });
 
+        // Milestone email: send only once when vendor profile is created.
+        if (!currentUser.emailNotifiedVendorCreatedAt) {
+          try {
+            const toEmail = (currentUser.email ?? "").trim();
+            if (toEmail) {
+              const tenantSlug = (input.name ?? "").trim() || undefined;
+
+              await sendDomainEmail({
+                db: ctx.db,
+                eventType: "vendor.created.tenant",
+                entityType: "tenant",
+                entityId: String(tenant.id),
+                recipientUserId: String(currentUser.id),
+                toEmail,
+                deliverability: toEmailDeliverability(currentUser),
+                data: {
+                  recipientName: displayNameFromUser(currentUser),
+                  tenantSlug,
+                  ctaUrl: toAbsolute("/profile?tab=vendor"),
+                },
+              });
+
+              await ctx.db.update({
+                collection: "users",
+                id: String(currentUser.id),
+                data: {
+                  emailNotifiedVendorCreatedAt: new Date().toISOString(),
+                },
+                overrideAccess: true,
+              });
+            }
+          } catch (err) {
+            console.warn("[email] vendor.created.tenant failed", err);
+          }
+        }
+
         return tenant;
       } catch (error) {
         let tenantDeleted = false;
@@ -471,7 +538,7 @@ export const authRouter = createTRPCRouter({
           // Heads-up: tenant rollback failed but Stripe account exists; state is intentionally left consistent.
           console.warn(
             "[createVendorProfile] Orphan risk: tenant rollback failed; keeping Stripe account",
-            { accountId: accountId.slice(0, 8) + "…", tenantId: tenant.id }
+            { accountId: accountId.slice(0, 8) + "…", tenantId: tenant.id },
           );
         }
 
@@ -740,7 +807,7 @@ export const authRouter = createTRPCRouter({
       // Return null instead of throwing - this stops the infinite spinner
       console.log(
         "getUserProfile: No user found for clerkUserId:",
-        mask(userId)
+        mask(userId),
       );
       return null;
     }
@@ -751,7 +818,7 @@ export const authRouter = createTRPCRouter({
       // Return null instead of throwing - this stops the infinite spinner
       console.log(
         "getUserProfile: User document is null for clerkUserId:",
-        mask(userId)
+        mask(userId),
       );
       return null;
     }
@@ -841,7 +908,7 @@ export const authRouter = createTRPCRouter({
       if (tenant.categories && tenant.categories.length > 0) {
         // Extract just the IDs from the category objects
         const categoryIds = tenant.categories.map((cat) =>
-          typeof cat === "object" && cat.id ? cat.id : cat
+          typeof cat === "object" && cat.id ? cat.id : cat,
         );
 
         const categoryDocs = await ctx.db.find({
@@ -859,7 +926,7 @@ export const authRouter = createTRPCRouter({
       if (tenant.subcategories && tenant.subcategories.length > 0) {
         // Extract just the IDs from the subcategory objects
         const subcategoryIds = tenant.subcategories.map((sub) =>
-          typeof sub === "object" && sub.id ? sub.id : sub
+          typeof sub === "object" && sub.id ? sub.id : sub,
         );
 
         const subcategoryDocs = await ctx.db.find({
@@ -990,6 +1057,12 @@ export const authRouter = createTRPCRouter({
         geoUpdatedAt: new Date().toISOString(),
       };
 
+      // For this codebase, becameOnboarded is the cleanest minimal guard.
+      // It avoids repeat sends on later profile updates (not about storing dates).
+      const becameOnboarded =
+        currentUser.onboardingCompleted !== true &&
+        data.onboardingCompleted === true;
+
       if (hasValidCoordinates(input.coordinates) && input.coordinates) {
         data.coordinates = replaceCoordinates(input.coordinates, true);
       }
@@ -1000,17 +1073,52 @@ export const authRouter = createTRPCRouter({
         data,
       });
 
+      // Milestone email: send only once when onboarding flips to completed.
+      if (becameOnboarded && !currentUser.emailNotifiedCustomerOnboardingAt) {
+        try {
+          const toEmail = (currentUser.email ?? "").trim();
+          if (toEmail) {
+            await sendDomainEmail({
+              db: ctx.db,
+              eventType: "onboarding.completed.customer",
+              entityType: "user",
+              entityId: String(currentUser.id),
+              recipientUserId: String(currentUser.id),
+              toEmail,
+              deliverability: toEmailDeliverability(currentUser),
+              data: {
+                customerName:
+                  `${(input.firstName ?? "").trim()} ${(input.lastName ?? "").trim()}`.trim() ||
+                  displayNameFromUser(currentUser),
+                ctaUrl: toAbsolute("/profile?tab=general"),
+              },
+            });
+
+            await ctx.db.update({
+              collection: "users",
+              id: String(currentUser.id),
+              data: {
+                emailNotifiedCustomerOnboardingAt: new Date().toISOString(),
+              },
+              overrideAccess: true,
+            });
+          }
+        } catch (err) {
+          console.warn("[email] onboarding.completed.customer failed", err);
+        }
+      }
+
       // Update Clerk user metadata with the new username
       if (typeof currentUser.id === "string" && currentUser.id.length > 0) {
         await updateClerkUserMetadata(
           userId!,
           currentUser.id,
-          input.username || undefined
+          input.username || undefined,
         );
       } else {
         if (process.env.NODE_ENV !== "production") {
           console.log(
-            "updateUserProfile: currentUser.id is null/empty; skipping Clerk metadata update"
+            "updateUserProfile: currentUser.id is null/empty; skipping Clerk metadata update",
           );
         }
       }
@@ -1034,7 +1142,7 @@ export const authRouter = createTRPCRouter({
         // NEW: Optional top-level fields
         country: z.string().optional(), // top-level display name
         language: z.string().optional(), // consider narrowing server-side
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.userId;
@@ -1076,7 +1184,7 @@ export const authRouter = createTRPCRouter({
       if (hasManual || (doneOnboarding && haveCoords)) {
         if (process.env.NODE_ENV !== "production") {
           console.log(
-            `Geo update skipped for ${String(userId).slice(0, 8)}… (manual or completed)`
+            `Geo update skipped for ${String(userId).slice(0, 8)}… (manual or completed)`,
           );
         }
         return { success: true, stored: false, coordinates: existing };
@@ -1153,7 +1261,7 @@ export const authRouter = createTRPCRouter({
 
       if (process.env.NODE_ENV !== "production") {
         console.log(
-          `Geo update for user ${mask(userId)}: stored=${changed}, countryISO=${merged.countryISO ?? "unknown"}`
+          `Geo update for user ${mask(userId)}: stored=${changed}, countryISO=${merged.countryISO ?? "unknown"}`,
         );
       }
 
@@ -1188,11 +1296,11 @@ export const authRouter = createTRPCRouter({
 
       const returnUrl = new URL(
         "/profile?tab=payouts&onboarding=done",
-        base
+        base,
       ).toString();
       const refreshUrl = new URL(
         "/profile?tab=payouts&resume=1",
-        base
+        base,
       ).toString();
 
       const link = await stripe.accountLinks.create({
@@ -1324,7 +1432,7 @@ export const authRouter = createTRPCRouter({
 
     const bump = (
       rows: Stripe.Balance.Available[] | Stripe.Balance.Pending[],
-      key: keyof Totals
+      key: keyof Totals,
     ) => {
       for (const { amount, currency } of rows) {
         const k = currency.toLowerCase();

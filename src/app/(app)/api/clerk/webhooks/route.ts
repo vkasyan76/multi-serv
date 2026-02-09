@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 function normalizeUsername(
   input?: string | null,
   email?: string | null,
-  fallbackId?: string
+  fallbackId?: string,
 ) {
   // pick a base: provided username → email local-part → clerk id → "user"
   const base = (
@@ -40,7 +40,7 @@ function withSuffix(base: string, suffix: string, max = 32) {
 
 async function ensureUniqueUsername(
   cms: Awaited<ReturnType<typeof getPayload>>,
-  username: string
+  username: string,
 ) {
   let i = 0;
   const maxAttempts = 100;
@@ -157,6 +157,8 @@ export async function POST(req: Request) {
           usernameSyncedAt: new Date().toISOString(),
           clerkUserId: clerkId,
           roles: ["user"],
+          // for tracking deliverability status from email sends
+          emailDeliverabilityStatus: "ok",
         },
       });
       console.log("Webhook - Created new user:", newUser.id);
@@ -241,7 +243,7 @@ export async function POST(req: Request) {
         "Delete lookup count:",
         found.docs.length,
         "for",
-        mask(clerkId)
+        mask(clerkId),
       );
 
       if (found.docs.length > 0) {
@@ -253,7 +255,7 @@ export async function POST(req: Request) {
               "Cleaning up",
               existingUser.tenants.length,
               "tenant(s) for user:",
-              existingUser.id
+              existingUser.id,
             );
 
             for (const tenantRef of existingUser.tenants) {
@@ -293,7 +295,7 @@ export async function POST(req: Request) {
                     console.error(
                       "Failed to delete tenant image:",
                       imageId,
-                      mediaError
+                      mediaError,
                     );
                   }
                 }
@@ -314,7 +316,7 @@ export async function POST(req: Request) {
                     console.warn(
                       "Stripe account cleanup skipped for",
                       acctId,
-                      (err as Error)?.message
+                      (err as Error)?.message,
                     );
                   }
                 }
@@ -330,7 +332,7 @@ export async function POST(req: Request) {
                 console.error(
                   "Failed to delete tenant:",
                   tenantId,
-                  tenantError
+                  tenantError,
                 );
                 // Continue with other tenants even if one fails
               }
@@ -359,13 +361,13 @@ export async function POST(req: Request) {
                 "Deleted",
                 profiles.docs.length,
                 "payment profile(s) for user:",
-                existingUser.id
+                existingUser.id,
               );
             }
           } catch (e) {
             console.warn(
               "Payment profile cleanup skipped:",
-              (e as Error)?.message
+              (e as Error)?.message,
             );
           }
 
@@ -379,7 +381,7 @@ export async function POST(req: Request) {
             "Deleted user doc:",
             existingUser.id,
             "for",
-            mask(clerkId)
+            mask(clerkId),
           );
         }
       } else {

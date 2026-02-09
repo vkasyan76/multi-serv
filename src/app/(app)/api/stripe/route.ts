@@ -5,7 +5,8 @@ import { getPayload } from "payload";
 import config from "@payload-config";
 import { stripe } from "@/lib/stripe";
 import { parseSlotIdsCsv } from "@/modules/checkout/server/types";
-import type { Order } from "@/payload-types";
+import { sendDomainEmail } from "@/modules/email/events";
+import type { Order, User } from "@/payload-types";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body access
 
@@ -29,6 +30,14 @@ type WebhookInvoice = {
   status?: string | null;
   paidAt?: string | null;
   order?: string | { id: string } | null;
+  tenant?: string | { id: string } | null;
+  customer?: string | { id: string } | null;
+  currency?: string | null;
+  amountTotalCents?: number | null;
+  buyerEmail?: string | null;
+  buyerName?: string | null;
+  sellerEmail?: string | null;
+  sellerLegalName?: string | null;
 };
 
 const paymentIntentIdOf = (s: Stripe.Checkout.Session): string | null => {
@@ -36,6 +45,21 @@ const paymentIntentIdOf = (s: Stripe.Checkout.Session): string | null => {
   if (s.payment_intent) return (s.payment_intent as Stripe.PaymentIntent).id;
   return null;
 };
+
+// Email CTA URLs (prefer server APP_URL).
+const toAbsolute = (path: string) => {
+  const base =
+    process.env.APP_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "http://localhost:3000";
+  return new URL(path, base).toString();
+};
+
+const toEmailDeliverability = (user: User) => ({
+  status: user.emailDeliverabilityStatus ?? undefined,
+  reason: user.emailDeliverabilityReason ?? undefined,
+  retryAfter: user.emailDeliverabilityRetryAfter ?? undefined,
+});
 
 export async function POST(req: Request) {
   // Payload instance – used to read/update your collections atomically
@@ -87,6 +111,11 @@ export async function POST(req: Request) {
           const piId = paymentIntentIdOf(session);
           let invoice: WebhookInvoice | undefined;
 
+          // Guard: only treat paid sessions as success.
+          if (session.payment_status !== "paid") {
+            return NextResponse.json({ ok: true }, { status: 200 });
+          }
+
           const byId = await payload.find({
             collection: "invoices",
             where: { id: { equals: invoiceId } },
@@ -109,13 +138,14 @@ export async function POST(req: Request) {
 
           if (!invoice) return NextResponse.json({ ok: true }, { status: 200 });
 
-          const paidAt =
-            invoice.status !== "paid"
-              ? new Date().toISOString()
-              : invoice.paidAt ?? undefined;
+          const paidNow = invoice.status !== "paid";
+          const paidAt = paidNow
+            ? new Date().toISOString()
+            : invoice.paidAt ?? undefined;
+          let updatedInvoice: WebhookInvoice | undefined;
 
-          if (invoice.status !== "paid") {
-            await payload.update({
+          if (paidNow) {
+            updatedInvoice = (await payload.update({
               collection: "invoices",
               id: invoice.id,
               data: {
@@ -124,7 +154,7 @@ export async function POST(req: Request) {
                 paidAt: paidAt!,
               },
               overrideAccess: true,
-            });
+            })) as WebhookInvoice;
           }
 
           const orderId =
@@ -141,6 +171,70 @@ export async function POST(req: Request) {
               },
               overrideAccess: true,
             });
+          }
+
+          // Phase E: send invoice.paid emails only on the paid transition.
+          // Phase E: send invoice.paid emails only when we transition to paid.
+          if (paidNow) {
+            // Merge to preserve snapshot fields even if update returns a partial doc.
+            const full = updatedInvoice ? { ...invoice, ...updatedInvoice } : invoice;
+            const ordersUrl = toAbsolute("/orders");
+            const dashboardUrl = toAbsolute("/dashboard");
+            const customerEmail = full.buyerEmail ?? undefined;
+            const tenantEmail = full.sellerEmail ?? undefined;
+            const customerName =
+              (full.buyerName ?? "").trim() || undefined;
+            const tenantName =
+              (full.sellerLegalName ?? "").trim() || undefined;
+
+            try {
+              if (customerEmail) {
+                await sendDomainEmail({
+                  db: payload,
+                  eventType: "invoice.paid.customer",
+                  entityType: "invoice",
+                  entityId: full.id,
+                  recipientUserId:
+                    typeof full.customer === "string"
+                      ? full.customer
+                      : full.customer?.id,
+                  toEmail: customerEmail,
+                  data: {
+                    customerName,
+                    tenantName,
+                    invoiceId: full.id,
+                    orderId: orderId ?? undefined,
+                    amountTotalCents: full.amountTotalCents ?? 0,
+                    currency: full.currency ?? "eur",
+                    ordersUrl,
+                  },
+                });
+              }
+
+              if (tenantEmail) {
+                await sendDomainEmail({
+                  db: payload,
+                  eventType: "invoice.paid.tenant",
+                  entityType: "invoice",
+                  entityId: full.id,
+                  // Tenant email uses snapshot address; owner user id may not be available here.
+                  toEmail: tenantEmail,
+                  data: {
+                    tenantName,
+                    customerName,
+                    invoiceId: full.id,
+                    orderId: orderId ?? undefined,
+                    amountTotalCents: full.amountTotalCents ?? 0,
+                    currency: full.currency ?? "eur",
+                    dashboardUrl,
+                  },
+                });
+              }
+            } catch (err) {
+              if (process.env.NODE_ENV !== "production") {
+                console.error("[email] invoice.paid webhook failed", err);
+              }
+            }
           }
 
           return NextResponse.json({ ok: true }, { status: 200 });
@@ -348,12 +442,26 @@ export async function POST(req: Request) {
               ? "restricted"
               : "in_progress";
 
-        await payload.update({
+        const tenantRes = await payload.find({
           collection: "tenants",
           where: { stripeAccountId: { equals: acct.id } },
+          limit: 1,
+          overrideAccess: true,
+          depth: 0,
+        });
+        const tenant = tenantRes.docs[0];
+        if (!tenant) break;
+
+        const becameCompleted =
+          tenant.onboardingStatus !== "completed" &&
+          onboardingStatus === "completed";
+
+        await payload.update({
+          collection: "tenants",
+          id: tenant.id,
           data: {
             stripeDetailsSubmitted: acct.details_submitted,
-            // NEW snapshot fields
+            // Stripe snapshot fields
             chargesEnabled,
             payoutsEnabled,
             stripeRequirements: requirementsDue,
@@ -362,6 +470,54 @@ export async function POST(req: Request) {
           },
           overrideAccess: true,
         });
+
+        // Milestone email: payouts enabled (webhook is the canonical source).
+        if (becameCompleted && !tenant.emailNotifiedPayoutsEnabledAt) {
+          try {
+            const ownerId =
+              typeof tenant.user === "string" ? tenant.user : tenant.user?.id;
+            if (ownerId) {
+              const ownerRes = await payload.find({
+                collection: "users",
+                where: { id: { equals: ownerId } },
+                limit: 1,
+                overrideAccess: true,
+                depth: 0,
+              });
+              const owner = ownerRes.docs[0] as User | undefined;
+              const toEmail = (owner?.email ?? "").trim();
+
+              if (toEmail) {
+                await sendDomainEmail({
+                  db: payload,
+                  eventType: "payouts.enabled.tenant",
+                  entityType: "tenant",
+                  entityId: String(tenant.id),
+                  recipientUserId: String(ownerId),
+                  toEmail,
+                  deliverability: owner
+                    ? toEmailDeliverability(owner)
+                    : undefined,
+                  data: {
+                    tenantName: tenant.name ?? undefined,
+                    ctaUrl: toAbsolute("/profile?tab=payouts"),
+                  },
+                });
+
+                await payload.update({
+                  collection: "tenants",
+                  id: tenant.id,
+                  data: {
+                    emailNotifiedPayoutsEnabledAt: new Date().toISOString(),
+                  },
+                  overrideAccess: true,
+                });
+              }
+            }
+          } catch (err) {
+            console.warn("[email] payouts.enabled.tenant failed", err);
+          }
+        }
         break;
       }
 

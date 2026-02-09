@@ -108,6 +108,17 @@ export const Tenants: CollectionConfig = {
       type: "date",
       admin: { readOnly: true },
     },
+    {
+      name: "emailNotifiedPayoutsEnabledAt",
+      type: "date",
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
+      admin: {
+        position: "sidebar",
+        description: "When the payouts-enabled email was sent.",
+      },
+    },
 
     // Vendor profile fields
 
