@@ -1030,6 +1030,13 @@ export const invoicesRouter = createTRPCRouter({
         snapshot = computed;
       }
 
+      if (snapshot.platformFeeCents == null) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Missing platform fee snapshot.",
+        });
+      }
+
       // Best-effort email for Checkout (optional).
       const user = (await ctx.db.findByID({
         collection: "users",
@@ -1071,7 +1078,11 @@ export const invoicesRouter = createTRPCRouter({
             },
           ],
           metadata,
-          payment_intent_data: { metadata },
+          // Collect the platform fee in Stripe using the invoice snapshot.
+          payment_intent_data: {
+            metadata,
+            application_fee_amount: snapshot.platformFeeCents,
+          },
         },
         { stripeAccount: tenant.stripeAccountId as string },
       );
