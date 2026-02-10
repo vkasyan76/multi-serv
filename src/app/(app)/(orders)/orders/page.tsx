@@ -6,20 +6,23 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 type OrdersPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const Page = async ({ searchParams }: OrdersPageProps) => {
+const Page = async ({ searchParams: searchParamsPromise }: OrdersPageProps) => {
   // Guard orders behind auth so email deep-links prompt sign-in if needed.
   const session = await caller.auth.session();
   if (!session.user) {
+    const searchParams = await searchParamsPromise;
     // Preserve invoice callback params so CustomerSlotOrdersView can finalize
     // /orders?invoice=success&session_id=... after login.
     const params = new URLSearchParams();
     if (searchParams) {
       for (const [key, value] of Object.entries(searchParams)) {
         if (Array.isArray(value)) {
-          value.forEach((entry) => params.append(key, entry));
+          value.forEach((entry) => {
+            params.append(key, entry);
+          });
         } else if (value != null) {
           params.set(key, value);
         }
@@ -34,8 +37,10 @@ const Page = async ({ searchParams }: OrdersPageProps) => {
 
   const queryClient = getQueryClient();
   // listMine is a normal query (no args)
-  await queryClient.prefetchQuery(trpc.auth.session.queryOptions());
-  await queryClient.prefetchQuery(trpc.orders.listMine.queryOptions());
+  await Promise.all([
+    queryClient.prefetchQuery(trpc.auth.session.queryOptions()),
+    queryClient.prefetchQuery(trpc.orders.listMine.queryOptions()),
+  ]);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
