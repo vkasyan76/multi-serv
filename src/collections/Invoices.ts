@@ -97,6 +97,8 @@ export const Invoices: CollectionConfig = {
       "tenant",
       "customer",
       "amountTotalCents",
+      "platformFeeCents",
+      "platformFeeRuleId",
       "currency",
       "issuedAt",
       "paidAt",
@@ -191,6 +193,67 @@ export const Invoices: CollectionConfig = {
       type: "number",
       required: true,
       admin: { description: "Total in minor units (cents)." },
+    },
+    // --- Platform fee snapshot (written when a customer starts checkout) ---
+    {
+      name: "platformFeeRateBps",
+      type: "number",
+      required: false,
+      index: true,
+      admin: {
+        readOnly: true,
+        description: "Applied platform fee rate (bps) for this invoice payment.",
+      },
+    },
+    {
+      name: "platformFeeCents",
+      type: "number",
+      required: false,
+      admin: {
+        readOnly: true,
+        description: "Applied platform fee amount in cents.",
+      },
+    },
+    {
+      name: "platformFeeRuleId",
+      type: "text",
+      required: false,
+      index: true,
+      admin: {
+        readOnly: true,
+        description: "Rule identifier used to compute the platform fee.",
+      },
+    },
+    // Timestamp when the platform fee snapshot was computed for this invoice.
+    {
+      name: "platformFeeCalculatedAt",
+      type: "date",
+      required: false,
+      index: true,
+      admin: {
+        readOnly: true,
+        description:
+          "When the platform fee snapshot was computed for checkout.",
+      },
+    },
+    {
+      name: "platformFeeBasis",
+      type: "select",
+      options: ["net"],
+      required: false,
+      admin: {
+        readOnly: true,
+        description: "Commission basis type. Locked to net for MVP.",
+      },
+    },
+    {
+      name: "platformFeeBasisCents",
+      type: "number",
+      required: false,
+      admin: {
+        readOnly: true,
+        description: "Basis amount in cents used for fee calculation.",
+      },
     },
     // VAT snapshot (seller-side only for MVP)
     { name: "sellerCountryISO", type: "text", required: true },

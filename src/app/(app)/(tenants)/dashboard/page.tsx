@@ -2,9 +2,16 @@
 import DashboardContent from "@/modules/tenants/ui/components/tenant_dashboard/dashboard-content";
 import { LayoutDashboard } from "lucide-react";
 import { redirect } from "next/navigation";
-import { getQueryClient, trpc } from "@/trpc/server";
+import { caller, getQueryClient, trpc } from "@/trpc/server";
 
 export default async function DashboardPage() {
+  // Guard dashboard behind auth so email deep-links prompt sign-in if needed.
+  const session = await caller.auth.session();
+  if (!session.user) {
+    // Include redirect_url so users return here after sign-in.
+    redirect("/sign-in?redirect_url=/dashboard");
+  }
+
   const qc = getQueryClient();
 
   // Fetch "my tenant" from auth context (bridged userId -> getMine)

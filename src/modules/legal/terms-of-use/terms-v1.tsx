@@ -135,6 +135,20 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
               Default platform commission rate: {commissionPercent}% (derived
               from {COMMISSION_RATE_BPS_DEFAULT} bps).
             </li>
+            <li>
+              Platform payments are currently supported in EUR only. Payment
+              availability, supported payment methods, and currency support may
+              depend on the providers connected payment account setup. If EUR is
+              not supported for a provider’s account, platform payments may be
+              unavailable for that provider.
+            </li>
+            <li>Platform payments are processed via Stripe where enabled.</li>
+            <li>
+              VAT registration on the platform is available for EU providers
+              only, and EU VAT IDs may be validated. Providers remain
+              responsible for tax compliance and issuing required
+              invoices/receipts.
+            </li>
           </ul>
           <p className="whitespace-pre-wrap">
             Taxes (including VAT) are handled according to applicable rules and

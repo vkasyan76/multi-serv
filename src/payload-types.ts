@@ -575,6 +575,30 @@ export interface Invoice {
    * Total in minor units (cents).
    */
   amountTotalCents: number;
+  /**
+   * Applied platform fee rate (bps) for this invoice payment.
+   */
+  platformFeeRateBps?: number | null;
+  /**
+   * Applied platform fee amount in cents.
+   */
+  platformFeeCents?: number | null;
+  /**
+   * Rule identifier used to compute the platform fee.
+   */
+  platformFeeRuleId?: string | null;
+  /**
+   * When the platform fee snapshot was computed for checkout.
+   */
+  platformFeeCalculatedAt?: string | null;
+  /**
+   * Commission basis type. Locked to net for MVP.
+   */
+  platformFeeBasis?: 'net' | null;
+  /**
+   * Basis amount in cents used for fee calculation.
+   */
+  platformFeeBasisCents?: number | null;
   sellerCountryISO: string;
   sellerVatRegistered: boolean;
   sellerVatId?: string | null;
@@ -1038,6 +1062,12 @@ export interface InvoicesSelect<T extends boolean = true> {
   amountSubtotalCents?: T;
   vatAmountCents?: T;
   amountTotalCents?: T;
+  platformFeeRateBps?: T;
+  platformFeeCents?: T;
+  platformFeeRuleId?: T;
+  platformFeeCalculatedAt?: T;
+  platformFeeBasis?: T;
+  platformFeeBasisCents?: T;
   sellerCountryISO?: T;
   sellerVatRegistered?: T;
   sellerVatId?: T;

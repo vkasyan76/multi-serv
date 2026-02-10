@@ -7,6 +7,7 @@ import type { Booking, Invoice, Order, Tenant, User } from "@/payload-types";
 import type { Stripe } from "stripe";
 import { stripe } from "@/lib/stripe";
 import { resolveVatRateBps } from "./vat-rates";
+import { computeCommissionSnapshot } from "@/modules/commissions/server/compute-commission";
 import { sendDomainEmail } from "@/modules/email/events";
 import type { EmailDeliverability } from "@/modules/email/types";
 
@@ -19,7 +20,14 @@ type InvoiceDoc = {
   tenant?: string | { id: string } | null;
   customer?: string | { id: string } | null;
   currency?: string | null;
+  amountSubtotalCents?: number | null;
   amountTotalCents?: number | null;
+  platformFeeRateBps?: number | null;
+  platformFeeCents?: number | null;
+  platformFeeRuleId?: string | null;
+  platformFeeCalculatedAt?: string | null;
+  platformFeeBasis?: "net" | null;
+  platformFeeBasisCents?: number | null;
   stripeCheckoutSessionId?: string | null;
   lineItems?: LineItem[] | null;
   buyerEmail?: string | null;
@@ -179,8 +187,11 @@ function relId(input: unknown): string | undefined {
 }
 
 function toAbsolute(urlOrPath: string) {
+  // Prefer server APP_URL so email CTAs point to production, not localhost.
   const base = (
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    process.env.APP_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "http://localhost:3000"
   ).replace(/\/+$/, "");
   return /^https?:\/\//i.test(urlOrPath) ? urlOrPath : `${base}${urlOrPath}`;
 }
@@ -964,8 +975,60 @@ export const invoicesRouter = createTRPCRouter({
         });
       }
 
+      const subtotalCents = Number(invoice.amountSubtotalCents ?? 0);
+      if (!Number.isFinite(subtotalCents) || subtotalCents <= 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid invoice subtotal.",
+        });
+      }
+
       const orderId = relId(invoice.order);
-      const currency = (invoice.currency ?? "eur").toLowerCase();
+      const currency = String(invoice.currency ?? "eur").toLowerCase();
+      if (currency !== "eur") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Unsupported currency.",
+        });
+      }
+
+      // Compute and persist the fee snapshot once (avoid drift on retries).
+      // The snapshot ties fee amount to the invoice subtotal at checkout time.
+      let snapshot = {
+        platformFeeRateBps: invoice.platformFeeRateBps ?? null,
+        platformFeeCents: invoice.platformFeeCents ?? null,
+        platformFeeRuleId: invoice.platformFeeRuleId ?? null,
+        platformFeeCalculatedAt: invoice.platformFeeCalculatedAt ?? null,
+        platformFeeBasis: invoice.platformFeeBasis ?? null,
+        platformFeeBasisCents: invoice.platformFeeBasisCents ?? null,
+      };
+
+      const hasSnapshot =
+        typeof snapshot.platformFeeRateBps === "number" &&
+        typeof snapshot.platformFeeCents === "number" &&
+        typeof snapshot.platformFeeRuleId === "string" &&
+        !!snapshot.platformFeeCalculatedAt &&
+        snapshot.platformFeeBasis === "net" &&
+        typeof snapshot.platformFeeBasisCents === "number";
+
+      if (!hasSnapshot) {
+        const computed = computeCommissionSnapshot({
+          tenantId,
+          basisAmountCents: subtotalCents,
+          currency,
+          context: "invoice_checkout",
+        });
+
+        await ctx.db.update({
+          collection: "invoices",
+          id: invoice.id,
+          data: computed,
+          overrideAccess: true,
+          depth: 0,
+        });
+
+        snapshot = computed;
+      }
 
       // Best-effort email for Checkout (optional).
       const user = (await ctx.db.findByID({

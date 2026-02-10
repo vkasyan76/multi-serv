@@ -103,13 +103,16 @@ export default function TenantContent({ slug }: { slug: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
+  // Legacy immediate-pay checkout query params (kept for reference only; should not be used now).
   const cancel = search.get("checkout") === "cancel";
-  const success = search.get("checkout") === "success"; // NEW
+  const success = search.get("checkout") === "success"; // legacy flow only
   const sessionId = search.get("session_id") || "";
 
   const clearCart = useCartStore((s) => s.clear); // NEW
   const successHandledRef = useRef(false);
 
+  // Legacy cleanup for abandoned immediate-pay checkout sessions.
+  // Kept for reference; in the invoice-first flow this should never fire.
   const release = useMutation({
     ...trpc.checkout.releaseOnCancel.mutationOptions(),
     retry: false,
