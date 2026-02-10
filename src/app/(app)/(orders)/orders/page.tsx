@@ -5,12 +5,31 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-const Page = async () => {
+type OrdersPageProps = {
+  searchParams?: Record<string, string | string[] | undefined>;
+};
+
+const Page = async ({ searchParams }: OrdersPageProps) => {
   // Guard orders behind auth so email deep-links prompt sign-in if needed.
   const session = await caller.auth.session();
   if (!session.user) {
-    // Include redirect_url so users return here after sign-in.
-    redirect("/sign-in?redirect_url=/orders");
+    // Preserve invoice callback params so CustomerSlotOrdersView can finalize
+    // /orders?invoice=success&session_id=... after login.
+    const params = new URLSearchParams();
+    if (searchParams) {
+      for (const [key, value] of Object.entries(searchParams)) {
+        if (Array.isArray(value)) {
+          value.forEach((entry) => params.append(key, entry));
+        } else if (value != null) {
+          params.set(key, value);
+        }
+      }
+    }
+    const suffix = params.toString();
+    const redirectUrl = suffix ? `/orders?${suffix}` : "/orders";
+    redirect(
+      `/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`,
+    );
   }
 
   const queryClient = getQueryClient();

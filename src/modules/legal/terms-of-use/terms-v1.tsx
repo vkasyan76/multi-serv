@@ -138,8 +138,8 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
             <li>
               Platform payments are currently supported in EUR only. Payment
               availability, supported payment methods, and currency support may
-              depend on the providers connected payment account setup. If EUR is
-              not supported for a provider’s account, platform payments may be
+              depend on the provider&rsquo;s connected payment account setup. If EUR is
+              not supported for a provider&rsquo;s account, platform payments may be
               unavailable for that provider.
             </li>
             <li>Platform payments are processed via Stripe where enabled.</li>
