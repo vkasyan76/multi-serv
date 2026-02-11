@@ -80,6 +80,7 @@ export interface Config {
     messages: Message;
     payment_profiles: PaymentProfile;
     email_event_logs: EmailEventLog;
+    commission_events: CommissionEvent;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -103,6 +104,7 @@ export interface Config {
     messages: MessagesSelect<false> | MessagesSelect<true>;
     payment_profiles: PaymentProfilesSelect<false> | PaymentProfilesSelect<true>;
     email_event_logs: EmailEventLogsSelect<false> | EmailEventLogsSelect<true>;
+    commission_events: CommissionEventsSelect<false> | CommissionEventsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -743,6 +745,26 @@ export interface EmailEventLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commission_events".
+ */
+export interface CommissionEvent {
+  id: string;
+  tenant: string | Tenant;
+  invoice: string | Invoice;
+  currency: string;
+  feeCents: number;
+  rateBps: number;
+  ruleId: string;
+  paymentIntentId: string;
+  /**
+   * Webhook time when the fee was collected in Stripe.
+   */
+  collectedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -799,6 +821,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'email_event_logs';
         value: string | EmailEventLog;
+      } | null)
+    | ({
+        relationTo: 'commission_events';
+        value: string | CommissionEvent;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1181,6 +1207,22 @@ export interface EmailEventLogsSelect<T extends boolean = true> {
   providerMessageId?: T;
   status?: T;
   error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commission_events_select".
+ */
+export interface CommissionEventsSelect<T extends boolean = true> {
+  tenant?: T;
+  invoice?: T;
+  currency?: T;
+  feeCents?: T;
+  rateBps?: T;
+  ruleId?: T;
+  paymentIntentId?: T;
+  collectedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

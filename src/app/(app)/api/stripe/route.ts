@@ -34,6 +34,9 @@ type WebhookInvoice = {
   customer?: string | { id: string } | null;
   currency?: string | null;
   amountTotalCents?: number | null;
+  platformFeeCents?: number | null;
+  platformFeeRateBps?: number | null;
+  platformFeeRuleId?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   sellerEmail?: string | null;
@@ -143,6 +146,53 @@ export async function POST(req: Request) {
             ? new Date().toISOString()
             : invoice.paidAt ?? undefined;
           let updatedInvoice: WebhookInvoice | undefined;
+
+          // Phase 4: record a collected-only commission event (idempotent by PI).
+          if (piId) {
+            const tenantId =
+              typeof invoice.tenant === "string"
+                ? invoice.tenant
+                : invoice.tenant?.id;
+            const feeCents = invoice.platformFeeCents ?? null;
+            const rateBps = invoice.platformFeeRateBps ?? null;
+            const ruleId = invoice.platformFeeRuleId ?? null;
+            const currency = invoice.currency ?? null;
+
+            if (tenantId && feeCents != null && rateBps != null && ruleId && currency) {
+              try {
+                await payload.create({
+                  collection: "commission_events",
+                  data: {
+                    tenant: tenantId,
+                    invoice: invoice.id,
+                    currency,
+                    feeCents,
+                    rateBps,
+                    ruleId,
+                    paymentIntentId: piId,
+                    collectedAt: new Date(event.created * 1000).toISOString(),
+                  },
+                  overrideAccess: true,
+                });
+              } catch (err) {
+                const code = (err as { code?: number }).code;
+                const message = (err as Error)?.message ?? "";
+                // Ignore duplicate inserts on webhook retries.
+                if (code !== 11000 && !/duplicate|unique/i.test(message)) {
+                  throw err;
+                }
+              }
+            } else {
+              devLog("[webhook] missing commission snapshot for invoice", {
+                invoiceId: invoice.id,
+                tenantId,
+                feeCents,
+                rateBps,
+                ruleId,
+                currency,
+              });
+            }
+          }
 
           if (paidNow) {
             updatedInvoice = (await payload.update({

@@ -138,8 +138,8 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
             <li>
               Platform payments are currently supported in EUR only. Payment
               availability, supported payment methods, and currency support may
-              depend on the provider&rsquo;s connected payment account setup. If EUR is
-              not supported for a provider&rsquo;s account, platform payments may be
+              depend on the provider&apos;s connected payment account setup. If EUR is
+              not supported for a provider&apos;s account, platform payments may be
               unavailable for that provider.
             </li>
             <li>Platform payments are processed via Stripe where enabled.</li>
@@ -152,8 +152,19 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
           </ul>
           <p className="whitespace-pre-wrap">
             Taxes (including VAT) are handled according to applicable rules and
-            the provider’s tax status. Providers are responsible for issuing any
+            the provider&apos;s tax status. Providers are responsible for issuing any
             required invoices/receipts and complying with tax obligations.
+          </p>
+          <p className="whitespace-pre-wrap">
+            Refunds and disputes. Payments processed through the platform may be
+            refunded by the provider or by Infinisimo on the provider&apos;s behalf as
+            part of platform support or dispute workflows. Refunds are issued
+            against the provider&apos;s connected payment account balance.
+            Application fees charged by the platform are refunded only if
+            explicitly reversed. Stripe processing fees may be non-refundable
+            according to Stripe&apos;s policies. Providers remain responsible for
+            refunds, disputes, and related payment obligations associated with
+            their services.
           </p>
         </section>
 
