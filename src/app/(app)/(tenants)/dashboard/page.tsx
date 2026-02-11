@@ -22,7 +22,9 @@ export default async function DashboardPage({
     if (searchParams) {
       for (const [key, value] of Object.entries(searchParams)) {
         if (Array.isArray(value)) {
-          value.forEach((entry) => params.append(key, entry));
+          value.forEach((entry) => {
+            params.append(key, entry);
+          });
         } else if (value != null) {
           params.set(key, value);
         }

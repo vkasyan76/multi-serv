@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 const Page = async () => {
-  // Disable the sign-in page if you are logged in:
+  // Disable the sign-up page if you are logged in:
   const session = await caller.auth.session();
   if (session.user) {
     redirect("/");
