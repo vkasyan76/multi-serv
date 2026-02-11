@@ -179,7 +179,6 @@ export async function POST(req: Request) {
             // Merge to preserve snapshot fields even if update returns a partial doc.
             const full = updatedInvoice ? { ...invoice, ...updatedInvoice } : invoice;
             const ordersUrl = toAbsolute("/orders");
-            const dashboardUrl = toAbsolute("/dashboard");
             const customerEmail = full.buyerEmail ?? undefined;
             const tenantEmail = full.sellerEmail ?? undefined;
             const customerName =
@@ -212,6 +211,28 @@ export async function POST(req: Request) {
               }
 
               if (tenantEmail) {
+                // Include tenant context so email CTAs don't land in the wrong dashboard.
+                let dashboardUrl = toAbsolute("/dashboard");
+                const tenantId =
+                  typeof full.tenant === "string"
+                    ? full.tenant
+                    : full.tenant?.id;
+                if (tenantId) {
+                  const tenant = await payload.findByID({
+                    collection: "tenants",
+                    id: tenantId,
+                    depth: 0,
+                    overrideAccess: true,
+                  });
+                  const slug =
+                    typeof tenant?.slug === "string" ? tenant.slug : "";
+                  if (slug) {
+                    dashboardUrl = toAbsolute(
+                      `/dashboard?tenant=${encodeURIComponent(slug)}`,
+                    );
+                  }
+                }
+
                 await sendDomainEmail({
                   db: payload,
                   eventType: "invoice.paid.tenant",

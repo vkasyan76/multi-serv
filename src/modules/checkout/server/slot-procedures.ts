@@ -357,12 +357,17 @@ export const slotCheckoutRouter = createTRPCRouter({
 
       // Phase D: order.created emails are sent only on insert, after slots are confirmed.
       const ordersUrl = toAbsolute("/orders");
-      const dashboardUrl = toAbsolute("/dashboard");
+      const tenantSlug = typeof tenant.slug === "string" ? tenant.slug : "";
+      const tenantName = typeof tenant.name === "string" ? tenant.name : "";
+      // Include tenant context so email CTAs don't land in the wrong dashboard.
+      const dashboardUrl = toAbsolute(
+        tenantSlug
+          ? `/dashboard?tenant=${encodeURIComponent(tenantSlug)}`
+          : "/dashboard",
+      );
       const services = extractServiceNames(bookings);
       const dateRange = extractDateRange(bookings);
       const customerName = `${firstName} ${lastName}`.trim();
-      const tenantSlug = typeof tenant.slug === "string" ? tenant.slug : "";
-      const tenantName = typeof tenant.name === "string" ? tenant.name : "";
 
       // Customer notification: order created (best-effort, non-blocking).
       if (payloadUser.email) {

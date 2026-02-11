@@ -1,4 +1,4 @@
-import { SignUpView } from "@/modules/auth/ui/views/sign-up-view";
+import { SignUp } from "@clerk/nextjs";
 import { caller } from "@/trpc/server";
 import { redirect } from "next/navigation";
 
@@ -11,7 +11,8 @@ const Page = async () => {
   if (session.user) {
     redirect("/");
   }
-  return <SignUpView />;
+  // Clerk-managed sign-up page; legacy payload form is intentionally bypassed.
+  return <SignUp routing="path" path="/sign-up" />;
 };
 
 export default Page;

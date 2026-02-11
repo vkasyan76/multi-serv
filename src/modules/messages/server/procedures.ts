@@ -151,26 +151,30 @@ export const messagesRouter = createTRPCRouter({
             // Debounce by windowed entityId; dedupeKey collapses repeats.
             const windowedEntityId = `conversation:${convo.id}:window:${windowKey}`;
 
+            const tenantId = getRelId(convo.tenant);
+            let tenantSlug = "";
+            if (tenantId) {
+              const tenantRes = await ctx.db.find({
+                collection: "tenants",
+                limit: 1,
+                where: { id: { equals: tenantId } },
+                depth: 0,
+                overrideAccess: true,
+              });
+              const tenant = tenantRes.docs[0] ?? null;
+              tenantSlug = typeof tenant?.slug === "string" ? tenant.slug : "";
+            }
+
             // Customer CTA -> tenant public page (subdomain in prod).
             let ctaUrl = toAbsolute("/");
             if (eventType === "message.received.customer") {
-              const tenantId = getRelId(convo.tenant);
-              if (tenantId) {
-                const tenantRes = await ctx.db.find({
-                  collection: "tenants",
-                  limit: 1,
-                  where: { id: { equals: tenantId } },
-                  depth: 0,
-                  overrideAccess: true,
-                });
-                const tenant = tenantRes.docs[0] ?? null;
-                const slug =
-                  typeof tenant?.slug === "string" ? tenant.slug : null;
-                if (slug) ctaUrl = toAbsolute(generateTenantUrl(slug));
-              }
+              if (tenantSlug) ctaUrl = toAbsolute(generateTenantUrl(tenantSlug));
             } else {
-              // Tenant CTA -> messages section in dashboard.
-              ctaUrl = toAbsolute("/dashboard#messages");
+              // Tenant CTA -> include tenant context to avoid cross-tenant dashboards.
+              const suffix = tenantSlug
+                ? `/dashboard?tenant=${encodeURIComponent(tenantSlug)}#messages`
+                : "/dashboard#messages";
+              ctaUrl = toAbsolute(suffix);
             }
 
             await sendDomainEmail({

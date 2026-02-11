@@ -1210,7 +1210,12 @@ export const invoicesRouter = createTRPCRouter({
         const customerName = (invoice.buyerName ?? "").trim() || undefined;
         const tenantName = (invoice.sellerLegalName ?? "").trim() || undefined;
         const ordersUrl = toAbsolute("/orders");
-        const dashboardUrl = toAbsolute("/dashboard");
+        // Include tenant context so email CTAs don't land in the wrong dashboard.
+        const dashboardUrl = toAbsolute(
+          tenant?.slug
+            ? `/dashboard?tenant=${encodeURIComponent(tenant.slug)}`
+            : "/dashboard",
+        );
 
         if (customerEmail) {
           await sendDomainEmail({
