@@ -81,6 +81,7 @@ export interface Config {
     payment_profiles: PaymentProfile;
     email_event_logs: EmailEventLog;
     commission_events: CommissionEvent;
+    commission_statements: CommissionStatement;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -105,6 +106,7 @@ export interface Config {
     payment_profiles: PaymentProfilesSelect<false> | PaymentProfilesSelect<true>;
     email_event_logs: EmailEventLogsSelect<false> | EmailEventLogsSelect<true>;
     commission_events: CommissionEventsSelect<false> | CommissionEventsSelect<true>;
+    commission_statements: CommissionStatementsSelect<false> | CommissionStatementsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -765,6 +767,41 @@ export interface CommissionEvent {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commission_statements".
+ */
+export interface CommissionStatement {
+  id: string;
+  tenant: string | Tenant;
+  periodStart: string;
+  periodEnd: string;
+  currency: string;
+  /**
+   * Statement period timezone (locked for MVP).
+   */
+  timezone: string;
+  /**
+   * Date basis used to include ledger events.
+   */
+  basis: string;
+  totalsNetCents: number;
+  totalsVatCents: number;
+  totalsGrossCents: number;
+  lineItems?:
+    | {
+        commissionEvent: string | CommissionEvent;
+        feeCents: number;
+        paymentIntentId: string;
+        collectedAt: string;
+        id?: string | null;
+      }[]
+    | null;
+  status: 'draft' | 'issued' | 'void' | 'settled';
+  statementNumber: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -825,6 +862,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'commission_events';
         value: string | CommissionEvent;
+      } | null)
+    | ({
+        relationTo: 'commission_statements';
+        value: string | CommissionStatement;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1223,6 +1264,34 @@ export interface CommissionEventsSelect<T extends boolean = true> {
   ruleId?: T;
   paymentIntentId?: T;
   collectedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commission_statements_select".
+ */
+export interface CommissionStatementsSelect<T extends boolean = true> {
+  tenant?: T;
+  periodStart?: T;
+  periodEnd?: T;
+  currency?: T;
+  timezone?: T;
+  basis?: T;
+  totalsNetCents?: T;
+  totalsVatCents?: T;
+  totalsGrossCents?: T;
+  lineItems?:
+    | T
+    | {
+        commissionEvent?: T;
+        feeCents?: T;
+        paymentIntentId?: T;
+        collectedAt?: T;
+        id?: T;
+      };
+  status?: T;
+  statementNumber?: T;
   updatedAt?: T;
   createdAt?: T;
 }

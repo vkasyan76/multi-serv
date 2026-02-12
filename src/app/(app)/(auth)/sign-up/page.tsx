@@ -12,7 +12,11 @@ const Page = async () => {
     redirect("/");
   }
   // Clerk-managed sign-up page; legacy payload form is intentionally bypassed.
-  return <SignUp routing="path" path="/sign-up" />;
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      <SignUp routing="path" path="/sign-up" />
+    </div>
+  );
 };
 
 export default Page;

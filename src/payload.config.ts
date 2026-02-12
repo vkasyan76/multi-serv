@@ -26,6 +26,7 @@ import { Messages } from "./collections/Messages.ts";
 import { PaymentProfiles } from "./collections/PaymentProfiles.ts";
 import { EmailEventLogs } from "./collections/EmailEventLogs.ts";
 import { CommissionEvents } from "./collections/CommissionEvents.ts";
+import { CommissionStatements } from "./collections/CommissionStatements.ts";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -52,6 +53,7 @@ export default buildConfig({
     PaymentProfiles,
     EmailEventLogs,
     CommissionEvents,
+    CommissionStatements,
   ],
   // cookiePrefix: "funroad",  // optional: if we want to change the cookie prefix
   editor: lexicalEditor(),
