@@ -160,6 +160,18 @@ export async function POST(req: Request) {
 
             if (tenantId && feeCents != null && rateBps != null && ruleId && currency) {
               try {
+                const existing = await payload.find({
+                  collection: "commission_events",
+                  where: { paymentIntentId: { equals: piId } },
+                  limit: 1,
+                  depth: 0,
+                  overrideAccess: true,
+                });
+                if (existing.totalDocs > 0) {
+                  devLog("[webhook] commission event already exists", {
+                    paymentIntentId: piId,
+                  });
+                } else {
                 await payload.create({
                   collection: "commission_events",
                   data: {
@@ -174,6 +186,7 @@ export async function POST(req: Request) {
                   },
                   overrideAccess: true,
                 });
+                }
               } catch (err) {
                 const code = (err as { code?: number }).code;
                 const message = (err as Error)?.message ?? "";
