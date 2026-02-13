@@ -17,6 +17,8 @@ import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { TenantOrdersLifecycleView } from "@/modules/orders/ui/tenant-orders-lifecycle-view";
+import { WalletSummaryCard } from "@/modules/commissions/ui/wallet-summary-card";
+import { WalletTransactionsTable } from "@/modules/commissions/ui/wallet-transactions-table";
 import {
   type AppLang,
   getInitialLanguage,
@@ -145,16 +147,21 @@ export default function DashboardContent({ slug }: { slug: string }) {
           iconSrc="/SVGs/Dashboard/Finance_Icon.svg"
           label="Finance"
         />
-        <div className="rounded-lg border bg-white p-5 flex items-center justify-between gap-4">
-          <p className="text-muted-foreground">
-            Open your payouts & balances panel in Profile.
-          </p>
-          <Button asChild variant="elevated">
-            <Link href="/profile?tab=payouts">
-              Open Payouts
-              <ExternalLink className="ml-2 h-4 w-4 opacity-70" />
-            </Link>
-          </Button>
+        <div className="space-y-4">
+          {/* Wallet is derived from platform invoices + fee events (not Stripe balance). */}
+          <WalletSummaryCard slug={slug} appLang={appLang} />
+          <WalletTransactionsTable slug={slug} appLang={appLang} />
+          <div className="rounded-lg border bg-white p-5 flex items-center justify-between gap-4">
+            <p className="text-muted-foreground">
+              Open your payouts & balances panel in Profile.
+            </p>
+            <Button asChild variant="elevated">
+              <Link href="/profile?tab=payouts">
+                Open Payouts
+                <ExternalLink className="ml-2 h-4 w-4 opacity-70" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
     </div>

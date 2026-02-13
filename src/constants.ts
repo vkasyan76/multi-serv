@@ -48,6 +48,10 @@ export const COMMISSION_RATE_BPS_DEFAULT = 500;
 // Dispute Policy
 export const DISPUTE_WINDOW_DAYS_DEFAULT = 14; // allow disputes up to N days after service completion date
 
+// Wallet is EUR-only for MVP; keeps summaries consistent with Stripe fees.
+export const WALLET_CURRENCY = "eur" as const;
+export const WALLET_PAGE_SIZE = 200;
+
 // --- Service lifecycle statuses (shared) ---
 export const SERVICE_STATUSES = [
   "scheduled",
