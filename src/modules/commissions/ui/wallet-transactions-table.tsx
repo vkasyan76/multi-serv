@@ -9,6 +9,11 @@ import {
   formatCurrency,
   mapAppLangToLocale,
 } from "@/modules/profile/location-utils";
+import {
+  WALLET_TRANSACTIONS_LIMIT_DEFAULT,
+  WALLET_TRANSACTIONS_LIMIT_MAX,
+  WALLET_TRANSACTIONS_LIMIT_STEP,
+} from "@/constants";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { WalletFilters, WalletTransactionRow } from "./wallet-types";
@@ -72,7 +77,7 @@ export function WalletTransactionsTable({
   onStateChange,
 }: WalletTransactionsTableProps) {
   const trpc = useTRPC();
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(WALLET_TRANSACTIONS_LIMIT_DEFAULT);
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
     key: "date",
     dir: "desc",
@@ -149,10 +154,12 @@ export function WalletTransactionsTable({
     });
   };
 
-  const canLoadMore = rows.length >= limit;
+  // Keep UI paging within server-side validation max.
+  const canLoadMore =
+    rows.length >= limit && limit < WALLET_TRANSACTIONS_LIMIT_MAX;
 
   useEffect(() => {
-    setLimit(50);
+    setLimit(WALLET_TRANSACTIONS_LIMIT_DEFAULT);
   }, [filterKey]);
 
   useEffect(() => {
@@ -324,7 +331,14 @@ export function WalletTransactionsTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setLimit((prev) => prev + 50)}
+            onClick={() =>
+              setLimit((prev) =>
+                Math.min(
+                  prev + WALLET_TRANSACTIONS_LIMIT_STEP,
+                  WALLET_TRANSACTIONS_LIMIT_MAX,
+                ),
+              )
+            }
           >
             Load more
           </Button>

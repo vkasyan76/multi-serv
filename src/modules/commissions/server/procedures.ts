@@ -5,7 +5,12 @@ import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { resolvePayloadUserId } from "@/modules/orders/server/identity";
 import { buildStatementNumber, getBerlinMonthRange } from "./statement-utils";
-import { WALLET_CURRENCY, WALLET_PAGE_SIZE } from "@/constants";
+import {
+  WALLET_CURRENCY,
+  WALLET_PAGE_SIZE,
+  WALLET_TRANSACTIONS_LIMIT_DEFAULT,
+  WALLET_TRANSACTIONS_LIMIT_MAX,
+} from "@/constants";
 
 type PayloadTenant = { id: string; slug?: string | null };
 type CommissionEventDoc = {
@@ -368,7 +373,8 @@ export const commissionsRouter = createTRPCRouter({
         return { statementId: existingDoc.id, created: false };
       }
 
-      const events = await ctx.db.find({
+      // Read all matching events page-by-page so statements are not truncated.
+      const docs = await findAllPages<CommissionEventDoc>(ctx, {
         collection: "commission_events",
         where: {
           and: [
@@ -378,13 +384,8 @@ export const commissionsRouter = createTRPCRouter({
             { collectedAt: { less_than: periodEndIso } },
           ],
         },
-        limit: 1000,
-        depth: 0,
-        overrideAccess: true,
         sort: "collectedAt",
       });
-
-      const docs = (events.docs ?? []) as CommissionEventDoc[];
       if (docs.length === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -540,7 +541,11 @@ export const commissionsRouter = createTRPCRouter({
         status: z
           .enum(["all", "paid", "payment_due", "platform_fee"])
           .default("all"),
-        limit: z.number().min(1).max(100).default(50),
+        limit: z
+          .number()
+          .min(1)
+          .max(WALLET_TRANSACTIONS_LIMIT_MAX)
+          .default(WALLET_TRANSACTIONS_LIMIT_DEFAULT),
       }),
     )
     .query(async ({ ctx, input }) => {
