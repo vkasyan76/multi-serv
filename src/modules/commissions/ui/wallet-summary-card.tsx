@@ -6,19 +6,34 @@ import {
   type AppLang,
   formatCurrency,
 } from "@/modules/profile/location-utils";
+import type { WalletFilters } from "./wallet-types";
+import {
+  FULL_HISTORY_LABEL,
+  deriveInvoiceRangeIso,
+  formatPeriodLabel,
+  getWalletStatusLabel,
+} from "./wallet-filter-utils";
 
 type WalletSummaryCardProps = {
   slug: string;
   appLang: AppLang;
+  filters: WalletFilters;
 };
 
 export function WalletSummaryCard({
   slug,
   appLang,
+  filters,
 }: WalletSummaryCardProps) {
   const trpc = useTRPC();
+  const { startIso, endIso } = deriveInvoiceRangeIso(filters.period);
   const summaryQ = useQuery(
-    trpc.commissions.walletSummary.queryOptions({ slug }),
+    trpc.commissions.walletSummary.queryOptions({
+      slug,
+      status: filters.status,
+      start: startIso,
+      end: endIso,
+    }),
   );
 
   if (summaryQ.isLoading) {
@@ -43,9 +58,20 @@ export function WalletSummaryCard({
   const dueFromCustomersCents = summaryQ.data?.dueFromCustomersCents ?? 0;
 
   const totalInvoicedCents = grossReceivedCents + dueFromCustomersCents;
+  const periodLabel = formatPeriodLabel(filters.period, appLang);
+  const statusLabel =
+    filters.status === "all"
+      ? ""
+      : getWalletStatusLabel(filters.status);
+  const summaryLabel = [periodLabel || FULL_HISTORY_LABEL, statusLabel]
+    .filter(Boolean)
+    .join(" • ");
 
   return (
     <div className="rounded-lg border bg-white p-5 space-y-4">
+      <div className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-sm font-medium text-foreground">
+        {summaryLabel}
+      </div>
       <div className="space-y-3 text-sm">
         <div className="flex items-center justify-between gap-4">
           <span className="text-muted-foreground">Payments received</span>

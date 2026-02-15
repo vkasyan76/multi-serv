@@ -154,6 +154,150 @@ async function sumAllPages<T>(
   return sum;
 }
 
+async function findAllPages<T>(
+  ctx: TRPCContext,
+  args: {
+    collection: "invoices" | "commission_events";
+    where: Where;
+    sort?: string;
+  },
+) {
+  let page = 1;
+  let totalPages = 1;
+  const docs: T[] = [];
+
+  do {
+    const res = await ctx.db.find({
+      collection: args.collection,
+      where: args.where,
+      limit: WALLET_PAGE_SIZE,
+      page,
+      depth: 0,
+      overrideAccess: true,
+      ...(args.sort ? { sort: args.sort } : {}),
+    });
+
+    docs.push(...((res.docs ?? []) as T[]));
+    totalPages = res.totalPages ?? 1;
+    page += 1;
+  } while (page <= totalPages);
+
+  return docs;
+}
+
+function chunkArray<T>(items: T[], size: number) {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function findInvoiceIdsByIssuedAtRange(
+  ctx: TRPCContext,
+  tenantId: string,
+  startIso?: string,
+  endIso?: string,
+) {
+  const where: Where = {
+    and: [
+      { tenant: { equals: tenantId } },
+      { status: { equals: "paid" } },
+      { currency: { equals: WALLET_CURRENCY } },
+    ],
+  };
+  if (startIso)
+    (where.and as Where[]).push({ issuedAt: { greater_than_equal: startIso } });
+  if (endIso)
+    (where.and as Where[]).push({ issuedAt: { less_than: endIso } });
+
+  const ids: string[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const res = await ctx.db.find({
+      collection: "invoices",
+      where,
+      limit: WALLET_PAGE_SIZE,
+      page,
+      depth: 0,
+      overrideAccess: true,
+    });
+    const docs = (res.docs ?? []) as InvoiceDoc[];
+    for (const doc of docs) {
+      if (doc.id) ids.push(doc.id);
+    }
+    totalPages = res.totalPages ?? 1;
+    page += 1;
+  } while (page <= totalPages);
+
+  return ids;
+}
+
+async function sumFeesByInvoiceIds(
+  ctx: TRPCContext,
+  tenantId: string,
+  invoiceIds: string[],
+) {
+  if (!invoiceIds.length) return 0;
+  let sum = 0;
+
+  for (const chunk of chunkArray(invoiceIds, 200)) {
+    sum += await sumAllPages<CommissionEventDoc>(ctx, {
+      collection: "commission_events",
+      where: {
+        and: [
+          { tenant: { equals: tenantId } },
+          { currency: { equals: WALLET_CURRENCY } },
+          { invoice: { in: chunk } },
+        ],
+      },
+      getValue: (doc) => doc.feeCents,
+    });
+  }
+
+  return sum;
+}
+
+async function findFeeDocsByInvoiceIds(
+  ctx: TRPCContext,
+  tenantId: string,
+  invoiceIds: string[],
+) {
+  const docs: CommissionEventDoc[] = [];
+  if (!invoiceIds.length) return docs;
+
+  for (const chunk of chunkArray(invoiceIds, 200)) {
+    let page = 1;
+    let totalPages = 1;
+
+    do {
+      const res = await ctx.db.find({
+        collection: "commission_events",
+        where: {
+          and: [
+            { tenant: { equals: tenantId } },
+            { currency: { equals: WALLET_CURRENCY } },
+            { invoice: { in: chunk } },
+          ],
+        },
+        limit: WALLET_PAGE_SIZE,
+        page,
+        depth: 0,
+        overrideAccess: true,
+        sort: "-collectedAt",
+      });
+
+      docs.push(...((res.docs ?? []) as CommissionEventDoc[]));
+      totalPages = res.totalPages ?? 1;
+      page += 1;
+    } while (page <= totalPages);
+  }
+
+  return docs;
+}
+
 async function requireSuperAdmin(
   ctx: TRPCContext,
 ): Promise<{ userId: string }> {
@@ -292,45 +436,90 @@ export const commissionsRouter = createTRPCRouter({
 
   // Wallet summary derived from paid invoices (+) and commission events (-).
   walletSummary: baseProcedure
-    .input(z.object({ slug: z.string().min(1) }))
+    .input(
+      z.object({
+        slug: z.string().min(1),
+        start: z.string().optional(),
+        end: z.string().optional(),
+        status: z
+          .enum(["all", "paid", "payment_due", "platform_fee"])
+          .default("all"),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const { tenantId } = await resolveTenantForUserBySlug(ctx, input.slug);
+      const startIso = parseIso(input.start);
+      const endIso = parseIso(input.end);
+      if (startIso && endIso && startIso >= endIso) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid date range.",
+        });
+      }
 
+      const includePaid = input.status === "all" || input.status === "paid";
+      const includeDue =
+        input.status === "all" || input.status === "payment_due";
+      const includeFees =
+        input.status === "all" || input.status === "platform_fee";
+      const hasDateFilter = Boolean(startIso || endIso);
+
+      // Date filters are end-exclusive to match Berlin date range selection.
       // Wallet summary is derived from paid invoices and commission events.
-      const grossReceivedCents = await sumAllPages<InvoiceDoc>(ctx, {
-        collection: "invoices",
-        where: {
-          and: [
-            { tenant: { equals: tenantId } },
-            { status: { equals: "paid" } },
-            { currency: { equals: WALLET_CURRENCY } },
-          ],
-        },
-        getValue: (doc) => doc.amountTotalCents,
-      });
+      const grossReceivedCents = includePaid
+        ? await sumAllPages<InvoiceDoc>(ctx, {
+            collection: "invoices",
+            where: {
+              and: [
+                { tenant: { equals: tenantId } },
+                { status: { equals: "paid" } },
+                { currency: { equals: WALLET_CURRENCY } },
+                ...(startIso
+                  ? [{ issuedAt: { greater_than_equal: startIso } }]
+                  : []),
+                ...(endIso ? [{ issuedAt: { less_than: endIso } }] : []),
+              ],
+            },
+            getValue: (doc) => doc.amountTotalCents,
+          })
+        : 0;
 
-      const platformFeesCents = await sumAllPages<CommissionEventDoc>(ctx, {
-        collection: "commission_events",
-        where: {
-          and: [
-            { tenant: { equals: tenantId } },
-            { currency: { equals: WALLET_CURRENCY } },
-          ],
-        },
-        getValue: (doc) => doc.feeCents,
-      });
+      const platformFeesCents = includeFees
+        ? hasDateFilter
+          ? await sumFeesByInvoiceIds(
+              ctx,
+              tenantId,
+              await findInvoiceIdsByIssuedAtRange(ctx, tenantId, startIso, endIso),
+            )
+          : await sumAllPages<CommissionEventDoc>(ctx, {
+              collection: "commission_events",
+              where: {
+                and: [
+                  { tenant: { equals: tenantId } },
+                  { currency: { equals: WALLET_CURRENCY } },
+                ],
+              },
+              getValue: (doc) => doc.feeCents,
+            })
+        : 0;
 
-      const dueFromCustomersCents = await sumAllPages<InvoiceDoc>(ctx, {
-        collection: "invoices",
-        where: {
-          and: [
-            { tenant: { equals: tenantId } },
-            { status: { in: ["issued", "overdue"] } },
-            { currency: { equals: WALLET_CURRENCY } },
-          ],
-        },
-        getValue: (doc) => doc.amountTotalCents,
-      });
+      const dueFromCustomersCents = includeDue
+        ? await sumAllPages<InvoiceDoc>(ctx, {
+            collection: "invoices",
+            where: {
+              and: [
+                { tenant: { equals: tenantId } },
+                { status: { in: ["issued", "overdue"] } },
+                { currency: { equals: WALLET_CURRENCY } },
+                ...(startIso
+                  ? [{ issuedAt: { greater_than_equal: startIso } }]
+                  : []),
+                ...(endIso ? [{ issuedAt: { less_than: endIso } }] : []),
+              ],
+            },
+            getValue: (doc) => doc.amountTotalCents,
+          })
+        : 0;
 
       return {
         currency: WALLET_CURRENCY,
@@ -348,8 +537,8 @@ export const commissionsRouter = createTRPCRouter({
         slug: z.string().min(1),
         start: z.string().optional(),
         end: z.string().optional(),
-        type: z
-          .enum(["all", "payment_received", "platform_fee", "payment_outstanding"])
+        status: z
+          .enum(["all", "paid", "payment_due", "platform_fee"])
           .default("all"),
         limit: z.number().min(1).max(100).default(50),
       }),
@@ -365,6 +554,13 @@ export const commissionsRouter = createTRPCRouter({
         });
       }
 
+      const includePaid = input.status === "all" || input.status === "paid";
+      const includeDue =
+        input.status === "all" || input.status === "payment_due";
+      const includeFees =
+        input.status === "all" || input.status === "platform_fee";
+      const hasDateFilter = Boolean(startIso || endIso);
+
       const paidInvoiceWhere: Where = {
         and: [
           { tenant: { equals: tenantId } },
@@ -374,11 +570,11 @@ export const commissionsRouter = createTRPCRouter({
       };
       if (startIso)
         (paidInvoiceWhere.and as Where[]).push({
-          paidAt: { greater_than_equal: startIso },
+          issuedAt: { greater_than_equal: startIso },
         });
       if (endIso)
         (paidInvoiceWhere.and as Where[]).push({
-          paidAt: { less_than: endIso },
+          issuedAt: { less_than: endIso },
         });
 
       const outstandingInvoiceWhere: Where = {
@@ -403,12 +599,9 @@ export const commissionsRouter = createTRPCRouter({
           { currency: { equals: WALLET_CURRENCY } },
         ],
       };
-      if (startIso) (feeWhere.and as Where[]).push({ collectedAt: { greater_than_equal: startIso } });
-      if (endIso) (feeWhere.and as Where[]).push({ collectedAt: { less_than: endIso } });
-
       const buffer = input.limit * 2;
       const paidInvoices =
-        input.type === "platform_fee" || input.type === "payment_outstanding"
+        !includePaid
           ? []
           : (
               await ctx.db.find({
@@ -417,12 +610,12 @@ export const commissionsRouter = createTRPCRouter({
                 limit: buffer,
                 depth: 0,
                 overrideAccess: true,
-                sort: "-paidAt",
+                sort: "-issuedAt",
               })
             ).docs ?? [];
 
       const outstandingInvoices =
-        input.type === "platform_fee" || input.type === "payment_received"
+        !includeDue
           ? []
           : (
               await ctx.db.find({
@@ -435,19 +628,32 @@ export const commissionsRouter = createTRPCRouter({
               })
             ).docs ?? [];
 
-      const feeDocs =
-        input.type === "payment_received" || input.type === "payment_outstanding"
-          ? []
-          : (
-              await ctx.db.find({
-                collection: "commission_events",
-                where: feeWhere,
-                limit: buffer,
-                depth: 0,
-                overrideAccess: true,
-                sort: "-collectedAt",
-              })
-            ).docs ?? [];
+      const invoiceCandidates: InvoiceDoc[] = includePaid || includeDue
+        ? [...(paidInvoices as InvoiceDoc[]), ...(outstandingInvoices as InvoiceDoc[])]
+        : [];
+
+      if (includeFees && hasDateFilter && invoiceCandidates.length === 0) {
+        const invoiceRangeRes = await ctx.db.find({
+          collection: "invoices",
+          where: {
+            and: [
+              { tenant: { equals: tenantId } },
+              { currency: { equals: WALLET_CURRENCY } },
+              ...(startIso
+                ? [{ issuedAt: { greater_than_equal: startIso } }]
+                : []),
+              ...(endIso ? [{ issuedAt: { less_than: endIso } }] : []),
+            ],
+          },
+          limit: buffer,
+          depth: 0,
+          overrideAccess: true,
+          sort: "-issuedAt",
+        });
+        invoiceCandidates.push(
+          ...((invoiceRangeRes.docs ?? []) as InvoiceDoc[]),
+        );
+      }
 
       const invoiceRanges = new Map<
         string,
@@ -458,13 +664,13 @@ export const commissionsRouter = createTRPCRouter({
         .map((inv) => {
           if (!inv.paidAt) return null;
           const range = getServiceRange(inv.lineItems);
-          const invoiceDate = inv.issuedAt ?? inv.paidAt ?? inv.createdAt ?? undefined;
+          const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
           invoiceRanges.set(inv.id, { ...range, invoiceDate });
           return {
             id: `inv_${inv.id}`,
             type: "payment_received",
             occurredAt: inv.paidAt,
-            description: "Payment received",
+            description: "Paid",
             amountCents: Number(inv.amountTotalCents ?? 0),
             currency: WALLET_CURRENCY,
             invoiceId: inv.id,
@@ -486,7 +692,7 @@ export const commissionsRouter = createTRPCRouter({
             id: `inv_${inv.id}`,
             type: "payment_outstanding",
             occurredAt: issuedAt,
-            description: "Payment outstanding",
+            description: "Payment due",
             amountCents: Number(inv.amountTotalCents ?? 0),
             currency: WALLET_CURRENCY,
             invoiceId: inv.id,
@@ -495,6 +701,83 @@ export const commissionsRouter = createTRPCRouter({
           } satisfies WalletTx;
         })
         .filter(Boolean) as WalletTx[];
+
+      for (const inv of invoiceCandidates) {
+        if (invoiceRanges.has(inv.id)) continue;
+        const range = getServiceRange(inv.lineItems);
+        const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
+        invoiceRanges.set(inv.id, { ...range, invoiceDate });
+      }
+
+      let feeDocs: CommissionEventDoc[] = [];
+      if (includeFees) {
+        if (hasDateFilter) {
+          const invoiceIds = Array.from(
+            new Set(invoiceCandidates.map((inv) => inv.id)),
+          );
+          if (invoiceIds.length) {
+            feeDocs = (
+              await ctx.db.find({
+                collection: "commission_events",
+                where: {
+                  and: [
+                    { tenant: { equals: tenantId } },
+                    { currency: { equals: WALLET_CURRENCY } },
+                    { invoice: { in: invoiceIds } },
+                  ],
+                },
+                limit: buffer,
+                depth: 0,
+                overrideAccess: true,
+                sort: "-collectedAt",
+              })
+            ).docs as CommissionEventDoc[] ?? [];
+          }
+        } else {
+          feeDocs = (
+            await ctx.db.find({
+              collection: "commission_events",
+              where: feeWhere,
+              limit: buffer,
+              depth: 0,
+              overrideAccess: true,
+              sort: "-collectedAt",
+            })
+          ).docs as CommissionEventDoc[] ?? [];
+        }
+      }
+
+      const missingInvoiceIds = Array.from(
+        new Set(
+          feeDocs
+            .map((ev) => relId(ev.invoice))
+            .filter((id): id is string => Boolean(id && !invoiceRanges.has(id))),
+        ),
+      );
+
+      if (missingInvoiceIds.length) {
+        for (const chunk of chunkArray(missingInvoiceIds, 200)) {
+          const invoiceRes = await ctx.db.find({
+            collection: "invoices",
+            where: {
+              and: [
+                { tenant: { equals: tenantId } },
+                { id: { in: chunk } },
+              ],
+            },
+            limit: chunk.length,
+            depth: 0,
+            overrideAccess: true,
+          });
+          const docs = (invoiceRes.docs ?? []) as InvoiceDoc[];
+          for (const inv of docs) {
+            if (invoiceRanges.has(inv.id)) continue;
+            const range = getServiceRange(inv.lineItems);
+            const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
+            invoiceRanges.set(inv.id, { ...range, invoiceDate });
+          }
+        }
+      }
 
       const fees = (feeDocs as CommissionEventDoc[])
         .map((ev) => {
@@ -505,13 +788,13 @@ export const commissionsRouter = createTRPCRouter({
             id: `fee_${ev.paymentIntentId ?? ev.id}`,
             type: "platform_fee",
             occurredAt: ev.collectedAt,
-            description: "Platform fee",
+            description: "Fee",
             amountCents: -Number(ev.feeCents ?? 0),
             currency: WALLET_CURRENCY,
             invoiceId,
             paymentIntentId: ev.paymentIntentId ?? undefined,
             ...(range ?? {}),
-            invoiceDate: range?.invoiceDate ?? ev.collectedAt,
+            invoiceDate: range?.invoiceDate,
           } satisfies WalletTx;
         })
         .filter(Boolean) as WalletTx[];
@@ -519,6 +802,240 @@ export const commissionsRouter = createTRPCRouter({
       return [...payments, ...outstanding, ...fees]
         .sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : -1))
         .slice(0, input.limit);
+    }),
+
+  // Full wallet export derived from invoices + commission events.
+  walletTransactionsExport: baseProcedure
+    .input(
+      z.object({
+        slug: z.string().min(1),
+        start: z.string().optional(),
+        end: z.string().optional(),
+        status: z
+          .enum(["all", "paid", "payment_due", "platform_fee"])
+          .default("all"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { tenantId } = await resolveTenantForUserBySlug(ctx, input.slug);
+      const startIso = parseIso(input.start);
+      const endIso = parseIso(input.end);
+      if (startIso && endIso && startIso >= endIso) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid date range.",
+        });
+      }
+
+      const includePaid = input.status === "all" || input.status === "paid";
+      const includeDue =
+        input.status === "all" || input.status === "payment_due";
+      const includeFees =
+        input.status === "all" || input.status === "platform_fee";
+      const hasDateFilter = Boolean(startIso || endIso);
+
+      const paidInvoiceWhere: Where = {
+        and: [
+          { tenant: { equals: tenantId } },
+          { status: { equals: "paid" } },
+          { currency: { equals: WALLET_CURRENCY } },
+        ],
+      };
+      if (startIso)
+        (paidInvoiceWhere.and as Where[]).push({
+          issuedAt: { greater_than_equal: startIso },
+        });
+      if (endIso)
+        (paidInvoiceWhere.and as Where[]).push({
+          issuedAt: { less_than: endIso },
+        });
+
+      const outstandingInvoiceWhere: Where = {
+        and: [
+          { tenant: { equals: tenantId } },
+          { status: { in: ["issued", "overdue"] } },
+          { currency: { equals: WALLET_CURRENCY } },
+        ],
+      };
+      if (startIso)
+        (outstandingInvoiceWhere.and as Where[]).push({
+          issuedAt: { greater_than_equal: startIso },
+        });
+      if (endIso)
+        (outstandingInvoiceWhere.and as Where[]).push({
+          issuedAt: { less_than: endIso },
+        });
+
+      const feeWhere: Where = {
+        and: [
+          { tenant: { equals: tenantId } },
+          { currency: { equals: WALLET_CURRENCY } },
+        ],
+      };
+
+      const paidInvoices = includePaid
+        ? await findAllPages<InvoiceDoc>(ctx, {
+            collection: "invoices",
+            where: paidInvoiceWhere,
+            sort: "-issuedAt",
+          })
+        : [];
+
+      const outstandingInvoices = includeDue
+        ? await findAllPages<InvoiceDoc>(ctx, {
+            collection: "invoices",
+            where: outstandingInvoiceWhere,
+            sort: "-issuedAt",
+          })
+        : [];
+
+      const invoiceCandidates: InvoiceDoc[] = includePaid || includeDue
+        ? [...paidInvoices, ...outstandingInvoices]
+        : [];
+
+      if (includeFees && hasDateFilter && invoiceCandidates.length === 0) {
+        const invoiceRangeRes = await findAllPages<InvoiceDoc>(ctx, {
+          collection: "invoices",
+          where: {
+            and: [
+              { tenant: { equals: tenantId } },
+              { currency: { equals: WALLET_CURRENCY } },
+              ...(startIso
+                ? [{ issuedAt: { greater_than_equal: startIso } }]
+                : []),
+              ...(endIso ? [{ issuedAt: { less_than: endIso } }] : []),
+            ],
+          },
+          sort: "-issuedAt",
+        });
+        invoiceCandidates.push(...invoiceRangeRes);
+      }
+
+      const invoiceRanges = new Map<
+        string,
+        { serviceStart?: string; serviceEnd?: string; invoiceDate?: string }
+      >();
+
+      const payments = (paidInvoices as InvoiceDoc[])
+        .map((inv) => {
+          if (!inv.paidAt) return null;
+          const range = getServiceRange(inv.lineItems);
+          const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
+          invoiceRanges.set(inv.id, { ...range, invoiceDate });
+          return {
+            id: `inv_${inv.id}`,
+            type: "payment_received",
+            occurredAt: inv.paidAt,
+            description: "Paid",
+            amountCents: Number(inv.amountTotalCents ?? 0),
+            currency: WALLET_CURRENCY,
+            invoiceId: inv.id,
+            paymentIntentId: inv.stripePaymentIntentId ?? undefined,
+            ...range,
+            invoiceDate,
+          } satisfies WalletTx;
+        })
+        .filter(Boolean) as WalletTx[];
+
+      const outstanding = (outstandingInvoices as InvoiceDoc[])
+        .map((inv) => {
+          const issuedAt = inv.issuedAt ?? inv.createdAt;
+          if (!issuedAt) return null;
+          const range = getServiceRange(inv.lineItems);
+          const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
+          invoiceRanges.set(inv.id, { ...range, invoiceDate });
+          return {
+            id: `inv_${inv.id}`,
+            type: "payment_outstanding",
+            occurredAt: issuedAt,
+            description: "Payment due",
+            amountCents: Number(inv.amountTotalCents ?? 0),
+            currency: WALLET_CURRENCY,
+            invoiceId: inv.id,
+            ...range,
+            invoiceDate,
+          } satisfies WalletTx;
+        })
+        .filter(Boolean) as WalletTx[];
+
+      for (const inv of invoiceCandidates) {
+        if (invoiceRanges.has(inv.id)) continue;
+        const range = getServiceRange(inv.lineItems);
+        const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
+        invoiceRanges.set(inv.id, { ...range, invoiceDate });
+      }
+
+      let feeDocs: CommissionEventDoc[] = [];
+      if (includeFees) {
+        if (hasDateFilter) {
+          const invoiceIds = Array.from(
+            new Set(invoiceCandidates.map((inv) => inv.id)),
+          );
+          feeDocs = await findFeeDocsByInvoiceIds(ctx, tenantId, invoiceIds);
+        } else {
+          feeDocs = await findAllPages<CommissionEventDoc>(ctx, {
+            collection: "commission_events",
+            where: feeWhere,
+            sort: "-collectedAt",
+          });
+        }
+      }
+
+      const missingInvoiceIds = Array.from(
+        new Set(
+          feeDocs
+            .map((ev) => relId(ev.invoice))
+            .filter((id): id is string => Boolean(id && !invoiceRanges.has(id))),
+        ),
+      );
+
+      if (missingInvoiceIds.length) {
+        for (const chunk of chunkArray(missingInvoiceIds, 200)) {
+          const invoiceRes = await ctx.db.find({
+            collection: "invoices",
+            where: {
+              and: [
+                { tenant: { equals: tenantId } },
+                { id: { in: chunk } },
+              ],
+            },
+            limit: chunk.length,
+            depth: 0,
+            overrideAccess: true,
+          });
+          const docs = (invoiceRes.docs ?? []) as InvoiceDoc[];
+          for (const inv of docs) {
+            if (invoiceRanges.has(inv.id)) continue;
+            const range = getServiceRange(inv.lineItems);
+            const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
+            invoiceRanges.set(inv.id, { ...range, invoiceDate });
+          }
+        }
+      }
+
+      const fees = (feeDocs as CommissionEventDoc[])
+        .map((ev) => {
+          const invoiceId = relId(ev.invoice);
+          if (!ev.collectedAt || !invoiceId) return null;
+          const range = invoiceRanges.get(invoiceId);
+          return {
+            id: `fee_${ev.paymentIntentId ?? ev.id}`,
+            type: "platform_fee",
+            occurredAt: ev.collectedAt,
+            description: "Fee",
+            amountCents: -Number(ev.feeCents ?? 0),
+            currency: WALLET_CURRENCY,
+            invoiceId,
+            paymentIntentId: ev.paymentIntentId ?? undefined,
+            ...(range ?? {}),
+            invoiceDate: range?.invoiceDate,
+          } satisfies WalletTx;
+        })
+        .filter(Boolean) as WalletTx[];
+
+      return [...payments, ...outstanding, ...fees].sort((a, b) =>
+        a.occurredAt < b.occurredAt ? 1 : -1,
+      );
     }),
 
   // Related rows for a given invoice (payment + fee), tenant-scoped by slug.
@@ -552,13 +1069,13 @@ export const commissionsRouter = createTRPCRouter({
         sort: "-collectedAt",
       });
 
-      const invoiceDate = invoice.issuedAt ?? invoice.paidAt ?? invoice.createdAt ?? undefined;
+      const invoiceDate = invoice.issuedAt ?? invoice.createdAt ?? undefined;
       const paymentRow: WalletTx | null = invoice.paidAt
         ? {
             id: `inv_${invoice.id}`,
             type: "payment_received",
             occurredAt: invoice.paidAt,
-            description: "Payment received",
+            description: "Paid",
             amountCents: Number(invoice.amountTotalCents ?? 0),
             currency: WALLET_CURRENCY,
             invoiceId: invoice.id,
@@ -571,7 +1088,7 @@ export const commissionsRouter = createTRPCRouter({
               id: `inv_${invoice.id}`,
               type: "payment_outstanding",
               occurredAt: invoice.issuedAt ?? invoice.createdAt ?? new Date().toISOString(),
-              description: "Payment outstanding",
+              description: "Payment due",
               amountCents: Number(invoice.amountTotalCents ?? 0),
               currency: WALLET_CURRENCY,
               invoiceId: invoice.id,
@@ -589,7 +1106,7 @@ export const commissionsRouter = createTRPCRouter({
             id: `fee_${(ev as CommissionEventDoc).paymentIntentId ?? (ev as CommissionEventDoc).id}`,
             type: "platform_fee",
             occurredAt: collectedAt,
-            description: "Platform fee",
+            description: "Fee",
             amountCents: -Number((ev as CommissionEventDoc).feeCents ?? 0),
             currency: WALLET_CURRENCY,
             invoiceId,

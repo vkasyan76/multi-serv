@@ -9,12 +9,17 @@ import {
   formatCurrency,
   mapAppLangToLocale,
 } from "@/modules/profile/location-utils";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import type { WalletFilters, WalletTransactionRow } from "./wallet-types";
+import { deriveInvoiceRangeIso } from "./wallet-filter-utils";
 
 type WalletTransactionsTableProps = {
   slug: string;
   appLang: AppLang;
+  filters: WalletFilters;
+  onRowsChange?: (rows: WalletTransactionRow[]) => void;
+  onStateChange?: (state: { isLoading: boolean; isError: boolean }) => void;
 };
 
 type SortKey = "date" | "invoice_date" | "description" | "amount";
@@ -56,12 +61,15 @@ function formatDateRange(
   if (!startIso) return "";
   const startLabel = formatBerlinDateTime(startIso, appLang);
   const endLabel = endIso ? formatBerlinDateTime(endIso, appLang) : startLabel;
-  return `${startLabel} -> ${endLabel}`;
+  return `${startLabel} → ${endLabel}`;
 }
 
 export function WalletTransactionsTable({
   slug,
   appLang,
+  filters,
+  onRowsChange,
+  onStateChange,
 }: WalletTransactionsTableProps) {
   const trpc = useTRPC();
   const [limit, setLimit] = useState(50);
@@ -69,16 +77,30 @@ export function WalletTransactionsTable({
     key: "date",
     dir: "desc",
   });
+  const lastRowsRef = useRef<WalletTransactionRow[]>([]);
+  const { startIso, endIso } = deriveInvoiceRangeIso(filters.period);
+  const filterKey = `${filters.status}-${startIso ?? ""}-${endIso ?? ""}`;
 
   const txQ = useQuery(
     trpc.commissions.walletTransactions.queryOptions({
       slug,
       limit,
-      type: "all",
+      status: filters.status,
+      start: startIso,
+      end: endIso,
     }),
   );
 
-  const rows = txQ.data ?? [];
+  useEffect(() => {
+    if (txQ.data && !txQ.isError) {
+      lastRowsRef.current = txQ.data;
+    }
+  }, [txQ.data, txQ.isError]);
+
+  const rows = useMemo(
+    () => txQ.data ?? lastRowsRef.current,
+    [txQ.data],
+  ); // Stable array for memoized sorting.
 
   const sortedRows = useMemo(() => {
     const list = [...rows];
@@ -129,7 +151,21 @@ export function WalletTransactionsTable({
 
   const canLoadMore = rows.length >= limit;
 
-  if (txQ.isLoading) {
+  useEffect(() => {
+    setLimit(50);
+  }, [filterKey]);
+
+  useEffect(() => {
+    if (!onRowsChange || txQ.isLoading || txQ.isError) return;
+    onRowsChange(sortedRows);
+  }, [onRowsChange, sortedRows, txQ.isError, txQ.isLoading]);
+
+  useEffect(() => {
+    if (!onStateChange) return;
+    onStateChange({ isLoading: txQ.isFetching, isError: txQ.isError });
+  }, [onStateChange, txQ.isError, txQ.isFetching]);
+
+  if (txQ.isLoading && rows.length === 0) {
     return (
       <div className="rounded-lg border bg-white p-5 text-sm text-muted-foreground">
         Loading transactions...
@@ -137,7 +173,7 @@ export function WalletTransactionsTable({
     );
   }
 
-  if (txQ.isError) {
+  if (txQ.isError && rows.length === 0) {
     return (
       <div className="rounded-lg border bg-white p-5 text-sm text-muted-foreground">
         Failed to load transactions.
@@ -155,7 +191,12 @@ export function WalletTransactionsTable({
 
   return (
     <div className="rounded-lg border bg-white p-5 space-y-3">
-      <h3 className="text-base font-semibold">Transactions</h3>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-base font-semibold">Transactions</h3>
+        {txQ.isFetching && (
+          <span className="text-xs text-muted-foreground">Updating…</span>
+        )}
+      </div>
       <div className="max-h-[420px] overflow-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-foreground">
@@ -181,7 +222,7 @@ export function WalletTransactionsTable({
                   className="px-0"
                   onClick={() => toggleSort("description")}
                 >
-                  Description
+                  Status
                   <SortIcon
                     active={sort.key === "description"}
                     dir={sort.dir}
@@ -231,6 +272,16 @@ export function WalletTransactionsTable({
               const invoiceDateLabel = row.invoiceDate
                 ? formatBerlinDate(row.invoiceDate, appLang)
                 : formatBerlinDate(row.occurredAt, appLang);
+              const statusLabel =
+                row.type === "payment_received" && row.occurredAt
+                  ? `Paid ${formatBerlinDate(row.occurredAt, appLang)}`
+                  : row.type === "payment_outstanding"
+                    ? "Payment due"
+                    : row.type === "platform_fee" && row.occurredAt
+                      ? `Fee ${formatBerlinDate(row.occurredAt, appLang)}`
+                      : row.type === "platform_fee"
+                        ? "Fee"
+                        : row.description;
 
               return (
                 <tr key={row.id} className="border-b last:border-b-0">
@@ -239,7 +290,7 @@ export function WalletTransactionsTable({
                   </td>
                   <td className="py-2 pr-3">
                     <span className={isFee ? "text-muted-foreground" : ""}>
-                      {row.description}
+                      {statusLabel}
                     </span>
                   </td>
                   <td className="py-2 pr-3">
