@@ -1,4 +1,4 @@
-import { SignUpView } from "@/modules/auth/ui/views/sign-up-view";
+import { SignUp } from "@clerk/nextjs";
 import { caller } from "@/trpc/server";
 import { redirect } from "next/navigation";
 
@@ -6,12 +6,17 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 const Page = async () => {
-  // Disable the sign-in page if you are logged in:
+  // Disable the sign-up page if you are logged in:
   const session = await caller.auth.session();
   if (session.user) {
     redirect("/");
   }
-  return <SignUpView />;
+  // Clerk-managed sign-up page; legacy payload form is intentionally bypassed.
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      <SignUp routing="path" path="/sign-up" />
+    </div>
+  );
 };
 
 export default Page;

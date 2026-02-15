@@ -1,10 +1,40 @@
 // src/app/(app)/dashboard/page.tsx
 import DashboardContent from "@/modules/tenants/ui/components/tenant_dashboard/dashboard-content";
+import TenantMismatchNotice from "@/modules/tenants/ui/components/tenant_dashboard/tenant-mismatch-notice";
 import { LayoutDashboard } from "lucide-react";
 import { redirect } from "next/navigation";
-import { getQueryClient, trpc } from "@/trpc/server";
+import { caller, getQueryClient, trpc } from "@/trpc/server";
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function DashboardPage({
+  searchParams: searchParamsPromise,
+}: DashboardPageProps) {
+  const searchParams = await searchParamsPromise;
+
+  // Guard dashboard behind auth so email deep-links prompt sign-in if needed.
+  const session = await caller.auth.session();
+  if (!session.user) {
+    // Preserve query params (e.g., tenant context) so links return correctly.
+    const params = new URLSearchParams();
+    if (searchParams) {
+      for (const [key, value] of Object.entries(searchParams)) {
+        if (Array.isArray(value)) {
+          value.forEach((entry) => {
+            params.append(key, entry);
+          });
+        } else if (value != null) {
+          params.set(key, value);
+        }
+      }
+    }
+    const suffix = params.toString();
+    const redirectUrl = suffix ? `/dashboard?${suffix}` : "/dashboard";
+    redirect(`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`);
+  }
+
   const qc = getQueryClient();
 
   // Fetch "my tenant" from auth context (bridged userId -> getMine)
@@ -16,6 +46,25 @@ export default async function DashboardPage() {
   }
 
   const tenantSlug = mine.slug;
+  const expectedTenant = (() => {
+    const raw = searchParams?.tenant;
+    if (Array.isArray(raw)) return raw[0] ?? "";
+    return typeof raw === "string" ? raw : "";
+  })().trim();
+
+  // If a tenant context is provided, block mismatched dashboards.
+  if (expectedTenant && expectedTenant !== tenantSlug) {
+    const params = new URLSearchParams({ tenant: expectedTenant });
+    const redirectUrl = `/dashboard?${params.toString()}`;
+    return (
+      <TenantMismatchNotice
+        expectedSlug={expectedTenant}
+        actualSlug={tenantSlug}
+        signInUrl={`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`}
+      />
+    );
+  }
+
   // minimal: capitalize first letter only
   const rawName = (mine.name ?? tenantSlug).trim();
   const tenantName =

@@ -1,4 +1,4 @@
-import { SignInView } from "@/modules/auth/ui/views/sign-in-view";
+import { SignIn } from "@clerk/nextjs";
 import { caller } from "@/trpc/server";
 import { redirect } from "next/navigation";
 
@@ -12,7 +12,13 @@ const Page = async () => {
     redirect("/");
   }
 
-  return <SignInView />;
+  // Clerk-managed sign-in page; legacy payload form is intentionally bypassed.
+  // Supports redirect_url from guarded pages (e.g. /orders, /dashboard).
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      <SignIn routing="path" path="/sign-in" />
+    </div>
+  );
 };
 
 export default Page;

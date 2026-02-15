@@ -48,6 +48,14 @@ export const COMMISSION_RATE_BPS_DEFAULT = 500;
 // Dispute Policy
 export const DISPUTE_WINDOW_DAYS_DEFAULT = 14; // allow disputes up to N days after service completion date
 
+// Wallet is EUR-only for MVP; keeps summaries consistent with Stripe fees.
+export const WALLET_CURRENCY = "eur" as const;
+export const WALLET_PAGE_SIZE = 200;
+// Shared wallet list limits so server validation and UI pagination stay in sync.
+export const WALLET_TRANSACTIONS_LIMIT_DEFAULT = 50;
+export const WALLET_TRANSACTIONS_LIMIT_STEP = 50;
+export const WALLET_TRANSACTIONS_LIMIT_MAX = 100;
+
 // --- Service lifecycle statuses (shared) ---
 export const SERVICE_STATUSES = [
   "scheduled",

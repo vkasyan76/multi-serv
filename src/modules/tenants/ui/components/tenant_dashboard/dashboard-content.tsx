@@ -14,9 +14,22 @@ import { TenantMessagesSkeleton } from "@/modules/tenants/ui/components/skeleton
 import Image from "next/image";
 
 import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { TenantOrdersLifecycleView } from "@/modules/orders/ui/tenant-orders-lifecycle-view";
+import { WalletSummaryCard } from "@/modules/commissions/ui/wallet-summary-card";
+import { WalletTransactionsTable } from "@/modules/commissions/ui/wallet-transactions-table";
+import { WalletFiltersBar } from "@/modules/commissions/ui/wallet-filters-bar";
+import type {
+  WalletFilters,
+  WalletTransactionRow,
+} from "@/modules/commissions/ui/wallet-types";
+import {
+  buildWalletCsvFilename,
+  downloadCsv,
+  deriveInvoiceRangeIso,
+  walletRowsToCsv,
+} from "@/modules/commissions/ui/wallet-filter-utils";
 import {
   type AppLang,
   getInitialLanguage,
@@ -76,6 +89,7 @@ function SectionTitle({
 
 export default function DashboardContent({ slug }: { slug: string }) {
   const trpc = useTRPC();
+  const qc = useQueryClient();
   const tenantQ = useQuery(trpc.tenants.getOne.queryOptions({ slug }));
   const profileQ = useQuery(trpc.auth.getUserProfile.queryOptions());
 
@@ -84,6 +98,34 @@ export default function DashboardContent({ slug }: { slug: string }) {
     if (profileLang) return normalizeToSupported(profileLang);
     return getInitialLanguage();
   }, [profileQ.data?.language]);
+
+  const [walletFilters, setWalletFilters] = useState<WalletFilters>({
+    period: { mode: "all" },
+    status: "all",
+  });
+  const [walletRows, setWalletRows] = useState<WalletTransactionRow[]>([]);
+  const [walletRowsLoading, setWalletRowsLoading] = useState(false);
+  const [walletRowsError, setWalletRowsError] = useState(false);
+
+  const handleWalletDownload = async () => {
+    if (walletRowsLoading || walletRowsError || !walletRows.length) return;
+    const { startIso, endIso } = deriveInvoiceRangeIso(walletFilters.period);
+    const rows = await qc.fetchQuery(
+      trpc.commissions.walletTransactionsExport.queryOptions({
+        slug,
+        status: walletFilters.status,
+        start: startIso,
+        end: endIso,
+      }),
+    );
+    const csv = walletRowsToCsv(rows);
+    const filename = buildWalletCsvFilename({
+      period: walletFilters.period,
+      status: walletFilters.status,
+      appLang,
+    });
+    downloadCsv(filename, csv);
+  };
 
   const canEditCalendar =
     tenantQ.data?.onboardingStatus === "completed" &&
@@ -145,16 +187,53 @@ export default function DashboardContent({ slug }: { slug: string }) {
           iconSrc="/SVGs/Dashboard/Finance_Icon.svg"
           label="Finance"
         />
-        <div className="rounded-lg border bg-white p-5 flex items-center justify-between gap-4">
-          <p className="text-muted-foreground">
-            Open your payouts & balances panel in Profile.
-          </p>
-          <Button asChild variant="elevated">
-            <Link href="/profile?tab=payouts">
-              Open Payouts
-              <ExternalLink className="ml-2 h-4 w-4 opacity-70" />
-            </Link>
-          </Button>
+        <div className="space-y-4">
+          {/* Wallet is derived from platform invoices + fee events (not Stripe balance). */}
+          <WalletFiltersBar
+            filters={walletFilters}
+            appLang={appLang}
+            onChange={setWalletFilters}
+            onDownload={handleWalletDownload}
+            canDownload={
+              !walletRowsLoading && !walletRowsError && walletRows.length > 0
+            }
+            onClear={
+              walletFilters.status !== "all" ||
+              walletFilters.period.mode !== "all"
+                ? () =>
+                    setWalletFilters({
+                      period: { mode: "all" },
+                      status: "all",
+                    })
+                : undefined
+            }
+          />
+          <WalletSummaryCard
+            slug={slug}
+            appLang={appLang}
+            filters={walletFilters}
+          />
+          <WalletTransactionsTable
+            slug={slug}
+            appLang={appLang}
+            filters={walletFilters}
+            onRowsChange={setWalletRows}
+            onStateChange={({ isLoading, isError }) => {
+              setWalletRowsLoading(isLoading);
+              setWalletRowsError(isError);
+            }}
+          />
+          <div className="rounded-lg border bg-white p-5 flex items-center justify-between gap-4">
+            <p className="text-muted-foreground">
+              Open your payouts & balances panel in Profile.
+            </p>
+            <Button asChild variant="elevated">
+              <Link href="/profile?tab=payouts">
+                Open Payouts
+                <ExternalLink className="ml-2 h-4 w-4 opacity-70" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
     </div>

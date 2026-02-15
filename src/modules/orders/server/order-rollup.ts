@@ -385,7 +385,12 @@ export async function recomputeOrdersForBookingId(
     const services = extractServiceNames(slots);
     const dateRange = extractDateRange(slots);
     const ordersUrl = toAbsolute("/orders");
-    const dashboardUrl = toAbsolute("/dashboard");
+    // Include tenant context so email CTAs don't land in the wrong dashboard.
+    const dashboardUrl = toAbsolute(
+      tenantSlug
+        ? `/dashboard?tenant=${encodeURIComponent(tenantSlug)}`
+        : "/dashboard",
+    );
     const disputeReason = extractDisputeReason(slots);
 
     if (next === "completed") {

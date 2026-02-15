@@ -34,6 +34,9 @@ type WebhookInvoice = {
   customer?: string | { id: string } | null;
   currency?: string | null;
   amountTotalCents?: number | null;
+  platformFeeCents?: number | null;
+  platformFeeRateBps?: number | null;
+  platformFeeRuleId?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   sellerEmail?: string | null;
@@ -144,6 +147,66 @@ export async function POST(req: Request) {
             : invoice.paidAt ?? undefined;
           let updatedInvoice: WebhookInvoice | undefined;
 
+          // Phase 4: record a collected-only commission event (idempotent by PI).
+          if (piId) {
+            const tenantId =
+              typeof invoice.tenant === "string"
+                ? invoice.tenant
+                : invoice.tenant?.id;
+            const feeCents = invoice.platformFeeCents ?? null;
+            const rateBps = invoice.platformFeeRateBps ?? null;
+            const ruleId = invoice.platformFeeRuleId ?? null;
+            const currency = invoice.currency ?? null;
+
+            if (tenantId && feeCents != null && rateBps != null && ruleId && currency) {
+              try {
+                const existing = await payload.find({
+                  collection: "commission_events",
+                  where: { paymentIntentId: { equals: piId } },
+                  limit: 1,
+                  depth: 0,
+                  overrideAccess: true,
+                });
+                if (existing.totalDocs > 0) {
+                  devLog("[webhook] commission event already exists", {
+                    paymentIntentId: piId,
+                  });
+                } else {
+                await payload.create({
+                  collection: "commission_events",
+                  data: {
+                    tenant: tenantId,
+                    invoice: invoice.id,
+                    currency,
+                    feeCents,
+                    rateBps,
+                    ruleId,
+                    paymentIntentId: piId,
+                    collectedAt: new Date(event.created * 1000).toISOString(),
+                  },
+                  overrideAccess: true,
+                });
+                }
+              } catch (err) {
+                const code = (err as { code?: number }).code;
+                const message = (err as Error)?.message ?? "";
+                // Ignore duplicate inserts on webhook retries.
+                if (code !== 11000 && !/duplicate|unique/i.test(message)) {
+                  throw err;
+                }
+              }
+            } else {
+              devLog("[webhook] missing commission snapshot for invoice", {
+                invoiceId: invoice.id,
+                tenantId,
+                feeCents,
+                rateBps,
+                ruleId,
+                currency,
+              });
+            }
+          }
+
           if (paidNow) {
             updatedInvoice = (await payload.update({
               collection: "invoices",
@@ -179,7 +242,6 @@ export async function POST(req: Request) {
             // Merge to preserve snapshot fields even if update returns a partial doc.
             const full = updatedInvoice ? { ...invoice, ...updatedInvoice } : invoice;
             const ordersUrl = toAbsolute("/orders");
-            const dashboardUrl = toAbsolute("/dashboard");
             const customerEmail = full.buyerEmail ?? undefined;
             const tenantEmail = full.sellerEmail ?? undefined;
             const customerName =
@@ -212,6 +274,28 @@ export async function POST(req: Request) {
               }
 
               if (tenantEmail) {
+                // Include tenant context so email CTAs don't land in the wrong dashboard.
+                let dashboardUrl = toAbsolute("/dashboard");
+                const tenantId =
+                  typeof full.tenant === "string"
+                    ? full.tenant
+                    : full.tenant?.id;
+                if (tenantId) {
+                  const tenant = await payload.findByID({
+                    collection: "tenants",
+                    id: tenantId,
+                    depth: 0,
+                    overrideAccess: true,
+                  });
+                  const slug =
+                    typeof tenant?.slug === "string" ? tenant.slug : "";
+                  if (slug) {
+                    dashboardUrl = toAbsolute(
+                      `/dashboard?tenant=${encodeURIComponent(slug)}`,
+                    );
+                  }
+                }
+
                 await sendDomainEmail({
                   db: payload,
                   eventType: "invoice.paid.tenant",

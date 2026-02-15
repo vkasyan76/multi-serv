@@ -213,11 +213,31 @@ export function VendorProfileForm() {
   const watchedVatRegistered = form.watch("vatRegistered");
   const watchedCountry = form.watch("country");
   const isEUCountry = isEU(watchedCountry);
+  const lastVatToastRef = useRef<string | null>(null);
 
   // ✅ If country or the "have VAT" toggle changes, require a fresh check
   useEffect(() => {
     setVatChecked(false);
   }, [watchedCountry]);
+
+  // Guard: VAT registration only allowed for EU countries.
+  useEffect(() => {
+    if (watchedVatRegistered && !isEUCountry) {
+      if (lastVatToastRef.current !== watchedCountry) {
+        toast.error("VAT can be set only for EU countries.");
+        lastVatToastRef.current = watchedCountry ?? "unknown";
+      }
+      form.setValue("vatRegistered", false, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.setValue("vatId", "", { shouldDirty: true, shouldValidate: true });
+      form.setValue("vatIdValid", false, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [watchedVatRegistered, isEUCountry, watchedCountry, form]);
 
   // useEffect(() => {
   //   if (!watchedVatRegistered) {

@@ -22,7 +22,7 @@ import {
   replaceCoordinates,
 } from "@/modules/profile/location-utils";
 import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
-import { normalizeVat } from "@/modules/profile/vat-validation-utils";
+import { isEU, normalizeVat } from "@/modules/profile/vat-validation-utils";
 import { sendDomainEmail } from "@/modules/email/events";
 import Stripe from "stripe";
 
@@ -401,6 +401,13 @@ export const authRouter = createTRPCRouter({
           "DE"
         ).toUpperCase();
 
+        if (input.vatRegistered && !isEU(countryForTenant)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "VAT can be set only for EU countries.",
+          });
+        }
+
         // ⬇️ VIES re-check before writing
         let vatIdValid = false;
         if (input.vatRegistered && input.vatId) {
@@ -635,6 +642,13 @@ export const authRouter = createTRPCRouter({
         input.country ||
         "DE"
       ).toUpperCase();
+
+      if (input.vatRegistered && !isEU(countryForTenant)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "VAT can be set only for EU countries.",
+        });
+      }
 
       let vatIdValid = false;
       if (input.vatRegistered && input.vatId) {
