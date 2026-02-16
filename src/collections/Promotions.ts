@@ -52,6 +52,15 @@ export const Promotions: CollectionConfig = {
         return next;
       },
     ],
+    beforeChange: [
+      ({ data, operation, req }) => {
+        // Stamp creator on create for a reliable audit trail.
+        if (operation !== "create" || !req.user?.id || !data) return data;
+        const next = { ...(data as Record<string, unknown>) };
+        if (!next.createdBy) next.createdBy = String(req.user.id);
+        return next;
+      },
+    ],
   },
   fields: [
     { name: "name", type: "text", required: true, index: true },
@@ -200,6 +209,7 @@ export const Promotions: CollectionConfig = {
       name: "createdBy",
       type: "relationship",
       relationTo: "users",
+      admin: { readOnly: true },
     },
   ],
   indexes: [

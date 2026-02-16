@@ -1,3 +1,5 @@
+import "server-only";
+
 import {
   COMMISSION_RATE_BPS_DEFAULT,
   PROMO_RULE_ID_DEFAULT,

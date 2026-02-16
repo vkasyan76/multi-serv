@@ -4,3 +4,5 @@ export {
   type ResolvePromotionResult,
   type WinningPromotion,
 } from "./promotion-resolver";
+
+export { buildPromotionCounterKey, type FirstNScope } from "./counter-key";

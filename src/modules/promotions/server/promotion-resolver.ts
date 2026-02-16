@@ -1,3 +1,5 @@
+import "server-only";
+
 import {
   COMMISSION_RATE_BPS_DEFAULT,
   PROMOTIONS_RESOLVER_MAX_ACTIVE,
@@ -46,6 +48,7 @@ export type ResolvePromotionResult = {
   ruleId: string;
   effectiveRateBps: number;
   // first_n in Phase 2A is only "eligible pending reservation".
+  // Reservation/consumption semantics are handled in Phase 3.
   requiresReservation: boolean;
 };
 
@@ -188,12 +191,18 @@ export async function resolvePromotionForCheckout(
     overrideAccess: true,
   });
 
-  const winnerDoc = ((promosRes.docs ?? []) as PromotionDoc[])
+  const candidates = ((promosRes.docs ?? []) as PromotionDoc[])
     .filter((doc) => isWithinWindow(doc, nowMs))
     .filter((doc) => matchesScope(doc, input.tenantId, referralCodeNorm))
-    .sort(comparePromotions)[0];
+    .sort(comparePromotions);
 
-  const winningPromotion = winnerDoc ? toWinningPromotion(winnerDoc) : null;
+  let winningPromotion: WinningPromotion | null = null;
+  for (const doc of candidates) {
+    const converted = toWinningPromotion(doc);
+    if (!converted) continue;
+    winningPromotion = converted;
+    break;
+  }
 
   if (!winningPromotion) {
     return {

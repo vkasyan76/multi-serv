@@ -47,8 +47,7 @@ export const CANCELLATION_WINDOW_HOURS = 24;
 export const COMMISSION_RATE_BPS_DEFAULT = 500;
 // The “rule identifier” label for the non-promo default commission logic.
 export const PROMO_RULE_ID_DEFAULT = "default-v1";
-// Resolver safety cap for active promo scan (MVP assumes low active promo volume).
-// A safety cap: how many active promotions the resolver will load and scan.
+// Safety cap: max active promotions the resolver will load (MVP assumes low volume).
 export const PROMOTIONS_RESOLVER_MAX_ACTIVE = 500;
 // Dispute Policy
 export const DISPUTE_WINDOW_DAYS_DEFAULT = 14; // allow disputes up to N days after service completion date
