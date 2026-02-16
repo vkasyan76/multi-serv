@@ -133,7 +133,10 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
           <ul className="list-disc pl-6">
             <li>
               Default platform commission rate: {commissionPercent}% (derived
-              from {COMMISSION_RATE_BPS_DEFAULT} bps).
+              from {COMMISSION_RATE_BPS_DEFAULT} bps). Promotional,
+              campaign-specific, or negotiated commission rates may apply to
+              eligible providers or transactions as separately communicated and
+              reflected at checkout/invoice creation.
             </li>
             <li>
               Platform payments are currently supported in EUR only. Payment
