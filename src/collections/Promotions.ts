@@ -169,6 +169,8 @@ export const Promotions: CollectionConfig = {
         if (siblingData?.type !== "first_n") return true;
         const num = Number(value);
         if (!Number.isFinite(num)) return "firstNLimit is required for first_n promotions.";
+        // firstNLimit is a count, so fractional values are invalid.
+        if (!Number.isInteger(num)) return "firstNLimit must be an integer >= 1.";
         if (num < 1) return "firstNLimit must be at least 1.";
         return true;
       },
