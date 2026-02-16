@@ -86,6 +86,9 @@ export const Promotions: CollectionConfig = {
       validate: (value: unknown) => {
         const num = Number(value);
         if (!Number.isFinite(num)) return "Rate is required.";
+        // Basis points are integer units; decimals introduce avoidable rounding ambiguity.
+        if (!Number.isInteger(num))
+          return "Rate must be an integer number of basis points.";
         if (num < 0 || num > 10000) return "Rate must be between 0 and 10000 bps.";
         return true;
       },

@@ -94,7 +94,12 @@ export default buildConfig({
     ] as IndexableCollection | undefined;
     const promotions = collections["promotions"] as IndexableCollection | undefined;
 
-    if (allocations?.createIndex) {
+    if (!allocations?.createIndex) {
+      // Keep this warning explicit: missing handles mean critical unique constraints are not applied.
+      payload.logger.warn(
+        "promotion_allocations collection handle missing; skipped partial unique index creation",
+      );
+    } else {
       try {
         await allocations.createIndex(
           { promotion: 1, invoice: 1 },
@@ -106,7 +111,11 @@ export default buildConfig({
             },
           },
         );
+      } catch (error) {
+        if (!isIgnorableIndexError(error)) throw error;
+      }
 
+      try {
         await allocations.createIndex(
           { stripePaymentIntentId: 1 },
           {
@@ -122,7 +131,11 @@ export default buildConfig({
       }
     }
 
-    if (promotions?.createIndex) {
+    if (!promotions?.createIndex) {
+      payload.logger.warn(
+        "promotions collection handle missing; skipped referral partial unique index creation",
+      );
+    } else {
       try {
         await promotions.createIndex(
           { referralCode: 1 },
