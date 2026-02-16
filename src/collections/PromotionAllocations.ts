@@ -73,22 +73,8 @@ export const PromotionAllocations: CollectionConfig = {
   indexes: [
     { fields: ["counterKey", "status"] },
     { fields: ["promotion", "status"] },
-    // Payload's CompoundIndex type currently only exposes fields/unique.
-    // We keep partial unique index options for Mongo at runtime via a typed escape hatch.
-    ({
-      fields: ["promotion", "invoice"],
-      unique: true,
-      partialFilterExpression: {
-        invoice: { $exists: true, $ne: null },
-      },
-    } as unknown as { fields: string[]; unique?: boolean }),
-    ({
-      fields: ["stripePaymentIntentId"],
-      unique: true,
-      partialFilterExpression: {
-        stripePaymentIntentId: { $exists: true, $ne: null },
-      },
-    } as unknown as { fields: string[]; unique?: boolean }),
+    // Partial unique indexes live in payload.config.ts:onInit.
+    // Payload collection-level indexes do not support partialFilterExpression.
   ],
   timestamps: true,
 };

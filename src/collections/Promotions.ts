@@ -12,6 +12,13 @@ function requireWhen<T>(
   return value != null || message;
 }
 
+function normalizeReferralCode(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  // Canonical form avoids case/whitespace duplicates in referral campaigns.
+  const normalized = value.trim().replace(/\s+/g, "-").toUpperCase();
+  return normalized.length ? normalized : undefined;
+}
+
 export const Promotions: CollectionConfig = {
   slug: "promotions",
   access: {
@@ -31,6 +38,19 @@ export const Promotions: CollectionConfig = {
       "rateBps",
       "startsAt",
       "endsAt",
+    ],
+  },
+  hooks: {
+    beforeValidate: [
+      ({ data }) => {
+        if (!data || typeof data !== "object") return data;
+        const next = { ...(data as Record<string, unknown>) };
+        if ("referralCode" in next) {
+          // Normalize before write so DB uniqueness works predictably.
+          next.referralCode = normalizeReferralCode(next.referralCode);
+        }
+        return next;
+      },
     ],
   },
   fields: [

@@ -34,6 +34,19 @@ import { PromotionAllocations } from "./collections/PromotionAllocations.ts";
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
+type IndexableCollection = {
+  createIndex: (
+    keys: Record<string, 1 | -1>,
+    options?: Record<string, unknown>,
+  ) => Promise<unknown>;
+};
+
+function isIgnorableIndexError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const message = String((error as { message?: unknown }).message ?? "");
+  return /already exists/i.test(message) && !/different|conflict/i.test(message);
+}
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -70,6 +83,64 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || "",
   }),
+  onInit: async (payload) => {
+    // Create Mongo partial unique indexes here because Payload collection
+    // config indexes do not expose partialFilterExpression.
+    const collections =
+      ((payload.db as { collections?: Record<string, unknown> }).collections ??
+        {}) as Record<string, unknown>;
+    const allocations = collections[
+      "promotion_allocations"
+    ] as IndexableCollection | undefined;
+    const promotions = collections["promotions"] as IndexableCollection | undefined;
+
+    if (allocations?.createIndex) {
+      try {
+        await allocations.createIndex(
+          { promotion: 1, invoice: 1 },
+          {
+            name: "uniq_promo_invoice_when_invoice_present",
+            unique: true,
+            partialFilterExpression: {
+              invoice: { $exists: true, $ne: null },
+            },
+          },
+        );
+
+        await allocations.createIndex(
+          { stripePaymentIntentId: 1 },
+          {
+            name: "uniq_promo_allocation_pi_when_present",
+            unique: true,
+            partialFilterExpression: {
+              stripePaymentIntentId: { $exists: true, $ne: null },
+            },
+          },
+        );
+      } catch (error) {
+        if (!isIgnorableIndexError(error)) throw error;
+      }
+    }
+
+    if (promotions?.createIndex) {
+      try {
+        await promotions.createIndex(
+          { referralCode: 1 },
+          {
+            name: "uniq_active_referral_code",
+            unique: true,
+            partialFilterExpression: {
+              active: true,
+              scope: "referral",
+              referralCode: { $exists: true, $ne: "" },
+            },
+          },
+        );
+      } catch (error) {
+        if (!isIgnorableIndexError(error)) throw error;
+      }
+    }
+  },
   sharp,
   plugins: [
     payloadCloudPlugin(),
