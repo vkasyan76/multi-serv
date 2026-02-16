@@ -1,4 +1,7 @@
-import { COMMISSION_RATE_BPS_DEFAULT } from "@/constants";
+import {
+  COMMISSION_RATE_BPS_DEFAULT,
+  PROMO_RULE_ID_DEFAULT,
+} from "@/constants";
 
 export type CommissionContext = "invoice_checkout";
 export type CommissionBasis = "net";
@@ -19,7 +22,6 @@ export type CommissionSnapshot = {
   platformFeeBasisCents: number;
 };
 
-const DEFAULT_RULE_ID = "default-v1";
 // MVP: fee basis is net/subtotal only.
 const PLATFORM_FEE_BASIS: CommissionBasis = "net";
 
@@ -38,7 +40,7 @@ export function computeCommissionSnapshot(
   return {
     platformFeeRateBps: rateBps,
     platformFeeCents: feeCents,
-    platformFeeRuleId: DEFAULT_RULE_ID,
+    platformFeeRuleId: PROMO_RULE_ID_DEFAULT,
     // Store ISO string to match Payload "date" field expectations.
     platformFeeCalculatedAt: new Date().toISOString(),
     platformFeeBasis: PLATFORM_FEE_BASIS,
