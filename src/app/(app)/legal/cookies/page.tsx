@@ -1,4 +1,5 @@
 import { OpenCookiePreferencesButton } from "@/modules/legal/cookies/ui/open-cookie-preferences-button";
+import { REFERRAL_COOKIE_TTL_DAYS } from "@/constants";
 
 export const metadata = {
   title: "Cookies",
@@ -24,7 +25,8 @@ export default function CookiesPage() {
         <ul className="list-disc pl-5 space-y-2">
           <li>
             <strong>Essential:</strong> required for core functionality (cannot
-            be turned off).
+            be turned off). This includes first-party referral attribution
+            (<code>infin_ref</code>) for referral campaign eligibility.
           </li>
           <li>
             <strong>Marketing & analytics:</strong> helps us understand usage
@@ -40,6 +42,10 @@ export default function CookiesPage() {
         <p>
           Use the “Cookie preferences” link in the site footer, or the button
           above.
+        </p>
+        <p>
+          Referral attribution cookies are currently retained for up to{" "}
+          {REFERRAL_COOKIE_TTL_DAYS} days.
         </p>
       </section>
     </article>

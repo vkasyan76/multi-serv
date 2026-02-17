@@ -170,6 +170,10 @@ export interface User {
   usernameSyncedAt?: string | null;
   email?: string | null;
   clerkUserId?: string | null;
+  /**
+   * Referral attribution code (server-managed; super-admin override only).
+   */
+  referralCode?: string | null;
   roles?: ('super-admin' | 'user')[] | null;
   tenants?:
     | {
@@ -364,6 +368,10 @@ export interface Tenant {
    * Vendor's hourly rate in EUR
    */
   hourlyRate?: number | null;
+  /**
+   * Referral attribution copied at tenant creation (super-admin override only).
+   */
+  referralCode?: string | null;
   /**
    * Two-letter ISO country code (e.g., DE)
    */
@@ -870,7 +878,7 @@ export interface CommissionStatement {
 export interface PromotionCounter {
   id: string;
   /**
-   * Unique atomic gate key (e.g. promo:<id>:global or promo:<id>:tenant:<tenantId>).
+   * Unique atomic gate key (e.g. promo:<promotionId>:global or promo:<promotionId>:tenant:<tenantId>).
    */
   counterKey: string;
   promotion: string | Promotion;
@@ -1016,6 +1024,7 @@ export interface UsersSelect<T extends boolean = true> {
   usernameSyncedAt?: T;
   email?: T;
   clerkUserId?: T;
+  referralCode?: T;
   roles?: T;
   tenants?:
     | T
@@ -1116,6 +1125,7 @@ export interface TenantsSelect<T extends boolean = true> {
   website?: T;
   phone?: T;
   hourlyRate?: T;
+  referralCode?: T;
   country?: T;
   vatRegistered?: T;
   vatId?: T;

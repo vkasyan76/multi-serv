@@ -110,6 +110,29 @@ export const Users: CollectionConfig = {
       required: false, // initially optional to avoid breaking existing records
     },
     {
+      // Phase 2C: first-touch referral attribution is persisted on the user.
+      name: "referralCode",
+      type: "text",
+      required: false,
+      index: true,
+      validate: (val: unknown) => {
+        if (val == null || val === "") return true;
+        const s = String(val);
+        return (
+          /^[A-Z0-9_-]{3,64}$/.test(s) ||
+          "Use 3-64 chars: A-Z, 0-9, _ or -."
+        );
+      },
+      admin: {
+        position: "sidebar",
+        description:
+          "Referral attribution code (server-managed; super-admin override only).",
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
+    },
+    {
       admin: { position: "sidebar" },
       name: "roles",
       type: "select",

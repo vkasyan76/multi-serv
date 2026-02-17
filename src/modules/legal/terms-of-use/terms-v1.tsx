@@ -139,6 +139,10 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
               reflected at checkout/invoice creation.
             </li>
             <li>
+              Referral-based campaigns may require referral attribution data to
+              determine eligibility.
+            </li>
+            <li>
               Platform payments are currently supported in EUR only. Payment
               availability, supported payment methods, and currency support may
               depend on the provider&apos;s connected payment account setup. If EUR is

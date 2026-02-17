@@ -20,6 +20,14 @@ export const FAIL_HIGHLIGHT_MS = 2000;
 export const BOOKING_CH = "booking-updates" as const;
 
 export const BRIDGE_COOKIE = "inf_br" as const;
+// Phase 2C referral capture cookie (separate from auth bridge cookie).
+export const REFERRAL_COOKIE = "infin_ref" as const;
+export const REFERRAL_COOKIE_TTL_DAYS = 15;
+export const REFERRAL_COOKIE_TTL_SECONDS =
+  60 * 60 * 24 * REFERRAL_COOKIE_TTL_DAYS;
+// Explicit rollout switch for referral capture in middleware.
+export const REFERRAL_CAPTURE_ENABLED =
+  process.env.REFERRAL_CAPTURE_ENABLED === "1";
 
 // Bridge cookie options with dev environment gating
 export const BRIDGE_COOKIE_OPTS =
