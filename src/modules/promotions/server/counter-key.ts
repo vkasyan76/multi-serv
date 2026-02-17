@@ -12,6 +12,11 @@ export function buildPromotionCounterKey(input: {
     return `promo:${promotionId}:global`;
   }
 
+  // Fail fast on unexpected runtime values from untyped callers.
+  if (input.firstNScope !== "per_tenant") {
+    throw new Error(`Unknown firstNScope: ${String(input.firstNScope)}`);
+  }
+
   const tenantId = input.tenantId?.trim();
   if (!tenantId) {
     throw new Error("tenantId is required for per_tenant counters.");
@@ -19,3 +24,4 @@ export function buildPromotionCounterKey(input: {
 
   return `promo:${promotionId}:tenant:${tenantId}`;
 }
+

@@ -24,11 +24,28 @@ import {
 import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
 import { isEU, normalizeVat } from "@/modules/profile/vat-validation-utils";
 import { sendDomainEmail } from "@/modules/email/events";
+import { REFERRAL_CAPTURE_ENABLED, REFERRAL_COOKIE } from "@/constants";
 import Stripe from "stripe";
 
 // for checking if user has accepted current terms:
 import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted";
 const PASSWORD_AUTH_ENABLED = false; // hard-disable payload auth - we rely entirely on Clerk,
+const REFERRAL_CODE_RE = /^[A-Z0-9_-]{3,64}$/;
+
+const normalizeReferralCode = (raw: string | null | undefined): string | null => {
+  if (!raw) return null;
+  const normalized = raw.trim().replace(/\s+/g, "-").toUpperCase();
+  return REFERRAL_CODE_RE.test(normalized) ? normalized : null;
+};
+
+const logReferralSync = (
+  action: "set" | "skip",
+  details: Record<string, unknown>,
+) => {
+  // Dev-only traceability for referral attribution flow validation.
+  if (process.env.NODE_ENV === "production") return;
+  console.log("[referral][syncClerkUser]", action, details);
+};
 
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
@@ -219,17 +236,67 @@ export const authRouter = createTRPCRouter({
     if (existing.docs.length > 0) {
       const existingUser = existing.docs[0];
       if (!existingUser) return null;
+      let userForReturn = existingUser;
+
+      const hasReferralCode =
+        typeof existingUser.referralCode === "string" &&
+        existingUser.referralCode.trim().length > 0;
+
+      if (!REFERRAL_CAPTURE_ENABLED) {
+        logReferralSync("skip", {
+          reason: "capture_disabled",
+          userId: mask(existingUser.id),
+        });
+      } else if (hasReferralCode) {
+        logReferralSync("skip", {
+          reason: "already_set",
+          userId: mask(existingUser.id),
+        });
+      } else {
+        const cookies = await getCookies();
+        const rawReferralCode = cookies.get(REFERRAL_COOKIE)?.value ?? null;
+        const normalizedReferralCode = normalizeReferralCode(rawReferralCode);
+
+        if (!rawReferralCode) {
+          logReferralSync("skip", {
+            reason: "cookie_missing",
+            userId: mask(existingUser.id),
+          });
+        } else if (!normalizedReferralCode) {
+          logReferralSync("skip", {
+            reason: "cookie_invalid",
+            userId: mask(existingUser.id),
+          });
+        } else {
+          await ctx.db.update({
+            collection: "users",
+            id: String(existingUser.id),
+            data: { referralCode: normalizedReferralCode },
+            overrideAccess: true,
+          });
+
+          userForReturn = {
+            ...existingUser,
+            referralCode: normalizedReferralCode,
+          };
+
+          logReferralSync("set", {
+            reason: "from_cookie",
+            userId: mask(existingUser.id),
+          });
+        }
+      }
 
       // Don't auto-create tenant - let user decide when to become vendor
       // Optional: Keep Clerk in sync if needed
       if (
-        typeof existingUser.username === "string" &&
-        existingUser.username.length > 0
+        typeof userForReturn.username === "string" &&
+        userForReturn.username.length > 0
       ) {
         await updateClerkUserMetadata(
           userId!,
-          existingUser.id as string,
-          existingUser.username, // now narrowed to `string`
+          userForReturn.id as string,
+          userForReturn.username, // now narrowed to `string`
         );
       } else {
         if (process.env.NODE_ENV !== "production") {
@@ -238,7 +305,7 @@ export const authRouter = createTRPCRouter({
           );
         }
       }
-      return existingUser;
+      return userForReturn;
     }
 
     // New user flow - webhook should have created this user
@@ -1535,3 +1602,4 @@ export const authRouter = createTRPCRouter({
     };
   }),
 });
+

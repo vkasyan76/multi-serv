@@ -60,7 +60,8 @@ function normalizeReferralCode(value?: string | null): string {
 function relId(input: unknown): string | null {
   if (!input) return null;
   if (typeof input === "string") return input;
-  if (typeof input === "object" && "id" in (input as Record<string, unknown>)) {
+  // Defensive null check for unknown relationship shapes.
+  if (typeof input === "object" && input !== null && "id" in input) {
     const raw = (input as { id?: unknown }).id;
     return typeof raw === "string" ? raw : null;
   }
@@ -220,3 +221,4 @@ export async function resolvePromotionForCheckout(
     requiresReservation: winningPromotion.type === "first_n",
   };
 }
+
