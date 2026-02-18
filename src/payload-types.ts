@@ -685,6 +685,10 @@ export interface Promotion {
   endsAt?: string | null;
   tenantIds?: (string | Tenant)[] | null;
   referralCode?: string | null;
+  /**
+   * Copy-ready referral link generated from referralCode.
+   */
+  referralUrl?: string | null;
   firstNLimit?: number | null;
   firstNScope?: ('global' | 'per_tenant') | null;
   createdBy?: (string | null) | User;
@@ -1421,6 +1425,7 @@ export interface PromotionsSelect<T extends boolean = true> {
   endsAt?: T;
   tenantIds?: T;
   referralCode?: T;
+  referralUrl?: T;
   firstNLimit?: T;
   firstNScope?: T;
   createdBy?: T;

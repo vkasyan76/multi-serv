@@ -445,12 +445,20 @@ export const authRouter = createTRPCRouter({
 
             // First-touch wins: never overwrite an already set user referral code.
             if (!normalizeReferralCode(currentUser.referralCode ?? null)) {
-              await ctx.db.update({
-                collection: "users",
-                id: String(currentUser.id),
-                data: { referralCode: referralFromCookie },
-                overrideAccess: true,
-              });
+              try {
+                await ctx.db.update({
+                  collection: "users",
+                  id: String(currentUser.id),
+                  data: { referralCode: referralFromCookie },
+                  overrideAccess: true,
+                });
+              } catch (err) {
+                // Attribution write must not block vendor profile creation.
+                console.warn("Failed to set referralCode for user in createVendorProfile", {
+                  userId: mask(currentUser.id),
+                  err,
+                });
+              }
             }
           }
         }

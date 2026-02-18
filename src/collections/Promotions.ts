@@ -19,6 +19,23 @@ function normalizeReferralCode(value: unknown): string | undefined {
   return normalized.length ? normalized : undefined;
 }
 
+function buildReferralUrl(referralCode: unknown): string {
+  const code = normalizeReferralCode(referralCode);
+  if (!code) return "";
+  // Prefer canonical server URL in prod so shared referral links are copy-ready.
+  const base =
+    process.env.APP_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    `http://localhost:${process.env.PORT ?? "3000"}`;
+  try {
+    const url = new URL("/", base);
+    url.searchParams.set("ref", code);
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
 export const Promotions: CollectionConfig = {
   slug: "promotions",
   access: {
@@ -163,6 +180,32 @@ export const Promotions: CollectionConfig = {
           value as string | null | undefined,
           "Referral code is required for referral-scoped promotions.",
         ),
+    },
+    {
+      name: "referralUrl",
+      type: "text",
+      virtual: true,
+      admin: {
+        readOnly: true,
+        description: "Copy-ready referral link generated from referralCode.",
+        condition: (data) =>
+          (data as { scope?: string; referralCode?: unknown } | undefined)
+            ?.scope === "referral" &&
+          Boolean(
+            normalizeReferralCode(
+              (data as { referralCode?: unknown } | undefined)?.referralCode,
+            ),
+          ),
+      },
+      hooks: {
+        afterRead: [
+          ({ siblingData }) =>
+            buildReferralUrl(
+              (siblingData as { referralCode?: unknown } | undefined)
+                ?.referralCode,
+            ),
+        ],
+      },
     },
     {
       name: "firstNLimit",

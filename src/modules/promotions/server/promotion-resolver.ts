@@ -125,6 +125,8 @@ function comparePromotions(a: PromotionDoc, b: PromotionDoc): number {
 function toWinningPromotion(doc: PromotionDoc): WinningPromotion | null {
   if (!doc.id || !doc.type || !doc.scope) return null;
 
+  // Reject null/undefined explicitly (Number(null) would incorrectly coerce to 0).
+  if (doc.rateBps == null) return null;
   const rateBps = Number(doc.rateBps);
   // Defend against dirty data even if schema validation exists.
   if (!Number.isFinite(rateBps) || !Number.isInteger(rateBps) || rateBps < 0)
