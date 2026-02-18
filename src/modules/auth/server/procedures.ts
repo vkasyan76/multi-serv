@@ -1,3 +1,5 @@
+import "server-only";
+
 import { headers as getHeaders, cookies as getCookies } from "next/headers";
 import { baseProcedure, createTRPCRouter, clerkProcedure } from "@/trpc/init";
 // import { z } from "zod";
@@ -268,22 +270,30 @@ export const authRouter = createTRPCRouter({
             userId: mask(existingUser.id),
           });
         } else {
-          await ctx.db.update({
-            collection: "users",
-            id: String(existingUser.id),
-            data: { referralCode: normalizedReferralCode },
-            overrideAccess: true,
-          });
+          try {
+            await ctx.db.update({
+              collection: "users",
+              id: String(existingUser.id),
+              data: { referralCode: normalizedReferralCode },
+              overrideAccess: true,
+            });
 
-          userForReturn = {
-            ...existingUser,
-            referralCode: normalizedReferralCode,
-          };
+            userForReturn = {
+              ...existingUser,
+              referralCode: normalizedReferralCode,
+            };
 
-          logReferralSync("set", {
-            reason: "from_cookie",
-            userId: mask(existingUser.id),
-          });
+            logReferralSync("set", {
+              reason: "from_cookie",
+              userId: mask(existingUser.id),
+            });
+          } catch (err) {
+            console.warn("Failed to set referralCode for user", {
+              userId: mask(existingUser.id),
+              referralCode: normalizedReferralCode,
+              err,
+            });
+          }
         }
       }
 
@@ -415,6 +425,36 @@ export const authRouter = createTRPCRouter({
 
       let accountId: string | undefined; // <-- just the id, visible to catch
       let tenant: { id: string } | null = null;
+      let referralCodeForTenant: string | null = null;
+
+      // Phase 2C.5: user referral is primary; cookie fallback only when user is empty.
+      // Keep one flag for fast rollback of capture + persist + tenant copy.
+      if (REFERRAL_CAPTURE_ENABLED) {
+        referralCodeForTenant = normalizeReferralCode(
+          currentUser.referralCode ?? null,
+        );
+
+        if (!referralCodeForTenant) {
+          const cookies = await getCookies();
+          const referralFromCookie = normalizeReferralCode(
+            cookies.get(REFERRAL_COOKIE)?.value ?? null,
+          );
+
+          if (referralFromCookie) {
+            referralCodeForTenant = referralFromCookie;
+
+            // First-touch wins: never overwrite an already set user referral code.
+            if (!normalizeReferralCode(currentUser.referralCode ?? null)) {
+              await ctx.db.update({
+                collection: "users",
+                id: String(currentUser.id),
+                data: { referralCode: referralFromCookie },
+                overrideAccess: true,
+              });
+            }
+          }
+        }
+      }
 
       try {
         // explicitly creating an Express connected account.
@@ -509,6 +549,8 @@ export const authRouter = createTRPCRouter({
               ? input.vatId?.trim() || null // persist null if somehow empty
               : null, // toggle off => clear explicitly
             vatIdValid, // ⬅️ authoritative server flag
+            // Persist referral attribution snapshot on tenant creation.
+            referralCode: referralCodeForTenant ?? undefined,
 
             user: currentUser!.id,
           },
@@ -1602,4 +1644,5 @@ export const authRouter = createTRPCRouter({
     };
   }),
 });
+
 

@@ -1,3 +1,5 @@
+import "server-only";
+
 export type FirstNScope = "global" | "per_tenant";
 
 export function buildPromotionCounterKey(input: {

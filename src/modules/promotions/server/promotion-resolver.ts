@@ -6,10 +6,10 @@ import {
   PROMO_RULE_ID_DEFAULT,
 } from "@/constants";
 import type { TRPCContext } from "@/trpc/init";
+import type { FirstNScope } from "./counter-key";
 
 type PromotionType = "first_n" | "time_window_rate";
 type PromotionScope = "global" | "tenants" | "referral";
-type FirstNScope = "global" | "per_tenant";
 
 type PromotionDoc = {
   id: string;
@@ -113,7 +113,11 @@ function comparePromotions(a: PromotionDoc, b: PromotionDoc): number {
     ? Date.parse(b.createdAt)
     : Number.POSITIVE_INFINITY;
 
-  if (aCreatedAt !== bCreatedAt) return aCreatedAt - bCreatedAt;
+  // Keep comparator stable even if malformed createdAt slips into storage.
+  const aSafe = Number.isFinite(aCreatedAt) ? aCreatedAt : Number.POSITIVE_INFINITY;
+  const bSafe = Number.isFinite(bCreatedAt) ? bCreatedAt : Number.POSITIVE_INFINITY;
+
+  if (aSafe !== bSafe) return aSafe - bSafe;
 
   return String(a.id).localeCompare(String(b.id));
 }
@@ -123,7 +127,8 @@ function toWinningPromotion(doc: PromotionDoc): WinningPromotion | null {
 
   const rateBps = Number(doc.rateBps);
   // Defend against dirty data even if schema validation exists.
-  if (!Number.isFinite(rateBps) || !Number.isInteger(rateBps)) return null;
+  if (!Number.isFinite(rateBps) || !Number.isInteger(rateBps) || rateBps < 0)
+    return null;
 
   if (doc.type === "first_n") {
     const firstNLimit = Number(doc.firstNLimit);
