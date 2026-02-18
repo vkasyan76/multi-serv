@@ -69,8 +69,10 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Keep existing rewrite behavior unchanged.
   if (!pathname.startsWith("/api") && ENABLED && ROOT) {
+    // Smart referral links must stay on the app router, not tenant-rewritten paths.
+    const isRefRoute = pathname === "/ref" || pathname.startsWith("/ref/");
     // ✅ Avoid double-rewrite for internal routes that already include /tenants/*
-    if (!pathname.startsWith("/tenants/")) {
+    if (!pathname.startsWith("/tenants/") && !isRefRoute) {
       const host = req.headers.get("host") ?? ""; // e.g. react_jedi.infinisimo.com
       const suffix = `.${ROOT}`; // ".infinisimo.com"
 

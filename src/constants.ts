@@ -25,6 +25,10 @@ export const REFERRAL_COOKIE = "infin_ref" as const;
 export const REFERRAL_COOKIE_TTL_DAYS = 15;
 export const REFERRAL_COOKIE_TTL_SECONDS =
   60 * 60 * 24 * REFERRAL_COOKIE_TTL_DAYS;
+// Short-lived notice for smart referral redirects (invalid/expired campaign UX).
+export const REFERRAL_NOTICE_COOKIE = "ref_notice" as const;
+// Keep this brief to reduce repeated banners without adding one-time clear logic.
+export const REFERRAL_NOTICE_TTL_SECONDS = 60;
 // Explicit rollout switch for referral capture in middleware.
 export const REFERRAL_CAPTURE_ENABLED =
   process.env.REFERRAL_CAPTURE_ENABLED === "1";

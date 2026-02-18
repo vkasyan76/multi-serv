@@ -28,9 +28,8 @@ function buildReferralUrl(referralCode: unknown): string {
     process.env.NEXT_PUBLIC_APP_URL ??
     `http://localhost:${process.env.PORT ?? "3000"}`;
   try {
-    const url = new URL("/", base);
-    url.searchParams.set("ref", code);
-    return url.toString();
+    // Smart link entrypoint handles clean redirects + optional expiry messaging.
+    return new URL(`/ref/${encodeURIComponent(code)}`, base).toString();
   } catch {
     return "";
   }
