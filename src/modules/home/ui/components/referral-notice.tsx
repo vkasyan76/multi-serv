@@ -38,18 +38,12 @@ function parseNotice(raw?: string | null): ParsedNotice | null {
 export function ReferralNotice({ notice }: Props) {
   useEffect(() => {
     const parsed = parseNotice(notice);
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[referral-toast] parse", { notice, parsed });
-    }
     if (!parsed) return;
 
     const key =
       parsed.kind === "expired" ? `expired:${parsed.code}` : "invalid";
     const storageKey = `ref_notice_shown:${key}`;
     if (sessionStorage.getItem(storageKey) === "1") {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[referral-toast] skipped (dedupe)", { storageKey });
-      }
       return;
     }
 
@@ -57,9 +51,6 @@ export function ReferralNotice({ notice }: Props) {
       parsed.kind === "expired"
         ? `This referral code ${parsed.code} is no longer active. You can still register normally.`
         : "This referral link is invalid. You can still register normally.";
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[referral-toast] show", { storageKey, message });
-    }
 
     // Lightweight UX notice: auto-dismiss + manual close.
     // Defer one tick so toast always fires after Toaster is mounted.

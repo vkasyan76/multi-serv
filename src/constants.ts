@@ -29,7 +29,7 @@ export const REFERRAL_COOKIE_TTL_SECONDS =
 export const REFERRAL_NOTICE_COOKIE = "ref_notice" as const;
 // Keep this brief to reduce repeated banners without adding one-time clear logic.
 export const REFERRAL_NOTICE_TTL_SECONDS = 60;
-// Explicit rollout switch for referral capture in middleware.
+// Explicit rollout switch for referral capture (smart links + persistence paths).
 export const REFERRAL_CAPTURE_ENABLED =
   process.env.REFERRAL_CAPTURE_ENABLED === "1";
 
