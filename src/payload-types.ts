@@ -703,6 +703,10 @@ export interface PromotionAllocation {
   id: string;
   promotion: string | Promotion;
   counterKey: string;
+  /**
+   * Unique reservation attempt key to prevent double-reserve on retries.
+   */
+  reservationKey?: string | null;
   tenant?: (string | null) | Tenant;
   status: 'reserved' | 'consumed' | 'released';
   reservedAt: string;
@@ -1453,6 +1457,7 @@ export interface PromotionCountersSelect<T extends boolean = true> {
 export interface PromotionAllocationsSelect<T extends boolean = true> {
   promotion?: T;
   counterKey?: T;
+  reservationKey?: T;
   tenant?: T;
   status?: T;
   reservedAt?: T;

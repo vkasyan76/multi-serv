@@ -15,6 +15,7 @@ export const PromotionAllocations: CollectionConfig = {
       "promotion",
       "status",
       "counterKey",
+      "reservationKey",
       "tenant",
       "invoice",
       "stripePaymentIntentId",
@@ -35,6 +36,14 @@ export const PromotionAllocations: CollectionConfig = {
       type: "text",
       required: true,
       index: true,
+    },
+    {
+      // Idempotency key for one checkout-attempt reservation.
+      name: "reservationKey",
+      type: "text",
+      admin: {
+        description: "Unique reservation attempt key to prevent double-reserve on retries.",
+      },
     },
     {
       name: "tenant",

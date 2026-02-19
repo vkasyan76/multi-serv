@@ -73,6 +73,26 @@ Required env groups are defined in `README.md`:
 - Payload-generated types in `src/payload-types.ts` are derived artifacts, not source of truth.
   - After language option/schema changes, run `npm run generate:types`.
 
+## Promotions Reservation (Phase 3)
+
+- `first_n` promotions reserve capacity through `src/modules/checkout/server/promotion-reserve.ts`.
+- `reservationKey` is the checkout-attempt idempotency key.
+  - Stored on `promotion_allocations` and uniquely indexed in `src/payload.config.ts`.
+- Reservation outcomes are intentionally split:
+  - `limit_reached`: business outcome, checkout may fall back to default fee.
+  - `error`: infrastructure/transaction failure, checkout creation must fail.
+- Reservation writes (counter gate + allocation) must run in one transaction context.
+
+## Referral Attribution (Phase 2)
+
+- Purpose: capture which referral code a user/tenant arrived with.
+- Flow:
+  - Referral route stores code in cookie: `src/app/(app)/(home)/ref/[code]/route.ts`.
+  - Auth/onboarding persists normalized code to DB: `src/modules/auth/server/procedures.ts`.
+  - Cookie is transport-only and should be cleared after successful persistence.
+- Source of truth is persisted DB fields (user/tenant referralCode), not browser cookie.
+- This tracks referral-code attribution, not person-to-person "who referred whom" identity.
+
 ## Finance and Commissions Rules (Important)
 
 - Wallet currency is EUR-only for MVP.

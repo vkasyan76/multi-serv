@@ -41,6 +41,29 @@ type IndexableCollection = {
   ) => Promise<unknown>;
 };
 
+// Payload's Mongo adapter can expose collection handles either directly on the model
+// or under model.collection depending on runtime shape. This helper normalizes both
+// forms so partial/unique indexes are always applied during onInit.
+function getIndexableCollection(
+  payload: { db: { collections?: Record<string, unknown> } },
+  slug: string,
+): IndexableCollection | undefined {
+  const model = payload.db.collections?.[slug] as
+    | { createIndex?: unknown; collection?: { createIndex?: unknown } }
+    | undefined;
+  if (!model) return undefined;
+
+  if (typeof model.createIndex === "function") {
+    return model as unknown as IndexableCollection;
+  }
+
+  if (model.collection && typeof model.collection.createIndex === "function") {
+    return model.collection as IndexableCollection;
+  }
+
+  return undefined;
+}
+
 function isIgnorableIndexError(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const message = String((error as { message?: unknown }).message ?? "");
@@ -86,13 +109,14 @@ export default buildConfig({
   onInit: async (payload) => {
     // Create Mongo partial unique indexes here because Payload collection
     // config indexes do not expose partialFilterExpression.
-    const collections =
-      ((payload.db as { collections?: Record<string, unknown> }).collections ??
-        {}) as Record<string, unknown>;
-    const allocations = collections[
-      "promotion_allocations"
-    ] as IndexableCollection | undefined;
-    const promotions = collections["promotions"] as IndexableCollection | undefined;
+    const allocations = getIndexableCollection(
+      payload as unknown as { db: { collections?: Record<string, unknown> } },
+      "promotion_allocations",
+    );
+    const promotions = getIndexableCollection(
+      payload as unknown as { db: { collections?: Record<string, unknown> } },
+      "promotions",
+    );
 
     if (!allocations?.createIndex) {
       // Keep this warning explicit: missing handles mean critical unique constraints are not applied.
@@ -107,7 +131,7 @@ export default buildConfig({
             name: "uniq_promo_invoice_when_invoice_present",
             unique: true,
             partialFilterExpression: {
-              invoice: { $exists: true, $ne: null },
+              invoice: { $exists: true },
             },
           },
         );
@@ -122,7 +146,23 @@ export default buildConfig({
             name: "uniq_promo_allocation_pi_when_present",
             unique: true,
             partialFilterExpression: {
-              stripePaymentIntentId: { $exists: true, $ne: null },
+              stripePaymentIntentId: { $exists: true },
+            },
+          },
+        );
+      } catch (error) {
+        if (!isIgnorableIndexError(error)) throw error;
+      }
+
+      try {
+        // Idempotency guard: one allocation per reservationKey (retry-safe checkout attempts).
+        await allocations.createIndex(
+          { reservationKey: 1 },
+          {
+            name: "uniq_promo_allocation_reservation_key_when_present",
+            unique: true,
+            partialFilterExpression: {
+              reservationKey: { $exists: true },
             },
           },
         );
@@ -145,7 +185,7 @@ export default buildConfig({
             partialFilterExpression: {
               active: true,
               scope: "referral",
-              referralCode: { $exists: true, $ne: "" },
+              referralCode: { $exists: true },
             },
           },
         );
