@@ -304,7 +304,6 @@ export const authRouter = createTRPCRouter({
           } catch (err) {
             console.warn("Failed to set referralCode for user", {
               userId: mask(existingUser.id),
-              referralCode: normalizedReferralCode,
               err,
             });
           }
@@ -457,22 +456,22 @@ export const authRouter = createTRPCRouter({
           if (referralFromCookie) {
             referralCodeForTenant = referralFromCookie;
 
-            // First-touch wins: never overwrite an already set user referral code.
-            if (!normalizeReferralCode(currentUser.referralCode ?? null)) {
-              try {
-                await ctx.db.update({
-                  collection: "users",
-                  id: String(currentUser.id),
-                  data: { referralCode: referralFromCookie },
-                  overrideAccess: true,
-                });
-              } catch (err) {
-                // Attribution write must not block vendor profile creation.
-                console.warn("Failed to set referralCode for user in createVendorProfile", {
-                  userId: mask(currentUser.id),
-                  err,
-                });
-              }
+            // User referral is empty in this branch; persist cookie attribution once.
+            try {
+              await ctx.db.update({
+                collection: "users",
+                id: String(currentUser.id),
+                data: { referralCode: referralFromCookie },
+                overrideAccess: true,
+              });
+              // Transport cookie can be removed after successful persistence.
+              cookies.set(REFERRAL_COOKIE, "", getReferralCookieOptions(true));
+            } catch (err) {
+              // Attribution write must not block vendor profile creation.
+              console.warn("Failed to set referralCode for user in createVendorProfile", {
+                userId: mask(currentUser.id),
+                err,
+              });
             }
           }
         }

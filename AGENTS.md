@@ -70,7 +70,7 @@ Required env groups are defined in `README.md`:
 - `normalizeToSupported` must handle region/case variants robustly (`de-DE`, `EN_us`, etc.).
 - Do not add new hardcoded app-language lists/unions in feature files.
   - Reuse `SUPPORTED_APP_LANGS` or `SUPPORTED_LANGUAGES` instead.
-- Payload generated types in `src/payload-types.ts` are derived artifacts, not source of truth.
+- Payload-generated types in `src/payload-types.ts` are derived artifacts, not source of truth.
   - After language option/schema changes, run `npm run generate:types`.
 
 ## Finance and Commissions Rules (Important)
