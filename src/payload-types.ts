@@ -200,7 +200,7 @@ export interface User {
   /**
    * User's preferred language
    */
-  language?: ('en' | 'es' | 'fr' | 'de' | 'it' | 'pt') | null;
+  language?: ('en' | 'de' | 'fr' | 'it' | 'es' | 'pt') | null;
   /**
    * Location coordinates with metadata
    */

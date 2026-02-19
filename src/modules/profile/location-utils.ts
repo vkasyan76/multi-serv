@@ -3,6 +3,12 @@ import type {
   UserCoordinates,
   SelectedLocation,
 } from "@/modules/tenants/types";
+import {
+  DEFAULT_APP_LANG,
+  normalizeToSupported,
+  SUPPORTED_LANGUAGES,
+  type AppLang,
+} from "@/lib/i18n/app-lang";
 
 // IP Geolocation helper function using ipapi.co service
 // This provides accurate, production-ready IP geolocation with EU country detection
@@ -354,44 +360,20 @@ export function getCountryCodeFromName(countryName: string): string {
 
 // ---- Language + appLang helpers ----
 
-export type AppLang = "en" | "es" | "fr" | "de" | "it" | "pt";
-export const DEFAULT_APP_LANG: AppLang = "en";
+// Re-export shared app language definitions for backward compatibility.
+// New code should prefer direct imports from `@/lib/i18n/app-lang`.
+export {
+  DEFAULT_APP_LANG,
+  normalizeToSupported,
+  SUPPORTED_LANGUAGES,
+  type AppLang,
+};
 
 export function detectLanguage(): Language {
   if (typeof navigator === "undefined") return Language.en;
   const langCode = navigator.language.slice(0, 2);
   const mapped = (Language as Record<string, Language>)[langCode];
   return mapped ?? Language.en;
-}
-
-//  * Maps browser/system language to your supported language codes.
-//  * Defaults to English if not supported.
-//  */
-// Single source of truth for app language codes
-
-export const SUPPORTED_LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "de", label: "German" },
-  { code: "fr", label: "French" },
-  { code: "it", label: "Italian" },
-  { code: "es", label: "Spanish" },
-  { code: "pt", label: "Portuguese" },
-];
-
-/**
- * Normalize an arbitrary language string (e.g. "de-DE,de;q=0.9")
- * to your supported AppLang codes.
- *
- * Safe on SERVER and CLIENT (no navigator here).
- */
-
-export function normalizeToSupported(code?: string): AppLang {
-  const fallback: AppLang = DEFAULT_APP_LANG;
-  if (!code) return fallback;
-
-  const short = code.split(",")[0]?.split("-")[0] ?? code; // take first entry if "de-DE,de;q=0.9"
-  const allowed: AppLang[] = ["en", "es", "fr", "de", "it", "pt"];
-  return allowed.includes(short as AppLang) ? (short as AppLang) : fallback;
 }
 
 /**

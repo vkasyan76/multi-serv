@@ -3,6 +3,7 @@ import { tenantsArrayField } from "@payloadcms/plugin-multi-tenant/fields";
 import { isSuperAdmin } from "../lib/access.ts";
 // import { ClerkAuthStrategy } from "@/lib/auth/clerk-strategy.ts";
 import { ClerkAuthStrategy } from "../lib/auth/clerk-strategy.ts";
+import { SUPPORTED_LANGUAGES } from "@/lib/i18n/app-lang";
 
 const defaultTenantArrayField = tenantsArrayField({
   tenantsArrayFieldName: "tenants",
@@ -184,14 +185,11 @@ export const Users: CollectionConfig = {
     {
       name: "language",
       type: "select",
-      options: [
-        { label: "English", value: "en" },
-        { label: "Spanish", value: "es" },
-        { label: "French", value: "fr" },
-        { label: "German", value: "de" },
-        { label: "Italian", value: "it" },
-        { label: "Portuguese", value: "pt" },
-      ],
+      // Derive from shared i18n list to avoid drift across app surfaces.
+      options: SUPPORTED_LANGUAGES.map(({ code, label }) => ({
+        label,
+        value: code,
+      })),
       label: "Language",
       admin: {
         description: "User's preferred language",

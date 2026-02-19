@@ -1,4 +1,5 @@
 import z from "zod";
+import { SUPPORTED_APP_LANGS } from "@/lib/i18n/app-lang";
 
 const usernameValidation = z
   .string()
@@ -22,7 +23,8 @@ export const profileSchema = z.object({
   email: z.string().email("Invalid email address"),
   location: z.string().min(3, "Please select a location"),
   country: z.string().min(2, "Country required"),
-  language: z.enum(["en", "es", "fr", "de", "it", "pt"]),
+  // Keep validation aligned with the shared i18n source of truth.
+  language: z.enum(SUPPORTED_APP_LANGS),
   coordinates: z
     .object({
       lat: z.number(),

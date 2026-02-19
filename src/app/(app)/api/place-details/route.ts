@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Client, Language } from "@googlemaps/google-maps-services-js";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,12 +10,10 @@ const client = new Client({});
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const placeId = searchParams.get("placeId");
-  const language = searchParams.get("language") || "en";
+  const language = searchParams.get("language") ?? undefined;
   const sessionToken = searchParams.get("sessiontoken");
-  
-  // Validate language against supported languages
-  const allowedLanguages = new Set(["en", "de", "fr", "it", "es", "pt"]);
-  const validLanguage = allowedLanguages.has(language) ? language : "en";
+  // Normalize from request input to the app's supported language set.
+  const validLanguage = normalizeToSupported(language);
   
   if (!placeId) {
     return NextResponse.json({ error: "Place ID is required" }, { status: 400 });
@@ -34,6 +33,7 @@ export async function GET(request: NextRequest) {
       params: {
         place_id: placeId,
         fields: ["address_components", "formatted_address", "geometry"],
+        // Safe: AppLang currently matches the Google language subset we support.
         language: validLanguage as Language,
         sessiontoken: sessionToken || undefined, // Include session token for billing
         key: apiKey, // Use secure server-side key

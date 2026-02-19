@@ -47,6 +47,14 @@ Current tasks and improvements for Multi-Serv project.
 
 ## Medium Priority
 
+- [ ] Referral/promotion dedupe cleanup (maintainability, later)
+  - Files: `src/modules/auth/server/procedures.ts`, `src/app/(app)/(home)/ref/[code]/route.ts`, `src/modules/promotions/server/promotion-resolver.ts`
+  - Scope: Consolidate duplicated `normalizeReferralCode`, `REFERRAL_CODE_RE`, and `isWithinWindow` into shared utilities after referral flow stabilizes.
+  - Why later:
+    - This is a maintainability improvement, not a current correctness/security blocker.
+    - Delaying keeps active PRs focused on low-risk behavioral fixes (cookie hardening + lifecycle cleanup).
+    - A dedicated refactor PR will be easier to review/test and reduces risk of mixed concerns.
+
 - [ ] Modularize large procedures into smaller functions
   - Files: `src/modules/auth/server/procedures.ts`, `src/modules/tenants/server/procedures.ts`
   - Target: Break down complex procedures for better maintainability

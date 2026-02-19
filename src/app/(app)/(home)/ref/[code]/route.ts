@@ -10,6 +10,7 @@ import {
   REFERRAL_NOTICE_COOKIE,
   REFERRAL_NOTICE_TTL_SECONDS,
 } from "@/constants";
+import { getReferralCookieOptions } from "@/lib/referral-cookie-options";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,15 +55,10 @@ function redirectToHome(req: NextRequest): NextResponse {
 }
 
 function setReferralCookie(res: NextResponse, code: string) {
-  const isProd = process.env.NODE_ENV === "production";
-  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN?.trim();
-
   res.cookies.set(REFERRAL_COOKIE, code, {
-    path: "/",
-    sameSite: "lax",
-    secure: isProd,
+    ...getReferralCookieOptions(),
+    // Keep referral attribution for the configured capture window.
     maxAge: REFERRAL_COOKIE_TTL_SECONDS,
-    ...(isProd && root ? { domain: `.${root}` } : {}),
   });
 }
 

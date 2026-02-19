@@ -59,6 +59,20 @@ Required env groups are defined in `README.md`:
 - Payload collections are admin-restricted by default; app logic often uses server-side `overrideAccess: true` with explicit guards.
 - Tenant isolation is enforced in server procedures through tenant membership checks.
 
+## Language Structure (i18n)
+
+- Single source of truth for supported app languages is `src/lib/i18n/app-lang.ts`.
+  - Canonical exports: `SUPPORTED_APP_LANGS`, `AppLang`, `DEFAULT_APP_LANG`, `SUPPORTED_LANGUAGES`, `normalizeToSupported`.
+- `src/modules/profile/location-utils.ts` re-exports language helpers for backward compatibility.
+  - Prefer importing from `src/lib/i18n/app-lang.ts` for new code.
+- Locale detection priority for client UX text should be:
+  - `document.documentElement.lang` -> `navigator.languages`/`navigator.language` -> `"en"`.
+- `normalizeToSupported` must handle region/case variants robustly (`de-DE`, `EN_us`, etc.).
+- Do not add new hardcoded app-language lists/unions in feature files.
+  - Reuse `SUPPORTED_APP_LANGS` or `SUPPORTED_LANGUAGES` instead.
+- Payload generated types in `src/payload-types.ts` are derived artifacts, not source of truth.
+  - After language option/schema changes, run `npm run generate:types`.
+
 ## Finance and Commissions Rules (Important)
 
 - Wallet currency is EUR-only for MVP.

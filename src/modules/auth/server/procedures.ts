@@ -27,6 +27,7 @@ import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
 import { isEU, normalizeVat } from "@/modules/profile/vat-validation-utils";
 import { sendDomainEmail } from "@/modules/email/events";
 import { REFERRAL_CAPTURE_ENABLED, REFERRAL_COOKIE } from "@/constants";
+import { getReferralCookieOptions } from "@/lib/referral-cookie-options";
 import Stripe from "stripe";
 
 // for checking if user has accepted current terms:
@@ -282,6 +283,19 @@ export const authRouter = createTRPCRouter({
               ...existingUser,
               referralCode: normalizedReferralCode,
             };
+
+            // Referral cookie is transport-only; clear it once attribution is persisted.
+            const currentCookieCode = normalizeReferralCode(
+              cookies.get(REFERRAL_COOKIE)?.value ?? null,
+            );
+            // Guard against races: only clear if cookie still matches what we saved.
+            if (currentCookieCode === normalizedReferralCode) {
+              cookies.set(
+                REFERRAL_COOKIE,
+                "",
+                getReferralCookieOptions(true),
+              );
+            }
 
             logReferralSync("set", {
               reason: "from_cookie",

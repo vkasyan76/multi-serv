@@ -2,12 +2,14 @@
 
 import { Client, Language } from "@googlemaps/google-maps-services-js";
 import type { PlacePrediction } from "@/modules/tenants/types";
+import type { AppLang } from "@/lib/i18n/app-lang";
 
 const client = new Client();
 
 export const autocomplete = async (
   input: string, 
-  language: "en" | "es" | "fr" | "de" | "it" | "pt" = "en",
+  // Shared AppLang keeps this helper aligned with app-wide language config.
+  language: AppLang = "en",
   sessionToken?: string
 ): Promise<PlacePrediction[]> => {
   if (!input || input.trim().length === 0) return [];
@@ -23,6 +25,7 @@ export const autocomplete = async (
     const { data } = await client.placeAutocomplete({
       params: {
         input,
+        // Safe today: current AppLang values are a subset of Google Language values.
         language: language as Language,
         sessiontoken: sessionToken || undefined, // Include session token for billing
         key: apiKey, // Use secure server-side key
