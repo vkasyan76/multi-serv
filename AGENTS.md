@@ -78,10 +78,13 @@ Required env groups are defined in `README.md`:
 - `first_n` promotions reserve capacity through `src/modules/checkout/server/promotion-reserve.ts`.
 - `reservationKey` is the checkout-attempt idempotency key.
   - Stored on `promotion_allocations` and uniquely indexed in `src/payload.config.ts`.
+- Atomic gate enforcement uses stored `promotion_counters.limit` (counter-canonical cap).
+  - If incoming limit and stored limit differ, reservation logs a warning and enforces stored limit.
 - Reservation outcomes are intentionally split:
   - `limit_reached`: business outcome, checkout may fall back to default fee.
   - `error`: infrastructure/transaction failure, checkout creation must fail.
 - Reservation writes (counter gate + allocation) must run in one transaction context.
+- Promotions reservation tests clean up created promo/counter/allocation records to avoid DB buildup.
 
 ## Referral Attribution (Phase 2)
 

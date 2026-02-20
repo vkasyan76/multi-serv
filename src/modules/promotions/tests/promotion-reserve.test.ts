@@ -13,6 +13,7 @@ process.env.PAYLOAD_SECRET ??= "test-payload-secret";
 
 type TestPayload = Awaited<ReturnType<typeof getPayload>>;
 let payloadPromise: Promise<TestPayload> | null = null;
+const createdPromotionIds = new Set<string>();
 
 async function getTestPayload(): Promise<TestPayload> {
   if (!payloadPromise) {
@@ -27,8 +28,55 @@ async function getTestPayload(): Promise<TestPayload> {
 after(async () => {
   if (!payloadPromise) return;
   const payload = await payloadPromise;
-  if (typeof payload.db.destroy === "function") {
-    await payload.db.destroy();
+  try {
+    for (const promotionId of createdPromotionIds) {
+      const allocations = await payload.find({
+        collection: "promotion_allocations",
+        where: { promotion: { equals: promotionId } },
+        overrideAccess: true,
+        depth: 0,
+        limit: 500,
+      });
+
+      for (const doc of allocations.docs) {
+        await payload.delete({
+          collection: "promotion_allocations",
+          id: String(doc.id),
+          overrideAccess: true,
+        });
+      }
+
+      const counters = await payload.find({
+        collection: "promotion_counters",
+        where: { promotion: { equals: promotionId } },
+        overrideAccess: true,
+        depth: 0,
+        limit: 500,
+      });
+
+      for (const doc of counters.docs) {
+        await payload.delete({
+          collection: "promotion_counters",
+          id: String(doc.id),
+          overrideAccess: true,
+        });
+      }
+
+      try {
+        await payload.delete({
+          collection: "promotions",
+          id: promotionId,
+          overrideAccess: true,
+        });
+      } catch {
+        // Ignore already-removed test records.
+      }
+    }
+  } finally {
+    createdPromotionIds.clear();
+    if (typeof payload.db.destroy === "function") {
+      await payload.db.destroy();
+    }
   }
 });
 
@@ -51,6 +99,7 @@ test("reserveFirstNPromotion: limit=1 allows exactly one winner under race", asy
       firstNScope: "global",
     },
   });
+  createdPromotionIds.add(String(promo.id));
 
   const ctx = { db: payload } as never;
   const ruleId = `promo:${promo.id}`;
@@ -125,6 +174,7 @@ test("reserveFirstNPromotion: rollback leaves used unchanged if allocation inser
       firstNScope: "global",
     },
   });
+  createdPromotionIds.add(String(promo.id));
 
   type CreateArgs = Parameters<typeof payload.create>[0];
   type CreateResult = ReturnType<typeof payload.create>;

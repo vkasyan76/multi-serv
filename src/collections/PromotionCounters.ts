@@ -53,6 +53,10 @@ export const PromotionCounters: CollectionConfig = {
       name: "limit",
       type: "number",
       required: true,
+      admin: {
+        description:
+          "Initialized from promotion at first reservation. Enforced cap for this counter. To change limits, duplicate promotion.",
+      },
       validate: (value: unknown) => {
         const num = Number(value);
         if (!Number.isFinite(num) || num < 1) return "Limit must be at least 1.";

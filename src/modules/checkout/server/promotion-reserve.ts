@@ -54,7 +54,10 @@ function getCounterModel(ctx: TRPCContext): CounterModelLike | null {
     db?: { collections?: Record<string, unknown> };
     collections?: Record<string, unknown>;
   };
-  // In Payload runtime, ctx.db may be BasePayload where raw model handles live under ctx.db.db.collections.
+  // Validated against Payload 3.35.0:
+  // we intentionally read internal Mongo adapter collections for raw
+  // findOneAndUpdate + session support in one transaction.
+  // Returning null on shape mismatch is intentional.
   const collections = dbRoot.db?.collections ?? dbRoot.collections ?? null;
   if (!collections) return null;
 
@@ -176,7 +179,6 @@ async function reserveFirstNPromotionOnce(
     ...(input.req ?? {}),
     payload: ctx.db,
   } as TxReq;
-  txReq.payload = ctx.db;
   delete txReq.transactionID;
 
   const startedHere = await initTransaction(txReq);
@@ -213,13 +215,14 @@ async function reserveFirstNPromotionOnce(
       return { ok: true, allocationId: String(existingAllocation.id) };
     }
 
-    await counterModel.findOneAndUpdate(
+    const counterDoc = (await counterModel.findOneAndUpdate(
       { counterKey },
       {
         $setOnInsert: {
           counterKey,
           promotion: promotionId,
           ...(tenantRef ? { tenant: tenantRef } : {}),
+          // Initialized from promo config on first insert; gate uses stored counter limit.
           limit,
           used: 0,
           active: true,
@@ -231,11 +234,38 @@ async function reserveFirstNPromotionOnce(
         setDefaultsOnInsert: true,
         session,
       },
-    );
+    )) as { limit?: unknown } | null;
 
-    // Atomic gate: "take exactly one promo spot if used < limit".
+    const storedLimit = Number(counterDoc?.limit);
+    if (!Number.isFinite(storedLimit) || storedLimit < 1) {
+      throw new Error(
+        `Invalid counter limit for reservation (promotionId=${promotionId}, counterKey=${counterKey}, limit=${String(counterDoc?.limit)})`,
+      );
+    }
+
+    if (storedLimit !== limit) {
+      const payloadLogger = (
+        txReq.payload as unknown as {
+          logger?: { warn?: (message: string, meta?: unknown) => void };
+        }
+      ).logger;
+      const meta = { promotionId, counterKey, inputLimit: limit, storedLimit };
+      if (typeof payloadLogger?.warn === "function") {
+        payloadLogger.warn(
+          "[promotion-reserve] limit mismatch, enforcing stored counter limit",
+          meta,
+        );
+      } else {
+        console.warn(
+          "[promotion-reserve] limit mismatch, enforcing stored counter limit",
+          meta,
+        );
+      }
+    }
+
+    // Atomic gate: "take exactly one promo spot if used < stored limit".
     const updated = await counterModel.findOneAndUpdate(
-      { counterKey, used: { $lt: limit } },
+      { counterKey, used: { $lt: storedLimit } },
       { $inc: { used: 1 } },
       { new: true, session },
     );

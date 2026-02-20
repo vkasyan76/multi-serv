@@ -894,6 +894,9 @@ export interface PromotionCounter {
    * Set only for per-tenant counters.
    */
   tenant?: (string | null) | Tenant;
+  /**
+   * Initialized from promotion at first reservation. Enforced cap for this counter. To change limits, duplicate promotion.
+   */
   limit: number;
   used: number;
   active: boolean;
