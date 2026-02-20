@@ -84,6 +84,7 @@ Required env groups are defined in `README.md`:
   - `limit_reached`: business outcome, checkout may fall back to default fee.
   - `error`: infrastructure/transaction failure, checkout creation must fail.
 - Reservation writes (counter gate + allocation) must run in one transaction context.
+- Checkout (`createCheckoutSession`) resolves promotion, reserves for `first_n` when needed, then locks invoice fee snapshot before creating Stripe session.
 - Promotions reservation tests clean up created promo/counter/allocation records to avoid DB buildup.
 
 ## Referral Attribution (Phase 2)

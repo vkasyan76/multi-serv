@@ -3,11 +3,18 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { resolvePayloadUserId } from "@/modules/orders/server/identity";
+import {
+  COMMISSION_RATE_BPS_DEFAULT,
+  PLATFORM_FEE_BASIS,
+  PROMO_RULE_ID_DEFAULT,
+} from "@/constants";
 import type { Booking, Invoice, Order, Tenant, User } from "@/payload-types";
 import type { Stripe } from "stripe";
 import { stripe } from "@/lib/stripe";
 import { resolveVatRateBps } from "./vat-rates";
 import { computeCommissionSnapshot } from "@/modules/commissions/server/compute-commission";
+import { resolvePromotionForCheckout } from "@/modules/promotions/server";
+import { reserveFirstNPromotion } from "@/modules/checkout/server/promotion-reserve";
 import { sendDomainEmail } from "@/modules/email/events";
 import type { EmailDeliverability } from "@/modules/email/types";
 
@@ -28,6 +35,9 @@ type InvoiceDoc = {
   platformFeeCalculatedAt?: string | null;
   platformFeeBasis?: "net" | null;
   platformFeeBasisCents?: number | null;
+  promotionId?: string | { id: string } | null;
+  promotionAllocationId?: string | { id: string } | null;
+  promotionType?: "first_n" | "time_window_rate" | null;
   stripeCheckoutSessionId?: string | null;
   lineItems?: LineItem[] | null;
   buyerEmail?: string | null;
@@ -184,6 +194,11 @@ function relId(input: unknown): string | undefined {
     return typeof raw === "string" ? raw : undefined;
   }
   return undefined;
+}
+
+function buildInvoiceReservationKey(invoiceId: string): string {
+  // Stable per-invoice key keeps reservation idempotent across checkout retries.
+  return `invoice:${invoiceId}:checkout`;
 }
 
 function toAbsolute(urlOrPath: string) {
@@ -1001,6 +1016,9 @@ export const invoicesRouter = createTRPCRouter({
         platformFeeCalculatedAt: invoice.platformFeeCalculatedAt ?? null,
         platformFeeBasis: invoice.platformFeeBasis ?? null,
         platformFeeBasisCents: invoice.platformFeeBasisCents ?? null,
+        promotionId: relId(invoice.promotionId) ?? null,
+        promotionAllocationId: relId(invoice.promotionAllocationId) ?? null,
+        promotionType: invoice.promotionType ?? null,
       };
 
       const hasSnapshot =
@@ -1008,26 +1026,142 @@ export const invoicesRouter = createTRPCRouter({
         typeof snapshot.platformFeeCents === "number" &&
         typeof snapshot.platformFeeRuleId === "string" &&
         !!snapshot.platformFeeCalculatedAt &&
-        snapshot.platformFeeBasis === "net" &&
+        snapshot.platformFeeBasis === PLATFORM_FEE_BASIS &&
         typeof snapshot.platformFeeBasisCents === "number";
 
       if (!hasSnapshot) {
+        let appliedRateBps = COMMISSION_RATE_BPS_DEFAULT;
+        let appliedRuleId = PROMO_RULE_ID_DEFAULT;
+        let appliedPromotionId: string | null = null;
+        let appliedPromotionAllocationId: string | null = null;
+        let appliedPromotionType: "first_n" | "time_window_rate" | null = null;
+
+        const resolved = await resolvePromotionForCheckout(ctx, {
+          tenantId,
+          referralCode: tenant.referralCode ?? null,
+        });
+        const winning = resolved.winningPromotion;
+
+        if (winning?.type === "first_n") {
+          const firstNLimitRaw = winning.firstNLimit;
+          const firstNScopeRaw = winning.firstNScope;
+          const validFirstN =
+            Number.isInteger(firstNLimitRaw) &&
+            typeof firstNLimitRaw === "number" &&
+            firstNLimitRaw > 0 &&
+            (firstNScopeRaw === "global" || firstNScopeRaw === "per_tenant") &&
+            Number.isInteger(winning.rateBps) &&
+            winning.rateBps >= 0 &&
+            typeof winning.ruleId === "string" &&
+            winning.ruleId.trim().length > 0;
+
+          if (!validFirstN) {
+            console.error("[checkout] invalid first_n promotion config", {
+              invoiceId: invoice.id,
+              tenantId,
+              promotionId: winning.id,
+              firstNLimit: winning.firstNLimit,
+              firstNScope: winning.firstNScope,
+              rateBps: winning.rateBps,
+              ruleId: winning.ruleId,
+            });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Checkout temporarily unavailable. Please retry.",
+            });
+          }
+
+          const firstNScope = firstNScopeRaw as "global" | "per_tenant";
+          const firstNLimit = firstNLimitRaw as number;
+          const reservationKey = buildInvoiceReservationKey(invoice.id);
+          const reserve = await reserveFirstNPromotion(ctx, {
+            promotionId: winning.id,
+            reservationKey,
+            tenantId,
+            firstNScope,
+            limit: firstNLimit,
+            appliedRateBps: winning.rateBps,
+            appliedRuleId: winning.ruleId,
+          });
+
+          if (reserve.ok) {
+            appliedRateBps = winning.rateBps;
+            appliedRuleId = winning.ruleId;
+            appliedPromotionId = winning.id;
+            appliedPromotionAllocationId = reserve.allocationId;
+            appliedPromotionType = "first_n";
+          } else if (reserve.reason === "limit_reached") {
+            // Exhausted first_n slots fall back to the default fee rule.
+            appliedRateBps = COMMISSION_RATE_BPS_DEFAULT;
+            appliedRuleId = PROMO_RULE_ID_DEFAULT;
+          } else {
+            console.error("[checkout] promotion reservation error", {
+              invoiceId: invoice.id,
+              tenantId,
+              promotionId: winning.id,
+              reservationKey,
+              error: reserve.error,
+            });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Checkout temporarily unavailable. Please retry.",
+            });
+          }
+        } else if (winning?.type === "time_window_rate") {
+          const validTimeWindow =
+            Number.isInteger(winning.rateBps) &&
+            winning.rateBps >= 0 &&
+            typeof winning.ruleId === "string" &&
+            winning.ruleId.trim().length > 0;
+
+          if (!validTimeWindow) {
+            console.error("[checkout] invalid time_window_rate promotion config", {
+              invoiceId: invoice.id,
+              tenantId,
+              promotionId: winning.id,
+              rateBps: winning.rateBps,
+              ruleId: winning.ruleId,
+            });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Checkout temporarily unavailable. Please retry.",
+            });
+          }
+
+          appliedRateBps = winning.rateBps;
+          appliedRuleId = winning.ruleId;
+          appliedPromotionId = winning.id;
+          appliedPromotionType = "time_window_rate";
+        }
+
         const computed = computeCommissionSnapshot({
           tenantId,
           basisAmountCents: subtotalCents,
           currency,
           context: "invoice_checkout",
+          rateBps: appliedRateBps,
+          ruleId: appliedRuleId,
         });
 
         await ctx.db.update({
           collection: "invoices",
           id: invoice.id,
-          data: computed,
+          data: {
+            ...computed,
+            promotionId: appliedPromotionId ?? undefined,
+            promotionAllocationId: appliedPromotionAllocationId ?? undefined,
+            promotionType: appliedPromotionType ?? undefined,
+          },
           overrideAccess: true,
           depth: 0,
         });
 
-        snapshot = computed;
+        snapshot = {
+          ...computed,
+          promotionId: appliedPromotionId,
+          promotionAllocationId: appliedPromotionAllocationId,
+          promotionType: appliedPromotionType,
+        };
       }
 
       if (snapshot.platformFeeCents == null) {
@@ -1056,6 +1190,9 @@ export const invoicesRouter = createTRPCRouter({
         orderId: orderId ?? "",
         userId: customerId,
         tenantId: tenantId ?? "",
+        platformFeeRuleId: snapshot.platformFeeRuleId ?? "",
+        promotionId: snapshot.promotionId ?? "",
+        promotionAllocationId: snapshot.promotionAllocationId ?? "",
       };
 
       const session = await stripe.checkout.sessions.create(

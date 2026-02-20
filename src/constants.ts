@@ -59,6 +59,8 @@ export const CANCELLATION_WINDOW_HOURS = 24;
 export const COMMISSION_RATE_BPS_DEFAULT = 500;
 // The “rule identifier” label for the non-promo default commission logic.
 export const PROMO_RULE_ID_DEFAULT = "default-v1";
+// Current fee basis for checkout-time platform fee snapshots.
+export const PLATFORM_FEE_BASIS = "net" as const;
 // Safety cap: max active promotions the resolver will load (MVP assumes low volume).
 export const PROMOTIONS_RESOLVER_MAX_ACTIVE = 500;
 // Dispute Policy
@@ -97,3 +99,4 @@ export const COOKIE_CONSENT_VERSION = "v1";
 export const COOKIE_CONSENT_COOKIE = "infinisimo_cookie_consent";
 export const OPEN_COOKIE_PREFS_EVENT = "open-cookie-preferences" as const;
 export const CONSENT_UPDATED_EVENT = "cookie-consent-updated" as const;
+
