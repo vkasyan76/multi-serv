@@ -5,6 +5,7 @@ import { config as loadEnv } from "dotenv";
 import { getPayload } from "payload";
 import { reserveFirstNPromotion } from "../../checkout/server/promotion-reserve.ts";
 import { buildPromotionCounterKey } from "../server/counter-key.ts";
+import type { TRPCContext } from "../../../trpc/init.ts";
 
 // Local test bootstrap: prefer .env.local, then fall back to .env.
 loadEnv({ path: ".env.local" });
@@ -23,6 +24,10 @@ async function getTestPayload(): Promise<TestPayload> {
     })();
   }
   return payloadPromise;
+}
+
+function makeTestContext(payload: TestPayload): TRPCContext {
+  return { db: payload } as unknown as TRPCContext;
 }
 
 after(async () => {
@@ -101,7 +106,7 @@ test("reserveFirstNPromotion: limit=1 allows exactly one winner under race", asy
   });
   createdPromotionIds.add(String(promo.id));
 
-  const ctx = { db: payload } as never;
+  const ctx = makeTestContext(payload);
   const ruleId = `promo:${promo.id}`;
 
   const [a, b] = await Promise.all([
@@ -191,7 +196,7 @@ test("reserveFirstNPromotion: rollback leaves used unchanged if allocation inser
 
   try {
     const result = await reserveFirstNPromotion(
-      { db: payload } as never,
+      makeTestContext(payload),
       {
         promotionId: String(promo.id),
         reservationKey: randomUUID(),

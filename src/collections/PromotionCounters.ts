@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { CollectionConfig } from "payload";
 import { isSuperAdmin } from "../lib/access.ts";
 
@@ -59,7 +61,9 @@ export const PromotionCounters: CollectionConfig = {
       },
       validate: (value: unknown) => {
         const num = Number(value);
-        if (!Number.isFinite(num) || num < 1) return "Limit must be at least 1.";
+        if (!Number.isFinite(num) || !Number.isInteger(num) || num < 1) {
+          return "Limit must be an integer >= 1.";
+        }
         return true;
       },
     },
@@ -70,7 +74,9 @@ export const PromotionCounters: CollectionConfig = {
       defaultValue: 0,
       validate: (value: unknown) => {
         const num = Number(value);
-        if (!Number.isFinite(num) || num < 0) return "Used must be non-negative.";
+        if (!Number.isFinite(num) || !Number.isInteger(num) || num < 0) {
+          return "Used must be a non-negative integer.";
+        }
         return true;
       },
     },
