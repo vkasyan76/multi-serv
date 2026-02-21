@@ -144,6 +144,22 @@ Run before finalizing changes:
 - Tenant scoping and membership authorization checks
 - Date/time logic in Berlin timezone for finance data
 
+## Payload Admin Auth Stability Note (Deferred Follow-up)
+
+- During promotions testing, Payload admin form submissions may intermittently fail with:
+  - `Error: Unauthorized` from `buildFormStateHandler`
+  - transient missing request user context (`id: null, roles: null`)
+- Working hypothesis:
+  - `src/lib/auth/clerk-strategy.ts` currently depends on both `auth().userId` and `currentUser()` for auth success.
+  - If `currentUser()` is temporarily unavailable, authenticated requests can degrade to anonymous.
+- Recommended fix path (after promotions track):
+  1. Treat `auth().userId` as the authoritative authentication signal.
+  2. Use `currentUser()` only for enrichment/sync fallback, not for auth gating.
+  3. Never null authenticated state just because enrichment fails.
+  4. Validate behavior in `/admin/collections/promotions/create` create/edit flows.
+- Scope control:
+  - Keep this work out of active promotions feature PRs unless admin auth becomes a blocker.
+
 ## If Unsure
 
 - Prefer tracing from UI call site -> tRPC procedure -> Payload query.

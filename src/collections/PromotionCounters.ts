@@ -29,7 +29,6 @@ export const PromotionCounters: CollectionConfig = {
       type: "text",
       required: true,
       unique: true,
-      index: true,
       admin: {
         description:
           "Unique atomic gate key (e.g. promo:<promotionId>:global or promo:<promotionId>:tenant:<tenantId>).",

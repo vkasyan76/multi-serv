@@ -4,6 +4,24 @@ Current tasks and improvements for Multi-Serv project.
 
 ## High Priority
 
+- [ ] Stabilize Payload admin auth session (defer until promotions testing is complete)
+  - Files: `src/lib/auth/clerk-strategy.ts`, `src/middleware.ts`, `src/trpc/init.ts`
+  - Observed symptoms:
+    - Intermittent Payload admin form-state failures (`Unauthorized` in `buildFormStateHandler`)
+    - Occasional UI crash while editing promotion form (`lockedState` null in Next dev overlay)
+    - Access logs sometimes show missing user context (`id: null, roles: null`) during admin form actions
+  - Likely root cause:
+    - Clerk strategy currently ties auth success to both `auth().userId` and `currentUser()`.
+    - When `currentUser()` is transiently unavailable, request auth can collapse to `null` even with a valid session.
+  - Recommendation plan:
+    1. Authenticate from `auth().userId` as primary source.
+    2. Use `currentUser()` only for optional profile/email sync and first-time user bootstrap.
+    3. Do not clear authenticated state when sync enrichment fails.
+    4. Add targeted debug logs around strategy decisions (only in development).
+    5. Re-test Payload admin create/edit flow for promotions after patch.
+  - Risk note:
+    - Can affect production intermittently too (lower frequency than local dev), so this should be addressed after promo validation.
+
 - [ ] Fix Clerk middleware detection errors
   - File: `src/middleware.ts`
   - Error: "Clerk: auth() was called but Clerk can't detect usage of clerkMiddleware()"
