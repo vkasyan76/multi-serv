@@ -25,6 +25,15 @@ const devLog = (...args: unknown[]) => {
  */
 
 type WebhookOrder = Pick<Order, "id" | "status">;
+type RelValue = string | { id?: string } | null | undefined;
+
+function relId(value: RelValue): string | null {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (typeof value.id === "string") return value.id;
+  return null;
+}
+
 type WebhookInvoice = {
   id: string;
   status?: string | null;
@@ -32,6 +41,7 @@ type WebhookInvoice = {
   order?: string | { id: string } | null;
   tenant?: string | { id: string } | null;
   customer?: string | { id: string } | null;
+  promotionAllocationId?: string | { id: string } | null;
   currency?: string | null;
   amountTotalCents?: number | null;
   platformFeeCents?: number | null;
@@ -48,6 +58,41 @@ const paymentIntentIdOf = (s: Stripe.Checkout.Session): string | null => {
   if (s.payment_intent) return (s.payment_intent as Stripe.PaymentIntent).id;
   return null;
 };
+
+async function consumePromotionAllocationIfReserved(params: {
+  payload: Awaited<ReturnType<typeof getPayload>>;
+  invoice: WebhookInvoice;
+  fallbackAllocationId?: string | null;
+  stripeCheckoutSessionId: string;
+  stripePaymentIntentId: string | null;
+  consumedAt: string;
+}) {
+  const allocationId =
+    relId(params.invoice.promotionAllocationId) ??
+    params.fallbackAllocationId?.trim() ??
+    null;
+
+  if (!allocationId) return;
+
+  // Idempotent consume: only transition allocations that are still reserved.
+  await params.payload.update({
+    collection: "promotion_allocations",
+    where: {
+      and: [
+        { id: { equals: allocationId } },
+        { status: { equals: "reserved" } },
+      ],
+    },
+    data: {
+      status: "consumed",
+      consumedAt: params.consumedAt,
+      invoice: params.invoice.id,
+      stripeCheckoutSessionId: params.stripeCheckoutSessionId,
+      stripePaymentIntentId: params.stripePaymentIntentId ?? undefined,
+    },
+    overrideAccess: true,
+  });
+}
 
 // Email CTA URLs (prefer server APP_URL).
 const toAbsolute = (path: string) => {
@@ -112,6 +157,10 @@ export async function POST(req: Request) {
           | null;
         if (invoiceId) {
           const piId = paymentIntentIdOf(session);
+          const metadataAllocationId =
+            typeof session.metadata?.promotionAllocationId === "string"
+              ? session.metadata.promotionAllocationId
+              : null;
           let invoice: WebhookInvoice | undefined;
 
           // Guard: only treat paid sessions as success.
@@ -220,6 +269,10 @@ export async function POST(req: Request) {
             })) as WebhookInvoice;
           }
 
+          const fullInvoice = updatedInvoice
+            ? { ...invoice, ...updatedInvoice }
+            : invoice;
+
           const orderId =
             typeof invoice.order === "string"
               ? invoice.order
@@ -233,6 +286,17 @@ export async function POST(req: Request) {
                 ...(paidAt ? { paidAt } : {}),
               },
               overrideAccess: true,
+            });
+          }
+
+          if (paidNow) {
+            await consumePromotionAllocationIfReserved({
+              payload,
+              invoice: fullInvoice,
+              fallbackAllocationId: metadataAllocationId,
+              stripeCheckoutSessionId: session.id,
+              stripePaymentIntentId: piId,
+              consumedAt: paidAt ?? new Date().toISOString(),
             });
           }
 
