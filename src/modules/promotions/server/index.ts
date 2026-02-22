@@ -6,3 +6,4 @@ export {
 } from "./promotion-resolver";
 
 export { buildPromotionCounterKey, type FirstNScope } from "./counter-key";
+export { consumePromotionAllocationIfReserved } from "./allocation-consume";

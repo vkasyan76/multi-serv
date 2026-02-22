@@ -6,6 +6,8 @@ import config from "@payload-config";
 import { stripe } from "@/lib/stripe";
 import { parseSlotIdsCsv } from "@/modules/checkout/server/types";
 import { sendDomainEmail } from "@/modules/email/events";
+import { consumePromotionAllocationIfReserved } from "@/modules/promotions/server";
+import { promotionDecisionLog } from "@/modules/promotions/server/flags";
 import type { Order, User } from "@/payload-types";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body access
@@ -25,14 +27,6 @@ const devLog = (...args: unknown[]) => {
  */
 
 type WebhookOrder = Pick<Order, "id" | "status">;
-type RelValue = string | { id?: string } | null | undefined;
-
-function relId(value: RelValue): string | null {
-  if (!value) return null;
-  if (typeof value === "string") return value;
-  if (typeof value.id === "string") return value.id;
-  return null;
-}
 
 type WebhookInvoice = {
   id: string;
@@ -58,41 +52,6 @@ const paymentIntentIdOf = (s: Stripe.Checkout.Session): string | null => {
   if (s.payment_intent) return (s.payment_intent as Stripe.PaymentIntent).id;
   return null;
 };
-
-async function consumePromotionAllocationIfReserved(params: {
-  payload: Awaited<ReturnType<typeof getPayload>>;
-  invoice: WebhookInvoice;
-  fallbackAllocationId?: string | null;
-  stripeCheckoutSessionId: string;
-  stripePaymentIntentId: string | null;
-  consumedAt: string;
-}) {
-  const allocationId =
-    relId(params.invoice.promotionAllocationId) ??
-    params.fallbackAllocationId?.trim() ??
-    null;
-
-  if (!allocationId) return;
-
-  // Idempotent consume: only transition allocations that are still reserved.
-  await params.payload.update({
-    collection: "promotion_allocations",
-    where: {
-      and: [
-        { id: { equals: allocationId } },
-        { status: { equals: "reserved" } },
-      ],
-    },
-    data: {
-      status: "consumed",
-      consumedAt: params.consumedAt,
-      invoice: params.invoice.id,
-      stripeCheckoutSessionId: params.stripeCheckoutSessionId,
-      stripePaymentIntentId: params.stripePaymentIntentId ?? undefined,
-    },
-    overrideAccess: true,
-  });
-}
 
 // Email CTA URLs (prefer server APP_URL).
 const toAbsolute = (path: string) => {
@@ -290,14 +249,32 @@ export async function POST(req: Request) {
           }
 
           if (paidNow) {
-            await consumePromotionAllocationIfReserved({
+            const consumeResult = await consumePromotionAllocationIfReserved({
               payload,
-              invoice: fullInvoice,
+              invoiceId: fullInvoice.id,
+              invoicePromotionAllocationId: fullInvoice.promotionAllocationId,
               fallbackAllocationId: metadataAllocationId,
               stripeCheckoutSessionId: session.id,
               stripePaymentIntentId: piId,
               consumedAt: paidAt ?? new Date().toISOString(),
             });
+            promotionDecisionLog("allocation_consume_result", {
+              invoiceId: fullInvoice.id,
+              allocationId: consumeResult.allocationId,
+              updatedCount: consumeResult.updatedCount,
+              stripeCheckoutSessionId: session.id,
+              stripePaymentIntentId: piId,
+            });
+            if (
+              consumeResult.allocationId &&
+              consumeResult.updatedCount === 0
+            ) {
+              console.warn("[webhook] promotion allocation consume no-op", {
+                invoiceId: fullInvoice.id,
+                allocationId: consumeResult.allocationId,
+                stripeCheckoutSessionId: session.id,
+              });
+            }
           }
 
           // Phase E: send invoice.paid emails only on the paid transition.

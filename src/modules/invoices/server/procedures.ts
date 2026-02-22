@@ -17,6 +17,10 @@ import { resolveVatRateBps } from "./vat-rates";
 import { computeCommissionSnapshot } from "@/modules/commissions/server/compute-commission";
 import { resolvePromotionForCheckout } from "@/modules/promotions/server";
 import { reserveFirstNPromotion } from "@/modules/checkout/server/promotion-reserve";
+import {
+  PROMOTIONS_ENABLED,
+  promotionDecisionLog,
+} from "@/modules/promotions/server/flags";
 import { sendDomainEmail } from "@/modules/email/events";
 import type { EmailDeliverability } from "@/modules/email/types";
 
@@ -1037,103 +1041,137 @@ export const invoicesRouter = createTRPCRouter({
         let appliedPromotionId: string | null = null;
         let appliedPromotionAllocationId: string | null = null;
         let appliedPromotionType: "first_n" | "time_window_rate" | null = null;
-
-        const resolved = await resolvePromotionForCheckout(ctx, {
-          tenantId,
-          referralCode: tenant.referralCode ?? null,
-        });
-        const winning = resolved.winningPromotion;
-
-        if (winning?.type === "first_n") {
-          const firstNLimitRaw = winning.firstNLimit;
-          const firstNScopeRaw = winning.firstNScope;
-          const validFirstN =
-            Number.isInteger(firstNLimitRaw) &&
-            typeof firstNLimitRaw === "number" &&
-            firstNLimitRaw > 0 &&
-            (firstNScopeRaw === "global" || firstNScopeRaw === "per_tenant") &&
-            Number.isInteger(winning.rateBps) &&
-            winning.rateBps >= 0 &&
-            typeof winning.ruleId === "string" &&
-            winning.ruleId.trim().length > 0;
-
-          if (!validFirstN) {
-            console.error("[checkout] invalid first_n promotion config", {
-              invoiceId: invoice.id,
-              tenantId,
-              promotionId: winning.id,
-              firstNLimit: winning.firstNLimit,
-              firstNScope: winning.firstNScope,
-              rateBps: winning.rateBps,
-              ruleId: winning.ruleId,
-            });
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Checkout temporarily unavailable. Please retry.",
-            });
-          }
-
-          const firstNScope = firstNScopeRaw as "global" | "per_tenant";
-          const firstNLimit = firstNLimitRaw as number;
-          const reservationKey = buildInvoiceReservationKey(invoice.id);
-          const reserve = await reserveFirstNPromotion(ctx, {
-            promotionId: winning.id,
-            reservationKey,
+        if (PROMOTIONS_ENABLED) {
+          const resolved = await resolvePromotionForCheckout(ctx, {
             tenantId,
-            firstNScope,
-            limit: firstNLimit,
-            appliedRateBps: winning.rateBps,
-            appliedRuleId: winning.ruleId,
+            referralCode: tenant.referralCode ?? null,
+          });
+          const winning = resolved.winningPromotion;
+
+          promotionDecisionLog("winner_resolved", {
+            invoiceId: invoice.id,
+            tenantId,
+            promotionId: winning?.id ?? null,
+            promotionType: winning?.type ?? null,
+            effectiveRateBps: resolved.effectiveRateBps,
+            requiresReservation: resolved.requiresReservation,
           });
 
-          if (reserve.ok) {
+          if (winning?.type === "first_n") {
+            const firstNLimitRaw = winning.firstNLimit;
+            const firstNScopeRaw = winning.firstNScope;
+            const validFirstN =
+              Number.isInteger(firstNLimitRaw) &&
+              typeof firstNLimitRaw === "number" &&
+              firstNLimitRaw > 0 &&
+              (firstNScopeRaw === "global" || firstNScopeRaw === "per_tenant") &&
+              Number.isInteger(winning.rateBps) &&
+              winning.rateBps >= 0 &&
+              typeof winning.ruleId === "string" &&
+              winning.ruleId.trim().length > 0;
+
+            if (!validFirstN) {
+              console.error("[checkout] invalid first_n promotion config", {
+                invoiceId: invoice.id,
+                tenantId,
+                promotionId: winning.id,
+                firstNLimit: winning.firstNLimit,
+                firstNScope: winning.firstNScope,
+                rateBps: winning.rateBps,
+                ruleId: winning.ruleId,
+              });
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Checkout temporarily unavailable. Please retry.",
+              });
+            }
+
+            const firstNScope = firstNScopeRaw as "global" | "per_tenant";
+            const firstNLimit = firstNLimitRaw as number;
+            const reservationKey = buildInvoiceReservationKey(invoice.id);
+            const reserve = await reserveFirstNPromotion(ctx, {
+              promotionId: winning.id,
+              reservationKey,
+              tenantId,
+              firstNScope,
+              limit: firstNLimit,
+              appliedRateBps: winning.rateBps,
+              appliedRuleId: winning.ruleId,
+            });
+
+            if (reserve.ok) {
+              appliedRateBps = winning.rateBps;
+              appliedRuleId = winning.ruleId;
+              appliedPromotionId = winning.id;
+              appliedPromotionAllocationId = reserve.allocationId;
+              appliedPromotionType = "first_n";
+              promotionDecisionLog("reservation_result", {
+                invoiceId: invoice.id,
+                tenantId,
+                promotionId: winning.id,
+                result: "ok",
+                allocationId: reserve.allocationId,
+              });
+            } else if (reserve.reason === "limit_reached") {
+              // Exhausted first_n slots fall back to the default fee rule.
+              appliedRateBps = COMMISSION_RATE_BPS_DEFAULT;
+              appliedRuleId = PROMO_RULE_ID_DEFAULT;
+              promotionDecisionLog("reservation_result", {
+                invoiceId: invoice.id,
+                tenantId,
+                promotionId: winning.id,
+                result: "limit_reached",
+              });
+            } else {
+              console.error("[checkout] promotion reservation error", {
+                invoiceId: invoice.id,
+                tenantId,
+                promotionId: winning.id,
+                reservationKey,
+                error: reserve.error,
+              });
+              promotionDecisionLog("reservation_result", {
+                invoiceId: invoice.id,
+                tenantId,
+                promotionId: winning.id,
+                result: "error",
+              });
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Checkout temporarily unavailable. Please retry.",
+              });
+            }
+          } else if (winning?.type === "time_window_rate") {
+            const validTimeWindow =
+              Number.isInteger(winning.rateBps) &&
+              winning.rateBps >= 0 &&
+              typeof winning.ruleId === "string" &&
+              winning.ruleId.trim().length > 0;
+
+            if (!validTimeWindow) {
+              console.error("[checkout] invalid time_window_rate promotion config", {
+                invoiceId: invoice.id,
+                tenantId,
+                promotionId: winning.id,
+                rateBps: winning.rateBps,
+                ruleId: winning.ruleId,
+              });
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Checkout temporarily unavailable. Please retry.",
+              });
+            }
+
             appliedRateBps = winning.rateBps;
             appliedRuleId = winning.ruleId;
             appliedPromotionId = winning.id;
-            appliedPromotionAllocationId = reserve.allocationId;
-            appliedPromotionType = "first_n";
-          } else if (reserve.reason === "limit_reached") {
-            // Exhausted first_n slots fall back to the default fee rule.
-            appliedRateBps = COMMISSION_RATE_BPS_DEFAULT;
-            appliedRuleId = PROMO_RULE_ID_DEFAULT;
-          } else {
-            console.error("[checkout] promotion reservation error", {
-              invoiceId: invoice.id,
-              tenantId,
-              promotionId: winning.id,
-              reservationKey,
-              error: reserve.error,
-            });
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Checkout temporarily unavailable. Please retry.",
-            });
+            appliedPromotionType = "time_window_rate";
           }
-        } else if (winning?.type === "time_window_rate") {
-          const validTimeWindow =
-            Number.isInteger(winning.rateBps) &&
-            winning.rateBps >= 0 &&
-            typeof winning.ruleId === "string" &&
-            winning.ruleId.trim().length > 0;
-
-          if (!validTimeWindow) {
-            console.error("[checkout] invalid time_window_rate promotion config", {
-              invoiceId: invoice.id,
-              tenantId,
-              promotionId: winning.id,
-              rateBps: winning.rateBps,
-              ruleId: winning.ruleId,
-            });
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Checkout temporarily unavailable. Please retry.",
-            });
-          }
-
-          appliedRateBps = winning.rateBps;
-          appliedRuleId = winning.ruleId;
-          appliedPromotionId = winning.id;
-          appliedPromotionType = "time_window_rate";
+        } else {
+          promotionDecisionLog("promotions_disabled", {
+            invoiceId: invoice.id,
+            tenantId,
+          });
         }
 
         const computed = computeCommissionSnapshot({
@@ -1164,6 +1202,16 @@ export const invoicesRouter = createTRPCRouter({
           promotionAllocationId: appliedPromotionAllocationId,
           promotionType: appliedPromotionType,
         };
+        promotionDecisionLog("snapshot_applied", {
+          invoiceId: invoice.id,
+          tenantId,
+          platformFeeRateBps: snapshot.platformFeeRateBps,
+          platformFeeCents: snapshot.platformFeeCents,
+          platformFeeRuleId: snapshot.platformFeeRuleId,
+          promotionId: snapshot.promotionId,
+          promotionAllocationId: snapshot.promotionAllocationId,
+          promotionType: snapshot.promotionType,
+        });
       }
 
       if (snapshot.platformFeeCents == null) {
