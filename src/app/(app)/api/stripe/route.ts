@@ -248,7 +248,23 @@ export async function POST(req: Request) {
             });
           }
 
-          if (paidNow) {
+          // Retry-safe consume is only relevant when we have an allocation id source.
+          const hasAllocationHint =
+            Boolean(
+              typeof fullInvoice.promotionAllocationId === "string"
+                ? fullInvoice.promotionAllocationId
+                : fullInvoice.promotionAllocationId?.id,
+            ) || Boolean(metadataAllocationId?.trim());
+
+          if (hasAllocationHint) {
+            // Keep consumedAt stable across retries for audit consistency.
+            const consumedAt =
+              fullInvoice.paidAt ??
+              paidAt ??
+              (event.created
+                ? new Date(event.created * 1000).toISOString()
+                : new Date().toISOString());
+
             const consumeResult = await consumePromotionAllocationIfReserved({
               payload,
               invoiceId: fullInvoice.id,
@@ -256,24 +272,28 @@ export async function POST(req: Request) {
               fallbackAllocationId: metadataAllocationId,
               stripeCheckoutSessionId: session.id,
               stripePaymentIntentId: piId,
-              consumedAt: paidAt ?? new Date().toISOString(),
+              consumedAt,
             });
-            promotionDecisionLog("allocation_consume_result", {
-              invoiceId: fullInvoice.id,
-              allocationId: consumeResult.allocationId,
-              updatedCount: consumeResult.updatedCount,
-              stripeCheckoutSessionId: session.id,
-              stripePaymentIntentId: piId,
-            });
-            if (
-              consumeResult.allocationId &&
-              consumeResult.updatedCount === 0
-            ) {
-              console.warn("[webhook] promotion allocation consume no-op", {
+            if (consumeResult.allocationId) {
+              promotionDecisionLog("allocation_consume_result", {
                 invoiceId: fullInvoice.id,
                 allocationId: consumeResult.allocationId,
+                updatedCount: consumeResult.updatedCount,
                 stripeCheckoutSessionId: session.id,
+                stripePaymentIntentId: piId,
+                paidNow,
               });
+              // No-op is expected on retries; warn only for first paid transition.
+              if (consumeResult.updatedCount === 0 && paidNow) {
+                console.warn(
+                  "[webhook] promotion allocation consume no-op on paid transition",
+                  {
+                    invoiceId: fullInvoice.id,
+                    allocationId: consumeResult.allocationId,
+                    stripeCheckoutSessionId: session.id,
+                  },
+                );
+              }
             }
           }
 

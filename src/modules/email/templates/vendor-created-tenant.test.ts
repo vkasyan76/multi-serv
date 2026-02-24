@@ -41,7 +41,7 @@ test("renderVendorCreatedTenantTemplate renders promo section when promotion pay
     ),
   );
   assert.ok(result.text.includes("Referral campaign eligibility"));
-  assert.ok(result.text.includes("3"));
+  assert.ok(result.text.includes("3%"));
 });
 
 test("renderVendorCreatedTenantTemplate ignores invalid promotion payload", async () => {

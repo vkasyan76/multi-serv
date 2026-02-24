@@ -1,3 +1,6 @@
+// Server-only barrel for promotions backend helpers.
+import "server-only";
+
 export {
   resolvePromotionForCheckout,
   type ResolvePromotionInput,

@@ -613,9 +613,9 @@ export const authRouter = createTRPCRouter({
                     referralCodeForTenant,
                   });
                 } catch (lookupErr) {
+                  // Do not log raw referral codes in server warnings.
                   console.warn("[email] referral promo lookup failed", {
                     tenantId: String(tenant.id),
-                    referralCode: referralCodeForTenant,
                     error:
                       lookupErr instanceof Error
                         ? lookupErr.message
