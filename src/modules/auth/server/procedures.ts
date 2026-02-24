@@ -29,18 +29,12 @@ import { sendDomainEmail } from "@/modules/email/events";
 import { getReferralPromoForTenantEmail } from "@/modules/promotions/server";
 import { REFERRAL_CAPTURE_ENABLED, REFERRAL_COOKIE } from "@/constants";
 import { getReferralCookieOptions } from "@/lib/referral-cookie-options";
+import { normalizeReferralCode } from "@/lib/referral-code";
 import Stripe from "stripe";
 
 // for checking if user has accepted current terms:
 import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted";
 const PASSWORD_AUTH_ENABLED = false; // hard-disable payload auth - we rely entirely on Clerk,
-const REFERRAL_CODE_RE = /^[A-Z0-9_-]{3,64}$/;
-
-const normalizeReferralCode = (raw: string | null | undefined): string | null => {
-  if (!raw) return null;
-  const normalized = raw.trim().replace(/\s+/g, "-").toUpperCase();
-  return REFERRAL_CODE_RE.test(normalized) ? normalized : null;
-};
 
 const logReferralSync = (
   action: "set" | "skip",

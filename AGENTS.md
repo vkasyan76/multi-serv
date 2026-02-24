@@ -96,6 +96,8 @@ Required env groups are defined in `README.md`:
   - Cookie is transport-only and should be cleared after successful persistence.
 - Source of truth is persisted DB fields (user/tenant referralCode), not browser cookie.
 - This tracks referral-code attribution, not person-to-person "who referred whom" identity.
+- Canonical referral normalization is shared in `src/lib/referral-code.ts`.
+  - Reuse `normalizeReferralCode` instead of redefining regex/normalization in feature files.
 
 ## Finance and Commissions Rules (Important)
 
@@ -143,6 +145,8 @@ Run before finalizing changes:
 - Stripe webhook idempotency and invoice status transitions
 - Tenant scoping and membership authorization checks
 - Date/time logic in Berlin timezone for finance data
+- Promotion allocation consume in Stripe webhook (`src/app/(app)/api/stripe/route.ts`)
+  - Consume is retry-safe/idempotent and should not be gated only by first paid transition.
 
 ## Payload Admin Auth Stability Note (Deferred Follow-up)
 
