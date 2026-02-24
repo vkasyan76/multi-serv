@@ -26,6 +26,7 @@ import {
 import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
 import { isEU, normalizeVat } from "@/modules/profile/vat-validation-utils";
 import { sendDomainEmail } from "@/modules/email/events";
+import { getReferralPromoForTenantEmail } from "@/modules/promotions/server";
 import { REFERRAL_CAPTURE_ENABLED, REFERRAL_COOKIE } from "@/constants";
 import { getReferralCookieOptions } from "@/lib/referral-cookie-options";
 import Stripe from "stripe";
@@ -437,7 +438,7 @@ export const authRouter = createTRPCRouter({
       }
 
       let accountId: string | undefined; // <-- just the id, visible to catch
-      let tenant: { id: string } | null = null;
+      let tenant: { id: string; slug?: string | null } | null = null;
       let referralCodeForTenant: string | null = null;
 
       // Phase 2C.5: user referral is primary; cookie fallback only when user is empty.
@@ -596,7 +597,43 @@ export const authRouter = createTRPCRouter({
           try {
             const toEmail = (currentUser.email ?? "").trim();
             if (toEmail) {
-              const tenantSlug = (input.name ?? "").trim() || undefined;
+              const tenantSlug =
+                typeof tenant.slug === "string" && tenant.slug.trim().length > 0
+                  ? tenant.slug.trim()
+                  : undefined;
+
+              // Fail-safe: promo lookup enriches the email, but never blocks sending.
+              let referralPromotion: Awaited<
+                ReturnType<typeof getReferralPromoForTenantEmail>
+              > = null;
+              if (referralCodeForTenant) {
+                try {
+                  referralPromotion = await getReferralPromoForTenantEmail({
+                    payload: ctx.db,
+                    referralCodeForTenant,
+                  });
+                } catch (lookupErr) {
+                  console.warn("[email] referral promo lookup failed", {
+                    tenantId: String(tenant.id),
+                    referralCode: referralCodeForTenant,
+                    error:
+                      lookupErr instanceof Error
+                        ? lookupErr.message
+                        : "unknown_error",
+                  });
+                }
+              }
+
+              const emailData: Record<string, unknown> = {
+                recipientName: displayNameFromUser(currentUser),
+                tenantSlug,
+                ctaUrl: toAbsolute("/profile?tab=vendor"),
+                // Keep formatting aligned with the existing email locale contract.
+                locale: currentUser.language ?? "en",
+              };
+              if (referralPromotion) {
+                emailData.promotion = referralPromotion;
+              }
 
               await sendDomainEmail({
                 db: ctx.db,
@@ -606,11 +643,7 @@ export const authRouter = createTRPCRouter({
                 recipientUserId: String(currentUser.id),
                 toEmail,
                 deliverability: toEmailDeliverability(currentUser),
-                data: {
-                  recipientName: displayNameFromUser(currentUser),
-                  tenantSlug,
-                  ctaUrl: toAbsolute("/profile?tab=vendor"),
-                },
+                data: emailData,
               });
 
               await ctx.db.update({
