@@ -26,6 +26,7 @@ type WalletTransactionsTableViewProps = {
   onRowsChange?: (rows: WalletTransactionRow[]) => void;
   onStateChange?: (state: { isLoading: boolean; isError: boolean }) => void;
   showTenantColumns?: boolean;
+  showPromotionColumns?: boolean;
 };
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
@@ -78,6 +79,7 @@ export function WalletTransactionsTableView({
   onRowsChange,
   onStateChange,
   showTenantColumns = false,
+  showPromotionColumns = false,
 }: WalletTransactionsTableViewProps) {
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
     key: "date",
@@ -226,6 +228,16 @@ export function WalletTransactionsTableView({
                   <SortIcon active={sort.key === "amount"} dir={sort.dir} />
                 </Button>
               </th>
+              {showPromotionColumns && (
+                <th className="py-2 pr-3 font-medium sticky top-0 z-20 bg-white">
+                  Fee %
+                </th>
+              )}
+              {showPromotionColumns && (
+                <th className="py-2 pr-3 font-medium sticky top-0 z-20 bg-white">
+                  Promo
+                </th>
+              )}
               <th className="py-2 pr-3 font-medium sticky top-0 z-20 bg-white">
                 <Button
                   variant="ghost"
@@ -257,6 +269,14 @@ export function WalletTransactionsTableView({
               const invoiceDateLabel = row.invoiceDate
                 ? formatBerlinDate(row.invoiceDate, appLang)
                 : formatBerlinDate(row.occurredAt, appLang);
+              const feePercentLabel =
+                typeof row.appliedFeeRateBps === "number"
+                  ? `${(row.appliedFeeRateBps / 100).toFixed(row.appliedFeeRateBps % 100 === 0 ? 0 : 2)}%`
+                  : "--";
+              const promoLabel = row.promotionId
+                ? (row.promotionName?.trim() ||
+                  `promo:${row.promotionId.slice(-6)}`)
+                : "None";
               const statusLabel =
                 row.type === "payment_received" && row.occurredAt
                   ? `Paid ${formatBerlinDate(row.occurredAt, appLang)}`
@@ -312,6 +332,37 @@ export function WalletTransactionsTableView({
                       {amount}
                     </span>
                   </td>
+                  {showPromotionColumns && (
+                    <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
+                      {feePercentLabel}
+                    </td>
+                  )}
+                  {showPromotionColumns && (
+                    <td
+                      className={
+                        row.promotionId
+                          ? "py-2 pr-3 whitespace-nowrap"
+                          : "py-2 pr-3 text-muted-foreground whitespace-nowrap"
+                      }
+                      title={
+                        row.promotionId
+                          ? [
+                              `id: ${row.promotionId}`,
+                              row.promotionType
+                                ? `type: ${row.promotionType}`
+                                : "",
+                              row.appliedRuleId
+                                ? `rule: ${row.appliedRuleId}`
+                                : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" | ")
+                          : undefined
+                      }
+                    >
+                      {promoLabel}
+                    </td>
+                  )}
                   <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
                     {dateLabel}
                   </td>

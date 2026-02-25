@@ -14,12 +14,15 @@ import {
 } from "@/constants";
 
 type PayloadTenant = { id: string; slug?: string | null; name?: string | null };
+type PromotionDoc = { id: string; name?: string | null };
 type CommissionEventDoc = {
   id: string;
   tenant?: string | { id?: string } | null;
   invoice?: string | { id?: string } | null;
   currency?: string | null;
   feeCents?: number | null;
+  rateBps?: number | null;
+  ruleId?: string | null;
   paymentIntentId?: string | null;
   collectedAt?: string | null;
 };
@@ -31,6 +34,11 @@ type InvoiceDoc = {
   paidAt?: string | null;
   amountTotalCents?: number | null;
   stripePaymentIntentId?: string | null;
+  platformFeeRateBps?: number | null;
+  platformFeeRuleId?: string | null;
+  promotionId?: string | { id?: string } | null;
+  promotionAllocationId?: string | { id?: string } | null;
+  promotionType?: "first_n" | "time_window_rate" | null;
   lineItems?: Array<{ start?: string | null; end?: string | null }> | null;
   issuedAt?: string | null;
   createdAt?: string | null;
@@ -51,6 +59,11 @@ type WalletTx = {
   tenantId?: string;
   tenantSlug?: string;
   tenantName?: string;
+  appliedFeeRateBps?: number;
+  appliedRuleId?: string;
+  promotionId?: string;
+  promotionAllocationId?: string;
+  promotionType?: "first_n" | "time_window_rate";
 };
 type UserTenantEntry = { tenant?: string | { id?: string } | null };
 type WalletStatus = "all" | "paid" | "payment_due" | "platform_fee";
@@ -108,6 +121,19 @@ function getServiceRange(
     : minStart;
 
   return { serviceStart: minStart, serviceEnd: maxEnd };
+}
+
+function getInvoicePromotionSnapshot(inv: InvoiceDoc) {
+  return {
+    appliedFeeRateBps:
+      typeof inv.platformFeeRateBps === "number"
+        ? inv.platformFeeRateBps
+        : undefined,
+    appliedRuleId: inv.platformFeeRuleId ?? undefined,
+    promotionId: relId(inv.promotionId) ?? undefined,
+    promotionAllocationId: relId(inv.promotionAllocationId) ?? undefined,
+    promotionType: inv.promotionType ?? undefined,
+  };
 }
 
 async function resolveTenantForUserBySlug(
@@ -378,6 +404,32 @@ async function getTenantMetaMap(ctx: TRPCContext, tenantIds: string[]) {
   return map;
 }
 
+async function getPromotionMetaMap(ctx: TRPCContext, promotionIds: string[]) {
+  const map = new Map<string, { name: string }>();
+  if (!promotionIds.length) return map;
+
+  for (const chunk of chunkArray(Array.from(new Set(promotionIds)), 200)) {
+    const promotionsRes = await ctx.db.find({
+      collection: "promotions",
+      where: { id: { in: chunk } },
+      limit: chunk.length,
+      depth: 0,
+      overrideAccess: true,
+    });
+    const docs = (promotionsRes.docs ?? []) as PromotionDoc[];
+    for (const promotion of docs) {
+      if (!promotion.id) continue;
+      map.set(promotion.id, {
+        name:
+          (promotion.name ?? "").trim() ||
+          `promo:${promotion.id.slice(-6)}`,
+      });
+    }
+  }
+
+  return map;
+}
+
 // Shared summary builder for tenant + admin endpoints to keep wallet semantics aligned.
 async function buildWalletSummary(
   ctx: TRPCContext,
@@ -551,6 +603,11 @@ async function buildWalletTransactions(
       serviceEnd?: string;
       invoiceDate?: string;
       tenantId?: string;
+      appliedFeeRateBps?: number;
+      appliedRuleId?: string;
+      promotionId?: string;
+      promotionAllocationId?: string;
+      promotionType?: "first_n" | "time_window_rate";
     }
   >();
 
@@ -560,7 +617,13 @@ async function buildWalletTransactions(
       const range = getServiceRange(inv.lineItems);
       const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
       const tenantId = relId(inv.tenant) ?? args.tenantId;
-      invoiceRanges.set(inv.id, { ...range, invoiceDate, tenantId: tenantId ?? undefined });
+      const snapshot = getInvoicePromotionSnapshot(inv);
+      invoiceRanges.set(inv.id, {
+        ...range,
+        invoiceDate,
+        tenantId: tenantId ?? undefined,
+        ...snapshot,
+      });
       return {
         id: `inv_${inv.id}`,
         type: "payment_received",
@@ -573,6 +636,7 @@ async function buildWalletTransactions(
         ...range,
         invoiceDate,
         tenantId: tenantId ?? undefined,
+        ...snapshot,
       } satisfies WalletTx;
     })
     .filter(Boolean) as WalletTx[];
@@ -584,7 +648,13 @@ async function buildWalletTransactions(
       const range = getServiceRange(inv.lineItems);
       const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
       const tenantId = relId(inv.tenant) ?? args.tenantId;
-      invoiceRanges.set(inv.id, { ...range, invoiceDate, tenantId: tenantId ?? undefined });
+      const snapshot = getInvoicePromotionSnapshot(inv);
+      invoiceRanges.set(inv.id, {
+        ...range,
+        invoiceDate,
+        tenantId: tenantId ?? undefined,
+        ...snapshot,
+      });
       return {
         id: `inv_${inv.id}`,
         type: "payment_outstanding",
@@ -596,6 +666,7 @@ async function buildWalletTransactions(
         ...range,
         invoiceDate,
         tenantId: tenantId ?? undefined,
+        ...snapshot,
       } satisfies WalletTx;
     })
     .filter(Boolean) as WalletTx[];
@@ -605,7 +676,12 @@ async function buildWalletTransactions(
     const range = getServiceRange(inv.lineItems);
     const invoiceDate = inv.issuedAt ?? inv.createdAt ?? undefined;
     const tenantId = relId(inv.tenant) ?? args.tenantId;
-    invoiceRanges.set(inv.id, { ...range, invoiceDate, tenantId: tenantId ?? undefined });
+    invoiceRanges.set(inv.id, {
+      ...range,
+      invoiceDate,
+      tenantId: tenantId ?? undefined,
+      ...getInvoicePromotionSnapshot(inv),
+    });
   }
 
   let feeDocs: CommissionEventDoc[] = [];
@@ -659,6 +735,7 @@ async function buildWalletTransactions(
           ...range,
           invoiceDate,
           tenantId: tenantId ?? undefined,
+          ...getInvoicePromotionSnapshot(inv),
         });
       }
     }
@@ -681,6 +758,13 @@ async function buildWalletTransactions(
         ...(range ?? {}),
         invoiceDate: range?.invoiceDate,
         tenantId: relId(ev.tenant) ?? range?.tenantId ?? args.tenantId,
+        // Keep fee rows tied to snapshot defaults, with event fields as trusted overrides.
+        appliedFeeRateBps:
+          typeof ev.rateBps === "number" ? ev.rateBps : range?.appliedFeeRateBps,
+        appliedRuleId: ev.ruleId ?? range?.appliedRuleId,
+        promotionId: range?.promotionId,
+        promotionAllocationId: range?.promotionAllocationId,
+        promotionType: range?.promotionType,
       } satisfies WalletTx;
     })
     .filter(Boolean) as WalletTx[];
@@ -964,14 +1048,28 @@ export const commissionsRouter = createTRPCRouter({
         ),
       );
       const metaMap = await getTenantMetaMap(ctx, tenantIds);
+      const promotionIds = Array.from(
+        new Set(
+          rows
+            .map((row) => row.promotionId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
+      const promotionMetaMap = await getPromotionMetaMap(ctx, promotionIds);
 
       return {
         rows: rows.map((row) => {
           const meta = row.tenantId ? metaMap.get(row.tenantId) : undefined;
+          const promoMeta = row.promotionId
+            ? promotionMetaMap.get(row.promotionId)
+            : undefined;
           return {
             ...row,
             tenantName: row.tenantName ?? meta?.name,
             tenantSlug: row.tenantSlug ?? meta?.slug,
+            promotionName: row.promotionId
+              ? promoMeta?.name ?? `promo:${row.promotionId.slice(-6)}`
+              : undefined,
           };
         }),
         // Cursor shape is reserved for Phase 5 pagination without API redesign.

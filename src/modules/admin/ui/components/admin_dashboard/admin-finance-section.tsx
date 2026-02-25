@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { WalletFiltersBar } from "@/modules/commissions/ui/wallet-filters-bar";
-import type { WalletFilters } from "@/modules/commissions/ui/wallet-types";
+import {
+  adminWalletRowsToCsv,
+  buildWalletCsvFilename,
+  downloadCsv,
+} from "@/modules/commissions/ui/wallet-filter-utils";
+import type {
+  WalletFilters,
+  WalletTransactionRow,
+} from "@/modules/commissions/ui/wallet-types";
 import {
   type AppLang,
   getInitialLanguage,
@@ -31,8 +39,22 @@ export function AdminFinanceSection() {
     period: { mode: "all" },
     status: "all",
   });
+  const [walletRows, setWalletRows] = useState<WalletTransactionRow[]>([]);
+  const [walletRowsLoading, setWalletRowsLoading] = useState(false);
+  const [walletRowsError, setWalletRowsError] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
   const tenantId = selectedTenantId === "all" ? undefined : selectedTenantId;
+
+  const handleWalletDownload = () => {
+    if (walletRowsLoading || walletRowsError || walletRows.length === 0) return;
+    const csv = adminWalletRowsToCsv(walletRows);
+    const filename = buildWalletCsvFilename({
+      period: walletFilters.period,
+      status: walletFilters.status,
+      appLang,
+    });
+    downloadCsv(filename, csv);
+  };
 
   useEffect(() => {
     // Convenience: if there is only one tenant, pre-select it.
@@ -69,6 +91,11 @@ export function AdminFinanceSection() {
           loading: tenantOptionsQ.isLoading,
           onChange: setSelectedTenantId,
         }}
+        download={{
+          onClick: handleWalletDownload,
+          enabled:
+            !walletRowsLoading && !walletRowsError && walletRows.length > 0,
+        }}
       />
 
       <AdminWalletSummaryCard
@@ -81,6 +108,12 @@ export function AdminFinanceSection() {
         tenantId={tenantId}
         appLang={appLang}
         filters={walletFilters}
+        onRowsChange={setWalletRows}
+        onStateChange={({ isLoading, isError }) => {
+          // Mirror tenant dashboard behavior for CSV button enablement.
+          setWalletRowsLoading(isLoading);
+          setWalletRowsError(isError);
+        }}
       />
     </div>
   );

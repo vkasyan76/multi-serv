@@ -82,6 +82,7 @@ export function AdminWalletTransactionsTable({
       onRowsChange={onRowsChange}
       onStateChange={onStateChange}
       showTenantColumns
+      showPromotionColumns
     />
   );
 }

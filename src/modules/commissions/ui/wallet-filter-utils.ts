@@ -174,6 +174,60 @@ export function walletRowsToCsv(rows: WalletTransactionRow[]) {
   return [headers.join(","), ...lines].join("\n");
 }
 
+export function adminWalletRowsToCsv(rows: WalletTransactionRow[]) {
+  const headers = [
+    "invoice_date",
+    "description",
+    "type",
+    "amount_cents",
+    "order_start",
+    "order_end",
+    "occurred_at",
+    "currency",
+    "invoice_id",
+    "payment_intent_id",
+    "tenant_name",
+    "tenant_slug",
+    "tenant_id",
+    "applied_fee_rate_bps",
+    "applied_rule_id",
+    "promotion_id",
+    "promotion_name",
+    "promotion_type",
+    "promotion_allocation_id",
+  ];
+
+  const lines = rows.map((row) =>
+    [
+      row.invoiceDate ?? "",
+      row.description ?? "",
+      row.type ?? "",
+      String(row.amountCents ?? 0),
+      row.serviceStart ?? "",
+      row.serviceEnd ?? "",
+      row.occurredAt ?? "",
+      row.currency ?? "",
+      row.invoiceId ?? "",
+      row.paymentIntentId ?? "",
+      row.tenantName ?? "",
+      row.tenantSlug ?? "",
+      row.tenantId ?? "",
+      typeof row.appliedFeeRateBps === "number"
+        ? String(row.appliedFeeRateBps)
+        : "",
+      row.appliedRuleId ?? "",
+      row.promotionId ?? "",
+      row.promotionName ?? "",
+      row.promotionType ?? "",
+      row.promotionAllocationId ?? "",
+    ]
+      .map((value) => escapeCsv(String(value)))
+      .join(","),
+  );
+
+  return [headers.join(","), ...lines].join("\n");
+}
+
 export function downloadCsv(filename: string, csv: string) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
