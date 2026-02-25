@@ -1,3 +1,4 @@
+import "server-only";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { Where } from "payload";
@@ -216,7 +217,8 @@ function chunkArray<T>(items: T[], size: number) {
   return chunks;
 }
 
-async function findInvoiceIdsByIssuedAtRange(
+// Commission events exist for paid invoices; this helper is intentionally paid-only.
+async function findPaidInvoiceIdsByIssuedAtRange(
   ctx: TRPCContext,
   tenantId?: string,
   startIso?: string,
@@ -428,7 +430,7 @@ async function buildWalletSummary(
       ? await sumFeesByInvoiceIds(
           ctx,
           args.tenantId,
-          await findInvoiceIdsByIssuedAtRange(
+          await findPaidInvoiceIdsByIssuedAtRange(
             ctx,
             args.tenantId,
             args.startIso,
@@ -534,7 +536,7 @@ async function buildWalletTransactions(
   // Use a full, paged ID set for fee-only/date-filtered queries to avoid truncation.
   const feeScopedInvoiceIds =
     includeFees && hasDateFilter
-      ? await findInvoiceIdsByIssuedAtRange(
+      ? await findPaidInvoiceIdsByIssuedAtRange(
           ctx,
           args.tenantId,
           args.startIso,

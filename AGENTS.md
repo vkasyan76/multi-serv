@@ -59,6 +59,16 @@ Required env groups are defined in `README.md`:
 - Payload collections are admin-restricted by default; app logic often uses server-side `overrideAccess: true` with explicit guards.
 - Tenant isolation is enforced in server procedures through tenant membership checks.
 
+## Admin Dashboard Status (Brief)
+
+- Phase 1 is implemented:
+  - In-app admin entry routes to `/dashboard/admin` (Payload remains at `/admin`).
+  - Server-side super-admin guard is enforced on the admin dashboard route.
+- Phase 2 is partially implemented:
+  - Admin transactions view reuses wallet filters/summary/table presentation via wrappers.
+  - Admin finance data uses super-admin procedures with tenant scope (`tenantId?: string`) and all-tenant mode.
+  - CSV export unification with shared builders is deferred (tracked in `TODO.md`).
+
 ## Language Structure (i18n)
 
 - Single source of truth for supported app languages is `src/lib/i18n/app-lang.ts`.
