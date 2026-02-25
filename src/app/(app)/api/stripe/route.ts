@@ -1,3 +1,5 @@
+import "server-only";
+
 // src/app/(app)/api/stripe/route.ts
 import type { Stripe } from "stripe";
 import { NextResponse } from "next/server";
@@ -6,6 +8,8 @@ import config from "@payload-config";
 import { stripe } from "@/lib/stripe";
 import { parseSlotIdsCsv } from "@/modules/checkout/server/types";
 import { sendDomainEmail } from "@/modules/email/events";
+import { consumePromotionAllocationIfReserved } from "@/modules/promotions/server";
+import { promotionDecisionLog } from "@/modules/promotions/server/flags";
 import type { Order, User } from "@/payload-types";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body access
@@ -25,6 +29,7 @@ const devLog = (...args: unknown[]) => {
  */
 
 type WebhookOrder = Pick<Order, "id" | "status">;
+
 type WebhookInvoice = {
   id: string;
   status?: string | null;
@@ -32,6 +37,7 @@ type WebhookInvoice = {
   order?: string | { id: string } | null;
   tenant?: string | { id: string } | null;
   customer?: string | { id: string } | null;
+  promotionAllocationId?: string | { id: string } | null;
   currency?: string | null;
   amountTotalCents?: number | null;
   platformFeeCents?: number | null;
@@ -112,6 +118,10 @@ export async function POST(req: Request) {
           | null;
         if (invoiceId) {
           const piId = paymentIntentIdOf(session);
+          const metadataAllocationId =
+            typeof session.metadata?.promotionAllocationId === "string"
+              ? session.metadata.promotionAllocationId
+              : null;
           let invoice: WebhookInvoice | undefined;
 
           // Guard: only treat paid sessions as success.
@@ -220,6 +230,10 @@ export async function POST(req: Request) {
             })) as WebhookInvoice;
           }
 
+          const fullInvoice = updatedInvoice
+            ? { ...invoice, ...updatedInvoice }
+            : invoice;
+
           const orderId =
             typeof invoice.order === "string"
               ? invoice.order
@@ -237,10 +251,8 @@ export async function POST(req: Request) {
           }
 
           // Phase E: send invoice.paid emails only on the paid transition.
-          // Phase E: send invoice.paid emails only when we transition to paid.
           if (paidNow) {
-            // Merge to preserve snapshot fields even if update returns a partial doc.
-            const full = updatedInvoice ? { ...invoice, ...updatedInvoice } : invoice;
+            const full = fullInvoice;
             const ordersUrl = toAbsolute("/orders");
             const customerEmail = full.buyerEmail ?? undefined;
             const tenantEmail = full.sellerEmail ?? undefined;
@@ -318,6 +330,79 @@ export async function POST(req: Request) {
               if (process.env.NODE_ENV !== "production") {
                 console.error("[email] invoice.paid webhook failed", err);
               }
+            }
+          }
+
+          // Retry-safe consume is only relevant when we have an allocation id source.
+          const hasAllocationHint =
+            Boolean(
+              typeof fullInvoice.promotionAllocationId === "string"
+                ? fullInvoice.promotionAllocationId
+                : fullInvoice.promotionAllocationId?.id,
+            ) || Boolean(metadataAllocationId?.trim());
+
+          if (hasAllocationHint) {
+            // Keep consumedAt stable across retries for audit consistency.
+            const consumedAt =
+              fullInvoice.paidAt ??
+              paidAt ??
+              new Date(event.created * 1000).toISOString();
+
+            // Consume is idempotent; keep email flow non-blocking on transient consume errors.
+            try {
+              const consumeResult = await consumePromotionAllocationIfReserved({
+                payload,
+                invoiceId: fullInvoice.id,
+                invoicePromotionAllocationId: fullInvoice.promotionAllocationId,
+                fallbackAllocationId: metadataAllocationId,
+                stripeCheckoutSessionId: session.id,
+                stripePaymentIntentId: piId,
+                consumedAt,
+              });
+              if (consumeResult.allocationId) {
+                promotionDecisionLog("allocation_consume_result", {
+                  invoiceId: fullInvoice.id,
+                  allocationId: consumeResult.allocationId,
+                  updatedCount: consumeResult.updatedCount,
+                  stripeCheckoutSessionId: session.id,
+                  stripePaymentIntentId: piId,
+                  paidNow,
+                });
+                // No-op is expected on retries; warn only for first paid transition.
+                if (consumeResult.updatedCount === 0 && paidNow) {
+                  console.warn(
+                    "[webhook] promotion allocation consume no-op on paid transition",
+                    {
+                      invoiceId: fullInvoice.id,
+                      allocationId: consumeResult.allocationId,
+                      stripeCheckoutSessionId: session.id,
+                    },
+                  );
+                }
+              }
+            } catch (err) {
+              // Intentionally non-blocking: keep webhook 200 so paid-transition emails are not lost.
+              // Recover allocation state via retry-safe consume on later deliveries or ops repair.
+              console.error(
+                "[webhook] promotion allocation consume failed; continuing",
+                {
+                  invoiceId: fullInvoice.id,
+                  stripeCheckoutSessionId: session.id,
+                  stripePaymentIntentId: piId,
+                  invoicePromotionAllocationId: fullInvoice.promotionAllocationId,
+                  fallbackAllocationId: metadataAllocationId,
+                  consumedAt,
+                  hasPayload: Boolean(payload),
+                  error:
+                    err instanceof Error
+                      ? {
+                          name: err.name,
+                          message: err.message,
+                          stack: err.stack,
+                        }
+                      : err,
+                },
+              );
             }
           }
 

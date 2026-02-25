@@ -14,33 +14,33 @@ export default clerkMiddleware(async (auth, req) => {
   // ✅ Always protect private routes (regardless of subdomain routing)
   if (isProtectedRoute(req)) await auth.protect();
 
-  // Don't touch anything unless subdomain routing is on and we know the root domain
-  if (!ENABLED || !ROOT) return NextResponse.next();
-
-  // ⛔️ Never rewrite API (incl. tRPC) calls
+  // Build baseline response first.
+  let res = NextResponse.next();
   const { pathname } = req.nextUrl;
-  if (pathname.startsWith("/api")) return NextResponse.next();
 
-  // ✅ Avoid double-rewrite for internal routes that already include /tenants/*
-  // early escape before the rewrite to avoid rewriting already-internal paths
-  if (pathname.startsWith("/tenants/")) return NextResponse.next();
+  // Keep existing rewrite behavior unchanged.
+  if (!pathname.startsWith("/api") && ENABLED && ROOT) {
+    // Smart referral links must stay on the app router, not tenant-rewritten paths.
+    const isRefRoute = pathname === "/ref" || pathname.startsWith("/ref/");
+    // ✅ Avoid double-rewrite for internal routes that already include /tenants/*
+    if (!pathname.startsWith("/tenants/") && !isRefRoute) {
+      const host = req.headers.get("host") ?? ""; // e.g. react_jedi.infinisimo.com
+      const suffix = `.${ROOT}`; // ".infinisimo.com"
 
-  const host = req.headers.get("host") ?? ""; // e.g. react_jedi.infinisimo.com
-  const suffix = `.${ROOT}`; // ".infinisimo.com"
+      // Only handle tenant subdomains (skip apex domain and static/other hosts)
+      if (host.endsWith(suffix)) {
+        const slug = host.slice(0, -suffix.length); // "react_jedi"
+        if (slug && slug !== "www") {
+          const url = req.nextUrl.clone();
+          const rest = url.pathname === "/" ? "" : url.pathname;
+          url.pathname = `/tenants/${slug}${rest}`;
+          res = NextResponse.rewrite(url);
+        }
+      }
+    }
+  }
 
-  // Only handle tenant subdomains (skip apex domain and static/other hosts)
-  if (!host.endsWith(suffix)) return NextResponse.next();
-
-  const slug = host.slice(0, -suffix.length); // "react_jedi"
-  if (!slug || slug === "www") return NextResponse.next();
-
-  // Rewrite to your existing tenant route, preserving the path after "/"
-  // Example: /services -> /tenants/react_jedi/services
-  const url = req.nextUrl.clone();
-  const rest = url.pathname === "/" ? "" : url.pathname;
-  url.pathname = `/tenants/${slug}${rest}`;
-
-  return NextResponse.rewrite(url);
+  return res;
 });
 
 export const config = {

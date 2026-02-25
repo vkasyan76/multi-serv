@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { REFERRAL_COOKIE_TTL_DAYS } from "@/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,12 @@ export default function PrivacyPolicyPage() {
               Cookie Policy
             </Link>
             . You can change cookie preferences at any time.
+          </p>
+          <p>
+            If you access Infinisimo via a referral link, we may store a
+            first-party referral attribution cookie to preserve referral
+            eligibility across redirects and sessions. Current retention is up
+            to {REFERRAL_COOKIE_TTL_DAYS} days, subject to policy updates.
           </p>
         </section>
 

@@ -1,3 +1,5 @@
+import "server-only";
+
 import { headers as getHeaders, cookies as getCookies } from "next/headers";
 import { baseProcedure, createTRPCRouter, clerkProcedure } from "@/trpc/init";
 // import { z } from "zod";
@@ -24,11 +26,24 @@ import {
 import { checkVatWithTimeout } from "@/modules/profile/server/services/vies";
 import { isEU, normalizeVat } from "@/modules/profile/vat-validation-utils";
 import { sendDomainEmail } from "@/modules/email/events";
+import { getReferralPromoForTenantEmail } from "@/modules/promotions/server";
+import { REFERRAL_CAPTURE_ENABLED, REFERRAL_COOKIE } from "@/constants";
+import { getReferralCookieOptions } from "@/lib/referral-cookie-options";
+import { normalizeReferralCode } from "@/lib/referral-code";
 import Stripe from "stripe";
 
 // for checking if user has accepted current terms:
 import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted";
 const PASSWORD_AUTH_ENABLED = false; // hard-disable payload auth - we rely entirely on Clerk,
+
+const logReferralSync = (
+  action: "set" | "skip",
+  details: Record<string, unknown>,
+) => {
+  // Dev-only traceability for referral attribution flow validation.
+  if (process.env.NODE_ENV === "production") return;
+  console.log("[referral][syncClerkUser]", action, details);
+};
 
 // Consistent ID masking helper for PII protection
 const mask = (v: unknown) => `${String(v ?? "").slice(0, 8)}…`;
@@ -219,17 +234,87 @@ export const authRouter = createTRPCRouter({
     if (existing.docs.length > 0) {
       const existingUser = existing.docs[0];
       if (!existingUser) return null;
+      let userForReturn = existingUser;
+
+      const hasReferralCode =
+        typeof existingUser.referralCode === "string" &&
+        existingUser.referralCode.trim().length > 0;
+
+      if (!REFERRAL_CAPTURE_ENABLED) {
+        logReferralSync("skip", {
+          reason: "capture_disabled",
+          userId: mask(existingUser.id),
+        });
+      } else if (hasReferralCode) {
+        logReferralSync("skip", {
+          reason: "already_set",
+          userId: mask(existingUser.id),
+        });
+      } else {
+        const cookies = await getCookies();
+        const rawReferralCode = cookies.get(REFERRAL_COOKIE)?.value ?? null;
+        const normalizedReferralCode = normalizeReferralCode(rawReferralCode);
+
+        if (!rawReferralCode) {
+          logReferralSync("skip", {
+            reason: "cookie_missing",
+            userId: mask(existingUser.id),
+          });
+        } else if (!normalizedReferralCode) {
+          logReferralSync("skip", {
+            reason: "cookie_invalid",
+            userId: mask(existingUser.id),
+          });
+        } else {
+          try {
+            await ctx.db.update({
+              collection: "users",
+              id: String(existingUser.id),
+              data: { referralCode: normalizedReferralCode },
+              overrideAccess: true,
+            });
+
+            userForReturn = {
+              ...existingUser,
+              referralCode: normalizedReferralCode,
+            };
+
+            // Referral cookie is transport-only; clear it once attribution is persisted.
+            const currentCookieCode = normalizeReferralCode(
+              cookies.get(REFERRAL_COOKIE)?.value ?? null,
+            );
+            // Guard against races: only clear if cookie still matches what we saved.
+            if (currentCookieCode === normalizedReferralCode) {
+              cookies.set(
+                REFERRAL_COOKIE,
+                "",
+                getReferralCookieOptions(true),
+              );
+            }
+
+            logReferralSync("set", {
+              reason: "from_cookie",
+              userId: mask(existingUser.id),
+            });
+          } catch (err) {
+            console.warn("Failed to set referralCode for user", {
+              userId: mask(existingUser.id),
+              err,
+            });
+          }
+        }
+      }
 
       // Don't auto-create tenant - let user decide when to become vendor
       // Optional: Keep Clerk in sync if needed
       if (
-        typeof existingUser.username === "string" &&
-        existingUser.username.length > 0
+        typeof userForReturn.username === "string" &&
+        userForReturn.username.length > 0
       ) {
         await updateClerkUserMetadata(
           userId!,
-          existingUser.id as string,
-          existingUser.username, // now narrowed to `string`
+          userForReturn.id as string,
+          userForReturn.username, // now narrowed to `string`
         );
       } else {
         if (process.env.NODE_ENV !== "production") {
@@ -238,7 +323,7 @@ export const authRouter = createTRPCRouter({
           );
         }
       }
-      return existingUser;
+      return userForReturn;
     }
 
     // New user flow - webhook should have created this user
@@ -347,7 +432,45 @@ export const authRouter = createTRPCRouter({
       }
 
       let accountId: string | undefined; // <-- just the id, visible to catch
-      let tenant: { id: string } | null = null;
+      let tenant: { id: string; slug?: string | null } | null = null;
+      let referralCodeForTenant: string | null = null;
+
+      // Phase 2C.5: user referral is primary; cookie fallback only when user is empty.
+      // Keep one flag for fast rollback of capture + persist + tenant copy.
+      if (REFERRAL_CAPTURE_ENABLED) {
+        referralCodeForTenant = normalizeReferralCode(
+          currentUser.referralCode ?? null,
+        );
+
+        if (!referralCodeForTenant) {
+          const cookies = await getCookies();
+          const referralFromCookie = normalizeReferralCode(
+            cookies.get(REFERRAL_COOKIE)?.value ?? null,
+          );
+
+          if (referralFromCookie) {
+            referralCodeForTenant = referralFromCookie;
+
+            // User referral is empty in this branch; persist cookie attribution once.
+            try {
+              await ctx.db.update({
+                collection: "users",
+                id: String(currentUser.id),
+                data: { referralCode: referralFromCookie },
+                overrideAccess: true,
+              });
+              // Transport cookie can be removed after successful persistence.
+              cookies.set(REFERRAL_COOKIE, "", getReferralCookieOptions(true));
+            } catch (err) {
+              // Attribution write must not block vendor profile creation.
+              console.warn("Failed to set referralCode for user in createVendorProfile", {
+                userId: mask(currentUser.id),
+                err,
+              });
+            }
+          }
+        }
+      }
 
       try {
         // explicitly creating an Express connected account.
@@ -442,6 +565,8 @@ export const authRouter = createTRPCRouter({
               ? input.vatId?.trim() || null // persist null if somehow empty
               : null, // toggle off => clear explicitly
             vatIdValid, // ⬅️ authoritative server flag
+            // Persist referral attribution snapshot on tenant creation.
+            referralCode: referralCodeForTenant ?? undefined,
 
             user: currentUser!.id,
           },
@@ -466,7 +591,43 @@ export const authRouter = createTRPCRouter({
           try {
             const toEmail = (currentUser.email ?? "").trim();
             if (toEmail) {
-              const tenantSlug = (input.name ?? "").trim() || undefined;
+              const tenantSlug =
+                typeof tenant.slug === "string" && tenant.slug.trim().length > 0
+                  ? tenant.slug.trim()
+                  : undefined;
+
+              // Fail-safe: promo lookup enriches the email, but never blocks sending.
+              let referralPromotion: Awaited<
+                ReturnType<typeof getReferralPromoForTenantEmail>
+              > = null;
+              if (referralCodeForTenant) {
+                try {
+                  referralPromotion = await getReferralPromoForTenantEmail({
+                    payload: ctx.db,
+                    referralCodeForTenant,
+                  });
+                } catch (lookupErr) {
+                  // Do not log raw referral codes in server warnings.
+                  console.warn("[email] referral promo lookup failed", {
+                    tenantId: String(tenant.id),
+                    error:
+                      lookupErr instanceof Error
+                        ? lookupErr.message
+                        : "unknown_error",
+                  });
+                }
+              }
+
+              const emailData: Record<string, unknown> = {
+                recipientName: displayNameFromUser(currentUser),
+                tenantSlug,
+                ctaUrl: toAbsolute("/profile?tab=vendor"),
+                // Keep formatting aligned with the existing email locale contract.
+                locale: currentUser.language ?? "en",
+              };
+              if (referralPromotion) {
+                emailData.promotion = referralPromotion;
+              }
 
               await sendDomainEmail({
                 db: ctx.db,
@@ -476,11 +637,7 @@ export const authRouter = createTRPCRouter({
                 recipientUserId: String(currentUser.id),
                 toEmail,
                 deliverability: toEmailDeliverability(currentUser),
-                data: {
-                  recipientName: displayNameFromUser(currentUser),
-                  tenantSlug,
-                  ctaUrl: toAbsolute("/profile?tab=vendor"),
-                },
+                data: emailData,
               });
 
               await ctx.db.update({
@@ -1535,3 +1692,5 @@ export const authRouter = createTRPCRouter({
     };
   }),
 });
+
+

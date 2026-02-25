@@ -3,6 +3,7 @@ import { tenantsArrayField } from "@payloadcms/plugin-multi-tenant/fields";
 import { isSuperAdmin } from "../lib/access.ts";
 // import { ClerkAuthStrategy } from "@/lib/auth/clerk-strategy.ts";
 import { ClerkAuthStrategy } from "../lib/auth/clerk-strategy.ts";
+import { SUPPORTED_LANGUAGES } from "@/lib/i18n/app-lang";
 
 const defaultTenantArrayField = tenantsArrayField({
   tenantsArrayFieldName: "tenants",
@@ -110,6 +111,29 @@ export const Users: CollectionConfig = {
       required: false, // initially optional to avoid breaking existing records
     },
     {
+      // Phase 2C: first-touch referral attribution is persisted on the user.
+      name: "referralCode",
+      type: "text",
+      required: false,
+      index: true,
+      validate: (val: unknown) => {
+        if (val == null || val === "") return true;
+        const s = String(val);
+        return (
+          /^[A-Z0-9_-]{3,64}$/.test(s) ||
+          "Use 3-64 chars: A-Z, 0-9, _ or -."
+        );
+      },
+      admin: {
+        position: "sidebar",
+        description:
+          "Referral attribution code (server-managed; super-admin override only).",
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
+    },
+    {
       admin: { position: "sidebar" },
       name: "roles",
       type: "select",
@@ -161,14 +185,11 @@ export const Users: CollectionConfig = {
     {
       name: "language",
       type: "select",
-      options: [
-        { label: "English", value: "en" },
-        { label: "Spanish", value: "es" },
-        { label: "French", value: "fr" },
-        { label: "German", value: "de" },
-        { label: "Italian", value: "it" },
-        { label: "Portuguese", value: "pt" },
-      ],
+      // Derive from shared i18n list to avoid drift across app surfaces.
+      options: SUPPORTED_LANGUAGES.map(({ code, label }) => ({
+        label,
+        value: code,
+      })),
       label: "Language",
       admin: {
         description: "User's preferred language",

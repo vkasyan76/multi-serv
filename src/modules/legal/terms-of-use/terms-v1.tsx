@@ -132,8 +132,28 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
           </p>
           <ul className="list-disc pl-6">
             <li>
+              Customer fee policy: customers pay the booking total shown at
+              checkout (including any applicable taxes). Infinisimo does not
+              add a separate customer-facing platform fee at this time unless
+              explicitly shown before payment.
+            </li>
+            <li>
               Default platform commission rate: {commissionPercent}% (derived
-              from {COMMISSION_RATE_BPS_DEFAULT} bps).
+              from {COMMISSION_RATE_BPS_DEFAULT} bps). Promotional,
+              campaign-specific, or negotiated commission rates may apply to
+              eligible providers or transactions as separately communicated and
+              reflected at checkout/invoice creation.
+            </li>
+            <li>
+              Provider fee policy: providers (tenants) authorize Infinisimo and
+              Stripe to collect applicable platform commission and Stripe
+              processing fees from platform-processed payments. In Stripe,
+              these can appear as an application fee (platform) and Stripe
+              processing fees.
+            </li>
+            <li>
+              Referral-based campaigns may require referral attribution data to
+              determine eligibility.
             </li>
             <li>
               Platform payments are currently supported in EUR only. Payment
@@ -143,6 +163,12 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
               unavailable for that provider.
             </li>
             <li>Platform payments are processed via Stripe where enabled.</li>
+            <li>
+              Payment handling and redirects: the payment step is hosted by
+              Stripe Checkout where enabled. Stripe fee schedules and
+              classifications are set by Stripe and may vary by payment method,
+              card region, and account setup, and may change over time.
+            </li>
             <li>
               VAT registration on the platform is available for EU providers
               only, and EU VAT IDs may be validated. Providers remain

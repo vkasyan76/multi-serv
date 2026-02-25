@@ -27,9 +27,48 @@ import { PaymentProfiles } from "./collections/PaymentProfiles.ts";
 import { EmailEventLogs } from "./collections/EmailEventLogs.ts";
 import { CommissionEvents } from "./collections/CommissionEvents.ts";
 import { CommissionStatements } from "./collections/CommissionStatements.ts";
+import { Promotions } from "./collections/Promotions.ts";
+import { PromotionCounters } from "./collections/PromotionCounters.ts";
+import { PromotionAllocations } from "./collections/PromotionAllocations.ts";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
+
+type IndexableCollection = {
+  createIndex: (
+    keys: Record<string, 1 | -1>,
+    options?: Record<string, unknown>,
+  ) => Promise<unknown>;
+};
+
+// Payload's Mongo adapter can expose collection handles either directly on the model
+// or under model.collection depending on runtime shape. This helper normalizes both
+// forms so partial/unique indexes are always applied during onInit.
+function getIndexableCollection(
+  payload: { db: { collections?: Record<string, unknown> } },
+  slug: string,
+): IndexableCollection | undefined {
+  const model = payload.db.collections?.[slug] as
+    | { createIndex?: unknown; collection?: { createIndex?: unknown } }
+    | undefined;
+  if (!model) return undefined;
+
+  if (typeof model.createIndex === "function") {
+    return model as unknown as IndexableCollection;
+  }
+
+  if (model.collection && typeof model.collection.createIndex === "function") {
+    return model.collection as IndexableCollection;
+  }
+
+  return undefined;
+}
+
+function isIgnorableIndexError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const message = String((error as { message?: unknown }).message ?? "");
+  return /already exists/i.test(message) && !/different|conflict/i.test(message);
+}
 
 export default buildConfig({
   admin: {
@@ -54,6 +93,9 @@ export default buildConfig({
     EmailEventLogs,
     CommissionEvents,
     CommissionStatements,
+    Promotions,
+    PromotionCounters,
+    PromotionAllocations,
   ],
   // cookiePrefix: "funroad",  // optional: if we want to change the cookie prefix
   editor: lexicalEditor(),
@@ -64,6 +106,94 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || "",
   }),
+  onInit: async (payload) => {
+    // Create Mongo partial unique indexes here because Payload collection
+    // config indexes do not expose partialFilterExpression.
+    const allocations = getIndexableCollection(
+      payload as unknown as { db: { collections?: Record<string, unknown> } },
+      "promotion_allocations",
+    );
+    const promotions = getIndexableCollection(
+      payload as unknown as { db: { collections?: Record<string, unknown> } },
+      "promotions",
+    );
+
+    if (!allocations?.createIndex) {
+      // Keep this warning explicit: missing handles mean critical unique constraints are not applied.
+      payload.logger.warn(
+        "promotion_allocations collection handle missing; skipped partial unique index creation",
+      );
+    } else {
+      try {
+        await allocations.createIndex(
+          { promotion: 1, invoice: 1 },
+          {
+            name: "uniq_promo_invoice_when_invoice_present",
+            unique: true,
+            partialFilterExpression: {
+              invoice: { $exists: true },
+            },
+          },
+        );
+      } catch (error) {
+        if (!isIgnorableIndexError(error)) throw error;
+      }
+
+      try {
+        await allocations.createIndex(
+          { stripePaymentIntentId: 1 },
+          {
+            name: "uniq_promo_allocation_pi_when_present",
+            unique: true,
+            partialFilterExpression: {
+              stripePaymentIntentId: { $exists: true },
+            },
+          },
+        );
+      } catch (error) {
+        if (!isIgnorableIndexError(error)) throw error;
+      }
+
+      try {
+        // Idempotency guard: one allocation per reservationKey (retry-safe checkout attempts).
+        await allocations.createIndex(
+          { reservationKey: 1 },
+          {
+            name: "uniq_promo_allocation_reservation_key_when_present",
+            unique: true,
+            partialFilterExpression: {
+              reservationKey: { $exists: true },
+            },
+          },
+        );
+      } catch (error) {
+        if (!isIgnorableIndexError(error)) throw error;
+      }
+    }
+
+    if (!promotions?.createIndex) {
+      payload.logger.warn(
+        "promotions collection handle missing; skipped referral partial unique index creation",
+      );
+    } else {
+      try {
+        await promotions.createIndex(
+          { referralCode: 1 },
+          {
+            name: "uniq_active_referral_code",
+            unique: true,
+            partialFilterExpression: {
+              active: true,
+              scope: "referral",
+              referralCode: { $exists: true },
+            },
+          },
+        );
+      } catch (error) {
+        if (!isIgnorableIndexError(error)) throw error;
+      }
+    }
+  },
   sharp,
   plugins: [
     payloadCloudPlugin(),

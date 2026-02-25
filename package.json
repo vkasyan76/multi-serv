@@ -20,7 +20,12 @@
     "db:clear:orders:unpaid": "node --loader ts-node/esm ./src/scripts/clear-orders.ts --unpaid",
     "orders:cancel-stale": "node --loader ts-node/esm ./src/scripts/cancel-stale-orders.ts",
     "db:prune:categories:dry": "node --loader ts-node/esm ./src/scripts/categories-prune-unused.ts -- --dry-run",
-    "db:prune:categories": "node --loader ts-node/esm ./src/scripts/categories-prune-unused.ts"
+    "db:prune:categories": "node --loader ts-node/esm ./src/scripts/categories-prune-unused.ts",
+    "test:promotions": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/promotions/tests/promotion-reserve.test.ts && node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/promotions/tests/promotion-allocation-consume.test.ts && node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/promotions/tests/referral-promo-for-tenant.test.ts",
+    "test:promotions:reserve": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/promotions/tests/promotion-reserve.test.ts",
+    "test:promotions:consume": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/promotions/tests/promotion-allocation-consume.test.ts",
+    "test:promotions:referral-email": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/promotions/tests/referral-promo-for-tenant.test.ts",
+    "test:email:vendor-created": "node --import tsx --test --test-concurrency=1 src/modules/email/templates/vendor-created-tenant.test.ts"
   },
   "dependencies": {
     "@clerk/backend": "^2.4.2",
@@ -124,6 +129,7 @@
     "react-email": "^5.2.5",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.0",
     "tw-animate-css": "^1.3.4",
     "typescript": "^5"
   }

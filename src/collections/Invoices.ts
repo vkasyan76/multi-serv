@@ -255,6 +255,39 @@ export const Invoices: CollectionConfig = {
         description: "Basis amount in cents used for fee calculation.",
       },
     },
+    {
+      name: "promotionId",
+      type: "relationship",
+      relationTo: "promotions",
+      required: false,
+      index: true,
+      admin: {
+        readOnly: true,
+        description: "Applied promotion id, if a promotion was used.",
+      },
+    },
+    {
+      name: "promotionAllocationId",
+      type: "relationship",
+      relationTo: "promotion_allocations",
+      required: false,
+      index: true,
+      admin: {
+        readOnly: true,
+        description: "Reservation/allocation record used for first_n promotions.",
+      },
+    },
+    {
+      name: "promotionType",
+      type: "select",
+      required: false,
+      options: ["first_n", "time_window_rate"],
+      index: true,
+      admin: {
+        readOnly: true,
+        description: "Promotion type used for this invoice, when applicable.",
+      },
+    },
     // VAT snapshot (seller-side only for MVP)
     { name: "sellerCountryISO", type: "text", required: true },
     { name: "sellerVatRegistered", type: "checkbox", required: true },

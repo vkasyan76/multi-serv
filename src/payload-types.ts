@@ -82,6 +82,9 @@ export interface Config {
     email_event_logs: EmailEventLog;
     commission_events: CommissionEvent;
     commission_statements: CommissionStatement;
+    promotions: Promotion;
+    promotion_counters: PromotionCounter;
+    promotion_allocations: PromotionAllocation;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -107,6 +110,9 @@ export interface Config {
     email_event_logs: EmailEventLogsSelect<false> | EmailEventLogsSelect<true>;
     commission_events: CommissionEventsSelect<false> | CommissionEventsSelect<true>;
     commission_statements: CommissionStatementsSelect<false> | CommissionStatementsSelect<true>;
+    promotions: PromotionsSelect<false> | PromotionsSelect<true>;
+    promotion_counters: PromotionCountersSelect<false> | PromotionCountersSelect<true>;
+    promotion_allocations: PromotionAllocationsSelect<false> | PromotionAllocationsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -164,6 +170,10 @@ export interface User {
   usernameSyncedAt?: string | null;
   email?: string | null;
   clerkUserId?: string | null;
+  /**
+   * Referral attribution code (server-managed; super-admin override only).
+   */
+  referralCode?: string | null;
   roles?: ('super-admin' | 'user')[] | null;
   tenants?:
     | {
@@ -190,7 +200,7 @@ export interface User {
   /**
    * User's preferred language
    */
-  language?: ('en' | 'es' | 'fr' | 'de' | 'it' | 'pt') | null;
+  language?: ('en' | 'de' | 'fr' | 'it' | 'es' | 'pt') | null;
   /**
    * Location coordinates with metadata
    */
@@ -358,6 +368,10 @@ export interface Tenant {
    * Vendor's hourly rate in EUR
    */
   hourlyRate?: number | null;
+  /**
+   * Referral attribution copied at tenant creation (super-admin override only).
+   */
+  referralCode?: string | null;
   /**
    * Two-letter ISO country code (e.g., DE)
    */
@@ -603,6 +617,18 @@ export interface Invoice {
    * Basis amount in cents used for fee calculation.
    */
   platformFeeBasisCents?: number | null;
+  /**
+   * Applied promotion id, if a promotion was used.
+   */
+  promotionId?: (string | null) | Promotion;
+  /**
+   * Reservation/allocation record used for first_n promotions.
+   */
+  promotionAllocationId?: (string | null) | PromotionAllocation;
+  /**
+   * Promotion type used for this invoice, when applicable.
+   */
+  promotionType?: ('first_n' | 'time_window_rate') | null;
   sellerCountryISO: string;
   sellerVatRegistered: boolean;
   sellerVatId?: string | null;
@@ -638,6 +664,59 @@ export interface Invoice {
   stripePaymentIntentId?: string | null;
   issuedAt?: string | null;
   paidAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotions".
+ */
+export interface Promotion {
+  id: string;
+  name: string;
+  description?: string | null;
+  active: boolean;
+  type: 'first_n' | 'time_window_rate';
+  scope: 'global' | 'tenants' | 'referral';
+  priority: number;
+  rateBps: number;
+  currency: 'eur';
+  startsAt?: string | null;
+  endsAt?: string | null;
+  tenantIds?: (string | Tenant)[] | null;
+  referralCode?: string | null;
+  /**
+   * Copy-ready referral link generated from referralCode.
+   */
+  referralUrl?: string | null;
+  firstNLimit?: number | null;
+  firstNScope?: ('global' | 'per_tenant') | null;
+  createdBy?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotion_allocations".
+ */
+export interface PromotionAllocation {
+  id: string;
+  promotion: string | Promotion;
+  counterKey: string;
+  /**
+   * Unique reservation attempt key to prevent double-reserve on retries.
+   */
+  reservationKey?: string | null;
+  tenant?: (string | null) | Tenant;
+  status: 'reserved' | 'consumed' | 'released';
+  reservedAt: string;
+  consumedAt?: string | null;
+  invoice?: (string | null) | Invoice;
+  stripeCheckoutSessionId?: string | null;
+  stripePaymentIntentId?: string | null;
+  appliedRateBps: number;
+  appliedRuleId: string;
+  notes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -802,6 +881,30 @@ export interface CommissionStatement {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotion_counters".
+ */
+export interface PromotionCounter {
+  id: string;
+  /**
+   * Unique atomic gate key (e.g. promo:<promotionId>:global or promo:<promotionId>:tenant:<tenantId>).
+   */
+  counterKey: string;
+  promotion: string | Promotion;
+  /**
+   * Set only for per-tenant counters.
+   */
+  tenant?: (string | null) | Tenant;
+  /**
+   * Initialized from promotion at first reservation. Enforced cap for this counter. To change limits, duplicate promotion.
+   */
+  limit: number;
+  used: number;
+  active: boolean;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -866,6 +969,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'commission_statements';
         value: string | CommissionStatement;
+      } | null)
+    | ({
+        relationTo: 'promotions';
+        value: string | Promotion;
+      } | null)
+    | ({
+        relationTo: 'promotion_counters';
+        value: string | PromotionCounter;
+      } | null)
+    | ({
+        relationTo: 'promotion_allocations';
+        value: string | PromotionAllocation;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -920,6 +1035,7 @@ export interface UsersSelect<T extends boolean = true> {
   usernameSyncedAt?: T;
   email?: T;
   clerkUserId?: T;
+  referralCode?: T;
   roles?: T;
   tenants?:
     | T
@@ -1020,6 +1136,7 @@ export interface TenantsSelect<T extends boolean = true> {
   website?: T;
   phone?: T;
   hourlyRate?: T;
+  referralCode?: T;
   country?: T;
   vatRegistered?: T;
   vatId?: T;
@@ -1135,6 +1252,9 @@ export interface InvoicesSelect<T extends boolean = true> {
   platformFeeCalculatedAt?: T;
   platformFeeBasis?: T;
   platformFeeBasisCents?: T;
+  promotionId?: T;
+  promotionAllocationId?: T;
+  promotionType?: T;
   sellerCountryISO?: T;
   sellerVatRegistered?: T;
   sellerVatId?: T;
@@ -1292,6 +1412,65 @@ export interface CommissionStatementsSelect<T extends boolean = true> {
       };
   status?: T;
   statementNumber?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotions_select".
+ */
+export interface PromotionsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  active?: T;
+  type?: T;
+  scope?: T;
+  priority?: T;
+  rateBps?: T;
+  currency?: T;
+  startsAt?: T;
+  endsAt?: T;
+  tenantIds?: T;
+  referralCode?: T;
+  referralUrl?: T;
+  firstNLimit?: T;
+  firstNScope?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotion_counters_select".
+ */
+export interface PromotionCountersSelect<T extends boolean = true> {
+  counterKey?: T;
+  promotion?: T;
+  tenant?: T;
+  limit?: T;
+  used?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotion_allocations_select".
+ */
+export interface PromotionAllocationsSelect<T extends boolean = true> {
+  promotion?: T;
+  counterKey?: T;
+  reservationKey?: T;
+  tenant?: T;
+  status?: T;
+  reservedAt?: T;
+  consumedAt?: T;
+  invoice?: T;
+  stripeCheckoutSessionId?: T;
+  stripePaymentIntentId?: T;
+  appliedRateBps?: T;
+  appliedRuleId?: T;
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

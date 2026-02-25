@@ -196,6 +196,29 @@ export const Tenants: CollectionConfig = {
         description: "Vendor's hourly rate in EUR",
       },
     },
+    {
+      // Phase 2C: tenant keeps copied referral attribution from user on create.
+      name: "referralCode",
+      type: "text",
+      required: false,
+      index: true,
+      validate: (val: unknown) => {
+        if (val == null || val === "") return true;
+        const s = String(val);
+        return (
+          /^[A-Z0-9_-]{3,64}$/.test(s) ||
+          "Use 3-64 chars: A-Z, 0-9, _ or -."
+        );
+      },
+      access: {
+        update: ({ req }) => isSuperAdmin(req.user),
+      },
+      admin: {
+        position: "sidebar",
+        description:
+          "Referral attribution copied at tenant creation (super-admin override only).",
+      },
+    },
 
     // VAT + Country fields
 

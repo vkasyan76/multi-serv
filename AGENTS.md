@@ -59,6 +59,46 @@ Required env groups are defined in `README.md`:
 - Payload collections are admin-restricted by default; app logic often uses server-side `overrideAccess: true` with explicit guards.
 - Tenant isolation is enforced in server procedures through tenant membership checks.
 
+## Language Structure (i18n)
+
+- Single source of truth for supported app languages is `src/lib/i18n/app-lang.ts`.
+  - Canonical exports: `SUPPORTED_APP_LANGS`, `AppLang`, `DEFAULT_APP_LANG`, `SUPPORTED_LANGUAGES`, `normalizeToSupported`.
+- `src/modules/profile/location-utils.ts` re-exports language helpers for backward compatibility.
+  - Prefer importing from `src/lib/i18n/app-lang.ts` for new code.
+- Locale detection priority for client UX text should be:
+  - `document.documentElement.lang` -> `navigator.languages`/`navigator.language` -> `"en"`.
+- `normalizeToSupported` must handle region/case variants robustly (`de-DE`, `EN_us`, etc.).
+- Do not add new hardcoded app-language lists/unions in feature files.
+  - Reuse `SUPPORTED_APP_LANGS` or `SUPPORTED_LANGUAGES` instead.
+- Payload-generated types in `src/payload-types.ts` are derived artifacts, not source of truth.
+  - After language option/schema changes, run `npm run generate:types`.
+
+## Promotions Reservation (Phase 3)
+
+- `first_n` promotions reserve capacity through `src/modules/checkout/server/promotion-reserve.ts`.
+- `reservationKey` is the checkout-attempt idempotency key.
+  - Stored on `promotion_allocations` and uniquely indexed in `src/payload.config.ts`.
+- Atomic gate enforcement uses stored `promotion_counters.limit` (counter-canonical cap).
+  - If incoming limit and stored limit differ, reservation logs a warning and enforces stored limit.
+- Reservation outcomes are intentionally split:
+  - `limit_reached`: business outcome, checkout may fall back to default fee.
+  - `error`: infrastructure/transaction failure, checkout creation must fail.
+- Reservation writes (counter gate + allocation) must run in one transaction context.
+- Checkout (`createCheckoutSession`) resolves promotion, reserves for `first_n` when needed, then locks invoice fee snapshot before creating Stripe session.
+- Promotions reservation tests clean up created promo/counter/allocation records to avoid DB buildup.
+
+## Referral Attribution (Phase 2)
+
+- Purpose: capture which referral code a user/tenant arrived with.
+- Flow:
+  - Referral route stores code in cookie: `src/app/(app)/(home)/ref/[code]/route.ts`.
+  - Auth/onboarding persists normalized code to DB: `src/modules/auth/server/procedures.ts`.
+  - Cookie is transport-only and should be cleared after successful persistence.
+- Source of truth is persisted DB fields (user/tenant referralCode), not browser cookie.
+- This tracks referral-code attribution, not person-to-person "who referred whom" identity.
+- Canonical referral normalization is shared in `src/lib/referral-code.ts`.
+  - Reuse `normalizeReferralCode` instead of redefining regex/normalization in feature files.
+
 ## Finance and Commissions Rules (Important)
 
 - Wallet currency is EUR-only for MVP.
@@ -105,6 +145,26 @@ Run before finalizing changes:
 - Stripe webhook idempotency and invoice status transitions
 - Tenant scoping and membership authorization checks
 - Date/time logic in Berlin timezone for finance data
+- Promotion allocation consume in Stripe webhook (`src/app/(app)/api/stripe/route.ts`)
+  - Consume is retry-safe/idempotent and should not be gated only by first paid transition.
+  - `invoice.paid` emails are transition-gated; consume failures are logged and non-blocking to protect email delivery.
+  - If consume fails on a 200 response path, reconcile `reserved` -> `consumed` via later webhook delivery or ops/admin repair.
+
+## Payload Admin Auth Stability Note (Deferred Follow-up)
+
+- During promotions testing, Payload admin form submissions may intermittently fail with:
+  - `Error: Unauthorized` from `buildFormStateHandler`
+  - transient missing request user context (`id: null, roles: null`)
+- Working hypothesis:
+  - `src/lib/auth/clerk-strategy.ts` currently depends on both `auth().userId` and `currentUser()` for auth success.
+  - If `currentUser()` is temporarily unavailable, authenticated requests can degrade to anonymous.
+- Recommended fix path (after promotions track):
+  1. Treat `auth().userId` as the authoritative authentication signal.
+  2. Use `currentUser()` only for enrichment/sync fallback, not for auth gating.
+  3. Never null authenticated state just because enrichment fails.
+  4. Validate behavior in `/admin/collections/promotions/create` create/edit flows.
+- Scope control:
+  - Keep this work out of active promotions feature PRs unless admin auth becomes a blocker.
 
 ## If Unsure
 
