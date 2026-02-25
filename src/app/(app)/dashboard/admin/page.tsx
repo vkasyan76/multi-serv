@@ -1,3 +1,4 @@
+import "server-only";
 import Link from "next/link";
 import { ClipboardList, Settings, Wallet } from "lucide-react";
 

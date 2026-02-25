@@ -531,27 +531,16 @@ async function buildWalletTransactions(
     includePaid || includeDue
       ? [...(paidInvoices as InvoiceDoc[]), ...(outstandingInvoices as InvoiceDoc[])]
       : [];
-
-  if (includeFees && hasDateFilter && invoiceCandidates.length === 0) {
-    const dateRangeAnd: Where[] = [{ currency: { equals: WALLET_CURRENCY } }];
-    withTenantScope(dateRangeAnd, args.tenantId);
-    if (args.startIso) {
-      dateRangeAnd.push({ issuedAt: { greater_than_equal: args.startIso } });
-    }
-    if (args.endIso) {
-      dateRangeAnd.push({ issuedAt: { less_than: args.endIso } });
-    }
-
-    const invoiceRangeRes = await ctx.db.find({
-      collection: "invoices",
-      where: { and: dateRangeAnd },
-      limit: buffer,
-      depth: 0,
-      overrideAccess: true,
-      sort: "-issuedAt",
-    });
-    invoiceCandidates.push(...((invoiceRangeRes.docs ?? []) as InvoiceDoc[]));
-  }
+  // Use a full, paged ID set for fee-only/date-filtered queries to avoid truncation.
+  const feeScopedInvoiceIds =
+    includeFees && hasDateFilter
+      ? await findInvoiceIdsByIssuedAtRange(
+          ctx,
+          args.tenantId,
+          args.startIso,
+          args.endIso,
+        )
+      : [];
 
   const invoiceRanges = new Map<
     string,
@@ -620,24 +609,11 @@ async function buildWalletTransactions(
   let feeDocs: CommissionEventDoc[] = [];
   if (includeFees) {
     if (hasDateFilter) {
-      const invoiceIds = Array.from(new Set(invoiceCandidates.map((inv) => inv.id)));
-      if (invoiceIds.length) {
-        feeDocs =
-          ((await ctx.db.find({
-            collection: "commission_events",
-            where: {
-              and: [
-                { currency: { equals: WALLET_CURRENCY } },
-                { invoice: { in: invoiceIds } },
-                ...(args.tenantId ? [{ tenant: { equals: args.tenantId } }] : []),
-              ],
-            },
-            limit: buffer,
-            depth: 0,
-            overrideAccess: true,
-            sort: "-collectedAt",
-          })).docs as CommissionEventDoc[]) ?? [];
-      }
+      feeDocs = await findFeeDocsByInvoiceIds(
+        ctx,
+        args.tenantId,
+        feeScopedInvoiceIds,
+      );
     } else {
       feeDocs =
         ((await ctx.db.find({
@@ -1017,12 +993,7 @@ export const commissionsRouter = createTRPCRouter({
       const { tenantId } = await resolveTenantForUserBySlug(ctx, input.slug);
       const startIso = parseIso(input.start);
       const endIso = parseIso(input.end);
-      if (startIso && endIso && startIso >= endIso) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Invalid date range.",
-        });
-      }
+      validateWalletRange(startIso, endIso);
 
       const includePaid = input.status === "all" || input.status === "paid";
       const includeDue =

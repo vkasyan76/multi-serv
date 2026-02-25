@@ -1,3 +1,4 @@
+import "server-only";
 import { notFound } from "next/navigation";
 
 import { isSuperAdmin } from "@/lib/access";

@@ -14,52 +14,30 @@ export default function AdminDashboardNavbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
-      <div className="mx-auto max-w-[var(--breakpoint-xl)] px-3 sm:px-4 lg:px-12">
-        <div className="hidden lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-4 lg:h-16">
-          <div className="flex items-center gap-2 min-w-0">
-            <p className={cn("text-xl font-semibold truncate", poppins.className)}>
-              Admin Dashboard
-            </p>
+      <div className="mx-auto max-w-[var(--breakpoint-xl)] px-3 sm:px-4 lg:px-12 py-2 lg:py-0">
+        <div className="grid grid-cols-[1fr_auto] items-center gap-3 lg:grid-cols-[auto_1fr_auto] lg:gap-4 lg:h-16">
+          <p
+            className={cn(
+              "text-lg sm:text-xl lg:text-xl font-semibold truncate",
+              poppins.className,
+            )}
+          >
+            Admin Dashboard
+          </p>
+
+          <div className="col-start-2 lg:col-start-3 flex items-center justify-end">
+            <Link
+              href={homeHref}
+              className="p-2 rounded-full hover:bg-muted"
+              aria-label="Home"
+            >
+              <Home className="h-7 w-7" />
+            </Link>
           </div>
 
-          <div className="justify-self-center">
+          {/* Mount subnav once to avoid duplicate hash/observer effects. */}
+          <div className="col-span-2 row-start-2 flex items-center justify-center border-t bg-white/90 backdrop-blur px-3 py-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:justify-self-center lg:border-t-0 lg:bg-transparent lg:backdrop-blur-none lg:px-0 lg:py-0">
             <AdminDashboardSubnav />
-          </div>
-
-          <div className="flex items-center justify-end gap-4">
-            <Link
-              href={homeHref}
-              className="p-2 rounded-full hover:bg-muted"
-              aria-label="Home"
-            >
-              <Home className="h-7 w-7" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="lg:hidden">
-          <div className="h-14 sm:h-16 flex items-center justify-between gap-3">
-            <p
-              className={cn(
-                "text-lg sm:text-xl font-semibold truncate",
-                poppins.className,
-              )}
-            >
-              Admin Dashboard
-            </p>
-            <Link
-              href={homeHref}
-              className="p-2 rounded-full hover:bg-muted"
-              aria-label="Home"
-            >
-              <Home className="h-7 w-7" />
-            </Link>
-          </div>
-
-          <div className="border-t bg-white/90 backdrop-blur">
-            <div className="h-12 sm:h-14 flex items-center justify-center px-3">
-              <AdminDashboardSubnav />
-            </div>
           </div>
         </div>
       </div>
