@@ -140,7 +140,7 @@ export const Navbar = () => {
               asChild
               className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
             >
-              <Link href="/admin">Admin panel</Link>
+              <Link href="/dashboard/admin">Admin panel</Link>
             </Button>
           ) : (
             <>
