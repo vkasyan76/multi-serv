@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { Payload } from "payload";
+import { PROMOTIONS_RESOLVER_MAX_ACTIVE } from "@/constants";
 import { getReferralPromoForTenantEmail } from "../server/referral-promo-for-tenant.ts";
 
 type PromotionDoc = {
@@ -13,11 +14,18 @@ type PromotionDoc = {
   createdAt?: string | null;
 };
 
-function makePayloadWithDocs(docs: PromotionDoc[], onFind?: (args: unknown) => void) {
+function makePayloadWithDocs(
+  docs: PromotionDoc[],
+  onFind?: (args: unknown) => void,
+  options?: { totalDocs?: number },
+) {
   return {
     find: async (args: unknown) => {
       onFind?.(args);
-      return { docs };
+      return {
+        docs,
+        totalDocs: options?.totalDocs ?? docs.length,
+      };
     },
   } as unknown as Payload;
 }
@@ -165,6 +173,32 @@ test("getReferralPromoForTenantEmail returns null when promo fields are invalid"
       createdAt: "2026-01-01T00:00:01.000Z",
     },
   ]);
+
+  const result = await getReferralPromoForTenantEmail({
+    payload,
+    referralCodeForTenant: "ref2026",
+    nowIso: "2026-03-01T12:00:00.000Z",
+  });
+
+  assert.equal(result, null);
+});
+
+test("getReferralPromoForTenantEmail returns null when query is truncated before ranking", async () => {
+  const payload = makePayloadWithDocs(
+    [
+      {
+        id: "candidate",
+        type: "time_window_rate",
+        priority: 100,
+        rateBps: 200,
+        startsAt: "2026-03-01T00:00:00.000Z",
+        endsAt: "2026-03-02T00:00:00.000Z",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+    undefined,
+    { totalDocs: PROMOTIONS_RESOLVER_MAX_ACTIVE + 1 },
+  );
 
   const result = await getReferralPromoForTenantEmail({
     payload,

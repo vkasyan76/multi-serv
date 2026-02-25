@@ -1,3 +1,5 @@
+import "server-only";
+
 // src/app/(app)/api/stripe/route.ts
 import type { Stripe } from "stripe";
 import { NextResponse } from "next/server";

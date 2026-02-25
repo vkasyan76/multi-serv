@@ -103,7 +103,19 @@ export async function getReferralPromoForTenantEmail(input: {
     overrideAccess: true,
   });
 
-  const winner = ((found.docs ?? []) as ReferralPromotionDoc[])
+  const docs = (found.docs ?? []) as ReferralPromotionDoc[];
+  const totalDocs =
+    typeof found.totalDocs === "number" ? found.totalDocs : docs.length;
+  if (totalDocs > PROMOTIONS_RESOLVER_MAX_ACTIVE) {
+    // Fail closed on real truncation to avoid returning a potentially wrong winner.
+    console.warn("[promotions] referral promo query truncated before ranking", {
+      totalDocs,
+      limit: PROMOTIONS_RESOLVER_MAX_ACTIVE,
+    });
+    return null;
+  }
+
+  const winner = docs
     .filter((doc) => isWithinWindow(doc, nowMs))
     .sort(comparePromotions)
     .map((doc) => toEmailSafePromotion(doc))
