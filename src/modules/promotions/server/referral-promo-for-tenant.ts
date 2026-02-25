@@ -106,8 +106,8 @@ export async function getReferralPromoForTenantEmail(input: {
   const winner = ((found.docs ?? []) as ReferralPromotionDoc[])
     .filter((doc) => isWithinWindow(doc, nowMs))
     .sort(comparePromotions)
-    .find((doc) => toEmailSafePromotion(doc) != null);
+    .map((doc) => toEmailSafePromotion(doc))
+    .find((doc): doc is ReferralPromoForTenantEmail => doc != null);
 
-  if (!winner) return null;
-  return toEmailSafePromotion(winner);
+  return winner ?? null;
 }

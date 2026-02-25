@@ -30,7 +30,7 @@ test("renderVendorCreatedTenantTemplate renders promo section when promotion pay
       id: "promo-1",
       type: "time_window_rate",
       rateBps: 300,
-      endsAt: "2026-03-10T00:00:00.000Z",
+      endsAt: "2099-12-31T00:00:00.000Z",
     },
   });
 
@@ -51,7 +51,7 @@ test("renderVendorCreatedTenantTemplate ignores invalid promotion payload", asyn
       id: "promo-1",
       type: "time_window_rate",
       rateBps: "3.5", // invalid: parsePromotion requires integer bps
-      endsAt: "2026-03-10T00:00:00.000Z",
+      endsAt: "2099-12-31T00:00:00.000Z",
     },
   });
 

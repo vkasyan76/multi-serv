@@ -147,6 +147,8 @@ Run before finalizing changes:
 - Date/time logic in Berlin timezone for finance data
 - Promotion allocation consume in Stripe webhook (`src/app/(app)/api/stripe/route.ts`)
   - Consume is retry-safe/idempotent and should not be gated only by first paid transition.
+  - `invoice.paid` emails are transition-gated; consume failures are logged and non-blocking to protect email delivery.
+  - If consume fails on a 200 response path, reconcile `reserved` -> `consumed` via later webhook delivery or ops/admin repair.
 
 ## Payload Admin Auth Stability Note (Deferred Follow-up)
 
