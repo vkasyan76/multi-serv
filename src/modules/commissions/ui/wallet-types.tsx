@@ -19,6 +19,12 @@ export type WalletFilters = {
   status: WalletStatusFilter;
 };
 
+export type WalletTenantOption = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 export type WalletTransactionRow = {
   id: string;
   type: "payment_received" | "payment_outstanding" | "platform_fee";
@@ -31,4 +37,7 @@ export type WalletTransactionRow = {
   serviceStart?: string;
   serviceEnd?: string;
   invoiceDate?: string;
+  tenantId?: string;
+  tenantSlug?: string;
+  tenantName?: string;
 };

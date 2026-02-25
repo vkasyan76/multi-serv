@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SECTIONS = [
-  { id: "finance", label: "Transactions" },
+  { id: "transactions", label: "Transactions" },
   { id: "orders", label: "Orders" },
   { id: "payload", label: "Payload" },
 ] as const;
@@ -13,12 +13,14 @@ const SECTION_IDS = SECTIONS.map((section) => section.id);
 
 function normalizeHash(hash: string) {
   const id = hash.replace(/^#/, "");
+  // Keep old links working after "finance" -> "transactions" rename.
+  if (id === "finance") return "transactions";
   return SECTION_IDS.includes(id as (typeof SECTION_IDS)[number]) ? id : null;
 }
 
 export default function AdminDashboardSubnav() {
-  const [active, setActive] = useState<string>("finance");
-  const activeRef = useRef<string>("finance");
+  const [active, setActive] = useState<string>("transactions");
+  const activeRef = useRef<string>("transactions");
 
   useEffect(() => {
     activeRef.current = active;
