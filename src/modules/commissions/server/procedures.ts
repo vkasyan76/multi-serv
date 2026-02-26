@@ -563,7 +563,8 @@ async function buildWalletTransactions(
             limit: buffer,
             depth: 0,
             overrideAccess: true,
-            sort: "-issuedAt",
+            // Keep candidate ordering aligned with feed ranking (occurredAt = paidAt).
+            sort: "-paidAt",
           })
         ).docs ?? [];
 

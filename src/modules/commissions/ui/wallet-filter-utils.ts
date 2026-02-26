@@ -131,6 +131,10 @@ export function buildWalletCsvFilename(options: {
 }
 
 function escapeCsv(value: string) {
+  // Neutralize spreadsheet formulas when CSV is opened in Excel/Sheets.
+  if (/^[\t\r ]*[=+@]/.test(value) || /^[\t\r ]*-[A-Za-z(]/.test(value)) {
+    value = `'${value}`;
+  }
   if (value.includes('"')) {
     value = value.replace(/"/g, '""');
   }
