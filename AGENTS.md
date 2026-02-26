@@ -67,7 +67,11 @@ Required env groups are defined in `README.md`:
 - Phase 2 is partially implemented:
   - Admin transactions view reuses wallet filters/summary/table presentation via wrappers.
   - Admin finance data uses super-admin procedures with tenant scope (`tenantId?: string`) and all-tenant mode.
-  - CSV export unification with shared builders is deferred (tracked in `TODO.md`).
+- Phase 3 (admin CSV export) is implemented:
+  - `adminWalletTransactionsExport` reuses the shared wallet transactions builder with full filtered fetch (`fetchAll`).
+  - Admin export enforces super-admin guard and supports full-history all-tenant export.
+  - Admin CSV is server-backed (not limited to loaded table rows) and includes `occurred_at_berlin` + `timezone`.
+  - Full tenant/admin export unification is still deferred (tracked in `TODO.md`).
 
 ## Language Structure (i18n)
 

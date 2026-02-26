@@ -4,6 +4,7 @@ import {
   type AppLang,
   formatDateForLocale,
   formatMonthYearForLocale,
+  mapAppLangToLocale,
 } from "@/modules/profile/location-utils";
 import type {
   WalletPeriodFilter,
@@ -118,12 +119,15 @@ export function buildWalletCsvFilename(options: {
   period: WalletPeriodFilter;
   status: WalletStatusFilter;
   appLang: AppLang;
+  scopeLabel?: string;
 }) {
   const periodLabel =
     formatPeriodLabel(options.period, options.appLang) || FULL_HISTORY_LABEL;
   const statusLabel =
     options.status === "all" ? "" : getWalletStatusLabel(options.status);
-  const descriptorRaw = [periodLabel, statusLabel].filter(Boolean).join(" ");
+  const descriptorRaw = [options.scopeLabel, periodLabel, statusLabel]
+    .filter(Boolean)
+    .join(" ");
   const descriptor = sanitizeFilenameSegment(descriptorRaw);
 
   if (!descriptor) return "transactions.csv";
@@ -178,7 +182,16 @@ export function walletRowsToCsv(rows: WalletTransactionRow[]) {
   return [headers.join(","), ...lines].join("\n");
 }
 
-export function adminWalletRowsToCsv(rows: WalletTransactionRow[]) {
+export function adminWalletRowsToCsv(
+  rows: WalletTransactionRow[],
+  options: { appLang: AppLang; timezone: "Europe/Berlin" },
+) {
+  const locale = mapAppLangToLocale(options.appLang);
+  const berlinDateTime = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: options.timezone,
+  });
   const headers = [
     "invoice_date",
     "description",
@@ -187,6 +200,8 @@ export function adminWalletRowsToCsv(rows: WalletTransactionRow[]) {
     "order_start",
     "order_end",
     "occurred_at",
+    "occurred_at_berlin",
+    "timezone",
     "currency",
     "invoice_id",
     "payment_intent_id",
@@ -210,6 +225,8 @@ export function adminWalletRowsToCsv(rows: WalletTransactionRow[]) {
       row.serviceStart ?? "",
       row.serviceEnd ?? "",
       row.occurredAt ?? "",
+      row.occurredAt ? berlinDateTime.format(new Date(row.occurredAt)) : "",
+      options.timezone,
       row.currency ?? "",
       row.invoiceId ?? "",
       row.paymentIntentId ?? "",

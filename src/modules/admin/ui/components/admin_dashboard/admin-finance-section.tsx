@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { WalletFiltersBar } from "@/modules/commissions/ui/wallet-filters-bar";
 import {
   adminWalletRowsToCsv,
   buildWalletCsvFilename,
+  deriveInvoiceRangeIso,
   downloadCsv,
 } from "@/modules/commissions/ui/wallet-filter-utils";
-import type {
-  WalletFilters,
-  WalletTransactionRow,
-} from "@/modules/commissions/ui/wallet-types";
+import type { WalletFilters } from "@/modules/commissions/ui/wallet-types";
 import {
   type AppLang,
   getInitialLanguage,
@@ -24,6 +22,7 @@ import { AdminWalletTransactionsTable } from "./admin-wallet-transactions-table"
 
 export function AdminFinanceSection() {
   const trpc = useTRPC();
+  const qc = useQueryClient();
   const profileQ = useQuery(trpc.auth.getUserProfile.queryOptions());
   const tenantOptionsQ = useQuery(
     trpc.commissions.adminTenantOptions.queryOptions({}),
@@ -39,19 +38,38 @@ export function AdminFinanceSection() {
     period: { mode: "all" },
     status: "all",
   });
-  const [walletRows, setWalletRows] = useState<WalletTransactionRow[]>([]);
-  const [walletRowsLoading, setWalletRowsLoading] = useState(false);
-  const [walletRowsError, setWalletRowsError] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
   const tenantId = selectedTenantId === "all" ? undefined : selectedTenantId;
+  const exportRange = useMemo(
+    () => deriveInvoiceRangeIso(walletFilters.period),
+    [walletFilters.period],
+  );
+  const exportScopeLabel = useMemo(() => {
+    if (selectedTenantId === "all") return "all-tenants";
+    const selected = (tenantOptionsQ.data ?? []).find(
+      (opt) => opt.id === selectedTenantId,
+    );
+    return selected?.name || selected?.slug || selectedTenantId;
+  }, [selectedTenantId, tenantOptionsQ.data]);
 
-  const handleWalletDownload = () => {
-    if (walletRowsLoading || walletRowsError || walletRows.length === 0) return;
-    const csv = adminWalletRowsToCsv(walletRows);
+  const handleWalletDownload = async () => {
+    const exportData = await qc.fetchQuery(
+      trpc.commissions.adminWalletTransactionsExport.queryOptions({
+        tenantId,
+        status: walletFilters.status,
+        start: exportRange.startIso,
+        end: exportRange.endIso,
+      }),
+    );
+    const csv = adminWalletRowsToCsv(exportData.rows, {
+      appLang,
+      timezone: exportData.timezone,
+    });
     const filename = buildWalletCsvFilename({
       period: walletFilters.period,
       status: walletFilters.status,
       appLang,
+      scopeLabel: exportScopeLabel,
     });
     downloadCsv(filename, csv);
   };
@@ -93,8 +111,7 @@ export function AdminFinanceSection() {
         }}
         download={{
           onClick: handleWalletDownload,
-          enabled:
-            !walletRowsLoading && !walletRowsError && walletRows.length > 0,
+          enabled: true,
         }}
       />
 
@@ -108,12 +125,6 @@ export function AdminFinanceSection() {
         tenantId={tenantId}
         appLang={appLang}
         filters={walletFilters}
-        onRowsChange={setWalletRows}
-        onStateChange={({ isLoading, isError }) => {
-          // Mirror tenant dashboard behavior for CSV button enablement.
-          setWalletRowsLoading(isLoading);
-          setWalletRowsError(isError);
-        }}
       />
     </div>
   );

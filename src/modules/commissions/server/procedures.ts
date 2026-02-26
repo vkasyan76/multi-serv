@@ -430,6 +430,49 @@ async function getPromotionMetaMap(ctx: TRPCContext, promotionIds: string[]) {
   return map;
 }
 
+async function enrichAdminWalletRows(ctx: TRPCContext, rows: WalletTx[]) {
+  // Admin reporting requires tenant attribution on each row.
+  const missingTenantRow = rows.find((row) => !row.tenantId);
+  if (missingTenantRow) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Wallet transaction row missing tenantId.",
+    });
+  }
+
+  const tenantIds = Array.from(
+    new Set(
+      rows
+        .map((row) => row.tenantId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const metaMap = await getTenantMetaMap(ctx, tenantIds);
+  const promotionIds = Array.from(
+    new Set(
+      rows
+        .map((row) => row.promotionId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const promotionMetaMap = await getPromotionMetaMap(ctx, promotionIds);
+
+  return rows.map((row) => {
+    const meta = row.tenantId ? metaMap.get(row.tenantId) : undefined;
+    const promoMeta = row.promotionId
+      ? promotionMetaMap.get(row.promotionId)
+      : undefined;
+    return {
+      ...row,
+      tenantName: row.tenantName ?? meta?.name,
+      tenantSlug: row.tenantSlug ?? meta?.slug,
+      promotionName: row.promotionId
+        ? promoMeta?.name ?? `promo:${row.promotionId.slice(-6)}`
+        : undefined,
+    };
+  });
+}
+
 // Shared summary builder for tenant + admin endpoints to keep wallet semantics aligned.
 async function buildWalletSummary(
   ctx: TRPCContext,
@@ -522,6 +565,7 @@ async function buildWalletTransactions(
     endIso?: string;
     status: WalletStatus;
     limit: number;
+    fetchAll?: boolean;
   },
 ) {
   validateWalletRange(args.startIso, args.endIso);
@@ -552,35 +596,49 @@ async function buildWalletTransactions(
     outstandingAnd.push({ issuedAt: { less_than: args.endIso } });
   }
 
+  const fetchAll = args.fetchAll === true;
   const buffer = args.limit * 2;
   const paidInvoices =
     !includePaid
       ? []
-      : (
-          await ctx.db.find({
+      : fetchAll
+        ? await findAllPages<InvoiceDoc>(ctx, {
             collection: "invoices",
             where: { and: paidInvoiceAnd },
-            limit: buffer,
-            depth: 0,
-            overrideAccess: true,
             // Keep candidate ordering aligned with feed ranking (occurredAt = paidAt).
             sort: "-paidAt",
           })
-        ).docs ?? [];
+        : (
+            await ctx.db.find({
+              collection: "invoices",
+              where: { and: paidInvoiceAnd },
+              limit: buffer,
+              depth: 0,
+              overrideAccess: true,
+              // Keep candidate ordering aligned with feed ranking (occurredAt = paidAt).
+              sort: "-paidAt",
+            })
+          ).docs ?? [];
 
   const outstandingInvoices =
     !includeDue
       ? []
-      : (
-          await ctx.db.find({
+      : fetchAll
+        ? await findAllPages<InvoiceDoc>(ctx, {
             collection: "invoices",
             where: { and: outstandingAnd },
-            limit: buffer,
-            depth: 0,
-            overrideAccess: true,
             sort: "-issuedAt",
           })
-        ).docs ?? [];
+        : (
+            await ctx.db.find({
+              collection: "invoices",
+              where: { and: outstandingAnd },
+              limit: buffer,
+              depth: 0,
+              overrideAccess: true,
+              sort: "-issuedAt",
+            })
+          ).docs ?? [];
 
   const invoiceCandidates: InvoiceDoc[] =
     includePaid || includeDue
@@ -694,15 +752,20 @@ async function buildWalletTransactions(
         feeScopedInvoiceIds,
       );
     } else {
-      feeDocs =
-        ((await ctx.db.find({
-          collection: "commission_events",
-          where: { and: feeAnd },
-          limit: buffer,
-          depth: 0,
-          overrideAccess: true,
-          sort: "-collectedAt",
-        })).docs as CommissionEventDoc[]) ?? [];
+      feeDocs = fetchAll
+        ? await findAllPages<CommissionEventDoc>(ctx, {
+            collection: "commission_events",
+            where: { and: feeAnd },
+            sort: "-collectedAt",
+          })
+        : (((await ctx.db.find({
+            collection: "commission_events",
+            where: { and: feeAnd },
+            limit: buffer,
+            depth: 0,
+            overrideAccess: true,
+            sort: "-collectedAt",
+          })).docs as CommissionEventDoc[]) ?? []);
     }
   }
 
@@ -770,9 +833,10 @@ async function buildWalletTransactions(
     })
     .filter(Boolean) as WalletTx[];
 
-  return [...payments, ...outstanding, ...fees]
-    .sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : -1))
-    .slice(0, args.limit);
+  const mergedRows = [...payments, ...outstanding, ...fees].sort((a, b) =>
+    a.occurredAt < b.occurredAt ? 1 : -1,
+  );
+  return fetchAll ? mergedRows : mergedRows.slice(0, args.limit);
 }
 
 export const commissionsRouter = createTRPCRouter({
@@ -1031,50 +1095,49 @@ export const commissionsRouter = createTRPCRouter({
         status: input.status,
         limit: input.limit,
       });
-
-      // Admin table requires tenant attribution on every row.
-      const missingTenantRow = rows.find((row) => !row.tenantId);
-      if (missingTenantRow) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Wallet transaction row missing tenantId.",
-        });
-      }
-
-      const tenantIds = Array.from(
-        new Set(
-          rows
-            .map((row) => row.tenantId)
-            .filter((id): id is string => Boolean(id)),
-        ),
-      );
-      const metaMap = await getTenantMetaMap(ctx, tenantIds);
-      const promotionIds = Array.from(
-        new Set(
-          rows
-            .map((row) => row.promotionId)
-            .filter((id): id is string => Boolean(id)),
-        ),
-      );
-      const promotionMetaMap = await getPromotionMetaMap(ctx, promotionIds);
+      const enrichedRows = await enrichAdminWalletRows(ctx, rows);
 
       return {
-        rows: rows.map((row) => {
-          const meta = row.tenantId ? metaMap.get(row.tenantId) : undefined;
-          const promoMeta = row.promotionId
-            ? promotionMetaMap.get(row.promotionId)
-            : undefined;
-          return {
-            ...row,
-            tenantName: row.tenantName ?? meta?.name,
-            tenantSlug: row.tenantSlug ?? meta?.slug,
-            promotionName: row.promotionId
-              ? promoMeta?.name ?? `promo:${row.promotionId.slice(-6)}`
-              : undefined,
-          };
-        }),
+        rows: enrichedRows,
         // Cursor shape is reserved for Phase 5 pagination without API redesign.
         nextCursor: null as string | null,
+      };
+    }),
+
+  adminWalletTransactionsExport: baseProcedure
+    .input(
+      z.object({
+        tenantId: z.string().min(1).optional(),
+        start: z.string().optional(),
+        end: z.string().optional(),
+        status: z
+          .enum(["all", "paid", "payment_due", "platform_fee"])
+          .default("all"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await requireSuperAdmin(ctx);
+      if (input.tenantId) {
+        await ensureTenantExists(ctx, input.tenantId);
+      }
+
+      const startIso = parseIso(input.start);
+      const endIso = parseIso(input.end);
+      validateWalletRange(startIso, endIso);
+
+      const rows = await buildWalletTransactions(ctx, {
+        tenantId: input.tenantId,
+        startIso,
+        endIso,
+        status: input.status,
+        limit: WALLET_TRANSACTIONS_LIMIT_MAX,
+        // Export must include the full filtered result set, not just the loaded page.
+        fetchAll: true,
+      });
+
+      return {
+        rows: await enrichAdminWalletRows(ctx, rows),
+        timezone: "Europe/Berlin" as const,
       };
     }),
 
