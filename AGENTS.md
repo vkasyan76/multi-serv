@@ -77,6 +77,10 @@ Required env groups are defined in `README.md`:
   - Tenant and admin transactions tables use server `hasMore` instead of client row-count heuristics.
   - Finance-read indexes were added for invoice/payment and commission-event date scans used by wallet queries.
   - Minimal wallet correctness tests were added for end-exclusive range and Berlin timezone behavior (`test:commissions:wallet`).
+- Admin Orders Phase 1 is implemented:
+  - Added super-admin-only `orders.adminListSlotLifecycle` for cross-tenant slot-lifecycle orders.
+  - Added `listForAdminSlotLifecycle` rollup query with canonical tenant filter (`order.tenant`) and customer snapshot text search.
+  - Reused tenant lifecycle row mapping and added admin tenant display metadata (`tenantName`/`tenantSlug`) with fallbacks.
 
 ## Language Structure (i18n)
 

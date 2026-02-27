@@ -1,5 +1,6 @@
 // src/modules/orders/server/order-rollup.ts
 import { TRPCError } from "@trpc/server";
+import type { Where } from "payload";
 import { resolvePayloadUserId } from "./identity";
 import type { Booking, Order, Tenant, User } from "@/payload-types";
 import type { TRPCContext } from "@/trpc/init";
@@ -16,6 +17,23 @@ type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
   serviceStatus: ServiceStatus;
   disputeReason: string | null;
   serviceSnapshot: NonNullable<Booking["serviceSnapshot"]> | null;
+};
+
+type TenantLifecycleListItem = {
+  id: string;
+  createdAt: string;
+  serviceStatus: Order["serviceStatus"];
+  invoiceStatus: Order["invoiceStatus"];
+  lifecycleMode: Order["lifecycleMode"];
+  userId: string;
+  customerSnapshot: Order["customerSnapshot"];
+  slots: SlotLifecycleSlot[];
+};
+
+type AdminTenantMeta = {
+  tenantId?: string;
+  tenantName: string;
+  tenantSlug?: string;
 };
 
 function normalizeServiceStatus(ss: unknown): ServiceStatus {
@@ -154,6 +172,49 @@ function mapSlotsFromOrder(o: DocWithId<Order>): SlotLifecycleSlot[] {
   );
 }
 
+function mapTenantLifecycleItem(o: DocWithId<Order>): TenantLifecycleListItem {
+  const slots = mapSlotsFromOrder(o);
+  // Defensive fallback for rare orphaned relation records in cross-tenant admin reads.
+  const userId = typeof o.user === "string" ? o.user : (o.user?.id ?? "");
+
+  return {
+    id: o.id,
+    createdAt: o.createdAt!,
+    serviceStatus: o.serviceStatus as Order["serviceStatus"],
+    invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
+    lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
+    userId,
+    customerSnapshot: o.customerSnapshot,
+    slots,
+  };
+}
+
+function tenantMetaFromOrder(
+  o: DocWithId<Order>,
+  slots: SlotLifecycleSlot[],
+): AdminTenantMeta {
+  const tenantId = typeof o.tenant === "string" ? o.tenant : o.tenant?.id;
+
+  const slotSnapshot = slots.find(
+    (s) => s.serviceSnapshot?.tenantName || s.serviceSnapshot?.tenantSlug,
+  )?.serviceSnapshot;
+
+  const tenantName =
+    (o.vendorSnapshot?.tenantName ?? "").trim() ||
+    (slotSnapshot?.tenantName ?? "").trim() ||
+    "Unknown tenant";
+
+  const tenantSlugRaw =
+    (o.vendorSnapshot?.tenantSlug ?? "").trim() ||
+    (slotSnapshot?.tenantSlug ?? "").trim();
+
+  return {
+    tenantId: tenantId ?? undefined,
+    tenantName,
+    tenantSlug: tenantSlugRaw || undefined,
+  };
+}
+
 export async function listMineSlotLifecycle(ctx: CtxLike) {
   if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
@@ -225,24 +286,70 @@ export async function listForMyTenantSlotLifecycle(
     hasPrevPage?: boolean;
   };
 
+  const items = (res.docs ?? []).map((o) => mapTenantLifecycleItem(o));
+
+  return {
+    items,
+    page: res.page ?? page,
+    totalPages: res.totalPages ?? 1,
+    totalDocs: res.totalDocs ?? items.length,
+    hasNextPage: res.hasNextPage ?? false,
+    hasPrevPage: res.hasPrevPage ?? false,
+  };
+}
+
+export async function listForAdminSlotLifecycle(
+  ctx: CtxLike,
+  input?: {
+    tenantId?: string;
+    customerQuery?: string;
+    page?: number;
+    limit?: number;
+  },
+) {
+  const page = Math.max(input?.page ?? 1, 1);
+  const limit = Math.min(Math.max(input?.limit ?? DEFAULT_LIMIT, 1), 100);
+
+  const whereAnd: Where[] = [{ lifecycleMode: { equals: "slot" } }];
+
+  if (input?.tenantId) {
+    // Canonical tenant scope key for orders is the relation field `tenant`.
+    whereAnd.push({ tenant: { equals: input.tenantId } });
+  }
+
+  const q = input?.customerQuery?.trim();
+  if (q) {
+    // Keep `like` to match existing repo text-search semantics.
+    whereAnd.push({
+      or: [
+        { "customerSnapshot.firstName": { like: q } },
+        { "customerSnapshot.lastName": { like: q } },
+        { "customerSnapshot.email": { like: q } },
+      ],
+    });
+  }
+
+  const res = (await ctx.db.find({
+    collection: "orders",
+    where: { and: whereAnd },
+    sort: "-createdAt",
+    page,
+    limit,
+    depth: 1, // Keep the same relation shape as tenant lifecycle query.
+    overrideAccess: true,
+  })) as {
+    docs?: Array<DocWithId<Order>>;
+    page?: number;
+    totalPages?: number;
+    totalDocs?: number;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+  };
+
   const items = (res.docs ?? []).map((o) => {
-    const slots = mapSlotsFromOrder(o);
-
-    const userId = typeof o.user === "string" ? o.user : o.user.id;
-
-    return {
-      id: o.id,
-      createdAt: o.createdAt!,
-      serviceStatus: o.serviceStatus as Order["serviceStatus"],
-      invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
-      lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
-
-      // simplest + already available in Order type
-      userId,
-      customerSnapshot: o.customerSnapshot,
-
-      slots,
-    };
+    const base = mapTenantLifecycleItem(o);
+    const tenantMeta = tenantMetaFromOrder(o, base.slots);
+    return { ...base, ...tenantMeta };
   });
 
   return {
