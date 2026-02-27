@@ -72,6 +72,11 @@ Required env groups are defined in `README.md`:
   - Admin export enforces super-admin guard and supports full-history all-tenant export.
   - Admin CSV is server-backed (not limited to loaded table rows) and includes `occurred_at_berlin` + `timezone`.
   - Full tenant/admin export unification is still deferred (tracked in `TODO.md`).
+- Phase 5 (minimal hardening) is implemented:
+  - Wallet list procedures now return server pagination metadata (`hasMore`) for reliable load-more behavior.
+  - Tenant and admin transactions tables use server `hasMore` instead of client row-count heuristics.
+  - Finance-read indexes were added for invoice/payment and commission-event date scans used by wallet queries.
+  - Minimal wallet correctness tests were added for end-exclusive range and Berlin timezone behavior (`test:commissions:wallet`).
 
 ## Language Structure (i18n)
 

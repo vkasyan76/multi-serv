@@ -56,8 +56,7 @@ export function AdminWalletTransactionsTable({
 
   const rows = useMemo(() => txQ.data?.rows ?? lastRowsRef.current, [txQ.data?.rows]);
 
-  const canLoadMore =
-    rows.length >= limit && limit < WALLET_TRANSACTIONS_LIMIT_MAX;
+  const canLoadMore = !!txQ.data?.hasMore && limit < WALLET_TRANSACTIONS_LIMIT_MAX;
 
   useEffect(() => {
     setLimit(WALLET_TRANSACTIONS_LIMIT_DEFAULT);

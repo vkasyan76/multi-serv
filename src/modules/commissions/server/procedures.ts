@@ -65,6 +65,10 @@ type WalletTx = {
   promotionAllocationId?: string;
   promotionType?: "first_n" | "time_window_rate";
 };
+type WalletTxPage = {
+  rows: WalletTx[];
+  hasMore: boolean;
+};
 type UserTenantEntry = { tenant?: string | { id?: string } | null };
 type WalletStatus = "all" | "paid" | "payment_due" | "platform_fee";
 
@@ -314,11 +318,15 @@ async function findFeeDocsByInvoiceIds(
   ctx: TRPCContext,
   tenantId: string | undefined,
   invoiceIds: string[],
+  maxDocs?: number,
 ) {
   const docs: CommissionEventDoc[] = [];
   if (!invoiceIds.length) return docs;
 
   for (const chunk of chunkArray(invoiceIds, 200)) {
+    if (maxDocs && docs.length >= maxDocs) {
+      return docs.slice(0, maxDocs);
+    }
     let page = 1;
     let totalPages = 1;
 
@@ -340,6 +348,9 @@ async function findFeeDocsByInvoiceIds(
       });
 
       docs.push(...((res.docs ?? []) as CommissionEventDoc[]));
+      if (maxDocs && docs.length >= maxDocs) {
+        return docs.slice(0, maxDocs);
+      }
       totalPages = res.totalPages ?? 1;
       page += 1;
     } while (page <= totalPages);
@@ -567,7 +578,7 @@ async function buildWalletTransactions(
     limit: number;
     fetchAll?: boolean;
   },
-) {
+) : Promise<WalletTxPage> {
   validateWalletRange(args.startIso, args.endIso);
 
   const includePaid = args.status === "all" || args.status === "paid";
@@ -597,8 +608,9 @@ async function buildWalletTransactions(
   }
 
   const fetchAll = args.fetchAll === true;
-  const buffer = args.limit * 2;
-  const paidInvoices =
+  const pageLimit = args.limit;
+  const sourceLimit = pageLimit + 1;
+  const paidInvoicesAll =
     !includePaid
       ? []
       : fetchAll
@@ -612,15 +624,19 @@ async function buildWalletTransactions(
             await ctx.db.find({
               collection: "invoices",
               where: { and: paidInvoiceAnd },
-              limit: buffer,
+              limit: sourceLimit,
               depth: 0,
               overrideAccess: true,
               // Keep candidate ordering aligned with feed ranking (occurredAt = paidAt).
               sort: "-paidAt",
             })
           ).docs ?? [];
+  const paidHasMore = !fetchAll && paidInvoicesAll.length > pageLimit;
+  const paidInvoices = fetchAll
+    ? paidInvoicesAll
+    : paidInvoicesAll.slice(0, pageLimit);
 
-  const outstandingInvoices =
+  const outstandingInvoicesAll =
     !includeDue
       ? []
       : fetchAll
@@ -633,12 +649,16 @@ async function buildWalletTransactions(
             await ctx.db.find({
               collection: "invoices",
               where: { and: outstandingAnd },
-              limit: buffer,
+              limit: sourceLimit,
               depth: 0,
               overrideAccess: true,
               sort: "-issuedAt",
             })
           ).docs ?? [];
+  const outstandingHasMore = !fetchAll && outstandingInvoicesAll.length > pageLimit;
+  const outstandingInvoices = fetchAll
+    ? outstandingInvoicesAll
+    : outstandingInvoicesAll.slice(0, pageLimit);
 
   const invoiceCandidates: InvoiceDoc[] =
     includePaid || includeDue
@@ -743,16 +763,17 @@ async function buildWalletTransactions(
     });
   }
 
-  let feeDocs: CommissionEventDoc[] = [];
+  let feeDocsAll: CommissionEventDoc[] = [];
   if (includeFees) {
     if (hasDateFilter) {
-      feeDocs = await findFeeDocsByInvoiceIds(
+      feeDocsAll = await findFeeDocsByInvoiceIds(
         ctx,
         args.tenantId,
         feeScopedInvoiceIds,
+        fetchAll ? undefined : sourceLimit,
       );
     } else {
-      feeDocs = fetchAll
+      feeDocsAll = fetchAll
         ? await findAllPages<CommissionEventDoc>(ctx, {
             collection: "commission_events",
             where: { and: feeAnd },
@@ -761,13 +782,15 @@ async function buildWalletTransactions(
         : (((await ctx.db.find({
             collection: "commission_events",
             where: { and: feeAnd },
-            limit: buffer,
+            limit: sourceLimit,
             depth: 0,
             overrideAccess: true,
             sort: "-collectedAt",
           })).docs as CommissionEventDoc[]) ?? []);
     }
   }
+  const feeHasMore = !fetchAll && feeDocsAll.length > pageLimit;
+  const feeDocs = fetchAll ? feeDocsAll : feeDocsAll.slice(0, pageLimit);
 
   const missingInvoiceIds = Array.from(
     new Set(
@@ -836,7 +859,12 @@ async function buildWalletTransactions(
   const mergedRows = [...payments, ...outstanding, ...fees].sort((a, b) =>
     a.occurredAt < b.occurredAt ? 1 : -1,
   );
-  return fetchAll ? mergedRows : mergedRows.slice(0, args.limit);
+  if (fetchAll) {
+    return { rows: mergedRows, hasMore: false };
+  }
+  // hasMore is determined from source-level overfetch flags.
+  const hasMore = paidHasMore || outstandingHasMore || feeHasMore;
+  return { rows: mergedRows.slice(0, pageLimit), hasMore };
 }
 
 export const commissionsRouter = createTRPCRouter({
@@ -1095,10 +1123,11 @@ export const commissionsRouter = createTRPCRouter({
         status: input.status,
         limit: input.limit,
       });
-      const enrichedRows = await enrichAdminWalletRows(ctx, rows);
+      const enrichedRows = await enrichAdminWalletRows(ctx, rows.rows);
 
       return {
         rows: enrichedRows,
+        hasMore: rows.hasMore,
         // Cursor shape is reserved for Phase 5 pagination without API redesign.
         nextCursor: null as string | null,
       };
@@ -1125,7 +1154,7 @@ export const commissionsRouter = createTRPCRouter({
       const endIso = parseIso(input.end);
       validateWalletRange(startIso, endIso);
 
-      const rows = await buildWalletTransactions(ctx, {
+      const page = await buildWalletTransactions(ctx, {
         tenantId: input.tenantId,
         startIso,
         endIso,
@@ -1136,7 +1165,7 @@ export const commissionsRouter = createTRPCRouter({
       });
 
       return {
-        rows: await enrichAdminWalletRows(ctx, rows),
+        rows: await enrichAdminWalletRows(ctx, page.rows),
         timezone: "Europe/Berlin" as const,
       };
     }),

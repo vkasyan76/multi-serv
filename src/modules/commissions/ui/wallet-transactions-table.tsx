@@ -49,15 +49,14 @@ export function WalletTransactionsTable({
   );
 
   useEffect(() => {
-    if (txQ.data && !txQ.isError) {
-      lastRowsRef.current = txQ.data;
+    if (txQ.data?.rows && !txQ.isError) {
+      lastRowsRef.current = txQ.data.rows;
     }
-  }, [txQ.data, txQ.isError]);
+  }, [txQ.data?.rows, txQ.isError]);
 
-  const rows = useMemo(() => txQ.data ?? lastRowsRef.current, [txQ.data]);
+  const rows = useMemo(() => txQ.data?.rows ?? lastRowsRef.current, [txQ.data?.rows]);
 
-  const canLoadMore =
-    rows.length >= limit && limit < WALLET_TRANSACTIONS_LIMIT_MAX;
+  const canLoadMore = !!txQ.data?.hasMore && limit < WALLET_TRANSACTIONS_LIMIT_MAX;
 
   useEffect(() => {
     setLimit(WALLET_TRANSACTIONS_LIMIT_DEFAULT);

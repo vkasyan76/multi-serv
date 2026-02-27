@@ -59,5 +59,9 @@ export const CommissionEvents: CollectionConfig = {
       },
     },
   ],
-  indexes: [{ fields: ["tenant", "collectedAt"] }],
+  indexes: [
+    { fields: ["tenant", "collectedAt"] },
+    { fields: ["collectedAt"] },
+    { fields: ["invoice", "collectedAt"] },
+  ],
 };
