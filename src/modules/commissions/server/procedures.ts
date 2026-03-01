@@ -324,9 +324,6 @@ async function findFeeDocsByInvoiceIds(
   if (!invoiceIds.length) return docs;
 
   for (const chunk of chunkArray(invoiceIds, 200)) {
-    if (maxDocs && docs.length >= maxDocs) {
-      return docs.slice(0, maxDocs);
-    }
     let page = 1;
     let totalPages = 1;
 
@@ -348,15 +345,14 @@ async function findFeeDocsByInvoiceIds(
       });
 
       docs.push(...((res.docs ?? []) as CommissionEventDoc[]));
-      if (maxDocs && docs.length >= maxDocs) {
-        return docs.slice(0, maxDocs);
-      }
       totalPages = res.totalPages ?? 1;
       page += 1;
     } while (page <= totalPages);
   }
 
-  return docs;
+  // Cap after collecting/sorting so later chunks cannot displace newer rows.
+  docs.sort((a, b) => ((a.collectedAt ?? "") < (b.collectedAt ?? "") ? 1 : -1));
+  return maxDocs ? docs.slice(0, maxDocs) : docs;
 }
 
 async function requireSuperAdmin(
@@ -442,18 +438,27 @@ async function getPromotionMetaMap(ctx: TRPCContext, promotionIds: string[]) {
 }
 
 async function enrichAdminWalletRows(ctx: TRPCContext, rows: WalletTx[]) {
-  // Admin reporting requires tenant attribution on each row.
-  const missingTenantRow = rows.find((row) => !row.tenantId);
-  if (missingTenantRow) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Wallet transaction row missing tenantId.",
+  const droppedRows = rows.filter((row) => !row.tenantId);
+  if (droppedRows.length > 0) {
+    const warn =
+      (ctx as { logger?: { warn?: (...args: unknown[]) => void } }).logger
+        ?.warn ?? console.warn;
+    // Keep admin reporting usable while leaving an audit trail for data cleanup.
+    warn("[commissions] dropping admin wallet rows without tenantId", {
+      count: droppedRows.length,
+      sample: droppedRows.slice(0, 5).map((row) => ({
+        rowId: row.id,
+        invoiceId: row.invoiceId,
+        paymentIntentId: row.paymentIntentId,
+        type: row.type,
+      })),
     });
   }
+  const safeRows = rows.filter((row) => Boolean(row.tenantId));
 
   const tenantIds = Array.from(
     new Set(
-      rows
+      safeRows
         .map((row) => row.tenantId)
         .filter((id): id is string => Boolean(id)),
     ),
@@ -461,14 +466,14 @@ async function enrichAdminWalletRows(ctx: TRPCContext, rows: WalletTx[]) {
   const metaMap = await getTenantMetaMap(ctx, tenantIds);
   const promotionIds = Array.from(
     new Set(
-      rows
+      safeRows
         .map((row) => row.promotionId)
         .filter((id): id is string => Boolean(id)),
     ),
   );
   const promotionMetaMap = await getPromotionMetaMap(ctx, promotionIds);
 
-  return rows.map((row) => {
+  return safeRows.map((row) => {
     const meta = row.tenantId ? metaMap.get(row.tenantId) : undefined;
     const promoMeta = row.promotionId
       ? promotionMetaMap.get(row.promotionId)
@@ -862,8 +867,12 @@ async function buildWalletTransactions(
   if (fetchAll) {
     return { rows: mergedRows, hasMore: false };
   }
-  // hasMore is determined from source-level overfetch flags.
-  const hasMore = paidHasMore || outstandingHasMore || feeHasMore;
+  // Cross-source merging can overflow the page even when each source stayed within pageLimit.
+  const hasMore =
+    mergedRows.length > pageLimit ||
+    paidHasMore ||
+    outstandingHasMore ||
+    feeHasMore;
   return { rows: mergedRows.slice(0, pageLimit), hasMore };
 }
 

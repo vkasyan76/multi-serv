@@ -8,9 +8,7 @@ import {
   WALLET_TRANSACTIONS_LIMIT_MAX,
   WALLET_TRANSACTIONS_LIMIT_STEP,
 } from "@/constants";
-import {
-  type AppLang,
-} from "@/modules/profile/location-utils";
+import { type AppLang } from "@/lib/i18n/app-lang";
 import { useTRPC } from "@/trpc/client";
 
 import { deriveInvoiceRangeIso } from "./wallet-filter-utils";

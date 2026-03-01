@@ -14,7 +14,7 @@ import type {
   WalletFilters,
   WalletTransactionRow,
 } from "@/modules/commissions/ui/wallet-types";
-import { type AppLang } from "@/modules/profile/location-utils";
+import { type AppLang } from "@/lib/i18n/app-lang";
 import { useTRPC } from "@/trpc/client";
 
 type AdminWalletTransactionsTableProps = {
