@@ -4,6 +4,7 @@ import { ClipboardList, Settings, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AdminFinanceSection } from "@/modules/admin/ui/components/admin_dashboard/admin-finance-section";
+import { AdminOrdersLifecycleView } from "@/modules/admin/ui/components/admin_dashboard/admin-orders-lifecycle-view";
 
 export default async function AdminDashboardPage() {
   return (
@@ -27,10 +28,7 @@ export default async function AdminDashboardPage() {
           <ClipboardList className="h-5 w-5 opacity-80" />
           Orders
         </h2>
-        <p className="text-sm text-muted-foreground">
-          Placeholder for future order analytics: categories, users, locations,
-          prices, statuses, and related filters.
-        </p>
+        <AdminOrdersLifecycleView />
       </section>
 
       <section

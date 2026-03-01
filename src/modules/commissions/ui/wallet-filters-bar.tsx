@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TenantCombobox } from "@/components/ui/tenant-combobox";
 import {
   type AppLang,
   formatDateForLocale,
@@ -44,6 +45,7 @@ type WalletFiltersBarProps = {
     options: WalletTenantOption[];
     loading?: boolean;
     onChange: (next: string) => void;
+    variant?: "select" | "combobox";
   };
   // Optional because admin Phase 2 has no CSV export yet.
   download?: {
@@ -314,24 +316,38 @@ export function WalletFiltersBar({
       {tenantScope && (
         <div className="flex flex-col gap-1">
           <span className="text-xs text-muted-foreground">Tenant</span>
-          <Select
-            value={tenantScope.value}
-            onValueChange={tenantScope.onChange}
-          >
-            <SelectTrigger className="w-[220px]">
-              <SelectValue
-                placeholder={tenantScope.loading ? "Loading..." : "All tenants"}
+          {tenantScope.variant === "combobox" ? (
+            // Admin tenant lists can grow large; searchable single-select keeps the same scope semantics.
+            <div className="w-[220px]">
+              <TenantCombobox
+                value={tenantScope.value}
+                options={tenantScope.options}
+                loading={tenantScope.loading}
+                onChange={tenantScope.onChange}
               />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All tenants</SelectItem>
-              {tenantScope.options.map((tenant) => (
-                <SelectItem key={tenant.id} value={tenant.id}>
-                  {tenant.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            </div>
+          ) : (
+            <Select
+              value={tenantScope.value}
+              onValueChange={tenantScope.onChange}
+            >
+              <SelectTrigger className="w-[220px]">
+                <SelectValue
+                  placeholder={
+                    tenantScope.loading ? "Loading..." : "All tenants"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tenants</SelectItem>
+                {tenantScope.options.map((tenant) => (
+                  <SelectItem key={tenant.id} value={tenant.id}>
+                    {tenant.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       )}
 

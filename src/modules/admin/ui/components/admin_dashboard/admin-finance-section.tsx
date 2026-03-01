@@ -108,6 +108,7 @@ export function AdminFinanceSection() {
           options: tenantOptionsQ.data ?? [],
           loading: tenantOptionsQ.isLoading,
           onChange: setSelectedTenantId,
+          variant: "combobox",
         }}
         download={{
           onClick: handleWalletDownload,
