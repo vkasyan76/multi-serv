@@ -19,7 +19,6 @@ import {
   SERVICE_STATUS_LABELS,
 } from "@/modules/bookings/ui/service-status";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -58,38 +57,30 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Booking, Order } from "@/payload-types";
+import type { Order } from "@/payload-types";
+import type { AppLang } from "@/lib/i18n/app-lang";
 import {
-  type AppLang,
   getInitialLanguage,
   getLocaleAndCurrency,
 } from "@/modules/profile/location-utils";
 import { toast } from "sonner";
+import {
+  type OrdersLifecycleCustomerRow,
+  type OrdersLifecycleTenantRow,
+  type SlotLifecycleSlot,
+  EM_DASH,
+  PaymentStatusBadge,
+  StatusBadge,
+  formatDateTime,
+  getCustomerLabel,
+  getDateRange,
+  getProviderLabel,
+} from "./orders-lifecycle-shared";
 
 type Mode = "customer" | "tenant";
 
 type ServiceStatus = Order["serviceStatus"];
 type InvoiceStatus = Order["invoiceStatus"];
-
-export type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
-  serviceStatus: ServiceStatus;
-  disputeReason: string | null;
-  serviceSnapshot: NonNullable<Booking["serviceSnapshot"]> | null;
-};
-
-type OrdersLifecycleRow = OrdersLifecycleCustomerRow | OrdersLifecycleTenantRow;
-
-export type OrdersLifecycleCustomerRow = Pick<
-  Order,
-  "id" | "createdAt" | "serviceStatus" | "lifecycleMode" | "invoiceStatus"
-> & {
-  slots: SlotLifecycleSlot[];
-};
-
-export type OrdersLifecycleTenantRow = OrdersLifecycleCustomerRow & {
-  userId: string;
-  customerSnapshot: Order["customerSnapshot"];
-};
 
 type Props = {
   mode: Mode;
@@ -99,25 +90,6 @@ type Props = {
 
 type SortKey = "date" | "name" | "status" | "payment";
 type SortDir = "asc" | "desc";
-
-const EM_DASH = "\u2014";
-const RANGE_ARROW = "\u2192";
-
-function statusTextClass(s: NormalizedServiceStatus) {
-  return s === "accepted" ? "text-white" : "text-slate-900";
-}
-
-function StatusBadge({ value }: { value: ServiceStatus }) {
-  const st = normalizeServiceStatus(value);
-  return (
-    <Badge
-      variant="secondary"
-      className={`border-0 ${SERVICE_STATUS_COLORS[st].className} ${statusTextClass(st)}`}
-    >
-      {SERVICE_STATUS_LABELS[st]}
-    </Badge>
-  );
-}
 
 function StatusSelectItem({
   value,
@@ -137,78 +109,6 @@ function StatusSelectItem({
       </span>
     </SelectItem>
   );
-}
-
-function paymentBadgeMeta(status: InvoiceStatus | null | undefined) {
-  switch (status) {
-    case "paid":
-      return { label: "paid", className: "bg-emerald-200 text-emerald-900" };
-    case "issued":
-    case "overdue":
-      return { label: "payment due", className: "bg-amber-200 text-amber-900" };
-    case "draft":
-    case "void":
-    case "none":
-    default:
-      return {
-        label: "not invoiced yet",
-        className: "bg-slate-200 text-slate-900",
-      };
-  }
-}
-
-function PaymentStatusBadge({ value }: { value?: InvoiceStatus | null }) {
-  const meta = paymentBadgeMeta(value);
-  return (
-    <Badge variant="secondary" className={`border-0 ${meta.className}`}>
-      {meta.label}
-    </Badge>
-  );
-}
-
-function formatDateTime(iso: string, locale: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return EM_DASH;
-  return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
-}
-
-function getDateRange(slots: SlotLifecycleSlot[], locale: string) {
-  if (!slots.length) return EM_DASH;
-
-  const starts = slots
-    .map((s) => new Date(s.start).getTime())
-    .filter((t) => !Number.isNaN(t));
-
-  const ends = slots
-    .map((s) => new Date(s.end ?? s.start).getTime())
-    .filter((t) => !Number.isNaN(t));
-
-  if (!starts.length) return EM_DASH;
-
-  const minStart = new Date(Math.min(...starts)).toISOString();
-  const maxEnd = ends.length
-    ? new Date(Math.max(...ends)).toISOString()
-    : minStart;
-
-  return `${formatDateTime(minStart, locale)} ${RANGE_ARROW} ${formatDateTime(maxEnd, locale)}`;
-}
-
-function getProviderLabel(order: OrdersLifecycleRow) {
-  const first = order.slots?.[0];
-  return first?.serviceSnapshot?.tenantName ?? EM_DASH;
-}
-
-function getCustomerLabel(order: OrdersLifecycleTenantRow) {
-  const cs = order.customerSnapshot;
-  const name = `${cs.firstName ?? ""} ${cs.lastName ?? ""}`.trim();
-  if (name) return name;
-  return cs.email ?? order.userId ?? EM_DASH;
 }
 
 function getMinStartMs(slots: SlotLifecycleSlot[]) {
