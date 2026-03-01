@@ -103,13 +103,24 @@ export function PaymentStatusBadge({
 export function formatDateTime(iso: string, locale: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return EM_DASH;
-  return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  } catch {
+    // Keep lifecycle rows rendering if an unexpected locale slips through.
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  }
 }
 
 export function getDateRange(slots: SlotLifecycleSlot[], locale: string) {

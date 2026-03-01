@@ -81,6 +81,8 @@ export function AdminOrdersLifecycleTable({ orders, locale }: Props) {
                       size="icon"
                       onClick={() => toggle(o.id)}
                       aria-label={isOpen ? "Collapse order" : "Expand order"}
+                      aria-expanded={isOpen}
+                      aria-controls={`order-${o.id}-details`}
                     >
                       {isOpen ? (
                         <ChevronDown className="h-4 w-4" />
@@ -107,7 +109,13 @@ export function AdminOrdersLifecycleTable({ orders, locale }: Props) {
 
                 {isOpen && (
                   <TableRow>
-                    <TableCell colSpan={6} className="bg-muted/30 p-0">
+                    <TableCell
+                      id={`order-${o.id}-details`}
+                      colSpan={6}
+                      className="bg-muted/30 p-0"
+                      role="region"
+                      aria-label="Order details"
+                    >
                       <div className="py-2">
                         <table className="w-full caption-bottom text-sm table-fixed">
                           <colgroup>
