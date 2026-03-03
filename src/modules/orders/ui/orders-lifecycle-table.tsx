@@ -54,7 +54,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Order } from "@/payload-types";
 import type { AppLang } from "@/lib/i18n/app-lang";
 import {
   getInitialLanguage,

@@ -158,7 +158,12 @@ export function getDateRange(slots: SlotLifecycleSlot[], locale: string) {
 
 export function getProviderLabel(order: OrdersLifecycleCustomerRow) {
   const first = order.slots?.[0];
-  return first?.serviceSnapshot?.tenantName ?? EM_DASH;
+  // Keep a usable provider label even if the tenant name snapshot is blank.
+  return (
+    (first?.serviceSnapshot?.tenantName ??
+      first?.serviceSnapshot?.tenantSlug ??
+      "").trim() || EM_DASH
+  );
 }
 
 export function getCustomerLabel(order: OrdersLifecycleTenantRow) {
