@@ -1,5 +1,6 @@
 import { addDays, startOfDay } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
+import { downloadCsv } from "@/lib/csv/download-csv";
 import {
   type AppLang,
   formatDateForLocale,
@@ -249,12 +250,4 @@ export function adminWalletRowsToCsv(
   return [headers.join(","), ...lines].join("\n");
 }
 
-export function downloadCsv(filename: string, csv: string) {
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
+export { downloadCsv };

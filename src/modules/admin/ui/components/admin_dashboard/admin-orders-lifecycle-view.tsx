@@ -2,14 +2,21 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Download, FilterX } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TenantCombobox } from "@/components/ui/tenant-combobox";
+import { downloadCsv } from "@/lib/csv/download-csv";
 import { DEFAULT_LIMIT } from "@/constants";
 import type { AppLang } from "@/lib/i18n/app-lang";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import {
+  adminOrdersSlotRowsToCsv,
+  buildOrdersCsvFilename,
+} from "@/modules/orders/ui/orders-csv";
 import {
   getInitialLanguage,
   getLocaleAndCurrency,
@@ -27,6 +34,7 @@ function pageWindow(current: number, total: number, size = 5) {
 
 export function AdminOrdersLifecycleView() {
   const trpc = useTRPC();
+  const qc = useQueryClient();
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const anchoredTopRef = useRef<number | null>(null);
 
@@ -49,6 +57,7 @@ export function AdminOrdersLifecycleView() {
     string | undefined
   >(undefined);
   const [page, setPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
 
   const tenantId = selectedTenantId === "all" ? undefined : selectedTenantId;
   const hasActiveFilters =
@@ -66,6 +75,18 @@ export function AdminOrdersLifecycleView() {
   const items = q.data?.items ?? [];
   const totalPages = q.data?.totalPages ?? 1;
   const pages = totalPages > 1 ? pageWindow(page, totalPages, 5) : [];
+  const exportScopeLabel = useMemo(() => {
+    if (selectedTenantId === "all") return "all-tenants";
+    const selected = (tenantOptionsQ.data ?? []).find(
+      (opt) => opt.id === selectedTenantId,
+    );
+
+    return selected?.slug || selected?.name || selectedTenantId;
+  }, [selectedTenantId, tenantOptionsQ.data]);
+  const exportCustomerLabel = useMemo(
+    () => appliedCustomerQuery?.trim() || undefined,
+    [appliedCustomerQuery],
+  );
 
   const captureAnchor = () => {
     anchoredTopRef.current =
@@ -116,6 +137,34 @@ export function AdminOrdersLifecycleView() {
     setPage(1);
   };
 
+  const handleDownloadCsv = async () => {
+    try {
+      setIsExporting(true);
+      toast.loading("Preparing orders CSV...", { id: "orders-csv" });
+
+      const exportData = await qc.fetchQuery(
+        trpc.orders.adminSlotLifecycleExport.queryOptions({
+          tenantId,
+          customerQuery: appliedCustomerQuery,
+        }),
+      );
+      const csv = adminOrdersSlotRowsToCsv(exportData.rows);
+      const filename = buildOrdersCsvFilename({
+        scopeLabel: exportScopeLabel,
+        customerLabel: exportCustomerLabel,
+      });
+
+      downloadCsv(filename, csv);
+      toast.success("Orders CSV ready.", { id: "orders-csv" });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to export orders.";
+      toast.error(message, { id: "orders-csv" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (q.isLoading) {
     return (
       <div className="rounded-lg border bg-white p-4 text-sm text-muted-foreground">
@@ -159,6 +208,11 @@ export function AdminOrdersLifecycleView() {
 
         <div className="flex items-center gap-2">
           <Button type="submit">Search</Button>
+        </div>
+
+        <div className="flex-1" />
+
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="ghost"
@@ -166,7 +220,17 @@ export function AdminOrdersLifecycleView() {
             disabled={!hasActiveFilters}
             className={!hasActiveFilters ? "invisible pointer-events-none" : undefined}
           >
+            <FilterX className="mr-2 h-4 w-4" />
             Clear filters
+          </Button>
+          <Button
+            type="button"
+            variant="default"
+            onClick={handleDownloadCsv}
+            disabled={isExporting || q.isLoading || items.length === 0}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {isExporting ? "Preparing..." : "Download CSV"}
           </Button>
         </div>
       </form>

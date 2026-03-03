@@ -81,6 +81,10 @@ Required env groups are defined in `README.md`:
   - Added super-admin-only `orders.adminListSlotLifecycle` for cross-tenant slot-lifecycle orders.
   - Added `listForAdminSlotLifecycle` rollup query with canonical tenant filter (`order.tenant`) and customer snapshot text search.
   - Reused tenant lifecycle row mapping and added admin tenant display metadata (`tenantName`/`tenantSlug`) with fallbacks.
+- Admin Orders CSV export is implemented:
+  - `orders.adminSlotLifecycleExport` returns flat slot-level export rows for the full filtered admin result set.
+  - Export reuses the same tenant/customer filter semantics as the admin Orders table and caps flattened slot rows server-side.
+  - Admin Orders download is wired in `AdminOrdersLifecycleView`; CSV formatting stays in `src/modules/orders/ui/orders-csv.ts`.
 
 ## Language Structure (i18n)
 

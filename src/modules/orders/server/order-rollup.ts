@@ -12,6 +12,8 @@ type DocWithId<T> = T & { id: string };
 type CtxLike = Pick<TRPCContext, "db" | "userId">; // for Stage 1C queries we also need ctx.userId
 type DbOnlyCtx = Pick<TRPCContext, "db">;
 type ServiceStatus = Order["serviceStatus"];
+const ADMIN_ORDERS_EXPORT_PAGE_SIZE = 200;
+const MAX_ADMIN_ORDERS_EXPORT_SLOT_ROWS = 50_000;
 
 type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
   serviceStatus: ServiceStatus;
@@ -34,6 +36,28 @@ type AdminTenantMeta = {
   tenantId?: string;
   tenantName: string;
   tenantSlug?: string;
+};
+
+export type AdminOrdersSlotExportRow = {
+  orderId: string;
+  orderCreatedAt: string;
+  lifecycleMode: string;
+  orderServiceStatus: string;
+  invoiceStatus: string | null;
+  tenantId?: string;
+  tenantName?: string | null;
+  tenantSlug?: string | null;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  userId?: string | null;
+  slotId: string;
+  slotIndex: number;
+  slotCount: number;
+  slotStart: string;
+  slotEnd?: string | null;
+  slotStatus: string;
+  serviceName?: string | null;
+  disputeReason?: string | null;
 };
 
 function normalizeServiceStatus(ss: unknown): ServiceStatus {
@@ -215,6 +239,74 @@ function tenantMetaFromOrder(
   };
 }
 
+function buildAdminSlotLifecycleWhere(input?: {
+  tenantId?: string;
+  customerQuery?: string;
+}) {
+  const whereAnd: Where[] = [{ lifecycleMode: { equals: "slot" } }];
+
+  if (input?.tenantId) {
+    // Canonical tenant scope key for orders is the relation field `tenant`.
+    whereAnd.push({ tenant: { equals: input.tenantId } });
+  }
+
+  const q = input?.customerQuery?.trim();
+  if (q) {
+    // Keep `like` to match existing repo text-search semantics.
+    whereAnd.push({
+      or: [
+        { "customerSnapshot.firstName": { like: q } },
+        { "customerSnapshot.lastName": { like: q } },
+        { "customerSnapshot.email": { like: q } },
+      ],
+    });
+  }
+
+  return { and: whereAnd } as Where;
+}
+
+async function findAdminSlotLifecycleOrders(
+  ctx: CtxLike,
+  input: {
+    tenantId?: string;
+    customerQuery?: string;
+    page: number;
+    limit: number;
+  },
+) {
+  return (await ctx.db.find({
+    collection: "orders",
+    where: buildAdminSlotLifecycleWhere(input),
+    sort: "-createdAt",
+    page: input.page,
+    limit: input.limit,
+    depth: 1, // Keep the same relation shape as tenant lifecycle query.
+    overrideAccess: true,
+  })) as {
+    docs?: Array<DocWithId<Order>>;
+    page?: number;
+    totalPages?: number;
+    totalDocs?: number;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+  };
+}
+
+function toCustomerExportMeta(
+  snapshot: Order["customerSnapshot"],
+  userId: string,
+) {
+  const customerName =
+    `${snapshot.firstName ?? ""} ${snapshot.lastName ?? ""}`.trim() || null;
+  const customerEmail = (snapshot.email ?? "").trim() || null;
+
+  return {
+    customerName,
+    customerEmail,
+    userId: userId.trim() || null,
+  };
+}
+
 export async function listMineSlotLifecycle(ctx: CtxLike) {
   if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
@@ -309,42 +401,12 @@ export async function listForAdminSlotLifecycle(
 ) {
   const page = Math.max(input?.page ?? 1, 1);
   const limit = Math.min(Math.max(input?.limit ?? DEFAULT_LIMIT, 1), 100);
-
-  const whereAnd: Where[] = [{ lifecycleMode: { equals: "slot" } }];
-
-  if (input?.tenantId) {
-    // Canonical tenant scope key for orders is the relation field `tenant`.
-    whereAnd.push({ tenant: { equals: input.tenantId } });
-  }
-
-  const q = input?.customerQuery?.trim();
-  if (q) {
-    // Keep `like` to match existing repo text-search semantics.
-    whereAnd.push({
-      or: [
-        { "customerSnapshot.firstName": { like: q } },
-        { "customerSnapshot.lastName": { like: q } },
-        { "customerSnapshot.email": { like: q } },
-      ],
-    });
-  }
-
-  const res = (await ctx.db.find({
-    collection: "orders",
-    where: { and: whereAnd },
-    sort: "-createdAt",
+  const res = await findAdminSlotLifecycleOrders(ctx, {
+    tenantId: input?.tenantId,
+    customerQuery: input?.customerQuery,
     page,
     limit,
-    depth: 1, // Keep the same relation shape as tenant lifecycle query.
-    overrideAccess: true,
-  })) as {
-    docs?: Array<DocWithId<Order>>;
-    page?: number;
-    totalPages?: number;
-    totalDocs?: number;
-    hasNextPage?: boolean;
-    hasPrevPage?: boolean;
-  };
+  });
 
   const items = (res.docs ?? []).map((o) => {
     const base = mapTenantLifecycleItem(o);
@@ -360,6 +422,88 @@ export async function listForAdminSlotLifecycle(
     hasNextPage: res.hasNextPage ?? false,
     hasPrevPage: res.hasPrevPage ?? false,
   };
+}
+
+export async function exportAdminSlotLifecycleRows(
+  ctx: CtxLike,
+  input?: {
+    tenantId?: string;
+    customerQuery?: string;
+  },
+) {
+  const rows: AdminOrdersSlotExportRow[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const res = await findAdminSlotLifecycleOrders(ctx, {
+      tenantId: input?.tenantId,
+      customerQuery: input?.customerQuery,
+      page,
+      limit: ADMIN_ORDERS_EXPORT_PAGE_SIZE,
+    });
+
+    for (const order of res.docs ?? []) {
+      const base = mapTenantLifecycleItem(order);
+      const tenantMeta = tenantMetaFromOrder(order, base.slots);
+      const customerMeta = toCustomerExportMeta(
+        base.customerSnapshot,
+        base.userId,
+      );
+      const orderedSlots = [...base.slots].sort((a, b) => {
+        const aStart = Date.parse(a.start ?? "");
+        const bStart = Date.parse(b.start ?? "");
+
+        if (Number.isFinite(aStart) && Number.isFinite(bStart) && aStart !== bStart) {
+          return aStart - bStart;
+        }
+
+        if (Number.isFinite(aStart) !== Number.isFinite(bStart)) {
+          return Number.isFinite(aStart) ? -1 : 1;
+        }
+
+        return a.id.localeCompare(b.id);
+      });
+
+      if (rows.length + orderedSlots.length > MAX_ADMIN_ORDERS_EXPORT_SLOT_ROWS) {
+        throw new TRPCError({
+          code: "PAYLOAD_TOO_LARGE",
+          message: "Too many rows. Narrow filters.",
+        });
+      }
+
+      const slotCount = orderedSlots.length;
+
+      orderedSlots.forEach((slot, index) => {
+        rows.push({
+          orderId: base.id,
+          orderCreatedAt: base.createdAt,
+          lifecycleMode: base.lifecycleMode ?? "",
+          orderServiceStatus: base.serviceStatus ?? "",
+          invoiceStatus: base.invoiceStatus ?? null,
+          tenantId: tenantMeta.tenantId ?? undefined,
+          tenantName: tenantMeta.tenantName ?? null,
+          tenantSlug: tenantMeta.tenantSlug ?? null,
+          customerName: customerMeta.customerName,
+          customerEmail: customerMeta.customerEmail,
+          userId: customerMeta.userId,
+          slotId: slot.id,
+          slotIndex: index + 1,
+          slotCount,
+          slotStart: slot.start,
+          slotEnd: slot.end ?? null,
+          slotStatus: slot.serviceStatus ?? "",
+          serviceName: (slot.serviceSnapshot?.serviceName ?? "").trim() || null,
+          disputeReason: (slot.disputeReason ?? "").trim() || null,
+        });
+      });
+    }
+
+    totalPages = res.totalPages ?? 1;
+    page += 1;
+  } while (page <= totalPages);
+
+  return rows;
 }
 
 /**

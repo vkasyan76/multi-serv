@@ -189,7 +189,8 @@ export function getCustomerLabel(order: OrdersLifecycleTenantRow) {
   const cs = order.customerSnapshot;
   const name = `${cs.firstName ?? ""} ${cs.lastName ?? ""}`.trim();
   if (name) return name;
-  return cs.email ?? order.userId ?? EM_DASH;
+  // Trim snapshot fallbacks so whitespace-only values do not render as blank labels.
+  return (cs.email ?? "").trim() || (order.userId ?? "").trim() || EM_DASH;
 }
 
 export function getTenantLabel(order: OrdersLifecycleAdminRow) {
