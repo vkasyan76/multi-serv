@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,17 @@ import {
 } from "@/components/ui/table";
 import {
   type OrdersLifecycleAdminRow,
+  type OrdersLifecycleAdminSortKey,
+  type OrdersLifecycleSortDir,
   EM_DASH,
+  OrdersLifecycleSortIcon,
   PaymentStatusBadge,
   StatusBadge,
   formatDateTime,
   getCustomerLabel,
   getDateRange,
   getTenantLabel,
+  sortAdminOrdersLifecycleRows,
 } from "@/modules/orders/ui/orders-lifecycle-shared";
 
 type Props = {
@@ -30,9 +34,28 @@ type Props = {
 export function AdminOrdersLifecycleTable({ orders, locale }: Props) {
   // Admin orders stays read-only here: expansion only, no actions or mutation hooks.
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [sort, setSort] = useState<{
+    key: OrdersLifecycleAdminSortKey;
+    dir: OrdersLifecycleSortDir;
+  }>({
+    key: "date",
+    dir: "desc",
+  });
+  const sortedOrders = useMemo(
+    () => sortAdminOrdersLifecycleRows(orders, sort),
+    [orders, sort],
+  );
 
   function toggle(id: string) {
     setOpen((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  function toggleSort(key: OrdersLifecycleAdminSortKey) {
+    setSort((prev) =>
+      prev.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: "asc" },
+    );
   }
 
   return (
@@ -50,25 +73,80 @@ export function AdminOrdersLifecycleTable({ orders, locale }: Props) {
           <TableRow>
             <TableHead className="sticky top-0 z-20 bg-background w-11" />
             <TableHead className="sticky top-0 z-20 bg-background">
-              Tenant
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0"
+                onClick={() => toggleSort("tenant")}
+              >
+                Tenant
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "tenant"}
+                  dir={sort.dir}
+                />
+              </Button>
             </TableHead>
             <TableHead className="sticky top-0 z-20 bg-background">
-              Customer
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0"
+                onClick={() => toggleSort("name")}
+              >
+                Customer
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "name"}
+                  dir={sort.dir}
+                />
+              </Button>
             </TableHead>
             <TableHead className="sticky top-0 z-20 bg-background">
-              Date range
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0"
+                onClick={() => toggleSort("date")}
+              >
+                Date range
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "date"}
+                  dir={sort.dir}
+                />
+              </Button>
             </TableHead>
             <TableHead className="sticky top-0 z-20 bg-background">
-              Status
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0"
+                onClick={() => toggleSort("status")}
+              >
+                Status
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "status"}
+                  dir={sort.dir}
+                />
+              </Button>
             </TableHead>
             <TableHead className="sticky top-0 z-20 bg-background">
-              Payment
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0"
+                onClick={() => toggleSort("payment")}
+              >
+                Payment
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "payment"}
+                  dir={sort.dir}
+                />
+              </Button>
             </TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody>
-          {orders.map((o) => {
+          {sortedOrders.map((o) => {
             const isOpen = !!open[o.id];
             const range = getDateRange(o.slots ?? [], locale);
 

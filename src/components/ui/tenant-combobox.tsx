@@ -41,10 +41,12 @@ export function TenantCombobox({
   const [open, setOpen] = useState(false);
 
   const selectedLabel = useMemo(() => {
-    if (value === ALL_TENANTS_VALUE) return "All tenants";
+    // Avoid showing "All tenants" for a stale or still-loading specific tenant selection.
+    if (!value || value === ALL_TENANTS_VALUE) return "All tenants";
     const selected = options.find((opt) => opt.id === value);
-    return (selected?.name ?? selected?.slug ?? "").trim() || "All tenants";
-  }, [options, value]);
+    if (!selected) return loading ? "Loading tenant..." : "Unknown tenant";
+    return (selected.name ?? selected.slug ?? "").trim() || selected.id;
+  }, [loading, options, value]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
