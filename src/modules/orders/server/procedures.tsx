@@ -10,6 +10,7 @@ import {
   listForMyTenantSlotLifecycle as listForMyTenantSlotLifecycleImpl,
   listForAdminSlotLifecycle as listForAdminSlotLifecycleImpl,
   exportAdminSlotLifecycleRows as exportAdminSlotLifecycleRowsImpl,
+  listAdminOrderCustomerOptions as listAdminOrderCustomerOptionsImpl,
 } from "./order-rollup";
 
 type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
@@ -394,6 +395,18 @@ export const ordersRouter = createTRPCRouter({
         rows: await exportAdminSlotLifecycleRowsImpl(ctx, input),
         timezone: "UTC" as const,
       };
+    }),
+
+  adminCustomerOptions: baseProcedure
+    .input(
+      z.object({
+        tenantId: z.string().min(1).optional(),
+        query: z.string().trim().min(1).max(120),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await requireSuperAdmin(ctx);
+      return listAdminOrderCustomerOptionsImpl(ctx, input);
     }),
 
   // check if customer has any orders:

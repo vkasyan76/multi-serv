@@ -60,6 +60,13 @@ export type AdminOrdersSlotExportRow = {
   disputeReason?: string | null;
 };
 
+export type AdminOrderCustomerOption = {
+  key: string;
+  label: string;
+  email?: string | null;
+  queryValue: string;
+};
+
 function normalizeServiceStatus(ss: unknown): ServiceStatus {
   if (ss === "completed" || ss === "accepted" || ss === "disputed") return ss;
   return "scheduled";
@@ -504,6 +511,56 @@ export async function exportAdminSlotLifecycleRows(
   } while (page <= totalPages);
 
   return rows;
+}
+
+export async function listAdminOrderCustomerOptions(
+  ctx: CtxLike,
+  input: {
+    tenantId?: string;
+    query: string;
+  },
+) {
+  const q = input.query.trim();
+  if (!q) return [];
+
+  const res = await findAdminSlotLifecycleOrders(ctx, {
+    tenantId: input.tenantId,
+    customerQuery: q,
+    page: 1,
+    limit: 50,
+  });
+
+  const options: AdminOrderCustomerOption[] = [];
+  const seen = new Set<string>();
+
+  for (const order of res.docs ?? []) {
+    const snapshot = order.customerSnapshot;
+    if (!snapshot) continue;
+
+    const name = `${snapshot.firstName ?? ""} ${snapshot.lastName ?? ""}`.trim();
+    const email = (snapshot.email ?? "").trim() || null;
+    const userId =
+      typeof order.user === "string" ? order.user.trim() : (order.user?.id ?? "").trim();
+    const queryValue = email || name;
+
+    if (!queryValue) continue;
+
+    const label = name || email || userId || "Unknown customer";
+    const key = email || name || userId;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+
+    options.push({
+      key,
+      label,
+      email,
+      queryValue,
+    });
+
+    if (options.length >= 15) break;
+  }
+
+  return options;
 }
 
 /**

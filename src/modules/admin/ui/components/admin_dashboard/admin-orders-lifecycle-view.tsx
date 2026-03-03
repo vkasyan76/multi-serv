@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, FilterX } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { TenantCombobox } from "@/components/ui/tenant-combobox";
 import { downloadCsv } from "@/lib/csv/download-csv";
 import { DEFAULT_LIMIT } from "@/constants";
@@ -22,6 +20,7 @@ import {
   getLocaleAndCurrency,
 } from "@/modules/profile/location-utils";
 import { useTRPC } from "@/trpc/client";
+import { AdminOrdersCustomerCombobox } from "./admin-orders-customer-combobox";
 import { AdminOrdersLifecycleTable } from "./admin-orders-lifecycle-table";
 
 function pageWindow(current: number, total: number, size = 5) {
@@ -52,8 +51,10 @@ export function AdminOrdersLifecycleView() {
   const { locale } = useMemo(() => getLocaleAndCurrency(appLang), [appLang]);
 
   const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
-  const [customerQueryInput, setCustomerQueryInput] = useState("");
   const [appliedCustomerQuery, setAppliedCustomerQuery] = useState<
+    string | undefined
+  >(undefined);
+  const [appliedCustomerLabel, setAppliedCustomerLabel] = useState<
     string | undefined
   >(undefined);
   const [page, setPage] = useState(1);
@@ -84,8 +85,8 @@ export function AdminOrdersLifecycleView() {
     return selected?.slug || selected?.name || selectedTenantId;
   }, [selectedTenantId, tenantOptionsQ.data]);
   const exportCustomerLabel = useMemo(
-    () => appliedCustomerQuery?.trim() || undefined,
-    [appliedCustomerQuery],
+    () => appliedCustomerLabel?.trim() || appliedCustomerQuery?.trim() || undefined,
+    [appliedCustomerLabel, appliedCustomerQuery],
   );
 
   const captureAnchor = () => {
@@ -114,26 +115,27 @@ export function AdminOrdersLifecycleView() {
     q.isError,
   ]);
 
-  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    captureAnchor();
-    setPage(1);
-    const next = customerQueryInput.trim();
-    // Admin search is explicit so list queries do not refetch on every keystroke.
-    setAppliedCustomerQuery(next || undefined);
-  };
-
   const handleTenantChange = (value: string) => {
     captureAnchor();
     setSelectedTenantId(value);
     setPage(1);
   };
 
+  const handleCustomerChange = (next?: {
+    value?: string;
+    label?: string;
+  }) => {
+    captureAnchor();
+    setAppliedCustomerQuery(next?.value?.trim() || undefined);
+    setAppliedCustomerLabel(next?.label?.trim() || undefined);
+    setPage(1);
+  };
+
   const handleClear = () => {
     captureAnchor();
     setSelectedTenantId("all");
-    setCustomerQueryInput("");
     setAppliedCustomerQuery(undefined);
+    setAppliedCustomerLabel(undefined);
     setPage(1);
   };
 
@@ -183,10 +185,7 @@ export function AdminOrdersLifecycleView() {
 
   return (
     <div ref={sectionRef} className="space-y-4">
-      <form
-        onSubmit={handleSearch}
-        className="rounded-lg border bg-white p-4 flex flex-col gap-3 lg:flex-row lg:items-end"
-      >
+      <div className="rounded-lg border bg-white p-4 flex flex-col gap-3 lg:flex-row lg:items-end">
         <div className="grid gap-2 min-w-0 lg:w-[260px]">
           <label className="text-sm text-muted-foreground">Tenant</label>
           <TenantCombobox
@@ -199,15 +198,12 @@ export function AdminOrdersLifecycleView() {
 
         <div className="grid gap-2 min-w-0 flex-1">
           <label className="text-sm text-muted-foreground">Customer</label>
-          <Input
-            value={customerQueryInput}
-            onChange={(e) => setCustomerQueryInput(e.target.value)}
-            placeholder="Search by customer name or email"
+          <AdminOrdersCustomerCombobox
+            tenantId={tenantId}
+            value={appliedCustomerQuery}
+            displayValue={appliedCustomerLabel}
+            onChange={handleCustomerChange}
           />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button type="submit">Search</Button>
         </div>
 
         <div className="flex-1" />
@@ -233,7 +229,7 @@ export function AdminOrdersLifecycleView() {
             {isExporting ? "Preparing..." : "Download CSV"}
           </Button>
         </div>
-      </form>
+      </div>
 
       {items.length === 0 ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
