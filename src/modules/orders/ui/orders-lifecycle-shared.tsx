@@ -48,6 +48,7 @@ export type OrdersLifecycleBaseSortKey =
   | "payment";
 export type OrdersLifecycleAdminSortKey =
   | OrdersLifecycleBaseSortKey
+  | "created"
   | "tenant";
 export type OrdersLifecycleSortDir = "asc" | "desc";
 
@@ -131,6 +132,24 @@ export function formatDateTime(iso: string, locale: string) {
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
+    }).format(d);
+  }
+}
+
+export function formatCompactDate(iso: string, locale: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return EM_DASH;
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }).format(d);
+  } catch {
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
     }).format(d);
   }
 }
@@ -323,6 +342,12 @@ export function sortAdminOrdersLifecycleRows(
     if (sort.key === "tenant") {
       av = getTenantLabel(a);
       bv = getTenantLabel(b);
+    } else if (sort.key === "created") {
+      const aCreated = new Date(a.createdAt).getTime();
+      const bCreated = new Date(b.createdAt).getTime();
+      // Invalid timestamps should not outrank real orders in the default newest-first admin view.
+      av = Number.isNaN(aCreated) ? Number.NEGATIVE_INFINITY : aCreated;
+      bv = Number.isNaN(bCreated) ? Number.NEGATIVE_INFINITY : bCreated;
     } else if (sort.key === "date") {
       av = getMinStartMs(a.slots ?? []);
       bv = getMinStartMs(b.slots ?? []);

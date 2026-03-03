@@ -19,6 +19,7 @@ import {
   OrdersLifecycleSortIcon,
   PaymentStatusBadge,
   StatusBadge,
+  formatCompactDate,
   formatDateTime,
   getCustomerLabel,
   getDateRange,
@@ -63,11 +64,12 @@ export function AdminOrdersLifecycleTable({ orders, locale }: Props) {
       <table className="w-full caption-bottom text-sm table-fixed">
         <colgroup>
           <col className="w-11" />
-          <col className="w-[180px]" />
-          <col className="w-[180px]" />
-          <col className="w-[360px]" />
-          <col className="w-[140px]" />
-          <col className="w-[140px]" />
+          <col className="w-[150px]" />
+          <col className="w-[170px]" />
+          <col className="w-[120px]" />
+          <col className="w-[320px]" />
+          <col className="w-[120px]" />
+          <col className="w-[120px]" />
         </colgroup>
         <TableHeader className="border-b">
           <TableRow>
@@ -96,6 +98,20 @@ export function AdminOrdersLifecycleTable({ orders, locale }: Props) {
                 Customer
                 <OrdersLifecycleSortIcon
                   active={sort.key === "name"}
+                  dir={sort.dir}
+                />
+              </Button>
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0"
+                onClick={() => toggleSort("created")}
+              >
+                Order date
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "created"}
                   dir={sort.dir}
                 />
               </Button>
@@ -176,7 +192,8 @@ export function AdminOrdersLifecycleTable({ orders, locale }: Props) {
                   <TableCell className="font-medium">
                     {getCustomerLabel(o)}
                   </TableCell>
-                  <TableCell className="pr-6">{range}</TableCell>
+                  <TableCell>{formatCompactDate(o.createdAt, locale)}</TableCell>
+                  <TableCell className="pr-3">{range}</TableCell>
                   <TableCell>
                     <StatusBadge value={o.serviceStatus} />
                   </TableCell>
@@ -189,7 +206,7 @@ export function AdminOrdersLifecycleTable({ orders, locale }: Props) {
                   <TableRow>
                     <TableCell
                       id={`order-${o.id}-details`}
-                      colSpan={6}
+                      colSpan={7}
                       className="bg-muted/30 p-0"
                       role="region"
                       aria-label="Order details"
