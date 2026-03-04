@@ -1,58 +1,171 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse, type NextRequest } from "next/server";
+import type { AppLang } from "@/lib/i18n/app-lang";
+import {
+  LOCALE_COOKIE_NAME,
+  resolveLocaleFromRequest,
+  stripLeadingLocale,
+  withLocalePrefix,
+} from "@/i18n/routing";
 
 const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
 const ENABLED = process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true";
 
-const isProtectedRoute = createRouteMatcher([
-  "/profile(.*)",
-  "/dashboard(.*)", // for tenant subdomain routing before rewrite
+const STATIC_EXACT_BYPASS = new Set([
+  "/favicon.ico",
+  "/robots.txt",
+  "/sitemap.xml",
 ]);
 
-// for domain rewrite:
+const STATIC_EXT_BYPASS =
+  /\.(?:png|jpe?g|gif|webp|svg|ico|txt|xml|css|js|map|woff2?|ttf|eot)$/i;
+
+const REDIRECT_PARAM_KEYS = ["redirect_url", "returnTo", "return_to"] as const;
+
+function isProtectedPath(pathname: string) {
+  return (
+    pathname === "/profile" ||
+    pathname.startsWith("/profile/") ||
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/")
+  );
+}
+
+function isTechnicalBypass(pathname: string) {
+  // Keep platform internals/APIs/admin outside locale redirect and tenant rewrite flows.
+  if (pathname.startsWith("/_next")) return true;
+  if (pathname.startsWith("/_vercel")) return true;
+  if (pathname.startsWith("/api")) return true;
+  if (pathname.startsWith("/trpc")) return true;
+  if (pathname.startsWith("/admin")) return true;
+  if (STATIC_EXACT_BYPASS.has(pathname)) return true;
+  if (STATIC_EXT_BYPASS.test(pathname)) return true;
+  return false;
+}
+
+function maybeSetLocaleCookie(req: NextRequest, res: NextResponse, lang: AppLang) {
+  // Avoid sending Set-Cookie on every request; only write when language actually changes.
+  const current = req.cookies.get(LOCALE_COOKIE_NAME)?.value;
+  if (current === lang) return;
+
+  res.cookies.set(LOCALE_COOKIE_NAME, lang, {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+    secure: process.env.NODE_ENV === "production",
+  });
+}
+
+function normalizeRedirectLikePath(value: string, lang: AppLang) {
+  if (!value.startsWith("/")) return value;
+
+  try {
+    const url = new URL(value, "https://infinisimo.local");
+    const pathOnly = url.pathname;
+    const stripped = stripLeadingLocale(pathOnly);
+
+    if (stripped.lang) return `${pathOnly}${url.search}`;
+    if (isTechnicalBypass(pathOnly)) return `${pathOnly}${url.search}`;
+
+    const prefixed = withLocalePrefix(pathOnly, lang);
+    return `${prefixed}${url.search}`;
+  } catch {
+    return value;
+  }
+}
+
+function normalizeAuthRedirectParams(url: URL, lang: AppLang) {
+  let changed = false;
+
+  for (const key of REDIRECT_PARAM_KEYS) {
+    const current = url.searchParams.get(key);
+    if (!current) continue;
+
+    const normalized = normalizeRedirectLikePath(current, lang);
+    if (normalized !== current) {
+      url.searchParams.set(key, normalized);
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
 export default clerkMiddleware(async (auth, req) => {
-  // ✅ Always protect private routes (regardless of subdomain routing)
-  if (isProtectedRoute(req)) await auth.protect();
+  const pathname = req.nextUrl.pathname;
+  const stripped = stripLeadingLocale(pathname);
 
-  // Build baseline response first.
-  let res = NextResponse.next();
-  const { pathname } = req.nextUrl;
+  // Strict technical bypass.
+  if (isTechnicalBypass(pathname)) {
+    return NextResponse.next();
+  }
 
-  // Keep existing rewrite behavior unchanged.
-  if (!pathname.startsWith("/api") && ENABLED && ROOT) {
-    // Smart referral links must stay on the app router, not tenant-rewritten paths.
-    const isRefRoute = pathname === "/ref" || pathname.startsWith("/ref/");
-    // ✅ Avoid double-rewrite for internal routes that already include /tenants/*
-    if (!pathname.startsWith("/tenants/") && !isRefRoute) {
-      const host = req.headers.get("host") ?? ""; // e.g. react_jedi.infinisimo.com
-      const suffix = `.${ROOT}`; // ".infinisimo.com"
+  // Canonicalize locale-prefixed technical paths (e.g. /en/api/* -> /api/*).
+  if (stripped.lang && isTechnicalBypass(stripped.restPathname)) {
+    const canonical = req.nextUrl.clone();
+    canonical.pathname = stripped.restPathname;
+    return NextResponse.redirect(canonical);
+  }
 
-      // Only handle tenant subdomains (skip apex domain and static/other hosts)
+  const lang = stripped.lang ?? resolveLocaleFromRequest(req);
+
+  // Prefix page routes when locale segment is missing.
+  if (!stripped.lang) {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = withLocalePrefix(pathname, lang);
+    const res = NextResponse.redirect(redirectUrl);
+    maybeSetLocaleCookie(req, res, lang);
+    return res;
+  }
+
+  // Normalize Clerk callback/deep-link redirect params.
+  const normalizedUrl = req.nextUrl.clone();
+  if (normalizeAuthRedirectParams(normalizedUrl, lang)) {
+    const res = NextResponse.redirect(normalizedUrl);
+    maybeSetLocaleCookie(req, res, lang);
+    return res;
+  }
+
+  const restPathname = stripped.restPathname;
+
+  // Protect using de-localized path.
+  if (isProtectedPath(restPathname)) {
+    await auth.protect();
+  }
+
+  // Keep existing tenant subdomain rewrite behavior on de-localized path.
+  if (ENABLED && ROOT) {
+    const isRefRoute = restPathname === "/ref" || restPathname.startsWith("/ref/");
+    if (!restPathname.startsWith("/tenants/") && !isRefRoute) {
+      const host =
+        req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+      const suffix = `.${ROOT}`;
+
       if (host.endsWith(suffix)) {
-        const slug = host.slice(0, -suffix.length); // "react_jedi"
+        const slug = host.slice(0, -suffix.length);
         if (slug && slug !== "www") {
-          const url = req.nextUrl.clone();
-          const rest = url.pathname === "/" ? "" : url.pathname;
-          url.pathname = `/tenants/${slug}${rest}`;
-          res = NextResponse.rewrite(url);
+          const rewriteUrl = req.nextUrl.clone();
+          const rest = restPathname === "/" ? "" : restPathname;
+          rewriteUrl.pathname = `/tenants/${slug}${rest}`;
+          const res = NextResponse.rewrite(rewriteUrl);
+          maybeSetLocaleCookie(req, res, lang);
+          return res;
         }
       }
     }
   }
 
+  // Phase 1 bridge mode: keep locale in URL, serve current non-prefixed app routes.
+  const bridgeUrl = req.nextUrl.clone();
+  bridgeUrl.pathname = restPathname;
+  const res = NextResponse.rewrite(bridgeUrl);
+  maybeSetLocaleCookie(req, res, lang);
   return res;
 });
 
 export const config = {
   matcher: [
-    // All app routes (exclude static assets and _next)
-    // "/((?!.+\\.[\\w]+$|_next).*)",
-    // All API + tRPC routes
-    // "/(api|trpc)(.*)",
-
-    // All app routes except Next internals, static files, and the Clerk webhook
-    "/((?!_next|.*\\..*|api/clerk/webhooks).*)",
-    // Explicitly include tRPC (protected by Clerk)
-    "/api/trpc/:path*",
+    "/((?!_next|_vercel|.*\\..*).*)",
+    "/(api|trpc)(.*)",
   ],
 };
