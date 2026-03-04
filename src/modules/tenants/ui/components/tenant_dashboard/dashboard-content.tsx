@@ -193,10 +193,11 @@ export default function DashboardContent({ slug }: { slug: string }) {
             filters={walletFilters}
             appLang={appLang}
             onChange={setWalletFilters}
-            onDownload={handleWalletDownload}
-            canDownload={
-              !walletRowsLoading && !walletRowsError && walletRows.length > 0
-            }
+            download={{
+              onClick: handleWalletDownload,
+              enabled:
+                !walletRowsLoading && !walletRowsError && walletRows.length > 0,
+            }}
             onClear={
               walletFilters.status !== "all" ||
               walletFilters.period.mode !== "all"

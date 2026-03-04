@@ -65,6 +65,11 @@ Current tasks and improvements for Multi-Serv project.
 
 ## Medium Priority
 
+- [ ] Admin finance: unify export + table transaction builders (deferred refactor)
+  - File: `src/modules/commissions/server/procedures.ts`
+  - Context: `walletTransactionsExport` still has a parallel assembly path next to `buildWalletTransactions`.
+  - Goal: consolidate into one shared builder strategy to reduce behavior drift risk.
+
 - [ ] Referral/promotion dedupe cleanup (maintainability, later)
   - Files: `src/modules/auth/server/procedures.ts`, `src/app/(app)/(home)/ref/[code]/route.ts`, `src/modules/promotions/server/promotion-resolver.ts`
   - Scope: Consolidate duplicated `normalizeReferralCode`, `REFERRAL_CODE_RE`, and `isWithinWindow` into shared utilities after referral flow stabilizes.

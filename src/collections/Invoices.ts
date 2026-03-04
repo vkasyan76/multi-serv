@@ -334,5 +334,10 @@ export const Invoices: CollectionConfig = {
     { name: "issuedAt", type: "date", index: true },
     { name: "paidAt", type: "date", index: true },
   ],
+  // Lean wallet-read compounds for tenant and all-tenant admin queries.
+  indexes: [
+    { fields: ["tenant", "paidAt"] },
+    { fields: ["tenant", "issuedAt"] },
+  ],
   timestamps: true,
 };

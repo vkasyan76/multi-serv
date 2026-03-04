@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TenantCombobox } from "@/components/ui/tenant-combobox";
 import {
   type AppLang,
   formatDateForLocale,
@@ -26,6 +27,7 @@ import type {
   PeriodMode,
   WalletFilters,
   WalletStatusFilter,
+  WalletTenantOption,
 } from "./wallet-types";
 import {
   FULL_HISTORY_LABEL,
@@ -36,9 +38,20 @@ type WalletFiltersBarProps = {
   filters: WalletFilters;
   appLang: AppLang;
   onChange: (next: WalletFilters) => void;
-  onDownload: () => void;
-  canDownload: boolean;
   onClear?: () => void;
+  // Optional admin extension: tenant scope selector.
+  tenantScope?: {
+    value: string;
+    options: WalletTenantOption[];
+    loading?: boolean;
+    onChange: (next: string) => void;
+    variant?: "select" | "combobox";
+  };
+  // Optional because admin Phase 2 has no CSV export yet.
+  download?: {
+    onClick: () => void;
+    enabled: boolean;
+  };
 };
 
 const PERIOD_LABELS: Record<PeriodMode, string> = {
@@ -52,9 +65,9 @@ export function WalletFiltersBar({
   filters,
   appLang,
   onChange,
-  onDownload,
-  canDownload,
   onClear,
+  tenantScope,
+  download,
 }: WalletFiltersBarProps) {
   const locale = mapAppLangToLocale(appLang);
   const berlinYear = Number(
@@ -300,6 +313,44 @@ export function WalletFiltersBar({
         </Select>
       </div>
 
+      {tenantScope && (
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Tenant</span>
+          {tenantScope.variant === "combobox" ? (
+            // Admin tenant lists can grow large; searchable single-select keeps the same scope semantics.
+            <div className="w-[220px]">
+              <TenantCombobox
+                value={tenantScope.value}
+                options={tenantScope.options}
+                loading={tenantScope.loading}
+                onChange={tenantScope.onChange}
+              />
+            </div>
+          ) : (
+            <Select
+              value={tenantScope.value}
+              onValueChange={tenantScope.onChange}
+            >
+              <SelectTrigger className="w-[220px]">
+                <SelectValue
+                  placeholder={
+                    tenantScope.loading ? "Loading..." : "All tenants"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tenants</SelectItem>
+                {tenantScope.options.map((tenant) => (
+                  <SelectItem key={tenant.id} value={tenant.id}>
+                    {tenant.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
+
       <div className="flex-1" />
 
       {onClear && (
@@ -309,10 +360,12 @@ export function WalletFiltersBar({
         </Button>
       )}
 
-      <Button onClick={onDownload} disabled={!canDownload}>
-        <Download className="mr-2 h-4 w-4" />
-        Download CSV
-      </Button>
+      {download && (
+        <Button onClick={download.onClick} disabled={!download.enabled}>
+          <Download className="mr-2 h-4 w-4" />
+          Download CSV
+        </Button>
+      )}
     </div>
   );
 }

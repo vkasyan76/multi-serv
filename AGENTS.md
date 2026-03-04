@@ -59,6 +59,42 @@ Required env groups are defined in `README.md`:
 - Payload collections are admin-restricted by default; app logic often uses server-side `overrideAccess: true` with explicit guards.
 - Tenant isolation is enforced in server procedures through tenant membership checks.
 
+## Admin Dashboard Status (Brief)
+
+- Phase 1 is implemented:
+  - In-app admin entry routes to `/dashboard/admin` (Payload remains at `/admin`).
+  - Server-side super-admin guard is enforced on the admin dashboard route.
+- Phase 2 is partially implemented:
+  - Admin transactions view reuses wallet filters/summary/table presentation via wrappers.
+  - Admin finance data uses super-admin procedures with tenant scope (`tenantId?: string`) and all-tenant mode.
+- Phase 3 (admin CSV export) is implemented:
+  - `adminWalletTransactionsExport` reuses the shared wallet transactions builder with full filtered fetch (`fetchAll`).
+  - Admin export enforces super-admin guard and supports full-history all-tenant export.
+  - Admin CSV is server-backed (not limited to loaded table rows) and includes `occurred_at_berlin` + `timezone`.
+  - Full tenant/admin export unification is still deferred (tracked in `TODO.md`).
+- Phase 5 (minimal hardening) is implemented:
+  - Wallet list procedures now return server pagination metadata (`hasMore`) for reliable load-more behavior.
+  - Tenant and admin transactions tables use server `hasMore` instead of client row-count heuristics.
+  - Finance-read indexes were added for invoice/payment and commission-event date scans used by wallet queries.
+  - Minimal wallet correctness tests were added for end-exclusive range and Berlin timezone behavior (`test:commissions:wallet`).
+- Admin Orders overview Phases 0-3 are implemented:
+  - Added super-admin-only `orders.adminListSlotLifecycle` for cross-tenant slot-lifecycle orders.
+  - Added `listForAdminSlotLifecycle` rollup query with canonical tenant filter (`order.tenant`) and customer snapshot text search.
+  - Reused tenant lifecycle row mapping and added admin tenant display metadata (`tenantName`/`tenantSlug`) with fallbacks.
+  - Added a separate read-only `AdminOrdersLifecycleTable` with zero mutation hooks or action/status controls.
+  - Added `AdminOrdersLifecycleView` and integrated the Orders section into `/dashboard/admin`.
+  - Admin Orders currently supports tenant filtering, customer filtering, pagination, and local scroll anchoring to keep the section stable while filters/pages change.
+- Admin Orders enhancements implemented beyond the original v1 scope:
+  - Admin Orders columns are sortable client-side on the current page and include an `Order date` column (`createdAt`) in addition to service `Date range`.
+  - Admin tenant selection uses the shared searchable `TenantCombobox`.
+  - Admin customer filtering uses an async suggestion combobox backed by `orders.adminCustomerOptions`; selected suggestions preserve a human label separately from the applied query token.
+  - `orders.adminSlotLifecycleExport` returns flat slot-level export rows for the full filtered admin result set.
+  - Export reuses the same tenant/customer filter semantics as the admin Orders table and caps flattened slot rows server-side.
+  - Admin Orders download is wired in `AdminOrdersLifecycleView`; CSV formatting stays in `src/modules/orders/ui/orders-csv.ts`.
+- Admin Orders follow-up work still open:
+  - Phase 4 hardening is only partially closed: dedicated Orders indexes and focused admin Orders tests are still pending.
+  - Optional warning metadata / non-blocking admin warning banner for malformed-row exclusions is still deferred.
+
 ## Language Structure (i18n)
 
 - Single source of truth for supported app languages is `src/lib/i18n/app-lang.ts`.

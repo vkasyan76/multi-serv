@@ -1,5 +1,7 @@
+import "server-only";
 // src/modules/orders/server/order-rollup.ts
 import { TRPCError } from "@trpc/server";
+import type { Where } from "payload";
 import { resolvePayloadUserId } from "./identity";
 import type { Booking, Order, Tenant, User } from "@/payload-types";
 import type { TRPCContext } from "@/trpc/init";
@@ -11,11 +13,59 @@ type DocWithId<T> = T & { id: string };
 type CtxLike = Pick<TRPCContext, "db" | "userId">; // for Stage 1C queries we also need ctx.userId
 type DbOnlyCtx = Pick<TRPCContext, "db">;
 type ServiceStatus = Order["serviceStatus"];
+const ADMIN_ORDERS_EXPORT_PAGE_SIZE = 200;
+const MAX_ADMIN_ORDERS_EXPORT_SLOT_ROWS = 50_000;
 
 type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
   serviceStatus: ServiceStatus;
   disputeReason: string | null;
   serviceSnapshot: NonNullable<Booking["serviceSnapshot"]> | null;
+};
+
+type TenantLifecycleListItem = {
+  id: string;
+  createdAt: string;
+  serviceStatus: Order["serviceStatus"];
+  invoiceStatus: Order["invoiceStatus"];
+  lifecycleMode: Order["lifecycleMode"];
+  userId: string;
+  customerSnapshot: Order["customerSnapshot"];
+  slots: SlotLifecycleSlot[];
+};
+
+type AdminTenantMeta = {
+  tenantId?: string;
+  tenantName: string;
+  tenantSlug?: string;
+};
+
+export type AdminOrdersSlotExportRow = {
+  orderId: string;
+  orderCreatedAt: string;
+  lifecycleMode: string;
+  orderServiceStatus: string;
+  invoiceStatus: string | null;
+  tenantId?: string;
+  tenantName?: string | null;
+  tenantSlug?: string | null;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  userId?: string | null;
+  slotId: string;
+  slotIndex: number;
+  slotCount: number;
+  slotStart: string;
+  slotEnd?: string | null;
+  slotStatus: string;
+  serviceName?: string | null;
+  disputeReason?: string | null;
+};
+
+export type AdminOrderCustomerOption = {
+  key: string;
+  label: string;
+  email?: string | null;
+  queryValue: string;
 };
 
 function normalizeServiceStatus(ss: unknown): ServiceStatus {
@@ -154,6 +204,117 @@ function mapSlotsFromOrder(o: DocWithId<Order>): SlotLifecycleSlot[] {
   );
 }
 
+function mapTenantLifecycleItem(o: DocWithId<Order>): TenantLifecycleListItem {
+  const slots = mapSlotsFromOrder(o);
+  // Defensive fallback for rare orphaned relation records in cross-tenant admin reads.
+  const userId = typeof o.user === "string" ? o.user : (o.user?.id ?? "");
+
+  return {
+    id: o.id,
+    createdAt: o.createdAt!,
+    serviceStatus: o.serviceStatus as Order["serviceStatus"],
+    invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
+    lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
+    userId,
+    customerSnapshot: o.customerSnapshot,
+    slots,
+  };
+}
+
+function tenantMetaFromOrder(
+  o: DocWithId<Order>,
+  slots: SlotLifecycleSlot[],
+): AdminTenantMeta {
+  const tenantId = typeof o.tenant === "string" ? o.tenant : o.tenant?.id;
+
+  const slotSnapshot = slots.find(
+    (s) => s.serviceSnapshot?.tenantName || s.serviceSnapshot?.tenantSlug,
+  )?.serviceSnapshot;
+
+  const tenantName =
+    (o.vendorSnapshot?.tenantName ?? "").trim() ||
+    (slotSnapshot?.tenantName ?? "").trim() ||
+    "Unknown tenant";
+
+  const tenantSlugRaw =
+    (o.vendorSnapshot?.tenantSlug ?? "").trim() ||
+    (slotSnapshot?.tenantSlug ?? "").trim();
+
+  return {
+    tenantId: tenantId ?? undefined,
+    tenantName,
+    tenantSlug: tenantSlugRaw || undefined,
+  };
+}
+
+function buildAdminSlotLifecycleWhere(input?: {
+  tenantId?: string;
+  customerQuery?: string;
+}) {
+  const whereAnd: Where[] = [{ lifecycleMode: { equals: "slot" } }];
+
+  if (input?.tenantId) {
+    // Canonical tenant scope key for orders is the relation field `tenant`.
+    whereAnd.push({ tenant: { equals: input.tenantId } });
+  }
+
+  const q = input?.customerQuery?.trim();
+  if (q) {
+    // Keep `like` to match existing repo text-search semantics.
+    whereAnd.push({
+      or: [
+        { "customerSnapshot.firstName": { like: q } },
+        { "customerSnapshot.lastName": { like: q } },
+        { "customerSnapshot.email": { like: q } },
+      ],
+    });
+  }
+
+  return { and: whereAnd } as Where;
+}
+
+async function findAdminSlotLifecycleOrders(
+  ctx: CtxLike,
+  input: {
+    tenantId?: string;
+    customerQuery?: string;
+    page: number;
+    limit: number;
+  },
+) {
+  return (await ctx.db.find({
+    collection: "orders",
+    where: buildAdminSlotLifecycleWhere(input),
+    sort: "-createdAt",
+    page: input.page,
+    limit: input.limit,
+    depth: 1, // Keep the same relation shape as tenant lifecycle query.
+    overrideAccess: true,
+  })) as {
+    docs?: Array<DocWithId<Order>>;
+    page?: number;
+    totalPages?: number;
+    totalDocs?: number;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+  };
+}
+
+function toCustomerExportMeta(
+  snapshot: Order["customerSnapshot"],
+  userId: string,
+) {
+  const customerName =
+    `${snapshot.firstName ?? ""} ${snapshot.lastName ?? ""}`.trim() || null;
+  const customerEmail = (snapshot.email ?? "").trim() || null;
+
+  return {
+    customerName,
+    customerEmail,
+    userId: userId.trim() || null,
+  };
+}
+
 export async function listMineSlotLifecycle(ctx: CtxLike) {
   if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
@@ -225,24 +386,40 @@ export async function listForMyTenantSlotLifecycle(
     hasPrevPage?: boolean;
   };
 
+  const items = (res.docs ?? []).map((o) => mapTenantLifecycleItem(o));
+
+  return {
+    items,
+    page: res.page ?? page,
+    totalPages: res.totalPages ?? 1,
+    totalDocs: res.totalDocs ?? items.length,
+    hasNextPage: res.hasNextPage ?? false,
+    hasPrevPage: res.hasPrevPage ?? false,
+  };
+}
+
+export async function listForAdminSlotLifecycle(
+  ctx: CtxLike,
+  input?: {
+    tenantId?: string;
+    customerQuery?: string;
+    page?: number;
+    limit?: number;
+  },
+) {
+  const page = Math.max(input?.page ?? 1, 1);
+  const limit = Math.min(Math.max(input?.limit ?? DEFAULT_LIMIT, 1), 100);
+  const res = await findAdminSlotLifecycleOrders(ctx, {
+    tenantId: input?.tenantId,
+    customerQuery: input?.customerQuery,
+    page,
+    limit,
+  });
+
   const items = (res.docs ?? []).map((o) => {
-    const slots = mapSlotsFromOrder(o);
-
-    const userId = typeof o.user === "string" ? o.user : o.user.id;
-
-    return {
-      id: o.id,
-      createdAt: o.createdAt!,
-      serviceStatus: o.serviceStatus as Order["serviceStatus"],
-      invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
-      lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
-
-      // simplest + already available in Order type
-      userId,
-      customerSnapshot: o.customerSnapshot,
-
-      slots,
-    };
+    const base = mapTenantLifecycleItem(o);
+    const tenantMeta = tenantMetaFromOrder(o, base.slots);
+    return { ...base, ...tenantMeta };
   });
 
   return {
@@ -253,6 +430,138 @@ export async function listForMyTenantSlotLifecycle(
     hasNextPage: res.hasNextPage ?? false,
     hasPrevPage: res.hasPrevPage ?? false,
   };
+}
+
+export async function exportAdminSlotLifecycleRows(
+  ctx: CtxLike,
+  input?: {
+    tenantId?: string;
+    customerQuery?: string;
+  },
+) {
+  const rows: AdminOrdersSlotExportRow[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const res = await findAdminSlotLifecycleOrders(ctx, {
+      tenantId: input?.tenantId,
+      customerQuery: input?.customerQuery,
+      page,
+      limit: ADMIN_ORDERS_EXPORT_PAGE_SIZE,
+    });
+
+    for (const order of res.docs ?? []) {
+      const base = mapTenantLifecycleItem(order);
+      const tenantMeta = tenantMetaFromOrder(order, base.slots);
+      const customerMeta = toCustomerExportMeta(
+        base.customerSnapshot,
+        base.userId,
+      );
+      const orderedSlots = [...base.slots].sort((a, b) => {
+        const aStart = Date.parse(a.start ?? "");
+        const bStart = Date.parse(b.start ?? "");
+
+        if (Number.isFinite(aStart) && Number.isFinite(bStart) && aStart !== bStart) {
+          return aStart - bStart;
+        }
+
+        if (Number.isFinite(aStart) !== Number.isFinite(bStart)) {
+          return Number.isFinite(aStart) ? -1 : 1;
+        }
+
+        return a.id.localeCompare(b.id);
+      });
+
+      if (rows.length + orderedSlots.length > MAX_ADMIN_ORDERS_EXPORT_SLOT_ROWS) {
+        throw new TRPCError({
+          code: "PAYLOAD_TOO_LARGE",
+          message: "Too many rows. Narrow filters.",
+        });
+      }
+
+      const slotCount = orderedSlots.length;
+
+      orderedSlots.forEach((slot, index) => {
+        rows.push({
+          orderId: base.id,
+          orderCreatedAt: base.createdAt,
+          lifecycleMode: base.lifecycleMode ?? "",
+          orderServiceStatus: base.serviceStatus ?? "",
+          invoiceStatus: base.invoiceStatus ?? null,
+          tenantId: tenantMeta.tenantId ?? undefined,
+          tenantName: tenantMeta.tenantName ?? null,
+          tenantSlug: tenantMeta.tenantSlug ?? null,
+          customerName: customerMeta.customerName,
+          customerEmail: customerMeta.customerEmail,
+          userId: customerMeta.userId,
+          slotId: slot.id,
+          slotIndex: index + 1,
+          slotCount,
+          slotStart: slot.start,
+          slotEnd: slot.end ?? null,
+          slotStatus: slot.serviceStatus ?? "",
+          serviceName: (slot.serviceSnapshot?.serviceName ?? "").trim() || null,
+          disputeReason: (slot.disputeReason ?? "").trim() || null,
+        });
+      });
+    }
+
+    totalPages = res.totalPages ?? 1;
+    page += 1;
+  } while (page <= totalPages);
+
+  return rows;
+}
+
+export async function listAdminOrderCustomerOptions(
+  ctx: CtxLike,
+  input: {
+    tenantId?: string;
+    query: string;
+  },
+) {
+  const q = input.query.trim();
+  if (!q) return [];
+
+  const res = await findAdminSlotLifecycleOrders(ctx, {
+    tenantId: input.tenantId,
+    customerQuery: q,
+    page: 1,
+    limit: 50,
+  });
+
+  const options: AdminOrderCustomerOption[] = [];
+  const seen = new Set<string>();
+
+  for (const order of res.docs ?? []) {
+    const snapshot = order.customerSnapshot;
+    if (!snapshot) continue;
+
+    const name = `${snapshot.firstName ?? ""} ${snapshot.lastName ?? ""}`.trim();
+    const email = (snapshot.email ?? "").trim() || null;
+    const userId =
+      typeof order.user === "string" ? order.user.trim() : (order.user?.id ?? "").trim();
+    const queryValue = email || name;
+
+    if (!queryValue) continue;
+
+    const label = name || email || userId || "Unknown customer";
+    const key = email || name || userId;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+
+    options.push({
+      key,
+      label,
+      email,
+      queryValue,
+    });
+
+    if (options.length >= 15) break;
+  }
+
+  return options;
 }
 
 /**

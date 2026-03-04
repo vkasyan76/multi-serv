@@ -1,28 +1,29 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@/trpc/client";
-import { type AppLang } from "@/modules/profile/location-utils";
-import type { WalletFilters } from "./wallet-types";
-import { deriveInvoiceRangeIso } from "./wallet-filter-utils";
-import { WalletSummaryCardView } from "./wallet-summary-card-view";
 
-type WalletSummaryCardProps = {
-  slug: string;
+import type { WalletFilters } from "@/modules/commissions/ui/wallet-types";
+import { deriveInvoiceRangeIso } from "@/modules/commissions/ui/wallet-filter-utils";
+import { WalletSummaryCardView } from "@/modules/commissions/ui/wallet-summary-card-view";
+import { type AppLang } from "@/modules/profile/location-utils";
+import { useTRPC } from "@/trpc/client";
+
+type AdminWalletSummaryCardProps = {
+  tenantId?: string;
   appLang: AppLang;
   filters: WalletFilters;
 };
 
-export function WalletSummaryCard({
-  slug,
+export function AdminWalletSummaryCard({
+  tenantId,
   appLang,
   filters,
-}: WalletSummaryCardProps) {
+}: AdminWalletSummaryCardProps) {
   const trpc = useTRPC();
   const { startIso, endIso } = deriveInvoiceRangeIso(filters.period);
   const summaryQ = useQuery(
-    trpc.commissions.walletSummary.queryOptions({
-      slug,
+    trpc.commissions.adminWalletSummary.queryOptions({
+      tenantId,
       status: filters.status,
       start: startIso,
       end: endIso,

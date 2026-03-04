@@ -1,44 +1,46 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   WALLET_TRANSACTIONS_LIMIT_DEFAULT,
   WALLET_TRANSACTIONS_LIMIT_MAX,
   WALLET_TRANSACTIONS_LIMIT_STEP,
 } from "@/constants";
+import { deriveInvoiceRangeIso } from "@/modules/commissions/ui/wallet-filter-utils";
+import { WalletTransactionsTableView } from "@/modules/commissions/ui/wallet-transactions-table-view";
+import type {
+  WalletFilters,
+  WalletTransactionRow,
+} from "@/modules/commissions/ui/wallet-types";
 import { type AppLang } from "@/lib/i18n/app-lang";
 import { useTRPC } from "@/trpc/client";
 
-import { deriveInvoiceRangeIso } from "./wallet-filter-utils";
-import { WalletTransactionsTableView } from "./wallet-transactions-table-view";
-import type { WalletFilters, WalletTransactionRow } from "./wallet-types";
-
-type WalletTransactionsTableProps = {
-  slug: string;
+type AdminWalletTransactionsTableProps = {
+  tenantId?: string;
   appLang: AppLang;
   filters: WalletFilters;
   onRowsChange?: (rows: WalletTransactionRow[]) => void;
   onStateChange?: (state: { isLoading: boolean; isError: boolean }) => void;
 };
 
-export function WalletTransactionsTable({
-  slug,
+export function AdminWalletTransactionsTable({
+  tenantId,
   appLang,
   filters,
   onRowsChange,
   onStateChange,
-}: WalletTransactionsTableProps) {
+}: AdminWalletTransactionsTableProps) {
   const trpc = useTRPC();
   const [limit, setLimit] = useState(WALLET_TRANSACTIONS_LIMIT_DEFAULT);
   const lastRowsRef = useRef<WalletTransactionRow[]>([]);
   const { startIso, endIso } = deriveInvoiceRangeIso(filters.period);
-  const filterKey = `${filters.status}-${startIso ?? ""}-${endIso ?? ""}`;
+  const filterKey = `${tenantId ?? "all"}-${filters.status}-${startIso ?? ""}-${endIso ?? ""}`;
 
   const txQ = useQuery(
-    trpc.commissions.walletTransactions.queryOptions({
-      slug,
+    trpc.commissions.adminWalletTransactions.queryOptions({
+      tenantId,
       limit,
       status: filters.status,
       start: startIso,
@@ -78,6 +80,8 @@ export function WalletTransactionsTable({
       }
       onRowsChange={onRowsChange}
       onStateChange={onStateChange}
+      showTenantColumns
+      showPromotionColumns
     />
   );
 }

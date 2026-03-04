@@ -1,9 +1,11 @@
 import { addDays, startOfDay } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
+import { downloadCsv } from "@/lib/csv/download-csv";
 import {
   type AppLang,
   formatDateForLocale,
   formatMonthYearForLocale,
+  mapAppLangToLocale,
 } from "@/modules/profile/location-utils";
 import type {
   WalletPeriodFilter,
@@ -118,12 +120,15 @@ export function buildWalletCsvFilename(options: {
   period: WalletPeriodFilter;
   status: WalletStatusFilter;
   appLang: AppLang;
+  scopeLabel?: string;
 }) {
   const periodLabel =
     formatPeriodLabel(options.period, options.appLang) || FULL_HISTORY_LABEL;
   const statusLabel =
     options.status === "all" ? "" : getWalletStatusLabel(options.status);
-  const descriptorRaw = [periodLabel, statusLabel].filter(Boolean).join(" ");
+  const descriptorRaw = [options.scopeLabel, periodLabel, statusLabel]
+    .filter(Boolean)
+    .join(" ");
   const descriptor = sanitizeFilenameSegment(descriptorRaw);
 
   if (!descriptor) return "transactions.csv";
@@ -131,6 +136,10 @@ export function buildWalletCsvFilename(options: {
 }
 
 function escapeCsv(value: string) {
+  // Neutralize spreadsheet formulas when CSV is opened in Excel/Sheets.
+  if (/^[\t\r ]*[=+@]/.test(value) || /^[\t\r ]*-[A-Za-z(]/.test(value)) {
+    value = `'${value}`;
+  }
   if (value.includes('"')) {
     value = value.replace(/"/g, '""');
   }
@@ -174,12 +183,71 @@ export function walletRowsToCsv(rows: WalletTransactionRow[]) {
   return [headers.join(","), ...lines].join("\n");
 }
 
-export function downloadCsv(filename: string, csv: string) {
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
+export function adminWalletRowsToCsv(
+  rows: WalletTransactionRow[],
+  options: { appLang: AppLang; timezone: "Europe/Berlin" },
+) {
+  const locale = mapAppLangToLocale(options.appLang);
+  const berlinDateTime = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: options.timezone,
+  });
+  const headers = [
+    "invoice_date",
+    "description",
+    "type",
+    "amount_cents",
+    "order_start",
+    "order_end",
+    "occurred_at",
+    "occurred_at_berlin",
+    "timezone",
+    "currency",
+    "invoice_id",
+    "payment_intent_id",
+    "tenant_name",
+    "tenant_slug",
+    "tenant_id",
+    "applied_fee_rate_bps",
+    "applied_rule_id",
+    "promotion_id",
+    "promotion_name",
+    "promotion_type",
+    "promotion_allocation_id",
+  ];
+
+  const lines = rows.map((row) =>
+    [
+      row.invoiceDate ?? "",
+      row.description ?? "",
+      row.type ?? "",
+      String(row.amountCents ?? 0),
+      row.serviceStart ?? "",
+      row.serviceEnd ?? "",
+      row.occurredAt ?? "",
+      row.occurredAt ? berlinDateTime.format(new Date(row.occurredAt)) : "",
+      options.timezone,
+      row.currency ?? "",
+      row.invoiceId ?? "",
+      row.paymentIntentId ?? "",
+      row.tenantName ?? "",
+      row.tenantSlug ?? "",
+      row.tenantId ?? "",
+      typeof row.appliedFeeRateBps === "number"
+        ? String(row.appliedFeeRateBps)
+        : "",
+      row.appliedRuleId ?? "",
+      row.promotionId ?? "",
+      row.promotionName ?? "",
+      row.promotionType ?? "",
+      row.promotionAllocationId ?? "",
+    ]
+      .map((value) => escapeCsv(String(value)))
+      .join(","),
+  );
+
+  return [headers.join(","), ...lines].join("\n");
 }
+
+export { downloadCsv };

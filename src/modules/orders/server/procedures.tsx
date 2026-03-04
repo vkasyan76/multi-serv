@@ -1,5 +1,7 @@
+import "server-only";
 // src/modules/orders/server/procedures.ts
 import { createTRPCRouter, baseProcedure } from "@/trpc/init";
+import type { TRPCContext } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import type { Order, Booking, Tenant } from "@/payload-types";
 import { z } from "zod";
@@ -7,6 +9,9 @@ import { resolvePayloadUserId } from "./identity";
 import {
   listMineSlotLifecycle as listMineSlotLifecycleImpl,
   listForMyTenantSlotLifecycle as listForMyTenantSlotLifecycleImpl,
+  listForAdminSlotLifecycle as listForAdminSlotLifecycleImpl,
+  exportAdminSlotLifecycleRows as exportAdminSlotLifecycleRowsImpl,
+  listAdminOrderCustomerOptions as listAdminOrderCustomerOptionsImpl,
 } from "./order-rollup";
 
 type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
@@ -15,6 +20,22 @@ type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
 type OrderWithTenantRef = Order & {
   tenant?: string | Tenant | null;
 };
+
+async function requireSuperAdmin(ctx: TRPCContext): Promise<void> {
+  if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+  const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+  const user = await ctx.db.findByID({
+    collection: "users",
+    id: payloadUserId,
+    depth: 0,
+    overrideAccess: true,
+  });
+
+  if (!user?.roles?.includes("super-admin")) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+}
 
 export const ordersRouter = createTRPCRouter({
   // Optional list for an Orders page
@@ -342,6 +363,53 @@ export const ordersRouter = createTRPCRouter({
         .optional(),
     )
     .query(({ ctx, input }) => listForMyTenantSlotLifecycleImpl(ctx, input)),
+
+  // Admin list for cross-tenant lifecycle overview (read-only UI in Phase 2).
+  adminListSlotLifecycle: baseProcedure
+    .input(
+      z
+        .object({
+          tenantId: z.string().min(1).optional(),
+          customerQuery: z.string().trim().min(1).max(120).optional(),
+          page: z.number().int().min(1).optional(),
+          limit: z.number().int().min(1).max(100).optional(),
+        })
+        .default({}),
+    )
+    .query(async ({ ctx, input }) => {
+      await requireSuperAdmin(ctx);
+      return listForAdminSlotLifecycleImpl(ctx, input);
+    }),
+
+  adminSlotLifecycleExport: baseProcedure
+    .input(
+      z
+        .object({
+          tenantId: z.string().min(1).optional(),
+          customerQuery: z.string().trim().min(1).max(120).optional(),
+        })
+        .default({}),
+    )
+    .query(async ({ ctx, input }) => {
+      await requireSuperAdmin(ctx);
+      return {
+        rows: await exportAdminSlotLifecycleRowsImpl(ctx, input),
+        timezone: "UTC" as const,
+      };
+    }),
+
+  adminCustomerOptions: baseProcedure
+    .input(
+      z.object({
+        tenantId: z.string().min(1).optional(),
+        query: z.string().trim().min(1).max(120),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await requireSuperAdmin(ctx);
+      return listAdminOrderCustomerOptionsImpl(ctx, input);
+    }),
+
   // check if customer has any orders:
   // NEW: show Orders button for slot-lifecycle orders (any status) - above we have hasAnyPaidMine
   hasAnyMineSlotLifecycle: baseProcedure.query(async ({ ctx }) => {

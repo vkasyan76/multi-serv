@@ -2,9 +2,6 @@
 import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   ChevronDown,
   ChevronRight,
   MoreHorizontal,
@@ -19,7 +16,6 @@ import {
   SERVICE_STATUS_LABELS,
 } from "@/modules/bookings/ui/service-status";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -58,66 +54,35 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Booking, Order } from "@/payload-types";
+import type { AppLang } from "@/lib/i18n/app-lang";
 import {
-  type AppLang,
   getInitialLanguage,
   getLocaleAndCurrency,
 } from "@/modules/profile/location-utils";
 import { toast } from "sonner";
+import {
+  type OrdersLifecycleBaseSortKey,
+  type OrdersLifecycleSortDir,
+  type OrdersLifecycleCustomerRow,
+  type OrdersLifecycleTenantRow,
+  EM_DASH,
+  OrdersLifecycleSortIcon,
+  PaymentStatusBadge,
+  StatusBadge,
+  formatDateTime,
+  getCustomerLabel,
+  getDateRange,
+  getProviderLabel,
+  sortOrdersLifecycleRows,
+} from "./orders-lifecycle-shared";
 
 type Mode = "customer" | "tenant";
-
-type ServiceStatus = Order["serviceStatus"];
-type InvoiceStatus = Order["invoiceStatus"];
-
-export type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
-  serviceStatus: ServiceStatus;
-  disputeReason: string | null;
-  serviceSnapshot: NonNullable<Booking["serviceSnapshot"]> | null;
-};
-
-type OrdersLifecycleRow = OrdersLifecycleCustomerRow | OrdersLifecycleTenantRow;
-
-export type OrdersLifecycleCustomerRow = Pick<
-  Order,
-  "id" | "createdAt" | "serviceStatus" | "lifecycleMode" | "invoiceStatus"
-> & {
-  slots: SlotLifecycleSlot[];
-};
-
-export type OrdersLifecycleTenantRow = OrdersLifecycleCustomerRow & {
-  userId: string;
-  customerSnapshot: Order["customerSnapshot"];
-};
 
 type Props = {
   mode: Mode;
   orders: Array<OrdersLifecycleCustomerRow | OrdersLifecycleTenantRow>;
   appLang?: AppLang;
 };
-
-type SortKey = "date" | "name" | "status" | "payment";
-type SortDir = "asc" | "desc";
-
-const EM_DASH = "\u2014";
-const RANGE_ARROW = "\u2192";
-
-function statusTextClass(s: NormalizedServiceStatus) {
-  return s === "accepted" ? "text-white" : "text-slate-900";
-}
-
-function StatusBadge({ value }: { value: ServiceStatus }) {
-  const st = normalizeServiceStatus(value);
-  return (
-    <Badge
-      variant="secondary"
-      className={`border-0 ${SERVICE_STATUS_COLORS[st].className} ${statusTextClass(st)}`}
-    >
-      {SERVICE_STATUS_LABELS[st]}
-    </Badge>
-  );
-}
 
 function StatusSelectItem({
   value,
@@ -139,146 +104,14 @@ function StatusSelectItem({
   );
 }
 
-function paymentBadgeMeta(status: InvoiceStatus | null | undefined) {
-  switch (status) {
-    case "paid":
-      return { label: "paid", className: "bg-emerald-200 text-emerald-900" };
-    case "issued":
-    case "overdue":
-      return { label: "payment due", className: "bg-amber-200 text-amber-900" };
-    case "draft":
-    case "void":
-    case "none":
-    default:
-      return {
-        label: "not invoiced yet",
-        className: "bg-slate-200 text-slate-900",
-      };
-  }
-}
-
-function PaymentStatusBadge({ value }: { value?: InvoiceStatus | null }) {
-  const meta = paymentBadgeMeta(value);
-  return (
-    <Badge variant="secondary" className={`border-0 ${meta.className}`}>
-      {meta.label}
-    </Badge>
-  );
-}
-
-function formatDateTime(iso: string, locale: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return EM_DASH;
-  return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
-}
-
-function getDateRange(slots: SlotLifecycleSlot[], locale: string) {
-  if (!slots.length) return EM_DASH;
-
-  const starts = slots
-    .map((s) => new Date(s.start).getTime())
-    .filter((t) => !Number.isNaN(t));
-
-  const ends = slots
-    .map((s) => new Date(s.end ?? s.start).getTime())
-    .filter((t) => !Number.isNaN(t));
-
-  if (!starts.length) return EM_DASH;
-
-  const minStart = new Date(Math.min(...starts)).toISOString();
-  const maxEnd = ends.length
-    ? new Date(Math.max(...ends)).toISOString()
-    : minStart;
-
-  return `${formatDateTime(minStart, locale)} ${RANGE_ARROW} ${formatDateTime(maxEnd, locale)}`;
-}
-
-function getProviderLabel(order: OrdersLifecycleRow) {
-  const first = order.slots?.[0];
-  return first?.serviceSnapshot?.tenantName ?? EM_DASH;
-}
-
-function getCustomerLabel(order: OrdersLifecycleTenantRow) {
-  const cs = order.customerSnapshot;
-  const name = `${cs.firstName ?? ""} ${cs.lastName ?? ""}`.trim();
-  if (name) return name;
-  return cs.email ?? order.userId ?? EM_DASH;
-}
-
-function getMinStartMs(slots: SlotLifecycleSlot[]) {
-  const starts = slots
-    .map((s) => new Date(s.start).getTime())
-    .filter((t) => Number.isFinite(t));
-
-  if (!starts.length) return Number.POSITIVE_INFINITY;
-
-  return Math.min(...starts);
-}
-
-function getMaxEndMs(slots: SlotLifecycleSlot[]) {
-  const ends = slots
-    .map((s) => new Date(s.end ?? s.start).getTime())
-    .filter((t) => Number.isFinite(t));
-
-  if (!ends.length) return Number.POSITIVE_INFINITY;
-
-  return Math.max(...ends);
-}
-
-function statusWeight(s: ServiceStatus) {
-  switch (s) {
-    case "scheduled":
-      return 1;
-    case "completed":
-      return 2;
-    case "accepted":
-      return 3;
-    case "disputed":
-      return 4;
-    default:
-      return 0;
-  }
-}
-
-function invoiceWeight(s: InvoiceStatus | null | undefined) {
-  switch (s) {
-    case "none":
-      return 0;
-    case "draft":
-      return 1;
-    case "void":
-      return 2;
-    case "issued":
-      return 3;
-    case "overdue":
-      return 4;
-    case "paid":
-      return 5;
-    default:
-      return -1;
-  }
-}
-
-function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
-  if (!active) return <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />;
-  return dir === "asc" ? (
-    <ArrowUp className="ml-1 h-4 w-4 opacity-70" />
-  ) : (
-    <ArrowDown className="ml-1 h-4 w-4 opacity-70" />
-  );
-}
-
 export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   const effectiveLang = appLang ?? getInitialLanguage();
   const { locale } = getLocaleAndCurrency(effectiveLang);
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
+  const [sort, setSort] = useState<{
+    key: OrdersLifecycleBaseSortKey;
+    dir: OrdersLifecycleSortDir;
+  }>({
     key: "date",
     dir: "desc",
   });
@@ -407,54 +240,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   });
 
   const sortedOrders = useMemo(() => {
-    const list = [...(orders ?? [])];
-
-    list.sort((a, b) => {
-      let av: number | string = "";
-      let bv: number | string = "";
-
-      if (sort.key === "date") {
-        av = getMinStartMs(a.slots ?? []);
-        bv = getMinStartMs(b.slots ?? []);
-      } else if (sort.key === "status") {
-        av = statusWeight(a.serviceStatus);
-        bv = statusWeight(b.serviceStatus);
-      } else if (sort.key === "payment") {
-        av = invoiceWeight(a.invoiceStatus);
-        bv = invoiceWeight(b.invoiceStatus);
-      } else {
-        av =
-          mode === "customer"
-            ? getProviderLabel(a)
-            : getCustomerLabel(a as OrdersLifecycleTenantRow);
-        bv =
-          mode === "customer"
-            ? getProviderLabel(b)
-            : getCustomerLabel(b as OrdersLifecycleTenantRow);
-      }
-
-      let cmp = 0;
-
-      if (typeof av === "number" && typeof bv === "number") {
-        cmp = av - bv;
-      } else {
-        cmp = String(av).localeCompare(String(bv), undefined, {
-          sensitivity: "base",
-        });
-      }
-
-      if (cmp === 0 && sort.key === "date") {
-        const aEnd = getMaxEndMs(a.slots ?? []);
-        const bEnd = getMaxEndMs(b.slots ?? []);
-        cmp = aEnd - bEnd;
-      }
-
-      if (cmp === 0) cmp = a.id.localeCompare(b.id);
-
-      return sort.dir === "asc" ? cmp : -cmp;
-    });
-
-    return list;
+    return sortOrdersLifecycleRows(orders ?? [], sort, mode);
   }, [orders, sort, mode]);
 
   // Customer-only: fetch payable invoice ids per order so the Pay button can work.
@@ -511,7 +297,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     router.push(`/tenants/${tenantSlug}/reviews/new?order=${orderId}`);
   };
 
-  function toggleSort(key: SortKey) {
+  function toggleSort(key: OrdersLifecycleBaseSortKey) {
     setSort((prev) =>
       prev.key === key
         ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
@@ -560,7 +346,10 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                 onClick={() => toggleSort("name")}
               >
                 {mode === "customer" ? "Provider" : "Customer"}
-                <SortIcon active={sort.key === "name"} dir={sort.dir} />
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "name"}
+                  dir={sort.dir}
+                />
               </Button>
             </TableHead>
             <TableHead className="sticky top-0 z-20 bg-background">
@@ -571,7 +360,10 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                 onClick={() => toggleSort("date")}
               >
                 Date range
-                <SortIcon active={sort.key === "date"} dir={sort.dir} />
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "date"}
+                  dir={sort.dir}
+                />
               </Button>
             </TableHead>
             <TableHead className="sticky top-0 z-20 bg-background">
@@ -582,7 +374,10 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                 onClick={() => toggleSort("status")}
               >
                 Status
-                <SortIcon active={sort.key === "status"} dir={sort.dir} />
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "status"}
+                  dir={sort.dir}
+                />
               </Button>
             </TableHead>
             <TableHead className="sticky top-0 z-20 bg-background">
@@ -593,7 +388,10 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                 onClick={() => toggleSort("payment")}
               >
                 Payment
-                <SortIcon active={sort.key === "payment"} dir={sort.dir} />
+                <OrdersLifecycleSortIcon
+                  active={sort.key === "payment"}
+                  dir={sort.dir}
+                />
               </Button>
             </TableHead>
             <TableHead className="sticky top-0 z-20 bg-background text-right whitespace-nowrap">
