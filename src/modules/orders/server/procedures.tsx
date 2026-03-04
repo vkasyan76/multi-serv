@@ -1,3 +1,4 @@
+import "server-only";
 // src/modules/orders/server/procedures.ts
 import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";

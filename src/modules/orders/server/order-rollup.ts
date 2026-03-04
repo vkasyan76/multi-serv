@@ -1,3 +1,4 @@
+import "server-only";
 // src/modules/orders/server/order-rollup.ts
 import { TRPCError } from "@trpc/server";
 import type { Where } from "payload";
