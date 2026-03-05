@@ -1,7 +1,7 @@
 // src/modules/profile/ui/GeneralProfileForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { profileSchema } from "@/modules/profile/schemas";
@@ -19,6 +19,8 @@ import {
   SUPPORTED_LANGUAGES,
   getInitialLanguage,
   normalizeToSupported,
+  mapAppLangToLocale,
+  countryNameFromCode,
   extractAddressComponents,
 } from "../location-utils";
 import {
@@ -100,6 +102,38 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const [selectedLocation, setSelectedLocation] =
     useState<SelectedLocation | null>(null);
   const [sessionToken, setSessionToken] = useState<string | undefined>();
+
+  const effectiveAppLang = useMemo(() => {
+    const langState = form.getFieldState("language", form.formState);
+    return normalizeToSupported(
+      String(
+        langState.isDirty || langState.isTouched
+          ? (selectedLanguage ?? userProfile?.language)
+          : (userProfile?.language ?? selectedLanguage),
+      ),
+    );
+  }, [form, selectedLanguage, userProfile?.language]);
+
+  const countryDisplay = useMemo(() => {
+    const locale = mapAppLangToLocale(effectiveAppLang);
+    const countryISO =
+      selectedLocation?.countryISO ?? userProfile?.coordinates?.countryISO;
+    const safeCountryISO = countryISO ?? undefined;
+
+    // Render country from canonical ISO when available; keep legacy text fallback.
+    return (
+      countryNameFromCode(safeCountryISO, locale) ||
+      selectedLocation?.countryName ||
+      userProfile?.country ||
+      ""
+    );
+  }, [
+    effectiveAppLang,
+    selectedLocation?.countryISO,
+    selectedLocation?.countryName,
+    userProfile?.coordinates?.countryISO,
+    userProfile?.country,
+  ]);
 
   // Add session token management
   useEffect(() => {
@@ -504,11 +538,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                   <FormControl>
                     <Input
                       {...field}
-                      value={
-                        selectedLocation?.countryName ||
-                        userProfile?.country ||
-                        ""
-                      }
+                      value={countryDisplay}
                       readOnly
                       disabled
                       tabIndex={-1}
