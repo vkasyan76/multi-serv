@@ -381,10 +381,13 @@ export function detectLanguage(): Language {
  * Use this ONLY in client components (e.g. useState(() => getInitialLanguage())).
  */
 export function getInitialLanguage(): AppLang {
-  if (typeof navigator === "undefined") {
-    return DEFAULT_APP_LANG;
-  }
-  return normalizeToSupported(navigator.language);
+  if (typeof window === "undefined") return DEFAULT_APP_LANG;
+
+  const htmlLang = document.documentElement.lang?.trim();
+  if (htmlLang) return normalizeToSupported(htmlLang);
+
+  const navLang = navigator.languages?.[0] ?? navigator.language;
+  return normalizeToSupported(navLang || DEFAULT_APP_LANG);
 }
 
 /**

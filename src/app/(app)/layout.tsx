@@ -58,16 +58,19 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Phase 2: route middleware maintains app_lang; use it first for html lang.
-  const cookieStore = await cookies();
-  const cookieLang = cookieStore.get(LOCALE_COOKIE_NAME)?.value;
+  // Phase 2: prefer middleware-resolved locale, then cookie, then Accept-Language.
+  const h = await headers();
+  const requestLang = h.get("x-app-lang")?.trim();
   let appLang: AppLang;
 
-  if (cookieLang) {
-    appLang = normalizeToSupported(cookieLang);
+  if (requestLang) {
+    appLang = normalizeToSupported(requestLang);
   } else {
-    const h = await headers();
-    appLang = getAppLangFromHeaders(h);
+    const cookieStore = await cookies();
+    const cookieLang = cookieStore.get(LOCALE_COOKIE_NAME)?.value;
+    appLang = cookieLang
+      ? normalizeToSupported(cookieLang)
+      : getAppLangFromHeaders(h);
   }
 
   return (

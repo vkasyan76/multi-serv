@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useFormState, useWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { profileSchema } from "@/modules/profile/schemas";
 import * as z from "zod";
@@ -99,6 +99,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
     name: "language",
     defaultValue: getInitialLanguage(),
   });
+  const { isDirty } = useFormState({ control: form.control });
   const watchedCountry = useWatch({
     control: form.control,
     name: "country",
@@ -121,14 +122,15 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
   const countryDisplay = useMemo(() => {
     const locale = mapAppLangToLocale(effectiveAppLang);
-    // While editing, prefer current form/selection state over persisted profile fallback.
-    const countryISO = selectedLocation
-      ? (selectedLocation.countryISO ?? userProfile?.coordinates?.countryISO)
+    // While editing a new location, do not fall back to stale profile ISO.
+    const countryISO = selectedLocation?.countryISO;
+    const profileISO = !selectedLocation
+      ? userProfile?.coordinates?.countryISO
       : undefined;
 
     // Render ISO-localized name first, then current form value.
     return (
-      countryNameFromCode(countryISO ?? undefined, locale) ||
+      countryNameFromCode(countryISO ?? profileISO ?? undefined, locale) ||
       selectedLocation?.countryName ||
       watchedCountry ||
       ""
@@ -153,57 +155,58 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
   // Populate form with user data when it loads
   useEffect(() => {
-    if (userProfile) {
-      const shouldPrefillLocation =
-        isProfileCompleted || userProfile.coordinates?.manuallySet;
+    if (!userProfile) return;
+    if (isDirty) return;
 
-      // Reset all fields at once so async profile hydration cannot leave stale defaults.
-      form.reset({
-        firstName: userProfile.firstName || "",
-        lastName: userProfile.lastName || "",
-        username: userProfile.username || "",
-        email: userProfile.email || "",
-        location: shouldPrefillLocation ? (userProfile.location || "") : "",
-        country: shouldPrefillLocation ? (userProfile.country || "") : "",
-        // Persisted profile language wins; otherwise use client-detected initial language.
-        language: normalizeToSupported(
-          userProfile.language ?? getInitialLanguage(),
-        ),
-      });
+    const shouldPrefillLocation =
+      isProfileCompleted || userProfile.coordinates?.manuallySet;
 
-      // Only populate location and country if user has completed onboarding
-      // or if they have manually set a location
-      if (shouldPrefillLocation) {
-        if (userProfile.location) {
-          setLocationInput(userProfile.location);
-        } else {
-          setLocationInput("");
-        }
+    // Reset all fields at once so async profile hydration cannot leave stale defaults.
+    form.reset({
+      firstName: userProfile.firstName || "",
+      lastName: userProfile.lastName || "",
+      username: userProfile.username || "",
+      email: userProfile.email || "",
+      location: shouldPrefillLocation ? (userProfile.location || "") : "",
+      country: shouldPrefillLocation ? (userProfile.country || "") : "",
+      // Persisted profile language wins; otherwise use client-detected initial language.
+      language: normalizeToSupported(
+        userProfile.language ?? getInitialLanguage(),
+      ),
+    });
 
-        // Set selected location if country exists - only display fields, not coordinate details
-        if (userProfile.country) {
-          setSelectedLocation({
-            formattedAddress: userProfile.location || "",
-            countryName: userProfile.country,
-            countryISO: userProfile.coordinates?.countryISO,
-            // Don't populate old coordinate details - they will be fetched fresh when user selects new location
-            lat: undefined,
-            lng: undefined,
-            city: undefined,
-            region: undefined,
-            postalCode: undefined,
-            street: undefined,
-          });
-        } else {
-          setSelectedLocation(null);
-        }
+    // Only populate location and country if user has completed onboarding
+    // or if they have manually set a location
+    if (shouldPrefillLocation) {
+      if (userProfile.location) {
+        setLocationInput(userProfile.location);
       } else {
-        // For first-time users, show placeholder and don't auto-populate
         setLocationInput("");
+      }
+
+      // Set selected location if country exists - only display fields, not coordinate details
+      if (userProfile.country) {
+        setSelectedLocation({
+          formattedAddress: userProfile.location || "",
+          countryName: userProfile.country,
+          countryISO: userProfile.coordinates?.countryISO,
+          // Don't populate old coordinate details - they will be fetched fresh when user selects new location
+          lat: undefined,
+          lng: undefined,
+          city: undefined,
+          region: undefined,
+          postalCode: undefined,
+          street: undefined,
+        });
+      } else {
         setSelectedLocation(null);
       }
+    } else {
+      // For first-time users, show placeholder and don't auto-populate
+      setLocationInput("");
+      setSelectedLocation(null);
     }
-  }, [userProfile, form, isProfileCompleted]);
+  }, [userProfile, form, isProfileCompleted, isDirty]);
 
   useEffect(() => {
     const profileLang = userProfile?.language;

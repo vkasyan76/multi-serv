@@ -24,6 +24,23 @@ Explicitly decide (in/out) in Phase 0:
 - internal admin diagnostics and system logs
 - CMS long-form marketing content (optional v1/v2)
 
+## Implementation Status (as of 2026-03-05)
+
+- Phase 0 completed (conventions and rollout doc locked).
+- Phase 1 completed on Next 15 using `src/middleware.ts` + `src/i18n/routing.ts`.
+- Phase 2 completed with localized app route tree under `src/app/(app)/[lang]/...`.
+
+Completed fixes across Phase 1/2:
+
+- middleware bridge rewrite removed; localized routes are now real route segments.
+- tenant rewrite target is localized: `/${lang}/tenants/${slug}/...`.
+- locale context propagation added via `x-app-lang` request header on `NextResponse.next()` and tenant rewrites.
+- root layout language resolution uses `x-app-lang` -> `app_lang` cookie -> `Accept-Language`.
+- locale-segment guard added in `src/app/(app)/[lang]/layout.tsx` with `notFound()` for invalid segments.
+- auth and server redirects were updated to locale-prefixed paths (`/${lang}/...`).
+- referral route redirect now preserves active locale namespace (`/${lang}`).
+- profile language/country UI follow-up fixes applied (stable language hydration + ISO-aware country display fallback behavior).
+
 ## Guiding Decisions
 
 ### URL strategy
@@ -72,7 +89,7 @@ If a key/content is missing in selected locale, fallback to `en`.
 
 ### Technical path bypass (strict)
 
-Proxy must not apply locale redirects/rewrites to:
+Middleware must not apply locale redirects/rewrites to:
 
 - `/_next/*`
 - `/api/*` (including webhooks)
@@ -105,11 +122,15 @@ Lock conventions, scope, and acceptance checks.
 
 - `docs/i18n-rollout.md` committed.
 
-## Phase 1 - Edge Routing Composition (foundation)
+## Phase 1 - Edge Routing Composition (Implemented)
 
 ### Goals
 
 Add locale-aware routing without breaking auth/subdomain behavior.
+
+### Status
+
+Implemented in `src/middleware.ts` and `src/i18n/routing.ts` on Next 15.
 
 ### Files
 
@@ -131,6 +152,8 @@ Add locale-aware routing without breaking auth/subdomain behavior.
 - tenant subdomain rewrite must preserve locale segment:
 - rewrite targets become `/{lang}/tenants/{slug}/...`
 - technical bypass remains strict (see Locked Rules)
+- locale cookie is only written when changed (avoids per-request `Set-Cookie`)
+- `x-app-lang` request header is injected on non-redirect pass-through/rewrite flows
 3. Callback/deep-link normalization
 - preserve path and query params through locale redirects
 - ensure Clerk redirect/callback parameters are locale-safe:
@@ -145,21 +168,29 @@ Add locale-aware routing without breaking auth/subdomain behavior.
 - no redirect loops
 - `/api/*` and webhooks unaffected
 
-## Phase 2 - App Route Structure for Locale Param
+## Phase 2 - App Route Structure for Locale Param (Implemented)
 
 ### Goals
 
 Make locale a first-class route param in App Router.
 
+### Status
+
+Implemented with localized app routes in `src/app/(app)/[lang]/...`.
+
 ### Work
 
-1. Introduce `src/app/[lang]/...` and move route groups under it.
-2. Add/adjust `src/app/[lang]/layout.tsx`:
-- set `<html lang={lang}>`
-3. Migration safety:
+1. Introduce `src/app/(app)/[lang]/...` and move route groups under it.
+2. Keep a single root `<html>` in `src/app/(app)/layout.tsx` and resolve `lang` as:
+- middleware header (`x-app-lang`) -> `app_lang` cookie -> `Accept-Language`
+3. Add locale-segment validation in `src/app/(app)/[lang]/layout.tsx`:
+- reject unsupported locale segments with `notFound()`
+4. Migration safety:
 - keep redirects from unprefixed links to prefixed links during migration window
 - Clerk sign-in/sign-up redirect URL sanity:
 - redirect targets include locale prefix, or are normalized immediately after auth
+- update locale-prefixed Clerk paths and server redirects (`/${lang}/sign-in`, `/${lang}/sign-up`, `/${lang}/profile?...`)
+- update moved route handlers (e.g. referral redirect target `/${lang}`, invoice page locale source from URL param)
 
 ### Acceptance checks
 
@@ -408,16 +439,17 @@ Add one explicit test ensuring missing locale key/content falls back to `en` for
 
 ## Immediate Next Step
 
-Execute Phase 1 only:
+Phase 1 and Phase 2 are complete. Start Phase 3:
 
-1. keep `src/middleware.ts` as the edge entrypoint for Next 15
-2. add locale routing config
-3. compose locale routing with existing Clerk + tenant logic
-4. validate admin/auth/tenant routes and no redirect loops
+1. add request-level next-intl config (`src/i18n/request.ts`)
+2. add minimal dictionaries (`src/i18n/messages/en/common.json`, `src/i18n/messages/de/common.json`)
+3. wire provider access patterns (server + client)
+4. migrate shell/common copy first (header/nav/footer/buttons/errors)
+5. add missing-key checks scoped to launched locales and required namespaces
 
 Recommended order after that:
 
-Phase 2 -> Phase 3 -> Phase 4 -> Phase 4A -> Phase 5 -> Phase 6 -> Phase 6A -> Phase 7.
+Phase 4 -> Phase 4A -> Phase 5 -> Phase 6 -> Phase 6A -> Phase 7.
 
 Future migration note:
 

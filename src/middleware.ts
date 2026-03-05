@@ -56,6 +56,12 @@ function maybeSetLocaleCookie(req: NextRequest, res: NextResponse, lang: AppLang
   });
 }
 
+function withAppLangHeader(req: NextRequest, lang: AppLang) {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-app-lang", lang);
+  return requestHeaders;
+}
+
 function normalizeRedirectLikePath(value: string, lang: AppLang) {
   if (!value.startsWith("/")) return value;
 
@@ -148,7 +154,9 @@ export default clerkMiddleware(async (auth, req) => {
           const rest = restPathname === "/" ? "" : restPathname;
           // Phase 2: tenant rewrite now lands on localized app routes.
           rewriteUrl.pathname = `/${lang}/tenants/${slug}${rest}`;
-          const res = NextResponse.rewrite(rewriteUrl);
+          const res = NextResponse.rewrite(rewriteUrl, {
+            request: { headers: withAppLangHeader(req, lang) },
+          });
           maybeSetLocaleCookie(req, res, lang);
           return res;
         }
@@ -157,7 +165,9 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Phase 2: localized app routes are real route segments; no bridge rewrite needed.
-  const res = NextResponse.next();
+  const res = NextResponse.next({
+    request: { headers: withAppLangHeader(req, lang) },
+  });
   maybeSetLocaleCookie(req, res, lang);
   return res;
 });

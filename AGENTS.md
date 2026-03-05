@@ -109,6 +109,29 @@ Required env groups are defined in `README.md`:
 - Payload-generated types in `src/payload-types.ts` are derived artifacts, not source of truth.
   - After language option/schema changes, run `npm run generate:types`.
 
+### i18n Rollout Status (Implemented So Far)
+
+- Phase 1 (edge routing composition) is implemented on Next 15 in `src/middleware.ts`:
+  - locale-prefix enforcement for page routes (`/{lang}/...`)
+  - strict bypass for technical paths (`/_next`, `/_vercel`, `/api`, `/trpc`, `/admin`, static assets)
+  - Clerk callback/deep-link param normalization (`redirect_url`, `returnTo`, `return_to`)
+  - locale-aware protected-route checks using de-localized paths (`/dashboard`, `/profile`)
+  - conditional locale cookie persistence via `LOCALE_COOKIE_NAME` (`app_lang`) to avoid per-request `Set-Cookie`
+- Phase 2 (localized app route tree) is implemented under `src/app/(app)/[lang]/...`:
+  - bridge rewrite removed; localized routes are now real route segments
+  - tenant rewrite target is localized (`/${lang}/tenants/${slug}/...`)
+  - locale guard added in `src/app/(app)/[lang]/layout.tsx` (`notFound()` for unsupported locale segments)
+  - locale-aware sign-in/sign-up and server redirects use `/${lang}/...` paths
+  - referral route `src/app/(app)/[lang]/(home)/ref/[code]/route.ts` redirects to `/${lang}`
+- First-request `<html lang>` correctness fix is implemented:
+  - middleware stamps `x-app-lang` on `NextResponse.next()` and tenant `rewrite()` request headers
+  - `src/app/(app)/layout.tsx` resolves lang as `x-app-lang` -> `app_lang` cookie -> `Accept-Language`
+- Profile form stabilization fixes (post Phase 2) are implemented:
+  - language select hydration uses field-level dirty/touched precedence to keep persisted profile language stable
+  - hydration reset is guarded with `useFormState(...).isDirty` to avoid clobbering in-progress edits
+  - country display prefers ISO-derived localized labels while avoiding stale profile ISO during active location edits
+  - `getInitialLanguage()` follows required priority: `document.documentElement.lang` -> `navigator.languages`/`navigator.language` -> `en`
+
 ## Promotions Reservation (Phase 3)
 
 - `first_n` promotions reserve capacity through `src/modules/checkout/server/promotion-reserve.ts`.
