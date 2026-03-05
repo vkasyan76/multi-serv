@@ -99,6 +99,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
     name: "language",
     defaultValue: getInitialLanguage(),
   });
+  const watchedCountry = useWatch({
+    control: form.control,
+    name: "country",
+    defaultValue: "",
+  });
   const [locationInput, setLocationInput] = useState("");
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [selectedLocation, setSelectedLocation] =
@@ -118,23 +123,23 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
   const countryDisplay = useMemo(() => {
     const locale = mapAppLangToLocale(effectiveAppLang);
-    const countryISO =
-      selectedLocation?.countryISO ?? userProfile?.coordinates?.countryISO;
-    const safeCountryISO = countryISO ?? undefined;
+    // While editing, prefer current form/selection state over persisted profile fallback.
+    const countryISO = selectedLocation
+      ? (selectedLocation.countryISO ?? userProfile?.coordinates?.countryISO)
+      : undefined;
 
-    // Render country from canonical ISO when available; keep legacy text fallback.
+    // Render ISO-localized name first, then current form value.
     return (
-      countryNameFromCode(safeCountryISO, locale) ||
+      countryNameFromCode(countryISO ?? undefined, locale) ||
       selectedLocation?.countryName ||
-      userProfile?.country ||
+      watchedCountry ||
       ""
     );
   }, [
     effectiveAppLang,
-    selectedLocation?.countryISO,
-    selectedLocation?.countryName,
+    selectedLocation,
     userProfile?.coordinates?.countryISO,
-    userProfile?.country,
+    watchedCountry,
   ]);
 
   // Add session token management
@@ -557,22 +562,12 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               name="language"
               control={form.control}
               render={({ field }) => {
-                const langState = form.getFieldState("language", form.formState);
-                // Keep persisted profile language until the user edits the language field.
-                const effectiveLang = normalizeToSupported(
-                  String(
-                    langState.isDirty || langState.isTouched
-                      ? (field.value ?? userProfile?.language)
-                      : (userProfile?.language ?? field.value)
-                  ),
-                );
-
                 return (
                   <FormItem>
                     <FormLabel>Language</FormLabel>
                     <FormControl>
                       <Select
-                        value={effectiveLang}
+                        value={effectiveAppLang}
                         onValueChange={(value) =>
                           field.onChange(normalizeToSupported(value))
                         }

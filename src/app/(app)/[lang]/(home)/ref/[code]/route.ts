@@ -41,6 +41,7 @@ function isWithinWindow(doc: PromotionWindowDoc, nowMs: number): boolean {
 function redirectToHome(req: NextRequest, lang: string): NextResponse {
   const base = process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL;
   try {
+    // Phase 2: keep referral landing redirect in the active locale namespace.
     return NextResponse.redirect(new URL(`/${lang}`, base ?? req.url));
   } catch {
     return NextResponse.redirect(new URL(`/${lang}`, req.url));

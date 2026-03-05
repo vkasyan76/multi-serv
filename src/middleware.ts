@@ -146,6 +146,7 @@ export default clerkMiddleware(async (auth, req) => {
         if (slug && slug !== "www") {
           const rewriteUrl = req.nextUrl.clone();
           const rest = restPathname === "/" ? "" : restPathname;
+          // Phase 2: tenant rewrite now lands on localized app routes.
           rewriteUrl.pathname = `/${lang}/tenants/${slug}${rest}`;
           const res = NextResponse.rewrite(rewriteUrl);
           maybeSetLocaleCookie(req, res, lang);

@@ -22,6 +22,7 @@ const Page = async ({
   // Supports redirect_url from guarded pages (e.g. /orders, /dashboard).
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      {/* Phase 2: Clerk path is locale-prefixed to match /[lang]/sign-in route. */}
       <SignIn routing="path" path={`/${lang}/sign-in`} />
     </div>
   );

@@ -35,6 +35,7 @@ const Page = async ({
       }
     }
     const suffix = params.toString();
+    // Phase 2: preserve locale in post-auth return target.
     const redirectUrl = suffix ? `/${lang}/orders?${suffix}` : `/${lang}/orders`;
     redirect(
       `/${lang}/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`,

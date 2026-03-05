@@ -20,6 +20,7 @@ export default async function DashboardLayout({
 
   // 1) Get my tenant
   const mine = await qc.fetchQuery(trpc.tenants.getMine.queryOptions({}));
+  // Phase 2: keep onboarding redirect locale-prefixed.
   if (!mine?.slug) redirect(`/${lang}/profile?tab=vendor`);
 
   // 2) Prefetch tenant details used by navbar/calendar

@@ -20,6 +20,7 @@ const Page = async ({
   // Clerk-managed sign-up page; legacy payload form is intentionally bypassed.
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      {/* Phase 2: Clerk path is locale-prefixed to match /[lang]/sign-up route. */}
       <SignUp routing="path" path={`/${lang}/sign-up`} />
     </div>
   );
