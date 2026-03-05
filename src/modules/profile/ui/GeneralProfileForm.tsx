@@ -160,7 +160,10 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         email: userProfile.email || "",
         location: shouldPrefillLocation ? (userProfile.location || "") : "",
         country: shouldPrefillLocation ? (userProfile.country || "") : "",
-        language: normalizeToSupported(userProfile.language ?? undefined),
+        // Persisted profile language wins; otherwise use client-detected initial language.
+        language: normalizeToSupported(
+          userProfile.language ?? getInitialLanguage(),
+        ),
       });
 
       // Only populate location and country if user has completed onboarding
