@@ -17,8 +17,10 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   SUPPORTED_LANGUAGES,
-  getInitialLanguage,
   normalizeToSupported,
+} from "@/lib/i18n/app-lang";
+import {
+  getInitialLanguage,
   mapAppLangToLocale,
   countryNameFromCode,
   extractAddressComponents,
