@@ -10,14 +10,17 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 export default async function DashboardLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ lang: string }>;
 }) {
+  const { lang } = await params;
   const qc = getQueryClient();
 
   // 1) Get my tenant
   const mine = await qc.fetchQuery(trpc.tenants.getMine.queryOptions({}));
-  if (!mine?.slug) redirect("/profile?tab=vendor");
+  if (!mine?.slug) redirect(`/${lang}/profile?tab=vendor`);
 
   // 2) Prefetch tenant details used by navbar/calendar
   await qc.prefetchQuery(trpc.tenants.getOne.queryOptions({ slug: mine.slug }));

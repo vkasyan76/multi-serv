@@ -12,11 +12,12 @@ import GeoBootstrap from "@/components/geo-bootstrap";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import {
   getAppLangFromHeaders,
   type AppLang,
 } from "@/modules/profile/location-utils";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { CookieConsentRoot } from "@/modules/legal/cookies/ui/cookie-consent-root";
 import { VercelAnalyticsConsent } from "@/modules/legal/cookies/ui/consents/vercel-analytics-consent";
 
@@ -57,10 +58,17 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // derive AppLang from Accept-Language header on the SERVER
-  // Next 15: headers() is async
-  const h = await headers();
-  const appLang: AppLang = getAppLangFromHeaders(h);
+  // Phase 2: route middleware maintains app_lang; use it first for html lang.
+  const cookieStore = await cookies();
+  const cookieLang = cookieStore.get("app_lang")?.value;
+  let appLang: AppLang;
+
+  if (cookieLang) {
+    appLang = normalizeToSupported(cookieLang);
+  } else {
+    const h = await headers();
+    appLang = getAppLangFromHeaders(h);
+  }
 
   return (
     <html lang={appLang}>

@@ -146,7 +146,7 @@ export default clerkMiddleware(async (auth, req) => {
         if (slug && slug !== "www") {
           const rewriteUrl = req.nextUrl.clone();
           const rest = restPathname === "/" ? "" : restPathname;
-          rewriteUrl.pathname = `/tenants/${slug}${rest}`;
+          rewriteUrl.pathname = `/${lang}/tenants/${slug}${rest}`;
           const res = NextResponse.rewrite(rewriteUrl);
           maybeSetLocaleCookie(req, res, lang);
           return res;
@@ -155,10 +155,8 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
-  // Phase 1 bridge mode: keep locale in URL, serve current non-prefixed app routes.
-  const bridgeUrl = req.nextUrl.clone();
-  bridgeUrl.pathname = restPathname;
-  const res = NextResponse.rewrite(bridgeUrl);
+  // Phase 2: localized app routes are real route segments; no bridge rewrite needed.
+  const res = NextResponse.next();
   maybeSetLocaleCookie(req, res, lang);
   return res;
 });

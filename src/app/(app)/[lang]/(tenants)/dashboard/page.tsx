@@ -6,12 +6,15 @@ import { redirect } from "next/navigation";
 import { caller, getQueryClient, trpc } from "@/trpc/server";
 
 type DashboardPageProps = {
+  params: Promise<{ lang: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function DashboardPage({
+  params: paramsPromise,
   searchParams: searchParamsPromise,
 }: DashboardPageProps) {
+  const { lang } = await paramsPromise;
   const searchParams = await searchParamsPromise;
 
   // Guard dashboard behind auth so email deep-links prompt sign-in if needed.
@@ -31,8 +34,10 @@ export default async function DashboardPage({
       }
     }
     const suffix = params.toString();
-    const redirectUrl = suffix ? `/dashboard?${suffix}` : "/dashboard";
-    redirect(`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`);
+    const redirectUrl = suffix
+      ? `/${lang}/dashboard?${suffix}`
+      : `/${lang}/dashboard`;
+    redirect(`/${lang}/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`);
   }
 
   const qc = getQueryClient();
@@ -42,7 +47,7 @@ export default async function DashboardPage({
 
   // If user is not a vendor yet (no tenant), send them to vendor onboarding
   if (!mine?.slug) {
-    redirect("/profile?tab=vendor");
+    redirect(`/${lang}/profile?tab=vendor`);
   }
 
   const tenantSlug = mine.slug;
@@ -55,12 +60,12 @@ export default async function DashboardPage({
   // If a tenant context is provided, block mismatched dashboards.
   if (expectedTenant && expectedTenant !== tenantSlug) {
     const params = new URLSearchParams({ tenant: expectedTenant });
-    const redirectUrl = `/dashboard?${params.toString()}`;
+    const redirectUrl = `/${lang}/dashboard?${params.toString()}`;
     return (
       <TenantMismatchNotice
         expectedSlug={expectedTenant}
         actualSlug={tenantSlug}
-        signInUrl={`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`}
+        signInUrl={`/${lang}/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`}
       />
     );
   }

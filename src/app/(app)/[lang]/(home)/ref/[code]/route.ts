@@ -38,12 +38,12 @@ function isWithinWindow(doc: PromotionWindowDoc, nowMs: number): boolean {
   return nowMs >= startMs && nowMs < endMs;
 }
 
-function redirectToHome(req: NextRequest): NextResponse {
+function redirectToHome(req: NextRequest, lang: string): NextResponse {
   const base = process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL;
   try {
-    return NextResponse.redirect(new URL("/", base ?? req.url));
+    return NextResponse.redirect(new URL(`/${lang}`, base ?? req.url));
   } catch {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL(`/${lang}`, req.url));
   }
 }
 
@@ -71,10 +71,10 @@ function setNoticeCookie(res: NextResponse, notice: ReferralNotice) {
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ code: string }> },
+  context: { params: Promise<{ lang: string; code: string }> },
 ) {
-  const { code } = await context.params;
-  const res = redirectToHome(req);
+  const { lang, code } = await context.params;
+  const res = redirectToHome(req, lang);
 
   // Global rollout/rollback switch: disabled means smart links are no-op redirects.
   if (!REFERRAL_CAPTURE_ENABLED) return res;

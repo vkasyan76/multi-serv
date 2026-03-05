@@ -4,8 +4,8 @@ import { headers } from "next/headers";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { Badge } from "@/components/ui/badge";
-import { DownloadPdfButton } from "../../../../modules/invoices/ui/DownloadPdfButton";
-import { InvoiceTopBar } from "../../../../modules/invoices/ui/InvoiceTopBar";
+import { DownloadPdfButton } from "@/modules/invoices/ui/DownloadPdfButton";
+import { InvoiceTopBar } from "@/modules/invoices/ui/InvoiceTopBar";
 import {
   Table,
   TableBody,

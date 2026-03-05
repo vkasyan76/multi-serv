@@ -6,10 +6,16 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 type OrdersPageProps = {
+  params: Promise<{ lang: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const Page = async ({ searchParams: searchParamsPromise }: OrdersPageProps) => {
+const Page = async ({
+  params: paramsPromise,
+  searchParams: searchParamsPromise,
+}: OrdersPageProps) => {
+  const { lang } = await paramsPromise;
+
   // Guard orders behind auth so email deep-links prompt sign-in if needed.
   const session = await caller.auth.session();
   if (!session.user) {
@@ -29,9 +35,9 @@ const Page = async ({ searchParams: searchParamsPromise }: OrdersPageProps) => {
       }
     }
     const suffix = params.toString();
-    const redirectUrl = suffix ? `/orders?${suffix}` : "/orders";
+    const redirectUrl = suffix ? `/${lang}/orders?${suffix}` : `/${lang}/orders`;
     redirect(
-      `/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`,
+      `/${lang}/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`,
     );
   }
 
