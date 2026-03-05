@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import {
   SUPPORTED_LANGUAGES,
   getInitialLanguage,
+  normalizeToSupported,
   extractAddressComponents,
 } from "../location-utils";
 import {
@@ -25,6 +26,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { autocomplete } from "@/lib/google";
 import type {
@@ -113,21 +115,27 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   // Populate form with user data when it loads
   useEffect(() => {
     if (userProfile) {
-      form.setValue("firstName", userProfile.firstName || "");
-      form.setValue("lastName", userProfile.lastName || "");
+      const shouldPrefillLocation =
+        isProfileCompleted || userProfile.coordinates?.manuallySet;
 
-      form.setValue("username", userProfile.username || "");
-      form.setValue("email", userProfile.email || "");
-      form.setValue("language", userProfile.language || "en");
+      // Reset all fields at once so async profile hydration cannot leave stale defaults.
+      form.reset({
+        firstName: userProfile.firstName || "",
+        lastName: userProfile.lastName || "",
+        username: userProfile.username || "",
+        email: userProfile.email || "",
+        location: shouldPrefillLocation ? (userProfile.location || "") : "",
+        country: shouldPrefillLocation ? (userProfile.country || "") : "",
+        language: normalizeToSupported(userProfile.language ?? undefined),
+      });
 
       // Only populate location and country if user has completed onboarding
       // or if they have manually set a location
-      if (isProfileCompleted || userProfile.coordinates?.manuallySet) {
-        form.setValue("location", userProfile.location || "");
-        form.setValue("country", userProfile.country || "");
-
+      if (shouldPrefillLocation) {
         if (userProfile.location) {
           setLocationInput(userProfile.location);
+        } else {
+          setLocationInput("");
         }
 
         // Set selected location if country exists - only display fields, not coordinate details
@@ -144,16 +152,35 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
             postalCode: undefined,
             street: undefined,
           });
+        } else {
+          setSelectedLocation(null);
         }
       } else {
         // For first-time users, show placeholder and don't auto-populate
-        form.setValue("location", "");
-        form.setValue("country", "");
         setLocationInput("");
         setSelectedLocation(null);
       }
     }
   }, [userProfile, form, isProfileCompleted]);
+
+  useEffect(() => {
+    const profileLang = userProfile?.language;
+    if (!profileLang) return;
+
+    const normalizedProfileLang = normalizeToSupported(profileLang);
+    const langState = form.getFieldState("language", form.formState);
+    if (langState.isDirty || langState.isTouched) return;
+
+    const currentLang = normalizeToSupported(form.getValues("language"));
+    if (currentLang === normalizedProfileLang) return;
+
+    // Keep language field aligned with fetched profile value after async hydration.
+    form.setValue("language", normalizedProfileLang, {
+      shouldDirty: false,
+      shouldTouch: false,
+      shouldValidate: false,
+    });
+  }, [form, userProfile?.language]);
 
   useEffect(() => {
     if (!locationInput) {
@@ -495,15 +522,25 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               name="language"
               control={form.control}
               render={({ field }) => {
-                const langCode = field.value ?? getInitialLanguage();
+                const langState = form.getFieldState("language", form.formState);
+                // Keep persisted profile language until the user edits the language field.
+                const effectiveLang = normalizeToSupported(
+                  String(
+                    langState.isDirty || langState.isTouched
+                      ? (field.value ?? userProfile?.language)
+                      : (userProfile?.language ?? field.value)
+                  ),
+                );
 
                 return (
                   <FormItem>
                     <FormLabel>Language</FormLabel>
                     <FormControl>
                       <Select
-                        value={langCode}
-                        onValueChange={field.onChange}
+                        value={effectiveLang}
+                        onValueChange={(value) =>
+                          field.onChange(normalizeToSupported(value))
+                        }
                         disabled={
                           updateUserProfile.isPending ||
                           form.formState.isSubmitting ||
@@ -511,8 +548,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                         }
                       >
                         <SelectTrigger className="w-full">
-                          {SUPPORTED_LANGUAGES.find((l) => l.code === langCode)
-                            ?.label ?? "English"}
+                          <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                         <SelectContent>
                           {SUPPORTED_LANGUAGES.map(({ code, label }) => (

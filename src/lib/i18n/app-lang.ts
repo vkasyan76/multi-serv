@@ -14,11 +14,11 @@ export const DEFAULT_APP_LANG: AppLang = "en";
 
 export const SUPPORTED_LANGUAGES: Array<{ code: AppLang; label: string }> = [
   { code: "en", label: "English" },
-  { code: "de", label: "German" },
-  { code: "fr", label: "French" },
-  { code: "it", label: "Italian" },
-  { code: "es", label: "Spanish" },
-  { code: "pt", label: "Portuguese" },
+  { code: "de", label: "Deutsch" },
+  { code: "fr", label: "Français" },
+  { code: "it", label: "Italiano" },
+  { code: "es", label: "Español" },
+  { code: "pt", label: "Português" },
 ];
 
 export function normalizeToSupported(code?: string): AppLang {

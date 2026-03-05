@@ -32,7 +32,7 @@ Locale-prefixed URLs: `/{lang}/...` where `{lang}` is AppLang short code (`en,de
 
 ### Single edge entrypoint
 
-All routing concerns are composed in one edge entrypoint (`src/proxy.ts`) as part of Next.js `middleware.ts` -> `proxy.ts` migration.
+All routing concerns are composed in one edge entrypoint (`src/middleware.ts`) for the current Next 15 stack. Migrate to `src/proxy.ts` later as part of a dedicated Next 16 upgrade.
 
 ### Locale resolution order (UI pages)
 
@@ -113,7 +113,7 @@ Add locale-aware routing without breaking auth/subdomain behavior.
 
 ### Files
 
-- `src/proxy.ts` (migrate from `src/middleware.ts` here)
+- `src/middleware.ts` (current edge entrypoint on Next 15)
 - `src/i18n/routing.ts`
 - optional: `src/i18n/request.ts` (next-intl request config later)
 
@@ -410,7 +410,7 @@ Add one explicit test ensuring missing locale key/content falls back to `en` for
 
 Execute Phase 1 only:
 
-1. migrate `middleware.ts` -> `proxy.ts`
+1. keep `src/middleware.ts` as the edge entrypoint for Next 15
 2. add locale routing config
 3. compose locale routing with existing Clerk + tenant logic
 4. validate admin/auth/tenant routes and no redirect loops
@@ -418,3 +418,7 @@ Execute Phase 1 only:
 Recommended order after that:
 
 Phase 2 -> Phase 3 -> Phase 4 -> Phase 4A -> Phase 5 -> Phase 6 -> Phase 6A -> Phase 7.
+
+Future migration note:
+
+After upgrading to Next 16 and validating Payload/Clerk compatibility, migrate `src/middleware.ts` -> `src/proxy.ts` in a separate infrastructure change.
