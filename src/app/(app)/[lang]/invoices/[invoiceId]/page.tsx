@@ -1,6 +1,5 @@
 import { caller } from "@/trpc/server";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +15,11 @@ import {
 } from "@/components/ui/table";
 import {
   formatCurrency,
-  getAppLangFromHeaders,
   countryNameFromCode,
   formatDateForLocale,
   getLocaleAndCurrency,
 } from "@/modules/profile/location-utils";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +31,12 @@ const statusClass: Record<string, string> = {
   void: "bg-slate-200 text-slate-900",
 };
 
-const Page = async ({ params }: { params: Promise<{ invoiceId: string }> }) => {
-  const { invoiceId } = await params;
+const Page = async ({
+  params,
+}: {
+  params: Promise<{ lang: string; invoiceId: string }>;
+}) => {
+  const { lang, invoiceId } = await params;
   if (!invoiceId) notFound();
 
   let invoice: Awaited<ReturnType<typeof caller.invoices.getById>> | null =
@@ -80,7 +83,8 @@ const Page = async ({ params }: { params: Promise<{ invoiceId: string }> }) => {
     .trim();
   const providerName =
     providerFullName || invoice.sellerLegalName || "Service Provider";
-  const appLang = getAppLangFromHeaders(await headers());
+  // In /[lang] routes, URL locale is authoritative.
+  const appLang = normalizeToSupported(lang);
   const { locale } = getLocaleAndCurrency(appLang);
   const currency = (invoice.currency ?? "eur").toUpperCase();
   const sellerCountry =

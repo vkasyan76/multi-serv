@@ -15,9 +15,9 @@ import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import { cookies, headers } from "next/headers";
 import {
   getAppLangFromHeaders,
-  type AppLang,
 } from "@/modules/profile/location-utils";
-import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { normalizeToSupported, type AppLang } from "@/lib/i18n/app-lang";
+import { LOCALE_COOKIE_NAME } from "@/i18n/routing";
 import { CookieConsentRoot } from "@/modules/legal/cookies/ui/cookie-consent-root";
 import { VercelAnalyticsConsent } from "@/modules/legal/cookies/ui/consents/vercel-analytics-consent";
 
@@ -60,7 +60,7 @@ export default async function RootLayout({
 }>) {
   // Phase 2: route middleware maintains app_lang; use it first for html lang.
   const cookieStore = await cookies();
-  const cookieLang = cookieStore.get("app_lang")?.value;
+  const cookieLang = cookieStore.get(LOCALE_COOKIE_NAME)?.value;
   let appLang: AppLang;
 
   if (cookieLang) {

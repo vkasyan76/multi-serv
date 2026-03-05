@@ -112,13 +112,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
   const effectiveAppLang = useMemo(() => {
     const langState = form.getFieldState("language", form.formState);
-    return normalizeToSupported(
-      String(
-        langState.isDirty || langState.isTouched
-          ? (selectedLanguage ?? userProfile?.language)
-          : (userProfile?.language ?? selectedLanguage),
-      ),
-    );
+    const resolvedLang =
+      langState.isDirty || langState.isTouched
+        ? (selectedLanguage ?? userProfile?.language)
+        : (userProfile?.language ?? selectedLanguage);
+    return normalizeToSupported(resolvedLang ?? undefined);
   }, [form, selectedLanguage, userProfile?.language]);
 
   const countryDisplay = useMemo(() => {
