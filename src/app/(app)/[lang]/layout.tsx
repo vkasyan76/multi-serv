@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { isLocaleSegment } from "@/i18n/routing";
+import { normalizeToSupported, type AppLang } from "@/lib/i18n/app-lang";
+import { IntlProvider } from "@/i18n/intl-provider";
 
 export default async function LocaleSegmentLayout({
   children,
@@ -9,12 +12,23 @@ export default async function LocaleSegmentLayout({
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
+  const rawLang = lang.toLowerCase();
 
-  // Guard locale segment early so only canonical app languages render.
-  if (!isLocaleSegment(lang.toLowerCase())) {
+  // URL locale is authoritative for /[lang] routes.
+  if (!isLocaleSegment(rawLang)) {
     notFound();
   }
 
-  return children;
-}
+  const appLang: AppLang = normalizeToSupported(rawLang);
 
+  // Pin next-intl request locale to the URL segment for deterministic message loading.
+  setRequestLocale(appLang);
+
+  const messages = await getMessages();
+
+  return (
+    <IntlProvider locale={appLang} messages={messages}>
+      {children}
+    </IntlProvider>
+  );
+}
