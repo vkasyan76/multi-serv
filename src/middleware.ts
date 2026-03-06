@@ -147,7 +147,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Keep existing tenant subdomain rewrite behavior on de-localized path.
   if (ENABLED && ROOT) {
     const isRefRoute = restPathname === "/ref" || restPathname.startsWith("/ref/");
-    if (!restPathname.startsWith("/tenants/") && !isRefRoute) {
+    if (restPathname !== "/tenants" && !restPathname.startsWith("/tenants/") && !isRefRoute) {
       const host =
         req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
       const suffix = `.${ROOT}`;
