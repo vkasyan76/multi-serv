@@ -5,16 +5,18 @@
     "features": "Features",
     "pricing": "Pricing",
     "contact": "Contact",
+    "terms_of_use": "Terms of Use",
+    "impressum": "Impressum",
     "profile": "Profile",
     "dashboard": "Dashboard",
-    "start_business": "Start business",
+    "start_business": "Start Business",
     "admin_panel": "Admin panel",
     "login": "Log in",
-    "logout": "Log out",
+    "logout": "Sign out",
     "menu": "Menu"
   },
   "footer": {
-    "terms": "Terms of use",
+    "terms": "Terms",
     "impressum": "Impressum",
     "privacy_policy": "Privacy policy",
     "cookies": "Cookies",
@@ -23,21 +25,28 @@
   },
   "cookie": {
     "banner": {
+      "full": "We use cookies to improve your experience. Read our <policy>cookie policy</policy>. You can <manage>change your preferences</manage> at any time.",
       "text": "We use cookies to improve your experience.",
       "policy": "cookie policy",
-      "manage": "Manage your preferences"
+      "manage": "change your preferences"
     },
     "dialog": {
-      "title": "Cookie preferences",
+      "title": "Website Data Collection Preferences",
       "description": "Choose which cookies you want to allow.",
+      "essential_title": "Essential",
+      "essential_text": "These cookies are necessary for the site to function and cannot be turned off.",
+      "analytics_title": "Marketing and Analytics",
+      "analytics_text": "Helps us understand usage and improve the product experience.",
+      "advertising_title": "Advertising",
+      "advertising_text": "Used to personalize and measure advertising effectiveness.",
       "save": "Save settings",
       "cancel": "Cancel"
     }
   },
   "toast": {
     "referral": {
-      "invalid": "Referral code is invalid.",
-      "expired": "Referral code is expired."
+      "invalid": "This referral link is invalid. You can still register normally.",
+      "expired": "This referral code {code} is no longer active. You can still register normally."
     }
   },
   "buttons": {
@@ -48,3 +57,4 @@
     "loading": "Loading..."
   }
 }
+

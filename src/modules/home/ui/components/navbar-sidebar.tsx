@@ -9,6 +9,10 @@ import Link from "next/link";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 import {
   SignInButton,
   SignedIn,
@@ -29,9 +33,19 @@ interface Props {
 }
 
 export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
+  const t = useTranslations("common");
   const trpc = useTRPC();
   const session = useQuery(trpc.auth.session.queryOptions());
   const user = session.data?.user;
+  const params = useParams<{ lang?: string }>();
+  const lang = normalizeToSupported(params?.lang);
+
+  // Keep sidebar links on the active locale segment.
+  const href = (pathnameWithQuery: string) => {
+    const [pathPart, query = ""] = pathnameWithQuery.split("?");
+    const localizedPath = withLocalePrefix(pathPart || "/", lang);
+    return query ? `${localizedPath}?${query}` : localizedPath;
+  };
 
   const isAdmin = user?.roles?.includes("super-admin");
   const hasTenant = !!user?.tenants?.length;
@@ -45,7 +59,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
   });
 
   // stop using domain redirect for the dashboard - it is internal page
-  const dashHref = myTenant ? "/dashboard" : "/profile?tab=vendor";
+  const dashHref = myTenant ? href("/dashboard") : href("/profile?tab=vendor");
 
   // const dashHref = myTenant
   //   ? `${generateTenantUrl(myTenant.slug)}/dashboard`
@@ -60,7 +74,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="p-0 transition-none">
         <SheetHeader className="p-4 border-b pr-12">
-          <SheetTitle>Menu</SheetTitle>
+          <SheetTitle>{t("nav.menu")}</SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex flex-col overflow-y-auto h-full pb-2">
           {items.map((item) => (
@@ -76,13 +90,13 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
           {/* Clerk Auth Buttons and User Profile / Dashboard Links */}
           <div className="border-t">
             <SignedOut>
-              <SignInButton mode="modal" forceRedirectUrl="/">
+              <SignInButton mode="modal" forceRedirectUrl={href("/")}>
                 <button
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                   onClick={() => onOpenChange(false)}
                   type="button"
                 >
-                  Log in
+                  {t("nav.login")}
                 </button>
               </SignInButton>
             </SignedOut>
@@ -90,21 +104,21 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
             <SignedIn>
               {isAdmin && (
                 <Link
-                  href="/dashboard/admin"
+                  href={href("/dashboard/admin")}
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                   onClick={() => onOpenChange(false)}
                 >
-                  Admin panel
+                  {t("nav.admin_panel")}
                 </Link>
               )}
 
               {/* Profile - always visible for authenticated users */}
               <Link
-                href="/profile"
+                href={href("/profile")}
                 className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                 onClick={() => onOpenChange(false)}
               >
-                Profile
+                {t("nav.profile")}
               </Link>
 
               {/* Dashboard OR Start Business - conditional based on tenant status */}
@@ -139,7 +153,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                     : () => onOpenChange(false) // current behavior when ready
                 }
               >
-                {myTenant ? "Dashboard" : "Start Business"}
+                {myTenant ? t("nav.dashboard") : t("nav.start_business")}
               </Link>
 
               {/* Clerk SignOutButton does not accept custom onClick handlers -> const { signOut } = useClerk(); */}
@@ -152,7 +166,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                     onOpenChange(false);
                   }}
                 >
-                  Sign out
+                  {t("nav.logout")}
                 </button>
               </div>
             </SignedIn>

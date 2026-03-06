@@ -4,7 +4,10 @@ import Link from "next/link";
 import { Poppins } from "next/font/google";
 
 import { cn, platformHomeHref } from "@/lib/utils";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
@@ -49,19 +52,37 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
   );
 };
 
-const navbarItems = [
-  { href: "/", children: "Home" },
-  { href: "/about", children: "About" },
-  { href: "/features", children: "Features" },
-  { href: "/pricing", children: "Pricing" },
-  { href: "/contact", children: "Contact" },
-  { href: "/legal/terms-of-use", children: "Terms of Use" },
-  { href: "/legal/impressum", children: "Impressum" },
-];
-
 export const Navbar = () => {
+  const t = useTranslations("common");
   const trpc = useTRPC();
   const session = useQuery(trpc.auth.session.queryOptions());
+  const params = useParams<{ lang?: string }>();
+  const lang = normalizeToSupported(params?.lang);
+
+  // Keep shell navigation locale-stable while preserving any query string.
+  const href = (pathnameWithQuery: string) => {
+    const [pathPart, query = ""] = pathnameWithQuery.split("?");
+    const localizedPath = withLocalePrefix(pathPart || "/", lang);
+    return query ? `${localizedPath}?${query}` : localizedPath;
+  };
+
+  // In subdomain mode use platform origin + localized path for dashboard links.
+  const platformHref = (pathnameWithQuery: string) => {
+    const localized = href(pathnameWithQuery);
+    const base = platformHomeHref();
+    if (!base.startsWith("http")) return localized;
+    return `${base.replace(/\/+$/, "")}${localized}`;
+  };
+
+  const navbarItems = [
+    { href: href("/"), children: t("nav.home") },
+    { href: href("/about"), children: t("nav.about") },
+    { href: href("/features"), children: t("nav.features") },
+    { href: href("/pricing"), children: t("nav.pricing") },
+    { href: href("/contact"), children: t("nav.contact") },
+    { href: href("/legal/terms-of-use"), children: t("nav.terms_of_use") },
+    { href: href("/legal/impressum"), children: t("nav.impressum") },
+  ];
 
   // Get info for user's tenant:
   const { data: myTenant, isLoading: isMineLoading } = useQuery({
@@ -71,12 +92,9 @@ export const Navbar = () => {
     refetchOnWindowFocus: false,
   });
 
-  // links to point to /dashboard (platform root)
-  const homeHref = platformHomeHref();
-
   const dashHref = myTenant
-    ? `${homeHref.replace(/\/$/, "")}/dashboard`
-    : "/profile?tab=vendor";
+    ? platformHref("/dashboard")
+    : href("/profile?tab=vendor");
 
   // Only disable when session says user has a tenant but getMine hasn't returned it yet
   const hasTenant = !!session.data?.user?.tenants?.length;
@@ -88,7 +106,7 @@ export const Navbar = () => {
   return (
     //  <na className="h-16 flex border-b justify-between font-medium bg-white">
     <nav className="sticky top-0 z-50 h-16 flex border-b justify-between font-medium bg-white">
-      <Link href="/" className="pl-6 flex items-center">
+      <Link href={href("/")} className="pl-6 flex items-center">
         <span className={cn("text-5xl font-semibold", poppins.className)}>
           Infinisimo
         </span>
@@ -122,7 +140,7 @@ export const Navbar = () => {
               variant="secondary"
               className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
             >
-              <span>Log in</span>
+              <span>{t("nav.login")}</span>
             </Button>
           </SignInButton>
         </SignedOut>
@@ -140,7 +158,7 @@ export const Navbar = () => {
               asChild
               className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
             >
-              <Link href="/dashboard/admin">Admin panel</Link>
+              <Link href={href("/dashboard/admin")}>{t("nav.admin_panel")}</Link>
             </Button>
           ) : (
             <>
@@ -149,7 +167,7 @@ export const Navbar = () => {
                 variant="secondary"
                 className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
               >
-                <Link href="/profile">Profile</Link>
+                <Link href={href("/profile")}>{t("nav.profile")}</Link>
               </Button>
               <LoadingButton
                 asChild
@@ -167,7 +185,7 @@ export const Navbar = () => {
                   aria-busy={isDashLoading}
                 >
                   {/* Label now depends on the same source as href */}
-                  {myTenant ? "Dashboard" : "Start Business"}
+                  {myTenant ? t("nav.dashboard") : t("nav.start_business")}
                 </Link>
               </LoadingButton>
             </>
@@ -177,7 +195,7 @@ export const Navbar = () => {
           <div className="ml-4">
             <UserButton
               userProfileMode="navigation"
-              userProfileUrl="/profile"
+              userProfileUrl={href("/profile")}
             />
           </div>
         </SignedIn>

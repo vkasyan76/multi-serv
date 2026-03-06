@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
 import type { CookieConsentPrefs } from "../consent";
 
 type CookiePreferencesDialogProps = {
@@ -28,14 +29,13 @@ export function CookiePreferencesDialog({
   setPrefsAction,
   onSaveAction,
 }: CookiePreferencesDialogProps) {
+  const t = useTranslations("common");
+
   return (
     <Dialog open={open} onOpenChange={setOpenAction}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>
-            {/* TODO(i18n): translate */}
-            Website Data Collection Preferences
-          </DialogTitle>
+          <DialogTitle>{t("cookie.dialog.title")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
@@ -43,19 +43,14 @@ export function CookiePreferencesDialog({
           <div className="rounded-lg border p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <div className="text-sm font-medium">
-                  {/* TODO(i18n): translate */}
-                  Essential
-                </div>
+                <div className="text-sm font-medium">{t("cookie.dialog.essential_title")}</div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {/* TODO(i18n): translate */}
-                  These cookies are necessary for the site to function and
-                  cannot be turned off.
+                  {t("cookie.dialog.essential_text")}
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <Label className="sr-only">Essential</Label>
+                <Label className="sr-only">{t("cookie.dialog.essential_title")}</Label>
                 <Switch checked disabled />
               </div>
             </div>
@@ -65,18 +60,14 @@ export function CookiePreferencesDialog({
           <div className="rounded-lg border p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <div className="text-sm font-medium">
-                  {/* TODO(i18n): translate */}
-                  Marketing and Analytics
-                </div>
+                <div className="text-sm font-medium">{t("cookie.dialog.analytics_title")}</div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {/* TODO(i18n): translate */}
-                  Helps us understand usage and improve the product experience.
+                  {t("cookie.dialog.analytics_text")}
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <Label className="sr-only">Analytics</Label>
+                <Label className="sr-only">{t("cookie.dialog.analytics_title")}</Label>
                 <Switch
                   checked={prefs.analytics}
                   onCheckedChange={(checked) =>
@@ -91,18 +82,14 @@ export function CookiePreferencesDialog({
           <div className="rounded-lg border p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <div className="text-sm font-medium">
-                  {/* TODO(i18n): translate */}
-                  Advertising
-                </div>
+                <div className="text-sm font-medium">{t("cookie.dialog.advertising_title")}</div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {/* TODO(i18n): translate */}
-                  Used to personalize and measure advertising effectiveness.
+                  {t("cookie.dialog.advertising_text")}
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <Label className="sr-only">Advertising</Label>
+                <Label className="sr-only">{t("cookie.dialog.advertising_title")}</Label>
                 <Switch
                   checked={prefs.advertising}
                   onCheckedChange={(checked) =>
@@ -119,16 +106,14 @@ export function CookiePreferencesDialog({
               variant="outline"
               onClick={() => setOpenAction(false)}
             >
-              {/* TODO(i18n): translate */}
-              Cancel
+              {t("buttons.cancel")}
             </Button>
             <Button
               type="button"
               className="bg-black text-white hover:bg-pink-400 hover:text-black"
               onClick={onSaveAction}
             >
-              {/* TODO(i18n): translate */}
-              Save settings
+              {t("buttons.save_settings")}
             </Button>
           </div>
         </div>

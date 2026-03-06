@@ -1,20 +1,22 @@
 {
   "nav": {
     "home": "Start",
-    "about": "Über uns",
+    "about": "\u00dcber uns",
     "features": "Funktionen",
     "pricing": "Preise",
     "contact": "Kontakt",
+    "terms_of_use": "Nutzungsbedingungen",
+    "impressum": "Impressum",
     "profile": "Profil",
     "dashboard": "Dashboard",
     "start_business": "Anbieter werden",
     "admin_panel": "Admin-Bereich",
     "login": "Anmelden",
     "logout": "Abmelden",
-    "menu": "Menü"
+    "menu": "Men\u00fc"
   },
   "footer": {
-    "terms": "Nutzungsbedingungen",
+    "terms": "AGB",
     "impressum": "Impressum",
     "privacy_policy": "Datenschutz",
     "cookies": "Cookies",
@@ -23,21 +25,28 @@
   },
   "cookie": {
     "banner": {
+      "full": "Wir verwenden Cookies, um dein Erlebnis zu verbessern. Lies unsere <policy>Cookie-Richtlinie</policy>. Du kannst <manage>deine Einstellungen \u00e4ndern</manage>.",
       "text": "Wir verwenden Cookies, um dein Erlebnis zu verbessern.",
       "policy": "Cookie-Richtlinie",
-      "manage": "Einstellungen verwalten"
+      "manage": "deine Einstellungen \u00e4ndern"
     },
     "dialog": {
-      "title": "Cookie-Einstellungen",
-      "description": "Wähle, welche Cookies erlaubt sind.",
+      "title": "Einstellungen zur Datenerfassung auf der Website",
+      "description": "W\u00e4hle, welche Cookies erlaubt sind.",
+      "essential_title": "Essenziell",
+      "essential_text": "Diese Cookies sind f\u00fcr den Betrieb der Website erforderlich und k\u00f6nnen nicht deaktiviert werden.",
+      "analytics_title": "Marketing und Analyse",
+      "analytics_text": "Hilft uns, die Nutzung zu verstehen und das Produkterlebnis zu verbessern.",
+      "advertising_title": "Werbung",
+      "advertising_text": "Wird verwendet, um Werbung zu personalisieren und deren Wirksamkeit zu messen.",
       "save": "Einstellungen speichern",
       "cancel": "Abbrechen"
     }
   },
   "toast": {
     "referral": {
-      "invalid": "Der Empfehlungscode ist ungültig.",
-      "expired": "Der Empfehlungscode ist abgelaufen."
+      "invalid": "Dieser Empfehlungslink ist ung\u00fcltig. Du kannst dich trotzdem normal registrieren.",
+      "expired": "Der Empfehlungscode {code} ist nicht mehr aktiv. Du kannst dich trotzdem normal registrieren."
     }
   },
   "buttons": {
@@ -45,6 +54,7 @@
     "decline": "Ablehnen",
     "save_settings": "Einstellungen speichern",
     "cancel": "Abbrechen",
-    "loading": "Lädt..."
+    "loading": "L\u00e4dt..."
   }
 }
+

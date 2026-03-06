@@ -7,6 +7,7 @@ import {
   assertLaunchedLocalesAreSupported,
   type RequiredNamespace,
 } from "../i18n/rollout";
+import { DEFAULT_APP_LANG } from "../lib/i18n/app-lang";
 
 // Phase 3 (Commit 4): run via `npm run test:i18n:messages`.
 type JsonObject = Record<string, unknown>;
@@ -42,7 +43,14 @@ function loadNamespace(lang: string, ns: RequiredNamespace): JsonObject {
   }
 
   const raw = readFileSync(file, "utf8");
-  const parsed = JSON.parse(raw) as unknown;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    // Include file path so CI points directly to the malformed locale file.
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`[i18n-check] Invalid JSON in: ${file}: ${message}`);
+  }
 
   if (!isPlainObject(parsed)) {
     throw new Error(`[i18n-check] Expected JSON object in: ${file}`);
@@ -55,7 +63,7 @@ function main() {
   assertLaunchedLocalesAreSupported();
 
   // EN is the baseline schema; launched locales must include all baseline keys.
-  const baselineLang = "en";
+  const baselineLang = DEFAULT_APP_LANG;
   const failures: string[] = [];
   const warnings: string[] = [];
 
