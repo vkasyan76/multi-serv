@@ -31,13 +31,18 @@ function isProtectedPath(pathname: string) {
   );
 }
 
+function hasSegmentPrefix(pathname: string, base: string) {
+  // Match only an exact segment (`/api` or `/api/...`), not lookalikes (`/apiary`).
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
 function isTechnicalBypass(pathname: string) {
   // Keep platform internals/APIs/admin outside locale redirect and tenant rewrite flows.
-  if (pathname.startsWith("/_next")) return true;
-  if (pathname.startsWith("/_vercel")) return true;
-  if (pathname.startsWith("/api")) return true;
-  if (pathname.startsWith("/trpc")) return true;
-  if (pathname.startsWith("/admin")) return true;
+  if (hasSegmentPrefix(pathname, "/_next")) return true;
+  if (hasSegmentPrefix(pathname, "/_vercel")) return true;
+  if (hasSegmentPrefix(pathname, "/api")) return true;
+  if (hasSegmentPrefix(pathname, "/trpc")) return true;
+  if (hasSegmentPrefix(pathname, "/admin")) return true;
   if (STATIC_EXACT_BYPASS.has(pathname)) return true;
   if (STATIC_EXT_BYPASS.test(pathname)) return true;
   return false;

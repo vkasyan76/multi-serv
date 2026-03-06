@@ -26,9 +26,9 @@ Explicitly decide (in/out) in Phase 0:
 
 ## Implementation Status (as of 2026-03-05)
 
-- Phase 0 completed (conventions and rollout doc locked).
-- Phase 1 completed on Next 15 using `src/middleware.ts` + `src/i18n/routing.ts`.
-- Phase 2 completed with localized app route tree under `src/app/(app)/[lang]/...`.
+- Phase 0 - conventions and rollout doc locked.
+- Completed Phase 1 on Next 15 using `src/middleware.ts` + `src/i18n/routing.ts`.
+- Phase 2 now runs on localized app routes under `src/app/(app)/[lang]/...`.
 
 Completed fixes across Phase 1/2:
 
