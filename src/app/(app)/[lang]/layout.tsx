@@ -1,7 +1,8 @@
+import "server-only";
 import { notFound } from "next/navigation";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { isLocaleSegment } from "@/i18n/routing";
-import { normalizeToSupported, type AppLang } from "@/lib/i18n/app-lang";
+import { type AppLang } from "@/lib/i18n/app-lang";
 import { IntlProvider } from "@/i18n/intl-provider";
 
 export default async function LocaleSegmentLayout({
@@ -19,7 +20,7 @@ export default async function LocaleSegmentLayout({
     notFound();
   }
 
-  const appLang: AppLang = normalizeToSupported(rawLang);
+  const appLang: AppLang = rawLang;
 
   // Pin next-intl request locale to the URL segment for deterministic message loading.
   setRequestLocale(appLang);
