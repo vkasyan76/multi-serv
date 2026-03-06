@@ -1,0 +1,50 @@
+{
+  "nav": {
+    "home": "Start",
+    "about": "Über uns",
+    "features": "Funktionen",
+    "pricing": "Preise",
+    "contact": "Kontakt",
+    "profile": "Profil",
+    "dashboard": "Dashboard",
+    "start_business": "Anbieter werden",
+    "admin_panel": "Admin-Bereich",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "menu": "Menü"
+  },
+  "footer": {
+    "terms": "Nutzungsbedingungen",
+    "impressum": "Impressum",
+    "privacy_policy": "Datenschutz",
+    "cookies": "Cookies",
+    "cookie_preferences": "Cookie-Einstellungen",
+    "all_rights_reserved": "Alle Rechte vorbehalten."
+  },
+  "cookie": {
+    "banner": {
+      "text": "Wir verwenden Cookies, um dein Erlebnis zu verbessern.",
+      "policy": "Cookie-Richtlinie",
+      "manage": "Einstellungen verwalten"
+    },
+    "dialog": {
+      "title": "Cookie-Einstellungen",
+      "description": "Wähle, welche Cookies erlaubt sind.",
+      "save": "Einstellungen speichern",
+      "cancel": "Abbrechen"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Der Empfehlungscode ist ungültig.",
+      "expired": "Der Empfehlungscode ist abgelaufen."
+    }
+  },
+  "buttons": {
+    "accept": "Akzeptieren",
+    "decline": "Ablehnen",
+    "save_settings": "Einstellungen speichern",
+    "cancel": "Abbrechen",
+    "loading": "Lädt..."
+  }
+}

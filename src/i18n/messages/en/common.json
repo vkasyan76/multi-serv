@@ -1,0 +1,50 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "features": "Features",
+    "pricing": "Pricing",
+    "contact": "Contact",
+    "profile": "Profile",
+    "dashboard": "Dashboard",
+    "start_business": "Start business",
+    "admin_panel": "Admin panel",
+    "login": "Log in",
+    "logout": "Log out",
+    "menu": "Menu"
+  },
+  "footer": {
+    "terms": "Terms of use",
+    "impressum": "Impressum",
+    "privacy_policy": "Privacy policy",
+    "cookies": "Cookies",
+    "cookie_preferences": "Cookie preferences",
+    "all_rights_reserved": "All rights reserved."
+  },
+  "cookie": {
+    "banner": {
+      "text": "We use cookies to improve your experience.",
+      "policy": "cookie policy",
+      "manage": "Manage your preferences"
+    },
+    "dialog": {
+      "title": "Cookie preferences",
+      "description": "Choose which cookies you want to allow.",
+      "save": "Save settings",
+      "cancel": "Cancel"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Referral code is invalid.",
+      "expired": "Referral code is expired."
+    }
+  },
+  "buttons": {
+    "accept": "Accept",
+    "decline": "Decline",
+    "save_settings": "Save settings",
+    "cancel": "Cancel",
+    "loading": "Loading..."
+  }
+}
