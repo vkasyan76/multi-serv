@@ -121,11 +121,12 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
   const countryDisplay = useMemo(() => {
     const locale = mapAppLangToLocale(effectiveAppLang);
-    // While editing a new location, do not fall back to stale profile ISO.
     const countryISO = selectedLocation?.countryISO;
-    const profileISO = !selectedLocation
-      ? userProfile?.coordinates?.countryISO
-      : undefined;
+    // Only use persisted ISO while the hydrated country field has not been cleared by a new edit.
+    const profileISO =
+      !selectedLocation && watchedCountry
+        ? userProfile?.coordinates?.countryISO
+        : undefined;
 
     // Render ISO-localized name first, then current form value.
     return (
