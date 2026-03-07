@@ -6,10 +6,10 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  type AppLang,
   formatCurrency,
   mapAppLangToLocale,
-} from "@/modules/profile/location-utils";
+} from "@/lib/i18n/locale";
+import { type AppLang } from "@/lib/i18n/app-lang";
 import type { WalletTransactionRow } from "./wallet-types";
 
 type SortKey = "date" | "invoice_date" | "description" | "amount" | "tenant";

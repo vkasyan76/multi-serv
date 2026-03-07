@@ -19,10 +19,9 @@ import {
   SUPPORTED_LANGUAGES,
   normalizeToSupported,
 } from "@/lib/i18n/app-lang";
+import { mapAppLangToLocale, countryNameFromCode } from "@/lib/i18n/locale";
 import {
   getInitialLanguage,
-  mapAppLangToLocale,
-  countryNameFromCode,
   extractAddressComponents,
 } from "../location-utils";
 import {

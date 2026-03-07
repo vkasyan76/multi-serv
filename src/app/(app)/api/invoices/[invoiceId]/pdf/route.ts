@@ -4,13 +4,13 @@ import { getPayload } from "payload";
 import config from "@payload-config";
 import { auth } from "@clerk/nextjs/server";
 import type { Invoice, Tenant } from "@/payload-types";
+import { type AppLang } from "@/lib/i18n/app-lang";
 import {
   countryNameFromCode,
-  getAppLangFromHeaders,
   getLocaleAndCurrency,
   formatDateForLocale,
-  type AppLang,
-} from "@/modules/profile/location-utils";
+} from "@/lib/i18n/locale";
+import { getAppLangFromHeaders } from "@/modules/profile/location-utils";
 
 export const runtime = "nodejs";
 

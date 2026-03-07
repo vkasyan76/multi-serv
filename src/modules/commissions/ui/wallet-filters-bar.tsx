@@ -18,10 +18,10 @@ import {
 } from "@/components/ui/select";
 import { TenantCombobox } from "@/components/ui/tenant-combobox";
 import {
-  type AppLang,
   formatDateForLocale,
   mapAppLangToLocale,
-} from "@/modules/profile/location-utils";
+} from "@/lib/i18n/locale";
+import { type AppLang } from "@/lib/i18n/app-lang";
 import { cn } from "@/lib/utils";
 import type {
   PeriodMode,

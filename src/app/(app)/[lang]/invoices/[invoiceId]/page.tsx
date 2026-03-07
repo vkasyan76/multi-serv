@@ -18,7 +18,7 @@ import {
   countryNameFromCode,
   formatDateForLocale,
   getLocaleAndCurrency,
-} from "@/modules/profile/location-utils";
+} from "@/lib/i18n/locale";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 
 export const dynamic = "force-dynamic";

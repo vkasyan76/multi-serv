@@ -1,12 +1,12 @@
 import { addDays, startOfDay } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
 import { downloadCsv } from "@/lib/csv/download-csv";
+import { type AppLang } from "@/lib/i18n/app-lang";
 import {
-  type AppLang,
   formatDateForLocale,
   formatMonthYearForLocale,
   mapAppLangToLocale,
-} from "@/modules/profile/location-utils";
+} from "@/lib/i18n/locale";
 import type {
   WalletPeriodFilter,
   WalletStatusFilter,
