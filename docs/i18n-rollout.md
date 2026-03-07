@@ -24,13 +24,14 @@ Explicitly decide (in/out) in Phase 0:
 - internal admin diagnostics and system logs
 - CMS long-form marketing content (optional v1/v2)
 
-## Implementation Status (as of 2026-03-05)
+## Implementation Status (as of 2026-03-06)
 
 - Phase 0 - conventions and rollout doc locked.
 - Completed Phase 1 on Next 15 using `src/middleware.ts` + `src/i18n/routing.ts`.
 - Phase 2 now runs on localized app routes under `src/app/(app)/[lang]/...`.
+- Phase 3 runtime i18n and shell/common migration is complete.
 
-Completed fixes across Phase 1/2:
+Completed fixes across Phase 1/2/3:
 
 - middleware bridge rewrite removed; localized routes are now real route segments.
 - tenant rewrite target is localized: `/${lang}/tenants/${slug}/...`.
@@ -40,6 +41,12 @@ Completed fixes across Phase 1/2:
 - auth and server redirects were updated to locale-prefixed paths (`/${lang}/...`).
 - referral route redirect now preserves active locale namespace (`/${lang}`).
 - profile language/country UI follow-up fixes applied (stable language hydration + ISO-aware country display fallback behavior).
+- `next-intl` runtime is wired via `next.config.ts` and `src/i18n/request.ts`.
+- request-level locale precedence is aligned as `x-app-lang` -> `app_lang` cookie -> `requestLocale` -> `DEFAULT_APP_LANG`.
+- root provider ownership is centralized in `src/app/(app)/layout.tsx` (`getMessages` + `IntlProvider`).
+- `src/app/(app)/[lang]/layout.tsx` validates/pins URL locale only (`setRequestLocale`), without a nested provider.
+- shell/common UI now uses `useTranslations("common")` in navbar/sidebar/footer/cookie/referral components.
+- launched-locale governance checks are active via `src/i18n/rollout.ts`, `src/scripts/i18n-check.ts`, and `npm run test:i18n:messages`.
 
 ## Guiding Decisions
 
@@ -67,7 +74,7 @@ All routing concerns are composed in one edge entrypoint (`src/middleware.ts`) f
 
 - Phase 1 proves routing integrity
 - Phase 2 restructures routes
-- Phase 3 introduces dictionaries
+- Phase 3 introduces dictionaries and shell/common migration (complete)
 - Phase 4/4A covers formatting + CMS localization
 - Phase 6/6A covers preference + emails
 - Phase 7 locks quality gates
@@ -199,34 +206,52 @@ Implemented with localized app routes in `src/app/(app)/[lang]/...`.
 - tenant routes still resolve
 - Payload admin remains reachable unprefixed
 
-## Phase 3 - Runtime i18n Layer and Dictionaries
+## Phase 3 - Runtime i18n Layer and Dictionaries (Implemented)
 
 ### Goals
 
 Set up dictionary loading and translation access patterns.
 
-### Work
+### Implemented Work
 
 1. Messages structure (start minimal):
 - `src/i18n/messages/en/common.json`
 - `src/i18n/messages/de/common.json`
 2. Request-level config (next-intl App Router):
-- `src/i18n/request.ts` via `getRequestConfig`
+- `src/i18n/request.ts` via `getRequestConfig` with precedence:
+- `x-app-lang` -> `app_lang` cookie -> `requestLocale` -> `DEFAULT_APP_LANG`
+- locale-specific messages merged onto `en` baseline fallback
 3. Translation access:
 - server: `getTranslations` and `getMessages`
 - client: `NextIntlClientProvider` and `useTranslations`
+- provider ownership:
+- `src/app/(app)/layout.tsx` owns `IntlProvider` for root-level client components
+- `src/app/(app)/[lang]/layout.tsx` validates locale and calls `setRequestLocale` only
 4. Start with shell/common copy:
 - header/nav, footer, global buttons, baseline errors/toasts
+- migrated components:
+- `src/modules/home/ui/components/navbar.tsx`
+- `src/modules/home/ui/components/navbar-sidebar.tsx`
+- `src/modules/home/ui/components/footer.tsx`
+- `src/modules/legal/cookies/ui/cookie-banner.tsx`
+- `src/modules/legal/cookies/ui/cookie-preferences-dialog.tsx`
+- `src/modules/home/ui/components/referral-notice.tsx`
 5. Typing and governance:
 - typed key access for `common` first (optional but recommended)
 - keys live in namespace files; components reference keys only
+- launched-locale governance config:
+- `src/i18n/rollout.ts` (`LAUNCHED_APP_LANGS`, `REQUIRED_NAMESPACES`)
+- message consistency checker:
+- `src/scripts/i18n-check.ts`
+- npm script:
+- `test:i18n:messages`
 
 CI governance rule:
 
 - fail only for required namespaces of launched locales
 - do not block on all supported locales at once
 
-### Acceptance checks
+### Acceptance checks (met)
 
 - one non-default locale renders shell/common fully
 - missing keys visible in dev (no prod crash)
@@ -439,13 +464,12 @@ Add one explicit test ensuring missing locale key/content falls back to `en` for
 
 ## Immediate Next Step
 
-Phase 1 and Phase 2 are complete. Start Phase 3:
+Phase 1/2/3 are complete. Start Phase 4:
 
-1. add request-level next-intl config (`src/i18n/request.ts`)
-2. add minimal dictionaries (`src/i18n/messages/en/common.json`, `src/i18n/messages/de/common.json`)
-3. wire provider access patterns (server + client)
-4. migrate shell/common copy first (header/nav/footer/buttons/errors)
-5. add missing-key checks scoped to launched locales and required namespaces
+1. consolidate locale formatting helpers into `src/lib/i18n/locale.ts`
+2. keep `src/modules/profile/location-utils.ts` as compatibility re-export during transition
+3. migrate new and touched formatting callsites to canonical `src/lib/i18n/*` helpers
+4. validate no date/currency regression in Berlin timezone behavior
 
 Recommended order after that:
 

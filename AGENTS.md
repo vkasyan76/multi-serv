@@ -131,6 +131,20 @@ Required env groups are defined in `README.md`:
   - hydration reset is guarded with `useFormState(...).isDirty` to avoid clobbering in-progress edits
   - country display prefers ISO-derived localized labels while avoiding stale profile ISO during active location edits
   - `getInitialLanguage()` follows required priority: `document.documentElement.lang` -> `navigator.languages`/`navigator.language` -> `en`
+- Phase 3 (runtime i18n + shell/common migration + governance) is implemented:
+  - `next-intl` plugin is wired in `next.config.ts` using `src/i18n/request.ts`
+  - request locale precedence in `src/i18n/request.ts` is `x-app-lang` -> `app_lang` cookie -> `requestLocale` -> `DEFAULT_APP_LANG`
+  - `common` dictionary loading merges locale-specific messages onto `en` fallback baseline
+  - `src/app/(app)/layout.tsx` owns the root `IntlProvider` (`getMessages` + provider wrap)
+  - `src/app/(app)/[lang]/layout.tsx` only validates locale and pins request locale via `setRequestLocale`
+  - shell/common components use `useTranslations("common")` with locale-safe links:
+    `src/modules/home/ui/components/navbar.tsx`,
+    `src/modules/home/ui/components/navbar-sidebar.tsx`,
+    `src/modules/home/ui/components/footer.tsx`,
+    `src/modules/legal/cookies/ui/cookie-banner.tsx`,
+    `src/modules/legal/cookies/ui/cookie-preferences-dialog.tsx`,
+    `src/modules/home/ui/components/referral-notice.tsx`
+  - governance checks are in `src/i18n/rollout.ts` + `src/scripts/i18n-check.ts`, executed via `npm run test:i18n:messages`
 
 ## Promotions Reservation (Phase 3)
 

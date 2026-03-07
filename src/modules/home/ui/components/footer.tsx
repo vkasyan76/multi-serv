@@ -99,7 +99,8 @@ export const Footer = () => {
 
         {/* Copyright */}
         <p className="text-center sm:text-right text-sm text-gray-600">
-          &copy; 2025 Infinisimo. {t("footer.all_rights_reserved")}
+          &copy; {new Date().getFullYear()} Infinisimo.{" "}
+          {t("footer.all_rights_reserved")}
         </p>
       </div>
     </footer>
