@@ -1,4 +1,22 @@
+import { WALLET_CURRENCY } from "@/constants";
 import { DEFAULT_APP_LANG, type AppLang } from "@/lib/i18n/app-lang";
+
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseLocaleDateInput(value: Date | string): Date {
+  if (value instanceof Date) return value;
+
+  // Preserve local calendar day for plain date-only strings.
+  if (DATE_ONLY_RE.test(value)) {
+    const parts = value.split("-");
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    return new Date(year, month - 1, day);
+  }
+
+  return new Date(value);
+}
 
 // Phase 4: canonical locale/formatting helpers; keep behavior identical to legacy location-utils exports.
 export function mapAppLangToLocale(appLang: AppLang): string {
@@ -21,7 +39,7 @@ export function mapAppLangToLocale(appLang: AppLang): string {
 
 export function getLocaleAndCurrency(appLang: AppLang = DEFAULT_APP_LANG) {
   const locale = mapAppLangToLocale(appLang);
-  return { locale, currency: "EUR" };
+  return { locale, currency: WALLET_CURRENCY.toUpperCase() };
 }
 
 export function countryNameFromCode(code?: string, locale = "en"): string {
@@ -39,10 +57,11 @@ export function formatLocationFromCoords(
   locale = "en"
 ): string {
   if (!coords) return "";
-  const country = countryNameFromCode(coords.countryISO, locale);
-  if (coords.city) return `${coords.city}, ${country}`;
-  if (coords.region) return `${coords.region}, ${country}`;
-  return country;
+  const primary = coords.city ?? coords.region;
+  const country = coords.countryISO
+    ? countryNameFromCode(coords.countryISO, locale)
+    : "";
+  return [primary, country].filter(Boolean).join(", ");
 }
 
 export function formatDateForLocale(
@@ -51,7 +70,7 @@ export function formatDateForLocale(
   appLang: AppLang = DEFAULT_APP_LANG
 ) {
   const { locale } = getLocaleAndCurrency(appLang);
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+  const dateObj = parseLocaleDateInput(date);
 
   return dateObj.toLocaleDateString(locale, {
     year: "numeric",
@@ -130,7 +149,7 @@ export function formatMonthYearForLocale(
   appLang: AppLang = DEFAULT_APP_LANG
 ) {
   const { locale } = getLocaleAndCurrency(appLang);
-  const d = typeof date === "string" ? new Date(date) : date;
+  const d = parseLocaleDateInput(date);
   return d.toLocaleDateString(locale, { month: monthStyle, year: "numeric" });
 }
 
@@ -140,7 +159,7 @@ export function formatCurrency(
   appLang: AppLang = DEFAULT_APP_LANG
 ) {
   const { locale } = getLocaleAndCurrency(appLang);
-  const cur = (currency ?? "EUR").toUpperCase();
+  const cur = (currency ?? WALLET_CURRENCY).toUpperCase();
 
   try {
     return new Intl.NumberFormat(locale, {

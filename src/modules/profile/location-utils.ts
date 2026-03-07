@@ -262,6 +262,13 @@ export function extractCountry(address: string): string {
 
 // Map country names to ISO country codes for phone number formatting
 export function getCountryCodeFromName(countryName: string): string {
+  const normalizeCountryKey = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
   const countryMap: Record<string, string> = {
     // EU Member States
     Germany: "DE",
@@ -275,6 +282,7 @@ export function getCountryCodeFromName(countryName: string): string {
     Nederland: "NL",
     Belgium: "BE",
     Belgique: "BE",
+    Belgie: "BE",
     Austria: "AT",
     Osterreich: "AT",
     Poland: "PL",
@@ -286,7 +294,6 @@ export function getCountryCodeFromName(countryName: string): string {
     Hungary: "HU",
     Magyarorszag: "HU",
     Romania: "RO",
-    RomaniaRO: "RO",
     Bulgaria: "BG",
     Balgariya: "BG",
     Croatia: "HR",
@@ -315,6 +322,10 @@ export function getCountryCodeFromName(countryName: string): string {
     Lietuva: "LT",
     Ireland: "IE",
     Eire: "IE",
+    "Ελλάδα": "GR",
+    "Κύπρος": "CY",
+    "България": "BG",
+    "Україна": "UA",
 
     // Non-EU European countries
     "United Kingdom": "GB",
@@ -332,20 +343,21 @@ export function getCountryCodeFromName(countryName: string): string {
   };
 
   // Normalize country name for matching
-  const normalizedCountry = countryName.trim().toLowerCase();
+  const normalizedCountry = normalizeCountryKey(countryName);
 
   // Try exact match first
   for (const [country, code] of Object.entries(countryMap)) {
-    if (country.toLowerCase() === normalizedCountry) {
+    if (normalizeCountryKey(country) === normalizedCountry) {
       return code;
     }
   }
 
   // Try partial match for common variations
   for (const [country, code] of Object.entries(countryMap)) {
+    const normalizedKey = normalizeCountryKey(country);
     if (
-      country.toLowerCase().includes(normalizedCountry) ||
-      normalizedCountry.includes(country.toLowerCase())
+      normalizedKey.includes(normalizedCountry) ||
+      normalizedCountry.includes(normalizedKey)
     ) {
       return code;
     }
