@@ -61,15 +61,17 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
   const updateUserProfile = useMutation(
     trpc.auth.updateUserProfile.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
         toast.success("Profile updated successfully!");
-        // Invalidate the getUserProfile query to update the cache
-        queryClient.invalidateQueries({
+        // Allow exactly one profile refetch to rehydrate server-normalized values after save.
+        setAllowProfileResync(true);
+        await queryClient.invalidateQueries({
           queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
         });
         onSuccess?.(); // Call the onSuccess callback if provided
       },
       onError: (error) => {
+        setAllowProfileResync(false);
         console.error("Error updating profile:", error);
         toast.error(
           error.message || "Failed to update profile. Please try again."
@@ -109,6 +111,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const [selectedLocation, setSelectedLocation] =
     useState<SelectedLocation | null>(null);
   const [sessionToken, setSessionToken] = useState<string | undefined>();
+  const [allowProfileResync, setAllowProfileResync] = useState(false);
 
   const effectiveAppLang = useMemo(() => {
     const langState = form.getFieldState("language", form.formState);
@@ -156,7 +159,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   // Populate form with user data when it loads
   useEffect(() => {
     if (!userProfile) return;
-    if (isDirty) return;
+    if (isDirty && !allowProfileResync) return;
 
     const shouldPrefillLocation =
       isProfileCompleted || userProfile.coordinates?.manuallySet;
@@ -206,7 +209,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       setLocationInput("");
       setSelectedLocation(null);
     }
-  }, [userProfile, form, isProfileCompleted, isDirty]);
+
+    if (allowProfileResync) {
+      setAllowProfileResync(false);
+    }
+  }, [userProfile, form, isProfileCompleted, isDirty, allowProfileResync]);
 
   useEffect(() => {
     const profileLang = userProfile?.language;
