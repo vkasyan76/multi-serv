@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "about": "À propos",
+    "features": "Fonctionnalités",
+    "pricing": "Tarifs",
+    "contact": "Contact",
+    "terms_of_use": "Conditions d'utilisation",
+    "impressum": "Mentions légales",
+    "profile": "Profil",
+    "dashboard": "Tableau de bord",
+    "start_business": "Devenir prestataire",
+    "admin_panel": "Panneau admin",
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "menu": "Menu"
+  },
+  "footer": {
+    "terms": "Conditions",
+    "impressum": "Mentions légales",
+    "privacy_policy": "Politique de confidentialité",
+    "cookies": "Cookies",
+    "cookie_preferences": "Préférences de cookies",
+    "all_rights_reserved": "Tous droits réservés."
+  },
+  "cookie": {
+    "banner": {
+      "full": "Nous utilisons des cookies pour améliorer votre expérience. Consultez notre <policy>politique relative aux cookies</policy>. Vous pouvez <manage>modifier vos préférences</manage> à tout moment.",
+      "text": "Nous utilisons des cookies pour améliorer votre expérience.",
+      "policy": "politique relative aux cookies",
+      "manage": "modifier vos préférences"
+    },
+    "dialog": {
+      "title": "Préférences de collecte des données du site web",
+      "description": "Choisissez les cookies que vous souhaitez autoriser.",
+      "essential_title": "Essentiels",
+      "essential_text": "Ces cookies sont nécessaires au fonctionnement du site et ne peuvent pas être désactivés.",
+      "analytics_title": "Marketing et analyse",
+      "analytics_text": "Nous aide à comprendre l'utilisation et à améliorer l'expérience produit.",
+      "advertising_title": "Publicité",
+      "advertising_text": "Utilisés pour personnaliser la publicité et en mesurer l'efficacité.",
+      "save": "Enregistrer les paramètres",
+      "cancel": "Annuler"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Ce lien de parrainage n'est pas valide. Vous pouvez tout de même vous inscrire normalement.",
+      "expired": "Ce code de parrainage {code} n'est plus actif. Vous pouvez tout de même vous inscrire normalement."
+    }
+  },
+  "buttons": {
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "save_settings": "Enregistrer les paramètres",
+    "cancel": "Annuler",
+    "loading": "Chargement..."
+  }
+}

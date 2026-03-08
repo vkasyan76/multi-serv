@@ -31,6 +31,12 @@ export function mapAppLangToLocale(appLang: AppLang): string {
       return "es-ES";
     case "pt":
       return "pt-PT";
+    case "pl":
+      return "pl-PL";
+    case "ro":
+      return "ro-RO";
+    case "uk":
+      return "uk-UA";
     case "en":
     default:
       return "en-US";

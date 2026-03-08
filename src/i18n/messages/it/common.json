@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "Chi siamo",
+    "features": "Funzionalità",
+    "pricing": "Prezzi",
+    "contact": "Contatti",
+    "terms_of_use": "Termini di utilizzo",
+    "impressum": "Note legali",
+    "profile": "Profilo",
+    "dashboard": "Dashboard",
+    "start_business": "Diventa fornitore",
+    "admin_panel": "Pannello admin",
+    "login": "Accedi",
+    "logout": "Esci",
+    "menu": "Menu"
+  },
+  "footer": {
+    "terms": "Termini",
+    "impressum": "Note legali",
+    "privacy_policy": "Informativa sulla privacy",
+    "cookies": "Cookie",
+    "cookie_preferences": "Preferenze cookie",
+    "all_rights_reserved": "Tutti i diritti riservati."
+  },
+  "cookie": {
+    "banner": {
+      "full": "Utilizziamo i cookie per migliorare la tua esperienza. Leggi la nostra <policy>informativa sui cookie</policy>. Puoi <manage>modificare le tue preferenze</manage> in qualsiasi momento.",
+      "text": "Utilizziamo i cookie per migliorare la tua esperienza.",
+      "policy": "informativa sui cookie",
+      "manage": "modificare le tue preferenze"
+    },
+    "dialog": {
+      "title": "Preferenze di raccolta dati del sito web",
+      "description": "Scegli quali cookie desideri consentire.",
+      "essential_title": "Essenziali",
+      "essential_text": "Questi cookie sono necessari al funzionamento del sito e non possono essere disattivati.",
+      "analytics_title": "Marketing e analisi",
+      "analytics_text": "Ci aiuta a comprendere l'utilizzo e a migliorare l'esperienza del prodotto.",
+      "advertising_title": "Pubblicità",
+      "advertising_text": "Utilizzati per personalizzare la pubblicità e misurarne l'efficacia.",
+      "save": "Salva impostazioni",
+      "cancel": "Annulla"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Questo link di referral non è valido. Puoi comunque registrarti normalmente.",
+      "expired": "Questo codice referral {code} non è più attivo. Puoi comunque registrarti normalmente."
+    }
+  },
+  "buttons": {
+    "accept": "Accetta",
+    "decline": "Rifiuta",
+    "save_settings": "Salva impostazioni",
+    "cancel": "Annulla",
+    "loading": "Caricamento..."
+  }
+}

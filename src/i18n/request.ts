@@ -11,9 +11,16 @@ type MessageTree = Record<string, unknown>;
 type Loader = () => Promise<MessageTree>;
 
 const COMMON_LOADERS: Partial<Record<AppLang, Loader>> = {
-  // Phase 3 (Commit 1): start with launched locales; EN remains canonical fallback.
+  // Keep launched locales explicit so i18n-check and runtime loading stay in lockstep.
   en: async () => (await import("./messages/en/common.json")).default,
   de: async () => (await import("./messages/de/common.json")).default,
+  fr: async () => (await import("./messages/fr/common.json")).default,
+  it: async () => (await import("./messages/it/common.json")).default,
+  es: async () => (await import("./messages/es/common.json")).default,
+  pt: async () => (await import("./messages/pt/common.json")).default,
+  pl: async () => (await import("./messages/pl/common.json")).default,
+  ro: async () => (await import("./messages/ro/common.json")).default,
+  uk: async () => (await import("./messages/uk/common.json")).default,
 };
 
 function isPlainObject(value: unknown): value is MessageTree {

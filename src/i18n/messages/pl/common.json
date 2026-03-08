@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "home": "Start",
+    "about": "O nas",
+    "features": "Funkcje",
+    "pricing": "Cennik",
+    "contact": "Kontakt",
+    "terms_of_use": "Warunki korzystania",
+    "impressum": "Nota prawna",
+    "profile": "Profil",
+    "dashboard": "Panel",
+    "start_business": "Zostań usługodawcą",
+    "admin_panel": "Panel administratora",
+    "login": "Zaloguj się",
+    "logout": "Wyloguj się",
+    "menu": "Menu"
+  },
+  "footer": {
+    "terms": "Warunki",
+    "impressum": "Nota prawna",
+    "privacy_policy": "Polityka prywatności",
+    "cookies": "Pliki cookie",
+    "cookie_preferences": "Preferencje plików cookie",
+    "all_rights_reserved": "Wszelkie prawa zastrzeżone."
+  },
+  "cookie": {
+    "banner": {
+      "full": "Używamy plików cookie, aby poprawić Twoje doświadczenie. Przeczytaj naszą <policy>politykę plików cookie</policy>. Możesz <manage>zmienić swoje preferencje</manage> w dowolnym momencie.",
+      "text": "Używamy plików cookie, aby poprawić Twoje doświadczenie.",
+      "policy": "polityka plików cookie",
+      "manage": "zmienić swoje preferencje"
+    },
+    "dialog": {
+      "title": "Preferencje gromadzenia danych na stronie",
+      "description": "Wybierz, na które pliki cookie chcesz zezwolić.",
+      "essential_title": "Niezbędne",
+      "essential_text": "Te pliki cookie są niezbędne do działania strony i nie można ich wyłączyć.",
+      "analytics_title": "Marketing i analityka",
+      "analytics_text": "Pomaga nam zrozumieć sposób korzystania z serwisu i ulepszać produkt.",
+      "advertising_title": "Reklama",
+      "advertising_text": "Służą do personalizacji reklam i mierzenia ich skuteczności.",
+      "save": "Zapisz ustawienia",
+      "cancel": "Anuluj"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Ten link polecający jest nieprawidłowy. Nadal możesz zarejestrować się normalnie.",
+      "expired": "Ten kod polecający {code} nie jest już aktywny. Nadal możesz zarejestrować się normalnie."
+    }
+  },
+  "buttons": {
+    "accept": "Akceptuj",
+    "decline": "Odrzuć",
+    "save_settings": "Zapisz ustawienia",
+    "cancel": "Anuluj",
+    "loading": "Ładowanie..."
+  }
+}

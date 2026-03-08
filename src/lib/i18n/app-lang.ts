@@ -6,6 +6,9 @@ export const SUPPORTED_APP_LANGS = [
   "it",
   "es",
   "pt",
+  "pl",
+  "ro",
+  "uk",
 ] as const;
 
 export type AppLang = (typeof SUPPORTED_APP_LANGS)[number];
@@ -19,6 +22,9 @@ export const SUPPORTED_LANGUAGES: Array<{ code: AppLang; label: string }> = [
   { code: "it", label: "Italiano" },
   { code: "es", label: "Español" },
   { code: "pt", label: "Português" },
+  { code: "pl", label: "Polski" },
+  { code: "ro", label: "Română" },
+  { code: "uk", label: "Українська" },
 ];
 
 export function normalizeToSupported(code?: string): AppLang {

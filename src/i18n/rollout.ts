@@ -2,7 +2,17 @@ import { SUPPORTED_APP_LANGS, type AppLang } from "@/lib/i18n/app-lang";
 
 // Phase 3 (Commit 4): rollout knobs used by i18n-check.ts and CI.
 // Phase 3 governance: CI blocks only on launched locales.
-export const LAUNCHED_APP_LANGS = ["en", "de"] as const satisfies ReadonlyArray<AppLang>;
+export const LAUNCHED_APP_LANGS = [
+  "en",
+  "de",
+  "fr",
+  "it",
+  "es",
+  "pt",
+  "pl",
+  "ro",
+  "uk",
+] as const satisfies ReadonlyArray<AppLang>;
 
 // Required namespaces that must exist for each launched locale.
 export const REQUIRED_NAMESPACES = ["common"] as const;

@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "home": "Acasă",
+    "about": "Despre noi",
+    "features": "Funcționalități",
+    "pricing": "Prețuri",
+    "contact": "Contact",
+    "terms_of_use": "Termeni de utilizare",
+    "impressum": "Informații legale",
+    "profile": "Profil",
+    "dashboard": "Panou",
+    "start_business": "Devino prestator",
+    "admin_panel": "Panou de administrare",
+    "login": "Conectare",
+    "logout": "Deconectare",
+    "menu": "Meniu"
+  },
+  "footer": {
+    "terms": "Termeni",
+    "impressum": "Informații legale",
+    "privacy_policy": "Politica de confidențialitate",
+    "cookies": "Cookie-uri",
+    "cookie_preferences": "Preferințe cookie",
+    "all_rights_reserved": "Toate drepturile rezervate."
+  },
+  "cookie": {
+    "banner": {
+      "full": "Folosim cookie-uri pentru a vă îmbunătăți experiența. Citiți <policy>politica noastră privind cookie-urile</policy>. Puteți <manage>să vă modificați preferințele</manage> în orice moment.",
+      "text": "Folosim cookie-uri pentru a vă îmbunătăți experiența.",
+      "policy": "politica noastră privind cookie-urile",
+      "manage": "să vă modificați preferințele"
+    },
+    "dialog": {
+      "title": "Preferințe de colectare a datelor pe site",
+      "description": "Alegeți ce cookie-uri doriți să permiteți.",
+      "essential_title": "Esențiale",
+      "essential_text": "Aceste cookie-uri sunt necesare pentru funcționarea site-ului și nu pot fi dezactivate.",
+      "analytics_title": "Marketing și analiză",
+      "analytics_text": "Ne ajută să înțelegem utilizarea și să îmbunătățim experiența produsului.",
+      "advertising_title": "Publicitate",
+      "advertising_text": "Sunt folosite pentru a personaliza publicitatea și a-i măsura eficiența.",
+      "save": "Salvează setările",
+      "cancel": "Anulează"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Acest link de recomandare nu este valid. Vă puteți înregistra în continuare în mod normal.",
+      "expired": "Acest cod de recomandare {code} nu mai este activ. Vă puteți înregistra în continuare în mod normal."
+    }
+  },
+  "buttons": {
+    "accept": "Acceptă",
+    "decline": "Respinge",
+    "save_settings": "Salvează setările",
+    "cancel": "Anulează",
+    "loading": "Se încarcă..."
+  }
+}
