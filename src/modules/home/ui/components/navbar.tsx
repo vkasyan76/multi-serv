@@ -92,12 +92,12 @@ export const Navbar = () => {
     refetchOnWindowFocus: false,
   });
 
-  const dashHref = myTenant
+  const hasTenant = !!session.data?.user?.tenants?.length;
+  const dashHref = hasTenant
     ? platformHref("/dashboard")
     : href("/profile?tab=vendor");
 
-  // Only disable when session says user has a tenant but getMine hasn't returned it yet
-  const hasTenant = !!session.data?.user?.tenants?.length;
+  // Only disable when session says user has a tenant but getMine hasn't returned it yet.
   const isDashLoading = hasTenant && !myTenant && isMineLoading;
 
   const pathname = usePathname();
@@ -147,7 +147,7 @@ export const Navbar = () => {
         <SignedIn>
           {/* Screen reader announcement for button text changes */}
           <div aria-live="polite" className="sr-only">
-            {session.data?.user?.tenants?.length
+            {hasTenant
               ? t("nav.sr_dashboard_available")
               : t("nav.sr_start_business_available")}
           </div>
@@ -158,6 +158,7 @@ export const Navbar = () => {
               asChild
               className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
             >
+              {/* Admin CTA intentionally stays English because Payload admin is internal-only UI. */}
               <Link href={href("/dashboard/admin")}>Admin Panel</Link>
             </Button>
           ) : (
@@ -184,8 +185,8 @@ export const Navbar = () => {
                   aria-disabled={isDashLoading}
                   aria-busy={isDashLoading}
                 >
-                  {/* Label now depends on the same source as href */}
-                  {myTenant ? t("nav.dashboard") : t("nav.start_business")}
+                  {/* Keep href, label, and SR announcement driven by the same tenant-membership signal. */}
+                  {hasTenant ? t("nav.dashboard") : t("nav.start_business")}
                 </Link>
               </LoadingButton>
             </>

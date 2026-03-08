@@ -14,8 +14,8 @@
     "login": "Conectare",
     "logout": "Deconectare",
     "menu": "Meniu",
-    "sr_dashboard_available": "Navigare actualizata: butonul Panou de control este disponibil",
-    "sr_start_business_available": "Navigare actualizata: butonul Incepe afacerea este disponibil"
+    "sr_dashboard_available": "Navigare actualizată: butonul Panou este disponibil",
+    "sr_start_business_available": "Navigare actualizată: butonul Devino prestator este disponibil"
   },
   "footer": {
     "terms": "Termeni",

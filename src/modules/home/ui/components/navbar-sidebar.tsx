@@ -108,6 +108,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                   onClick={() => onOpenChange(false)}
                 >
+                  {/* Admin CTA intentionally stays English because Payload admin is internal-only UI. */}
                   Admin Panel
                 </Link>
               )}
