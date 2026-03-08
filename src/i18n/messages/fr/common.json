@@ -13,7 +13,9 @@
     "admin_panel": "Panneau admin",
     "login": "Se connecter",
     "logout": "Se déconnecter",
-    "menu": "Menu"
+    "menu": "Menu",
+    "sr_dashboard_available": "Navigation mise a jour : bouton Tableau de bord disponible",
+    "sr_start_business_available": "Navigation mise a jour : bouton Devenir prestataire disponible"
   },
   "footer": {
     "terms": "Conditions",

@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "Start",
-    "about": "\u00dcber uns",
+    "about": "Über uns",
     "features": "Funktionen",
     "pricing": "Preise",
     "contact": "Kontakt",
@@ -13,7 +13,9 @@
     "admin_panel": "Admin-Bereich",
     "login": "Anmelden",
     "logout": "Abmelden",
-    "menu": "Men\u00fc"
+    "menu": "Menü",
+    "sr_dashboard_available": "Navigation aktualisiert: Dashboard-Schaltfl?che verf?gbar",
+    "sr_start_business_available": "Navigation aktualisiert: Schaltfl?che \"Anbieter werden\" verf?gbar"
   },
   "footer": {
     "terms": "AGB",
@@ -25,16 +27,16 @@
   },
   "cookie": {
     "banner": {
-      "full": "Wir verwenden Cookies, um dein Erlebnis zu verbessern. Lies unsere <policy>Cookie-Richtlinie</policy>. Du kannst <manage>deine Einstellungen \u00e4ndern</manage>.",
+      "full": "Wir verwenden Cookies, um dein Erlebnis zu verbessern. Lies unsere <policy>Cookie-Richtlinie</policy>. Du kannst <manage>deine Einstellungen ändern</manage>.",
       "text": "Wir verwenden Cookies, um dein Erlebnis zu verbessern.",
       "policy": "Cookie-Richtlinie",
-      "manage": "deine Einstellungen \u00e4ndern"
+      "manage": "deine Einstellungen ändern"
     },
     "dialog": {
       "title": "Einstellungen zur Datenerfassung auf der Website",
-      "description": "W\u00e4hle, welche Cookies erlaubt sind.",
+      "description": "Wähle, welche Cookies erlaubt sind.",
       "essential_title": "Essenziell",
-      "essential_text": "Diese Cookies sind f\u00fcr den Betrieb der Website erforderlich und k\u00f6nnen nicht deaktiviert werden.",
+      "essential_text": "Diese Cookies sind für den Betrieb der Website erforderlich und können nicht deaktiviert werden.",
       "analytics_title": "Marketing und Analyse",
       "analytics_text": "Hilft uns, die Nutzung zu verstehen und das Produkterlebnis zu verbessern.",
       "advertising_title": "Werbung",
@@ -45,7 +47,7 @@
   },
   "toast": {
     "referral": {
-      "invalid": "Dieser Empfehlungslink ist ung\u00fcltig. Du kannst dich trotzdem normal registrieren.",
+      "invalid": "Dieser Empfehlungslink ist ungültig. Du kannst dich trotzdem normal registrieren.",
       "expired": "Der Empfehlungscode {code} ist nicht mehr aktiv. Du kannst dich trotzdem normal registrieren."
     }
   },
@@ -54,7 +56,6 @@
     "decline": "Ablehnen",
     "save_settings": "Einstellungen speichern",
     "cancel": "Abbrechen",
-    "loading": "L\u00e4dt..."
+    "loading": "Lädt..."
   }
 }
-

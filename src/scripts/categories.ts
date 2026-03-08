@@ -7,6 +7,7 @@ import config from "../payload.config.js";
 import { SUPPORTED_APP_LANGS, type AppLang } from "../lib/i18n/app-lang.ts";
 
 const NEW_ONLY = process.argv.includes("--new-only");
+// Payload supports locale="all" for reads, which lets this script compare the full localized name object.
 const ALL_LOCALES = "all" as never;
 
 type LocalizedLabel = Record<AppLang, string>;
@@ -50,7 +51,7 @@ function normalizeLabel(value: LocalizedLabel): LocalizedLabel {
   const normalized = {} as LocalizedLabel;
 
   for (const locale of SUPPORTED_APP_LANGS) {
-    normalized[locale] = value[locale].trim();
+    normalized[locale] = (value[locale] ?? "").trim();
   }
 
   return normalized;
@@ -864,8 +865,6 @@ async function upsertCategory(
         id: doc.id,
         data: patch as never,
         overrideAccess: true,
-        fallbackLocale: false,
-        locale: ALL_LOCALES,
       });
       updated = true;
     }

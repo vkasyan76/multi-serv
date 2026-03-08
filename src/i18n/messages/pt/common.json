@@ -13,7 +13,9 @@
     "admin_panel": "Painel de administração",
     "login": "Iniciar sessão",
     "logout": "Terminar sessão",
-    "menu": "Menu"
+    "menu": "Menu",
+    "sr_dashboard_available": "Navegacao atualizada: botao Painel disponivel",
+    "sr_start_business_available": "Navegacao atualizada: botao Criar negocio disponivel"
   },
   "footer": {
     "terms": "Termos",

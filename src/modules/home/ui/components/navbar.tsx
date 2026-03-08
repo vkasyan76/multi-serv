@@ -148,8 +148,8 @@ export const Navbar = () => {
           {/* Screen reader announcement for button text changes */}
           <div aria-live="polite" className="sr-only">
             {session.data?.user?.tenants?.length
-              ? "Navigation updated: Dashboard button available"
-              : "Navigation updated: Start Business button available"}
+              ? t("nav.sr_dashboard_available")
+              : t("nav.sr_start_business_available")}
           </div>
 
           {/* Show role/tenant-based buttons for authenticated users */}
