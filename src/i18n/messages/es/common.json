@@ -14,8 +14,8 @@
     "login": "Iniciar sesión",
     "logout": "Cerrar sesión",
     "menu": "Menú",
-    "sr_dashboard_available": "Navegacion actualizada: boton Panel disponible",
-    "sr_start_business_available": "Navegacion actualizada: boton Empezar negocio disponible"
+    "sr_dashboard_available": "Navegación actualizada: botón Panel disponible",
+    "sr_start_business_available": "Navegación actualizada: botón Hazte proveedor disponible"
   },
   "footer": {
     "terms": "Términos",

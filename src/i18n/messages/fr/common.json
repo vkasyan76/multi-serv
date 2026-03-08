@@ -14,8 +14,8 @@
     "login": "Se connecter",
     "logout": "Se déconnecter",
     "menu": "Menu",
-    "sr_dashboard_available": "Navigation mise a jour : bouton Tableau de bord disponible",
-    "sr_start_business_available": "Navigation mise a jour : bouton Devenir prestataire disponible"
+    "sr_dashboard_available": "Navigation mise à jour : bouton Tableau de bord disponible",
+    "sr_start_business_available": "Navigation mise à jour : bouton Devenir prestataire disponible"
   },
   "footer": {
     "terms": "Conditions",
@@ -38,7 +38,7 @@
       "essential_title": "Essentiels",
       "essential_text": "Ces cookies sont nécessaires au fonctionnement du site et ne peuvent pas être désactivés.",
       "analytics_title": "Marketing et analyse",
-      "analytics_text": "Nous aide à comprendre l'utilisation et à améliorer l'expérience produit.",
+      "analytics_text": "Ces cookies nous aident à comprendre l'utilisation et à améliorer l'expérience produit.",
       "advertising_title": "Publicité",
       "advertising_text": "Utilisés pour personnaliser la publicité et en mesurer l'efficacité.",
       "save": "Enregistrer les paramètres",

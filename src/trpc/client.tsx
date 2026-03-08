@@ -56,10 +56,14 @@ export function TRPCReactProvider(
               return {};
             }
 
+            const lang =
+              document.documentElement.lang ||
+              navigator.languages?.[0] ||
+              navigator.language ||
+              undefined;
+
             return {
-              "x-app-lang": normalizeToSupported(
-                document.documentElement.lang || undefined
-              ),
+              "x-app-lang": normalizeToSupported(lang),
             };
           },
         }),
