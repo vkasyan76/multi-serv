@@ -32,10 +32,24 @@ export const tenantPublicHref = (slug: string) =>
 //  alternative (simple version)
 // export const tenantPublicHref = (slug: string) => generateTenantUrl(slug);
 
-export const platformHomeHref = () =>
-  process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true"
-    ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}` // e.g. https://infinisimo.com
-    : `/`;
+export const platformHomeHref = () => {
+  if (process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING !== "true") {
+    return "/";
+  }
+
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN?.trim();
+  if (
+    !rootDomain ||
+    rootDomain === "undefined" ||
+    rootDomain.startsWith("http://") ||
+    rootDomain.startsWith("https://")
+  ) {
+    // Fall back to local platform routing when the root domain is not configured safely.
+    return "/";
+  }
+
+  return `https://${rootDomain}`; // e.g. https://infinisimo.com
+};
 
 function stripTrailingSlash(v: string) {
   return v.replace(/\/+$/, "");
