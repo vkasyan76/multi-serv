@@ -63,11 +63,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
     trpc.auth.updateUserProfile.mutationOptions({
       onSuccess: async () => {
         toast.success("Profile updated successfully!");
-        // Allow exactly one profile refetch to rehydrate server-normalized values after save.
-        setAllowProfileResync(true);
         await queryClient.invalidateQueries({
           queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
         });
+        // Allow exactly one profile refetch to rehydrate after the fresh profile is back.
+        setAllowProfileResync(true);
         onSuccess?.(); // Call the onSuccess callback if provided
       },
       onError: (error) => {
@@ -193,6 +193,8 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
           formattedAddress: userProfile.location || "",
           countryName: userProfile.country,
           countryISO: userProfile.coordinates?.countryISO,
+          // Preserve house-number validation for manually prefilled locations.
+          streetNumber: userProfile.coordinates?.streetNumber ?? undefined,
           // Don't populate old coordinate details - they will be fetched fresh when user selects new location
           lat: undefined,
           lng: undefined,

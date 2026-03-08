@@ -17,6 +17,8 @@ export const Categories: CollectionConfig = {
     {
       name: "name",
       type: "text",
+      // Commit 2: schema localizes category/subcategory labels; seed backfill follows in Commit 3.
+      localized: true,
       required: true,
     },
     {

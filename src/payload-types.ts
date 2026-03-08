@@ -122,7 +122,7 @@ export interface Config {
   };
   globals: {};
   globalsSelect: {};
-  locale: null;
+  locale: 'en' | 'de' | 'fr' | 'it' | 'es' | 'pt' | 'pl' | 'ro' | 'uk';
   user: User & {
     collection: 'users';
   };
@@ -200,7 +200,7 @@ export interface User {
   /**
    * User's preferred language
    */
-  language?: ('en' | 'de' | 'fr' | 'it' | 'es' | 'pt') | null;
+  language?: ('en' | 'de' | 'fr' | 'it' | 'es' | 'pt' | 'pl' | 'ro' | 'uk') | null;
   /**
    * Location coordinates with metadata
    */
