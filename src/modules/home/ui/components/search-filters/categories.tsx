@@ -8,6 +8,7 @@ import { ListFilterIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CategoriesSidebar } from "./categories-sidebar";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface Props {
   // data: Category[];
@@ -17,6 +18,7 @@ interface Props {
 export const Categories = ({ data }: Props) => {
   // client way of accessing params:
   const params = useParams();
+  const t = useTranslations("common");
 
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -146,7 +148,7 @@ export const Categories = ({ data }: Props) => {
             )}
             onClick={() => setIsSidebarOpen(true)}
           >
-            View all
+            {t("buttons.view_all")}
             <ListFilterIcon className="ml-2" />
           </Button>
         </div>

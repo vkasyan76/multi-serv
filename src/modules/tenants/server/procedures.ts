@@ -1,3 +1,4 @@
+import { DEFAULT_APP_LANG } from "@/lib/i18n/app-lang";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { Category, Media, Tenant, User } from "@payload-types";
 import type { Sort, Where } from "payload";
@@ -177,6 +178,8 @@ export const tenantsRouter = createTRPCRouter({
       const data = await ctx.db.find({
         collection: "tenants",
         depth: 3, // populate "categories", "subcategories" and "image" / / Depth 2- populate "user" (for coordinates)
+        locale: ctx.appLang,
+        fallbackLocale: DEFAULT_APP_LANG,
         where,
         sort,
         limit: input.limit,
@@ -197,6 +200,8 @@ export const tenantsRouter = createTRPCRouter({
         const priceSortedData = await ctx.db.find({
           collection: "tenants",
           depth: 3,
+          locale: ctx.appLang,
+          fallbackLocale: DEFAULT_APP_LANG,
           where,
           sort: "hourlyRate", // low → high
           limit: input.limit,
@@ -327,6 +332,8 @@ export const tenantsRouter = createTRPCRouter({
       const tenantsData = await ctx.db.find({
         collection: "tenants",
         depth: 3, // populate "categories", "subcategories", "image", and "user" with coordinates
+        locale: ctx.appLang,
+        fallbackLocale: DEFAULT_APP_LANG,
         where: {
           slug: {
             equals: input.slug,
@@ -352,6 +359,8 @@ export const tenantsRouter = createTRPCRouter({
       const tenantsData = await ctx.db.find({
         collection: "tenants",
         depth: 3,
+        locale: ctx.appLang,
+        fallbackLocale: DEFAULT_APP_LANG,
         where: { slug: { equals: input.slug } },
         limit: 1,
         pagination: false,

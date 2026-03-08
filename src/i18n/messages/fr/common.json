@@ -56,6 +56,7 @@
     "decline": "Refuser",
     "save_settings": "Enregistrer les paramètres",
     "cancel": "Annuler",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "view_all": "Voir tout"
   }
 }

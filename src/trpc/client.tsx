@@ -1,6 +1,7 @@
 "use client";
 // ^-- to make sure we can mount the Provider from a server component
 
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import superjson from "superjson";
 
 import type { QueryClient } from "@tanstack/react-query";
@@ -50,6 +51,17 @@ export function TRPCReactProvider(
           // <-- if you use a data transformer:
           transformer: superjson,
           url: getUrl(),
+          headers() {
+            if (typeof document === "undefined") {
+              return {};
+            }
+
+            return {
+              "x-app-lang": normalizeToSupported(
+                document.documentElement.lang || undefined
+              ),
+            };
+          },
         }),
       ],
     })

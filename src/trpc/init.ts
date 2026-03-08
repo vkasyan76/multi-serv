@@ -7,6 +7,7 @@ import { auth } from "@clerk/nextjs/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 
 import { headers as nextHeaders } from "next/headers";
+import { resolveAppLangFromHeaders } from "@/lib/i18n/request-app-lang";
 
 // ★ NEW: import the small helper (optional but keeps init.ts tidy)
 import { readBridgeUidFromRequest } from "./auth-utils";
@@ -26,6 +27,8 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
       headers = {};
     }
   }
+
+  const appLang = resolveAppLangFromHeaders(headers);
 
   // keep whatever you already return in ctx (payload, headers, etc.)
   let clerkAuth: Awaited<ReturnType<typeof auth>> | null = null;
@@ -59,6 +62,7 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
     req,
     db: payload,
     headers,
+    appLang,
     userId,
     authSource, // optional, handy in logs / debugging
   };

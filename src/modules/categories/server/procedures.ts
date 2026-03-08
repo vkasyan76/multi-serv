@@ -1,3 +1,4 @@
+import { DEFAULT_APP_LANG } from "@/lib/i18n/app-lang";
 import { Category } from "@/payload-types";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 
@@ -13,6 +14,8 @@ export const categoriesRouter = createTRPCRouter({
     const data = await ctx.db.find({
       collection: "categories",
       depth: 1, // Populate subcategories, subcategories.[0] will be a type of "Category"
+      locale: ctx.appLang,
+      fallbackLocale: DEFAULT_APP_LANG,
       pagination: false, // Disable pagination to get all categories
       where: {
         parent: {
