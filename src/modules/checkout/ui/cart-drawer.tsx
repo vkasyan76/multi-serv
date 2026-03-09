@@ -2,6 +2,8 @@
 
 import { useMemo, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   getLocaleAndCurrency,
   formatDateForLocale,
@@ -16,10 +18,9 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
-
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { useTRPC } from "@/trpc/client";
 import { TRPCClientError } from "@trpc/client";
-
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Select,
@@ -29,7 +30,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
-const NONE = "__none__"; // keep a non-empty placeholder value for Select
 import { toast } from "sonner";
 import { BOOKING_CH, TERMS_VERSION } from "@/constants";
 import { platformHomeHref } from "@/lib/utils";
@@ -39,17 +39,18 @@ import { PaymentMethodSetup } from "@/modules/payments/ui/payment-method-setup";
 
 import type { User } from "@/payload-types";
 
+const NONE = "__none__";
+
 type CustomerSnapshot = Pick<
   User,
   "firstName" | "lastName" | "location" | "country" | "onboardingCompleted"
 >;
 
-// all props are required: prevents accidental future usage without the tenant handoff
 type CartDrawerProps = {
   authState: boolean | null;
   policyAcceptedAt: string | null;
   policyAcceptedVersion: string | null;
-  customer: CustomerSnapshot | null; // allow "not loaded yet"
+  customer: CustomerSnapshot | null;
 };
 
 export function CartDrawer({
@@ -58,57 +59,44 @@ export function CartDrawer({
   policyAcceptedVersion,
   customer,
 }: CartDrawerProps) {
-  // ---- customer completeness gate (UX only; server must still snapshot on order creation) ----
-  // In Infinisimo, onboardingCompleted is set only after name + valid address selection is enforced server-side.
+  const tCheckout = useTranslations("checkout");
+  const params = useParams<{ lang?: string }>();
+  const appLang = normalizeToSupported(params?.lang);
+
   const customerReady = customer !== null;
   const customerOk = customerReady && customer.onboardingCompleted === true;
-
-  // ------------------------------------------------------------------------------------------
 
   const open = useCartStore((s) => s.open);
   const setOpen = useCartStore((s) => s.setOpen);
   const items = useCartStore((s) => s.items);
   const clear = useCartStore((s) => s.clear);
   const remove = useCartStore((s) => s.remove);
-  const setService = useCartStore((s) => s.setService); // ← NEW
-
+  const setService = useCartStore((s) => s.setService);
   const tenantSlug = useCartStore((s) => s.tenant);
 
   const totalCents = items.reduce((sum, it) => sum + (it.priceCents ?? 0), 0);
-  // --- helper: are all slots assigned a service? ---
   const allHaveService = items.every((i) => !!i.serviceId);
 
   const trpc = useTRPC();
   const qc = useQueryClient();
 
-  // check if policy already accepted:
-  // Tenant content always provides these (CartDrawer is tenant-only):
   const authReady = authState !== null;
   const hasUser = authState === true;
 
-  // TermsAcceptanceDialog
-
   const [termsOpen, setTermsOpen] = useState(false);
-  const [pendingCheckout, setPendingCheckout] = useState(false); // after Accept in the dialog, we can resume checkout automatically not clicking Checkout button again
-
-  // Avoid “accepted but props still stale” race right after mutation success
+  const [pendingCheckout, setPendingCheckout] = useState(false);
   const [acceptedThisSession, setAcceptedThisSession] = useState(false);
 
   const serverPolicyOk =
     policyAcceptedVersion === TERMS_VERSION && !!policyAcceptedAt;
-
   const policyOk = serverPolicyOk || acceptedThisSession;
-
-  // Show the Terms gate when signed-in but the current Terms version is not accepted.
   const showAcceptanceGate = hasUser && !policyOk;
 
-  // small helper so “Decline/close” clears the pending intent:
   const handleTermsOpenChange = (v: boolean) => {
     setTermsOpen(v);
     if (!v) setPendingCheckout(false);
   };
 
-  // for redirect to the terms-of-use page with returnTo=
   const homeHref = platformHomeHref();
   const termsHref =
     homeHref === "/"
@@ -118,14 +106,12 @@ export function CartDrawer({
   const profileHref =
     homeHref === "/" ? "/profile" : `${homeHref.replace(/\/$/, "")}/profile`;
 
-  // Pull tenant's subcategories/categories to build "Service" options
   const { data: tenant } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug: tenantSlug ?? "" }),
     enabled: !!tenantSlug,
     staleTime: 0,
   });
 
-  // check if payment method was submitted for this tenant:
   const paymentProfileQ = useQuery({
     ...trpc.payments.getOrCreateProfileForTenant.queryOptions({
       tenantId: tenant?.id ?? "",
@@ -136,16 +122,15 @@ export function CartDrawer({
 
   const paymentOk = paymentProfileQ.data?.status === "active";
 
-  // Locale & currency from your location utils
-  const { locale, currency } = getLocaleAndCurrency();
+  const { locale, currency } = getLocaleAndCurrency(appLang);
   const money = useMemo(
     () => new Intl.NumberFormat(locale, { style: "currency", currency }),
-    [locale, currency]
+    [locale, currency],
   );
   const fmtTime = useCallback(
     (d: Date) =>
       d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
-    [locale]
+    [locale],
   );
 
   type IdName = { id: string; name?: string | null };
@@ -158,17 +143,14 @@ export function CartDrawer({
 
   const serviceOptions = ((): Array<{ id: string; label: string }> => {
     if (!tenant) return [];
-    // Prefer subcategories; fallback to categories
     const sub = ((tenant.subcategories ?? []) as RelRef[]).map(toOption);
     const cat = ((tenant.categories ?? []) as RelRef[]).map(toOption);
     const raw = sub.length > 0 ? sub : cat;
 
-    // de-dupe by id, preserve order
     const seen = new Set<string>();
     return raw.filter((o) => (seen.has(o.id) ? false : (seen.add(o.id), true)));
   })();
 
-  // invalidate all bookings lists (public + mine)
   const invalidateBookings = () =>
     qc.invalidateQueries({
       predicate: (q) => {
@@ -180,7 +162,6 @@ export function CartDrawer({
       },
     });
 
-  // calendar listeners filter by channel + tenant; including tenantSlug and ids makes cross-tab refresh precise.
   const bookSlots = useMutation({
     ...trpc.bookings.bookSlots.mutationOptions(),
     onSuccess: async () => {
@@ -196,29 +177,27 @@ export function CartDrawer({
             ts: Date.now(),
           });
           ch.close();
-        } catch {}
+        } catch {
+          // ignore
+        }
       }
     },
   });
 
-  // create Stripe Checkout session for the reserved slots
   const createSession = useMutation({
     ...trpc.checkout.createSession.mutationOptions(),
   });
 
-  // releasing slots on failure
   const releaseBySlotIds = useMutation({
     ...trpc.checkout.releaseBySlotIds.mutationOptions(),
     retry: false,
   });
 
-  // Split the “real checkout” into a helper runCheckout() that does not contain the terms gate.
-  // to avoid that handleCheckout() immediately hits   setPendingCheckout(true) & setTermsOpen(true) - loop behaviour
   const runCheckout = async () => {
     const slotIds = items.map((i) => i.id);
     let booked = false;
+
     try {
-      // Step 1 — reserve the slots (available -> booked)
       await bookSlots.mutateAsync({
         items: items.map((i) => ({
           bookingId: i.id,
@@ -226,29 +205,21 @@ export function CartDrawer({
         })),
       });
 
-      booked = true; // ✅ IMPORTANT: now fallback release can run
+      booked = true;
 
-      // Step 2 — create the Checkout session for these slot ids
       const res = await createSession.mutateAsync({ slotIds });
-
-      // Step 3 — send the user to Stripe
       if (!res?.url) {
-        throw new Error("Could not start checkout. Please try again.");
+        throw new Error(tCheckout("toast.checkout_started_failed"));
       }
-      // ✅ close only when we are actually leaving
-      setOpen(false);
 
+      setOpen(false);
       window.location.assign(res.url);
     } catch (err) {
-      // NEW: if booking already happened but checkout failed before Stripe,
-      // release immediately using slot ids (no session_id available)
       if (booked) {
         try {
           await releaseBySlotIds.mutateAsync({ slotIds });
-          // ✅ refresh calendar data immediately
           await invalidateBookings();
 
-          // optional but consistent with your other path:
           if ("BroadcastChannel" in window && tenantSlug) {
             const ch = new BroadcastChannel(BOOKING_CH);
             ch.postMessage({
@@ -260,67 +231,58 @@ export function CartDrawer({
             ch.close();
           }
         } catch {
-          // ignore, best-effort; user can retry
+          // ignore, best effort only
         }
       }
 
-      let msg = "Checkout failed. Please try again.";
+      let msg = tCheckout("errors.generic");
       if (err instanceof TRPCClientError) {
         msg =
           err.data?.code === "UNAUTHORIZED"
-            ? "Please sign in to continue."
+            ? tCheckout("status.please_sign_in")
             : err.message || msg;
       }
       toast.error(msg);
     }
   };
 
-  // called by the Checkout button
   const handleCheckout = async () => {
     if (!items.length) return;
 
-    // hard-guard in case someone disables the button in dev tools
     if (!items.every((i) => !!i.serviceId)) {
-      toast.error("Please select a service for every slot.");
+      toast.error(tCheckout("status.please_select_service_every_slot"));
       return;
     }
 
-    // hard guard so checkout cannot run until session is known:
     if (!authReady) {
-      toast.error("Please wait…");
+      toast.error(tCheckout("status.please_wait"));
       return;
     }
     if (!hasUser) {
-      toast.error("Please sign in to continue.");
+      toast.error(tCheckout("status.please_sign_in"));
       return;
     }
-    // customer completeness check:
     if (!customerReady) {
-      toast.error("Please wait… loading your profile.");
+      toast.error(tCheckout("status.please_wait_loading_profile"));
       return;
     }
-
     if (!customerOk) {
-      toast.error(
-        "Please complete onboarding (name and address) in your profile before checkout."
-      );
+      toast.error(tCheckout("errors.profile_incomplete"));
       return;
     }
-
-    // payment method check:
     if (paymentProfileQ.isPending) {
-      toast.error("Please wait…");
+      toast.error(tCheckout("status.please_wait"));
       return;
     }
-
     if (!paymentOk) {
       toast.error(
-        `Please add a payment method for ${tenant?.name ?? "this provider"} to continue.`
+        tCheckout("errors.payment_method_required", {
+          provider: tenant?.name ?? "",
+        }),
       );
       return;
     }
 
-    // accept policy gate: open dialog (no page hop)
     if (showAcceptanceGate) {
       setPendingCheckout(true);
       setTermsOpen(true);
@@ -329,17 +291,13 @@ export function CartDrawer({
     await runCheckout();
   };
 
-  // Loading button:
   const isBusy = bookSlots.isPending || createSession.isPending;
 
-  // Close the drawer automatically when the cart becomes empty
   useEffect(() => {
     if (open && items.length === 0) {
-      setOpen(false); // onOpenChange will run and clear() (safe even if already empty)
+      setOpen(false);
     }
   }, [open, items.length, setOpen]);
-
-  // Diagnostics UseEffect - development only:
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
@@ -352,8 +310,6 @@ export function CartDrawer({
   }, [authState, policyAcceptedVersion, policyAcceptedAt]);
 
   useEffect(() => {
-    // if the upstream acceptance values change (likely different user or acceptance caught up),
-    // don't keep local override around
     setAcceptedThisSession(false);
   }, [policyAcceptedAt, policyAcceptedVersion, authState]);
 
@@ -361,10 +317,9 @@ export function CartDrawer({
     <Sheet
       open={open}
       onOpenChange={(v) => {
-        // prevent closing while a session is being created / slots are being booked
         if (!v && isBusy) return;
         setOpen(v);
-        if (!v) clear(); // close = empty cart
+        if (!v) clear();
       }}
     >
       <SheetContent
@@ -372,11 +327,13 @@ export function CartDrawer({
         className="w-screen max-w-[100vw] p-4 sm:w-[520px] sm:max-w-[520px] sm:p-6 rounded-none flex flex-col"
       >
         <SheetHeader>
-          <SheetTitle>Booking cart</SheetTitle>
+          <SheetTitle>{tCheckout("cart.title")}</SheetTitle>
         </SheetHeader>
         <div className="mt-3 sm:mt-4 flex-1 min-h-0 overflow-y-auto">
           {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Cart is empty.</p>
+            <p className="text-sm text-muted-foreground">
+              {tCheckout("cart.empty")}
+            </p>
           ) : (
             <ul className="space-y-2 sm:space-y-3 pr-1">
               {items.map((it) => {
@@ -384,8 +341,8 @@ export function CartDrawer({
                 const end = new Date(it.endIso);
                 const when =
                   isFinite(start.getTime()) && isFinite(end.getTime())
-                    ? `${formatDateForLocale(start)} • ${fmtTime(start)}–${fmtTime(end)}`
-                    : "—";
+                    ? `${formatDateForLocale(start, {}, appLang)} • ${fmtTime(start)}-${fmtTime(end)}`
+                    : "-";
 
                 return (
                   <li
@@ -395,24 +352,25 @@ export function CartDrawer({
                     <div className="mr-3">
                       <div className="font-medium">{when}</div>
                       <div className="text-muted-foreground">
-                        Slot ID: {it.id}
+                        {tCheckout("cart.slot_id")}: {it.id}
                       </div>
-                      {/* Service picker (subcategory preferred; fallback to category) */}
                       {serviceOptions.length > 0 && (
                         <div className="mt-2">
                           <Select
-                            value={it.serviceId ?? NONE} // empty string = "no selection"
+                            value={it.serviceId ?? NONE}
                             onValueChange={(val) =>
                               setService(it.id, val === NONE ? null : val)
                             }
                             disabled={isBusy}
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select service" />
+                              <SelectValue
+                                placeholder={tCheckout("cart.select_service")}
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value={NONE} disabled>
-                                Pick a service
+                                {tCheckout("cart.pick_service")}
                               </SelectItem>
                               {serviceOptions.map((opt) => (
                                 <SelectItem key={opt.id} value={opt.id}>
@@ -431,8 +389,8 @@ export function CartDrawer({
                       variant="ghost"
                       size="icon"
                       onClick={() => remove(it.id)}
-                      aria-label="Remove slot"
-                      title="Remove"
+                      aria-label={tCheckout("cart.remove_slot")}
+                      title={tCheckout("cart.remove")}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -453,7 +411,6 @@ export function CartDrawer({
               customer={customer}
             />
 
-            {/* NEW: Payment method setup (only when signed in + we know tenantId) */}
             {hasUser && tenant?.id && (
               <div className="mt-3">
                 <PaymentMethodSetup
@@ -466,22 +423,22 @@ export function CartDrawer({
             {showAcceptanceGate && (
               <div className="mb-3 space-y-2 text-sm">
                 <div>
-                  You must accept the{" "}
+                  {tCheckout("terms.must_accept_terms")} {" "}
                   <Link
                     className="underline font-medium"
                     href={termsHref}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Terms of Use
+                    {tCheckout("terms.title")}
                   </Link>{" "}
-                  to continue. You can accept them when you click Checkout.
+                  {tCheckout("terms.continue_on_checkout")}
                 </div>
               </div>
             )}
 
             <div className="flex items-center justify-between text-base mb-3">
-              <span>Total</span>
+              <span>{tCheckout("cart.total")}</span>
               <span className="font-semibold">
                 {money.format(totalCents / 100)}
               </span>
@@ -491,8 +448,6 @@ export function CartDrawer({
                 className="flex-1"
                 onClick={handleCheckout}
                 isLoading={isBusy}
-                // loadingText="Redirecting…"
-                // if you want just a spinner with no text:
                 loadingText=""
                 reserveWidth={false}
                 disabled={
@@ -501,13 +456,13 @@ export function CartDrawer({
                   isBusy ||
                   !authReady ||
                   !hasUser ||
-                  !customerReady || // explicit: profile still loading
+                  !customerReady ||
                   !customerOk ||
                   paymentProfileQ.isPending ||
                   !paymentOk
                 }
               >
-                Checkout
+                {tCheckout("cart.checkout")}
               </LoadingButton>
               <Button
                 variant="outline"
@@ -515,10 +470,10 @@ export function CartDrawer({
                 onClick={() => {
                   setOpen(false);
                   clear();
-                }} // closes drawer → will clear due to onOpenChange
+                }}
                 disabled={isBusy}
               >
-                Cancel
+                {tCheckout("cart.cancel")}
               </Button>
             </div>
           </div>
@@ -528,10 +483,7 @@ export function CartDrawer({
           open={termsOpen}
           onOpenChangeAction={handleTermsOpenChange}
           onAcceptedAction={() => {
-            // locally mark as accepted to avoid “stale props” race
             setAcceptedThisSession(true);
-
-            // continue checkout only if the user clicked Checkout and was intercepted
             if (pendingCheckout) {
               setPendingCheckout(false);
               void runCheckout();

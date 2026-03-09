@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, UserRound } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type Customer = {
   firstName?: string | null;
   lastName?: string | null;
-  location?: string | null; // your “address line”
+  location?: string | null;
   country?: string | null;
 };
 
@@ -21,7 +22,7 @@ type Props = {
 
 function lineOrDash(v: string) {
   const s = v.trim();
-  return s.length ? s : "—";
+  return s.length ? s : "-";
 }
 
 export function CartDrawerCustomerInfo({
@@ -31,44 +32,47 @@ export function CartDrawerCustomerInfo({
   profileHref,
   customer,
 }: Props) {
+  const tCheckout = useTranslations("checkout");
+
   if (!hasUser) return null;
 
-  // Loading / not yet available: keep it neutral (no Alert)
   if (!customerReady) {
     return (
       <div className="mb-3 rounded-lg border bg-muted/30 p-3 text-sm">
         <div className="flex items-center gap-2 font-medium">
           <UserRound className="h-4 w-4" />
-          <span>Invoice address</span>
+          <span>{tCheckout("customer.invoice_address")}</span>
         </div>
-        <div className="mt-1 text-muted-foreground">Loading profile…</div>
+        <div className="mt-1 text-muted-foreground">
+          {tCheckout("customer.loading_profile")}
+        </div>
       </div>
     );
   }
 
-  // Incomplete onboarding: THIS is when Alert is appropriate
   if (!customerOk) {
     return (
       <Alert className="mb-3">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Invoice address required</AlertTitle>
+        <AlertTitle>{tCheckout("customer.invoice_address_required")}</AlertTitle>
         <AlertDescription>
-          Please complete onboarding (name and address) in your{" "}
-          <Link
-            className="underline font-medium"
-            href={profileHref}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            profile
-          </Link>{" "}
-          before checkout.
+          {tCheckout.rich("customer.complete_profile_before_checkout_link", {
+            profile: (chunks) => (
+              <Link
+                className="underline font-medium"
+                href={profileHref}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
         </AlertDescription>
       </Alert>
     );
   }
 
-  // Onboarding completed: show clean invoice block (not Alert)
   if (!customer) return null;
 
   const fullName = [customer.firstName, customer.lastName]
@@ -85,7 +89,7 @@ export function CartDrawerCustomerInfo({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 font-medium">
           <UserRound className="h-4 w-4" />
-          <span>Invoice address</span>
+          <span>{tCheckout("customer.invoice_address")}</span>
         </div>
 
         <Link
@@ -94,7 +98,7 @@ export function CartDrawerCustomerInfo({
           rel="noopener noreferrer"
           className="text-xs underline text-muted-foreground hover:text-foreground"
         >
-          Edit
+          {tCheckout("customer.edit")}
         </Link>
       </div>
 

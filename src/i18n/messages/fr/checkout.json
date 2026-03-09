@@ -10,7 +10,10 @@
     "total": "Total",
     "checkout": "Paiement",
     "create_order": "Créer la commande",
-    "continue": "Continuer"
+    "continue": "Continuer",
+    "slot_id": "ID du créneau",
+    "pick_service": "Choisir un service",
+    "cancel": "Annuler"
   },
   "customer": {
     "invoice_address": "Adresse de facturation",
@@ -18,7 +21,8 @@
     "invoice_address_required": "Adresse de facturation requise",
     "edit": "Modifier",
     "profile": "profil",
-    "complete_profile_before_checkout": "Veuillez terminer l'onboarding (nom et adresse) dans votre profil avant le paiement."
+    "complete_profile_before_checkout": "Veuillez terminer l'onboarding (nom et adresse) dans votre profil avant le paiement.",
+    "complete_profile_before_checkout_link": "Veuillez terminer l'onboarding (nom et adresse) dans votre <profile>profil</profile> avant le paiement."
   },
   "payment_method": {
     "saving": "Enregistrement du moyen de paiement...",
@@ -39,7 +43,8 @@
     "accepted": "Conditions acceptées.",
     "accept_failed": "Impossible d'enregistrer l'acceptation. Veuillez réessayer.",
     "must_accept_terms": "Vous devez accepter les",
-    "before_checkout": "avant le paiement."
+    "before_checkout": "avant le paiement.",
+    "continue_on_checkout": "pour continuer. Vous pouvez les accepter en utilisant le bouton ci-dessous."
   },
   "status": {
     "please_wait": "Veuillez patienter...",
@@ -56,6 +61,7 @@
   "errors": {
     "generic": "Le paiement a échoué. Veuillez réessayer.",
     "profile_incomplete": "Veuillez compléter votre profil avant le paiement.",
-    "payment_method_required": "Veuillez ajouter un moyen de paiement pour {provider} pour continuer."
+    "payment_method_required": "Veuillez ajouter un moyen de paiement pour {provider} pour continuer.",
+    "release_checkout_failed": "Nous n'avons pas pu libérer votre session de paiement. Veuillez réessayer dans un instant."
   }
 }

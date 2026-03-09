@@ -10,7 +10,10 @@
     "total": "Totale",
     "checkout": "Checkout",
     "create_order": "Crea ordine",
-    "continue": "Continua"
+    "continue": "Continua",
+    "slot_id": "ID fascia oraria",
+    "pick_service": "Scegli un servizio",
+    "cancel": "Annulla"
   },
   "customer": {
     "invoice_address": "Indirizzo di fatturazione",
@@ -18,7 +21,8 @@
     "invoice_address_required": "Indirizzo di fatturazione obbligatorio",
     "edit": "Modifica",
     "profile": "profilo",
-    "complete_profile_before_checkout": "Completa l'onboarding (nome e indirizzo) nel tuo profilo prima del checkout."
+    "complete_profile_before_checkout": "Completa l'onboarding (nome e indirizzo) nel tuo profilo prima del checkout.",
+    "complete_profile_before_checkout_link": "Completa l'onboarding (nome e indirizzo) nel tuo <profile>profilo</profile> prima del checkout."
   },
   "payment_method": {
     "saving": "Salvataggio metodo di pagamento...",
@@ -39,7 +43,8 @@
     "accepted": "Termini accettati.",
     "accept_failed": "Impossibile registrare l'accettazione. Riprova.",
     "must_accept_terms": "Devi accettare i",
-    "before_checkout": "prima del checkout."
+    "before_checkout": "prima del checkout.",
+    "continue_on_checkout": "per continuare. Puoi accettarli usando il pulsante qui sotto."
   },
   "status": {
     "please_wait": "Attendere...",
@@ -56,6 +61,7 @@
   "errors": {
     "generic": "Checkout non riuscito. Riprova.",
     "profile_incomplete": "Completa il tuo profilo prima del checkout.",
-    "payment_method_required": "Aggiungi un metodo di pagamento per {provider} per continuare."
+    "payment_method_required": "Aggiungi un metodo di pagamento per {provider} per continuare.",
+    "release_checkout_failed": "Non siamo riusciti a liberare la tua sessione di checkout. Riprova tra un momento."
   }
 }

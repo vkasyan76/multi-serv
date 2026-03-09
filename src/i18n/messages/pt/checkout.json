@@ -10,15 +10,19 @@
     "total": "Total",
     "checkout": "Pagar",
     "create_order": "Criar encomenda",
-    "continue": "Continuar"
+    "continue": "Continuar",
+    "slot_id": "ID do horário",
+    "pick_service": "Escolha um serviço",
+    "cancel": "Cancelar"
   },
   "customer": {
-    "invoice_address": "Morada de faturação",
+    "invoice_address": "Endereço de faturação",
     "loading_profile": "A carregar perfil...",
-    "invoice_address_required": "Morada de faturação obrigatória",
+    "invoice_address_required": "Endereço de faturação obrigatório",
     "edit": "Editar",
     "profile": "perfil",
-    "complete_profile_before_checkout": "Conclua o onboarding (nome e morada) no seu perfil antes do pagamento."
+    "complete_profile_before_checkout": "Conclua o onboarding (nome e morada) no seu perfil antes de avançar para o checkout.",
+    "complete_profile_before_checkout_link": "Conclua o onboarding (nome e morada) no seu <profile>perfil</profile> antes de avançar para o checkout."
   },
   "payment_method": {
     "saving": "A guardar método de pagamento...",
@@ -30,7 +34,7 @@
     "card_saved": "Cartão guardado.",
     "card_setup_finalize_failed": "Não foi possível concluir a configuração do cartão.",
     "start_setup_failed": "Não foi possível iniciar a configuração.",
-    "no_charge_at_booking": "Não há cobrança no momento da reserva. Será cobrado após a aceitação ou aceitação automática da conclusão do serviço."
+    "no_charge_at_booking": "Não haverá cobrança no momento da reserva. O valor será cobrado após a conclusão do serviço ser aceite (ou aceite automaticamente)."
   },
   "terms": {
     "title": "Termos de utilização",
@@ -39,7 +43,8 @@
     "accepted": "Termos aceites.",
     "accept_failed": "Não foi possível registar a aceitação. Tente novamente.",
     "must_accept_terms": "Tem de aceitar os",
-    "before_checkout": "antes do pagamento."
+    "before_checkout": "antes de concluir o checkout.",
+    "continue_on_checkout": "para continuar. Pode aceitá-los usando o botão abaixo."
   },
   "status": {
     "please_wait": "Aguarde...",
@@ -48,14 +53,15 @@
     "please_select_service_every_slot": "Selecione um serviço para cada horário."
   },
   "toast": {
-    "checkout_failed": "O pagamento falhou. Tente novamente.",
-    "checkout_started_failed": "Não foi possível iniciar o pagamento. Tente novamente.",
-    "order_created_pay_later": "Encomenda criada. O pagamento acontecerá mais tarde após a aceitação.",
+    "checkout_failed": "Não foi possível concluir a reserva. Tente novamente.",
+    "checkout_started_failed": "Não foi possível iniciar o checkout. Tente novamente.",
+    "order_created_pay_later": "Encomenda criada. O pagamento acontecerá mais tarde (após a aceitação).",
     "payment_received_finalizing": "Pagamento recebido. A finalizar a sua reserva..."
   },
   "errors": {
-    "generic": "O pagamento falhou. Tente novamente.",
-    "profile_incomplete": "Conclua o seu perfil antes do pagamento.",
-    "payment_method_required": "Adicione um método de pagamento para {provider} para continuar."
+    "generic": "Não foi possível concluir a reserva. Tente novamente.",
+    "profile_incomplete": "Conclua o seu perfil antes de avançar para o checkout.",
+    "payment_method_required": "Adicione um método de pagamento para {provider} para continuar.",
+    "release_checkout_failed": "Não conseguimos libertar a sua sessão de checkout. Tente novamente dentro de instantes."
   }
 }

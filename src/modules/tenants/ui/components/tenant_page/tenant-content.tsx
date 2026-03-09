@@ -51,6 +51,7 @@ const PM_CART_TTL_MS = 5 * 60 * 1000;
 export default function TenantContent({ slug }: { slug: string }) {
   const homeHref = platformHomeHref();
   const tBookings = useTranslations("bookings");
+  const tCheckout = useTranslations("checkout");
 
   // ensures "/plumbing" becomes "https://root-domain/plumbing" in prod,
   // and stays "/plumbing" in dev
@@ -69,7 +70,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   type CalendarAvail = {
     loading: boolean;
     hasAvailableSlots: boolean; // in the CURRENT visible view (day on mobile, week on desktop)
-    hasAnyAvailableSlots: boolean; // in the fetched window (so mobile can know “other days”)
+    hasAnyAvailableSlots: boolean; // in the fetched window (so mobile can know â€œother daysâ€)
     view: "day" | "week";
   };
 
@@ -121,7 +122,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   });
   const isCancelling = cancel && !!sessionId; // canvelling paymente process
 
-  // Auth + language + “warmup gate” in one place.
+  // Auth + language + â€œwarmup gateâ€ in one place.
   // waiting for bridge validation
   const {
     signedState,
@@ -150,7 +151,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   // must be before any early return
   const [chatOpen, setChatOpen] = useState(false);
 
-  // If the user is logged out, bridge.authenticated === false → you get the toast and the sheet does not open.
+  // If the user is logged out, bridge.authenticated === false â†’ you get the toast and the sheet does not open.
   const handleContact = async () => {
     if (signedState === true) {
       setChatOpen(true);
@@ -187,7 +188,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   useEffect(() => {
     if (!pmSetup) return;
 
-    // ✅ restore cart BEFORE opening drawer (otherwise it opens empty and may auto-close)
+    // âœ… restore cart BEFORE opening drawer (otherwise it opens empty and may auto-close)
     if (cartLen === 0) {
       try {
         const raw = sessionStorage.getItem(PM_CART_KEY);
@@ -210,7 +211,7 @@ export default function TenantContent({ slug }: { slug: string }) {
             snap.items.length > 0
           ) {
             setCart(slug, snap.items);
-            setSelected(snap.items.map((i) => i.id)); // ✅ restore calendar highlight too
+            setSelected(snap.items.map((i) => i.id)); // âœ… restore calendar highlight too
           }
 
           sessionStorage.removeItem(PM_CART_KEY);
@@ -237,21 +238,21 @@ export default function TenantContent({ slug }: { slug: string }) {
     return () => window.removeEventListener("focus", onFocus);
   }, [cartOpen, refetchProfile]);
 
-  // best-effort success handler — after redirect from Stripe Checkout
+  // best-effort success handler â€” after redirect from Stripe Checkout
   useEffect(() => {
     if (!success || !sessionId || successHandledRef.current) return;
     successHandledRef.current = true;
 
     // UX: acknowledge and clean up immediately
-    toast.success("Payment received. Finalizing your booking…");
+    toast.success(tCheckout("toast.payment_received_finalizing"));
 
-    // clear local cart so user doesn’t see stale items
+    // clear local cart so user doesnâ€™t see stale items
     clearCart();
 
     // remove the query params (?checkout=success&session_id=...)
     router.replace(pathname);
     // NEW: after a Stripe redirect, do one best-effort bridge/profile resync
-    // so chat/booking doesn’t hit the rare “still resolving” window.
+    // so chat/booking doesnâ€™t hit the rare â€œstill resolvingâ€ window.
     (async () => {
       try {
         await onBridgeResync();
@@ -260,7 +261,7 @@ export default function TenantContent({ slug }: { slug: string }) {
         // ignore (best-effort only)
       }
     })();
-  }, [success, sessionId, clearCart, router, pathname, onBridgeResync]);
+  }, [success, sessionId, clearCart, router, pathname, onBridgeResync, tCheckout]);
 
   // grey slots selection cleared when cart closes
   useEffect(() => {
@@ -285,13 +286,11 @@ export default function TenantContent({ slug }: { slug: string }) {
             // Only clear params once the release worked
             router.replace(pathname);
           },
-          // explicit success/error handling. Don’t clear the URL on failure, and allow a retry.
+          // explicit success/error handling. Donâ€™t clear the URL on failure, and allow a retry.
           onError: () => {
             // Let the effect try again later (or user can refresh)
             didReleaseRef.current = false;
-            toast.error(
-              "We couldn't release your checkout session. Please retry in a moment.",
-            );
+            toast.error(tCheckout("errors.release_checkout_failed"));
             // Keep the URL params so the next run can retry
           },
         },
@@ -324,9 +323,9 @@ export default function TenantContent({ slug }: { slug: string }) {
   const { data: cardTenant, isLoading: cardLoading } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug }),
     enabled: !!slug && !isCancelling, // pause heavy data work while the cancel flow is in progress
-    staleTime: 0, // ← was 60_000; must be 0
-    gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
-    refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
+    staleTime: 0, // â† was 60_000; must be 0
+    gcTime: 0, // â† optional but good to prevent leaking last-user cache after unmount
+    refetchOnMount: "always", // â† force fresh fetch when page opens/navigates
     refetchOnReconnect: "always",
     refetchOnWindowFocus: false,
     // placeholderData: keepPreviousData,
@@ -341,7 +340,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const subcatsSpan = subcatsTooMany ? "md:col-span-2" : "md:col-span-1";
 
-  // grab “parent” category once (used for subcategory links/colors)
+  // grab â€œparentâ€ category once (used for subcategory links/colors)
   // grab parent category (used for subcategory links/colors)
   const categoriesArr = cardTenant?.categories ?? [];
 
@@ -392,7 +391,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           tenant={cardTenant}
           reviewRating={reviewRating}
           reviewCount={reviewCount}
-          isSignedIn={signedState} // ← tri-state: true | false | null
+          isSignedIn={signedState} // â† tri-state: true | false | null
           variant="detail"
           showActions
           ordersCount={ordersCount}
@@ -527,7 +526,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                 </div>
               )}
 
-              {/* My Offer (Subcategories) — full width to avoid gaps */}
+              {/* My Offer (Subcategories) â€” full width to avoid gaps */}
               {cardTenant?.subcategories &&
                 cardTenant.subcategories.length > 0 && (
                   <div
@@ -774,3 +773,4 @@ export default function TenantContent({ slug }: { slug: string }) {
     </div>
   );
 }
+

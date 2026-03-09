@@ -9,8 +9,8 @@ import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
-//  restore cart atomically (used after Stripe redirect)
 const PM_CART_KEY = "pm_cart_restore_v1";
 
 type Props = {
@@ -20,7 +20,7 @@ type Props = {
 };
 
 export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
-  // prevent POST / GET race conditions for payment method status in the drawer
+  const tCheckout = useTranslations("checkout");
   const [finalizing, setFinalizing] = useState(false);
   const finalizedRef = useRef(false);
 
@@ -45,34 +45,33 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
     retry: false,
   });
 
-  // URL flags from Stripe return
-  const setupFlag = sp.get("pm_setup"); // "success" | "cancel" | null
+  const setupFlag = sp.get("pm_setup");
   const sessionId = sp.get("session_id");
 
-  // existing values (keep simple)
   const status = profileQ.data?.status ?? "none";
   const cardBrand = profileQ.data?.cardBrand ?? null;
   const cardLast4 = profileQ.data?.cardLast4 ?? null;
 
   const cardOnFile = status === "active";
+  const provider = tenantName?.trim() ? tenantName.trim() : null;
 
-  // keep your original provider logic
-  const provider = tenantName?.trim() ? tenantName.trim() : "this provider";
-
-  // LEAN: only to avoid showing "Add payment method" while we are returning from Stripe success
   const showFinalizing = finalizing || (setupFlag === "success" && !!sessionId);
 
   const titleText = showFinalizing
-    ? "Saving payment method…"
+    ? tCheckout("payment_method.saving")
     : cardOnFile
-      ? `Payment method for ${provider}`
-      : `Add a payment method for ${provider} to continue`;
+      ? provider
+        ? tCheckout("payment_method.payment_method_for_provider", { provider })
+        : tCheckout("payment_method.update_payment_method")
+      : provider
+        ? tCheckout("payment_method.add_payment_method_for_provider", { provider })
+        : tCheckout("payment_method.add_payment_method");
 
   const buttonText = showFinalizing
-    ? "Saving…"
+    ? tCheckout("payment_method.saving")
     : cardOnFile
-      ? "Update payment method"
-      : "Add payment method";
+      ? tCheckout("payment_method.update_payment_method")
+      : tCheckout("payment_method.add_payment_method");
 
   const busy =
     showFinalizing ||
@@ -88,7 +87,7 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
       url.searchParams.delete("pm_setup");
       url.searchParams.delete("session_id");
       router.replace(url.pathname + (url.search ? url.search : ""));
-      toast.message("Card setup canceled.");
+      toast.message(tCheckout("payment_method.card_setup_canceled"));
 
       finalizedRef.current = false;
       setFinalizing(false);
@@ -117,10 +116,10 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
         url.searchParams.delete("session_id");
         router.replace(url.pathname + (url.search ? url.search : ""));
 
-        toast.success("Card saved.");
+        toast.success(tCheckout("payment_method.card_saved"));
       } catch {
         finalizedRef.current = false;
-        toast.error("Could not finalize card setup.");
+        toast.error(tCheckout("payment_method.card_setup_finalize_failed"));
       } finally {
         setFinalizing(false);
       }
@@ -130,7 +129,6 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
 
   const startSetup = async () => {
     try {
-      // ✅ snapshot the cart BEFORE leaving the site (Stripe redirect = full reload)
       try {
         const cartTenantSlug = useCartStore.getState().tenant;
         const cartItems = useCartStore.getState().items;
@@ -146,10 +144,9 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
           );
         }
       } catch {
-        // ignore (best-effort only)
+        // ignore
       }
 
-      // Build a clean "returnTo" (relative path) from the CURRENT page
       const url = new URL(window.location.href);
       url.searchParams.delete("pm_setup");
       url.searchParams.delete("session_id");
@@ -161,7 +158,9 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
       window.location.assign(res.url);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Could not start setup."
+        err instanceof Error
+          ? err.message
+          : tCheckout("payment_method.start_setup_failed")
       );
     }
   };
@@ -174,7 +173,9 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
 
           {cardOnFile && (cardBrand || cardLast4) ? (
             <div className="text-muted-foreground">
-              {cardBrand ?? "Card"} •••• {cardLast4 ?? "—"}
+              {cardBrand
+                ? `${cardBrand} **** ${cardLast4 ?? "-"}`
+                : `**** ${cardLast4 ?? "-"}`}
             </div>
           ) : null}
         </div>
@@ -183,10 +184,8 @@ export function PaymentMethodSetup({ tenantId, tenantName, className }: Props) {
           {buttonText}
         </Button>
 
-        {/* DEV copy matching your target flow */}
         <div className="text-xs text-muted-foreground">
-          No charge at booking. You’ll be charged after service completion is
-          accepted (or auto-accepted).
+          {tCheckout("payment_method.no_charge_at_booking")}
         </div>
       </CardContent>
     </Card>

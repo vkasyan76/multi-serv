@@ -10,7 +10,10 @@
     "total": "Total",
     "checkout": "Checkout",
     "create_order": "Create order",
-    "continue": "Continue"
+    "continue": "Continue",
+    "slot_id": "Slot ID",
+    "pick_service": "Pick a service",
+    "cancel": "Cancel"
   },
   "customer": {
     "invoice_address": "Invoice address",
@@ -18,7 +21,8 @@
     "invoice_address_required": "Invoice address required",
     "edit": "Edit",
     "profile": "profile",
-    "complete_profile_before_checkout": "Please complete onboarding (name and address) in your profile before checkout."
+    "complete_profile_before_checkout": "Please complete onboarding (name and address) in your profile before checkout.",
+    "complete_profile_before_checkout_link": "Please complete onboarding (name and address) in your <profile>profile</profile> before checkout."
   },
   "payment_method": {
     "saving": "Saving payment method...",
@@ -39,7 +43,8 @@
     "accepted": "Terms accepted.",
     "accept_failed": "Could not record acceptance. Please try again.",
     "must_accept_terms": "You must accept the",
-    "before_checkout": "before checkout."
+    "before_checkout": "before checkout.",
+    "continue_on_checkout": "to continue. You can accept them using the button below."
   },
   "status": {
     "please_wait": "Please wait...",
@@ -56,6 +61,7 @@
   "errors": {
     "generic": "Checkout failed. Please try again.",
     "profile_incomplete": "Please complete your profile before checkout.",
-    "payment_method_required": "Please add a payment method for {provider} to continue."
+    "payment_method_required": "Please add a payment method for {provider} to continue.",
+    "release_checkout_failed": "We couldn't release your checkout session. Please retry in a moment."
   }
 }
