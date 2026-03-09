@@ -1,0 +1,61 @@
+{
+  "cart": {
+    "open": "Deschide coșul",
+    "open_count": "Deschide coșul ({count})",
+    "empty": "Coșul este gol.",
+    "title": "Rezervarea ta",
+    "select_service": "Selectează serviciul",
+    "remove_slot": "Elimină intervalul",
+    "remove": "Elimină",
+    "total": "Total",
+    "checkout": "Plătește",
+    "create_order": "Creează comanda",
+    "continue": "Continuă"
+  },
+  "customer": {
+    "invoice_address": "Adresa de facturare",
+    "loading_profile": "Se încarcă profilul...",
+    "invoice_address_required": "Adresa de facturare este obligatorie",
+    "edit": "Editează",
+    "profile": "profil",
+    "complete_profile_before_checkout": "Completează onboardingul (nume și adresă) în profilul tău înainte de plată."
+  },
+  "payment_method": {
+    "saving": "Se salvează metoda de plată...",
+    "payment_method_for_provider": "Metodă de plată pentru {provider}",
+    "add_payment_method_for_provider": "Adaugă o metodă de plată pentru {provider} pentru a continua",
+    "add_payment_method": "Adaugă metodă de plată",
+    "update_payment_method": "Actualizează metoda de plată",
+    "card_setup_canceled": "Configurarea cardului a fost anulată.",
+    "card_saved": "Card salvat.",
+    "card_setup_finalize_failed": "Nu s-a putut finaliza configurarea cardului.",
+    "start_setup_failed": "Nu s-a putut porni configurarea.",
+    "no_charge_at_booking": "Nu există taxare la rezervare. Vei fi taxat după acceptarea sau autoacceptarea finalizării serviciului."
+  },
+  "terms": {
+    "title": "Termeni de utilizare",
+    "accept": "Acceptă",
+    "decline": "Respinge",
+    "accepted": "Termeni acceptați.",
+    "accept_failed": "Nu s-a putut înregistra acceptarea. Încearcă din nou.",
+    "must_accept_terms": "Trebuie să accepți",
+    "before_checkout": "înainte de plată."
+  },
+  "status": {
+    "please_wait": "Te rugăm să aștepți...",
+    "please_wait_loading_profile": "Te rugăm să aștepți... se încarcă profilul tău.",
+    "please_sign_in": "Autentifică-te pentru a continua.",
+    "please_select_service_every_slot": "Selectează un serviciu pentru fiecare interval."
+  },
+  "toast": {
+    "checkout_failed": "Plata a eșuat. Încearcă din nou.",
+    "checkout_started_failed": "Nu s-a putut porni plata. Încearcă din nou.",
+    "order_created_pay_later": "Comandă creată. Plata va avea loc mai târziu după acceptare.",
+    "payment_received_finalizing": "Plată primită. Se finalizează rezervarea..."
+  },
+  "errors": {
+    "generic": "Plata a eșuat. Încearcă din nou.",
+    "profile_incomplete": "Completează profilul înainte de plată.",
+    "payment_method_required": "Adaugă o metodă de plată pentru {provider} pentru a continua."
+  }
+}

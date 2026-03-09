@@ -1,0 +1,43 @@
+{
+  "section": { "title": "Prenotazione" },
+  "availability": {
+    "loading": "Caricamento disponibilità...",
+    "select_slot": "Fai clic su uno slot disponibile per prenotare.",
+    "no_slots_day": "Nessuno slot disponibile in questa data. Usa le frecce per controllare altri giorni.",
+    "no_slots_week": "Nessuno slot libero disponibile questa settimana. Usa le frecce per controllare un'altra settimana.",
+    "no_slots_any": "Al momento non ci sono slot liberi disponibili. Puoi contattare il fornitore per la disponibilità o riprovare più tardi."
+  },
+  "selection": {
+    "clear": "Cancella selezione",
+    "limit_reached": "Puoi selezionare fino a {count} slot per prenotazione."
+  },
+  "cta": {
+    "book_slots": "Prenota slot",
+    "book_slots_count": "Prenota slot ({count})",
+    "checking_sign_in": "Verifica accesso...",
+    "sign_in_to_book_provider": "Accedi per prenotare questo fornitore.",
+    "select_slots_then_sign_in": "Seleziona gli slot, poi accedi per prenotare."
+  },
+  "calendar": {
+    "today": "Oggi",
+    "previous_day": "Giorno precedente",
+    "next_day": "Giorno successivo",
+    "previous_week": "Settimana precedente",
+    "next_week": "Settimana successiva",
+    "crosses_midnight": "L'ultimo slot di 1 ora inizia alle 22:00. Le 23:00 supererebbero la mezzanotte."
+  },
+  "legend": {
+    "available": "Disponibile",
+    "scheduled": "Programmato",
+    "completed": "Completato",
+    "accepted": "Accettato",
+    "disputed": "Contestato"
+  },
+  "tooltip": {
+    "available": "Disponibile - {date}",
+    "status": "{label} - {date}"
+  },
+  "errors": {
+    "generic": "Prenotazione non riuscita. Riprova."
+  }
+}

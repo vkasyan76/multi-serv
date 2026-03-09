@@ -1,0 +1,43 @@
+{
+  "section": { "title": "Reserva" },
+  "availability": {
+    "loading": "Cargando disponibilidad...",
+    "select_slot": "Haz clic en una franja disponible para reservar.",
+    "no_slots_day": "No hay franjas disponibles en esta fecha. Usa las flechas para consultar otros días.",
+    "no_slots_week": "No hay franjas libres disponibles esta semana. Usa las flechas para consultar otra semana.",
+    "no_slots_any": "Actualmente no hay franjas libres disponibles. Puedes contactar con el proveedor sobre la disponibilidad o volver a intentarlo más tarde."
+  },
+  "selection": {
+    "clear": "Borrar selección",
+    "limit_reached": "Puedes seleccionar hasta {count} franjas por reserva."
+  },
+  "cta": {
+    "book_slots": "Reservar franjas",
+    "book_slots_count": "Reservar franjas ({count})",
+    "checking_sign_in": "Comprobando inicio de sesión...",
+    "sign_in_to_book_provider": "Inicia sesión para reservar este proveedor.",
+    "select_slots_then_sign_in": "Selecciona franjas y luego inicia sesión para reservar."
+  },
+  "calendar": {
+    "today": "Hoy",
+    "previous_day": "Día anterior",
+    "next_day": "Día siguiente",
+    "previous_week": "Semana anterior",
+    "next_week": "Semana siguiente",
+    "crosses_midnight": "La última franja de 1 hora empieza a las 22:00. Las 23:00 cruzarían la medianoche."
+  },
+  "legend": {
+    "available": "Disponible",
+    "scheduled": "Programado",
+    "completed": "Completado",
+    "accepted": "Aceptado",
+    "disputed": "En disputa"
+  },
+  "tooltip": {
+    "available": "Disponible - {date}",
+    "status": "{label} - {date}"
+  },
+  "errors": {
+    "generic": "La reserva ha fallado. Inténtalo de nuevo."
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "cart": {
+    "open": "Ouvrir le panier",
+    "open_count": "Ouvrir le panier ({count})",
+    "empty": "Le panier est vide.",
+    "title": "Votre réservation",
+    "select_service": "Sélectionner un service",
+    "remove_slot": "Supprimer le créneau",
+    "remove": "Supprimer",
+    "total": "Total",
+    "checkout": "Paiement",
+    "create_order": "Créer la commande",
+    "continue": "Continuer"
+  },
+  "customer": {
+    "invoice_address": "Adresse de facturation",
+    "loading_profile": "Chargement du profil...",
+    "invoice_address_required": "Adresse de facturation requise",
+    "edit": "Modifier",
+    "profile": "profil",
+    "complete_profile_before_checkout": "Veuillez terminer l'onboarding (nom et adresse) dans votre profil avant le paiement."
+  },
+  "payment_method": {
+    "saving": "Enregistrement du moyen de paiement...",
+    "payment_method_for_provider": "Moyen de paiement pour {provider}",
+    "add_payment_method_for_provider": "Ajoutez un moyen de paiement pour {provider} pour continuer",
+    "add_payment_method": "Ajouter un moyen de paiement",
+    "update_payment_method": "Mettre à jour le moyen de paiement",
+    "card_setup_canceled": "Configuration de la carte annulée.",
+    "card_saved": "Carte enregistrée.",
+    "card_setup_finalize_failed": "Impossible de finaliser la configuration de la carte.",
+    "start_setup_failed": "Impossible de démarrer la configuration.",
+    "no_charge_at_booking": "Aucun débit lors de la réservation. Vous serez débité après l'acceptation ou l'acceptation automatique de la prestation terminée."
+  },
+  "terms": {
+    "title": "Conditions d'utilisation",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "accepted": "Conditions acceptées.",
+    "accept_failed": "Impossible d'enregistrer l'acceptation. Veuillez réessayer.",
+    "must_accept_terms": "Vous devez accepter les",
+    "before_checkout": "avant le paiement."
+  },
+  "status": {
+    "please_wait": "Veuillez patienter...",
+    "please_wait_loading_profile": "Veuillez patienter... chargement de votre profil.",
+    "please_sign_in": "Veuillez vous connecter pour continuer.",
+    "please_select_service_every_slot": "Veuillez sélectionner un service pour chaque créneau."
+  },
+  "toast": {
+    "checkout_failed": "Le paiement a échoué. Veuillez réessayer.",
+    "checkout_started_failed": "Impossible de démarrer le paiement. Veuillez réessayer.",
+    "order_created_pay_later": "Commande créée. Le paiement aura lieu plus tard après acceptation.",
+    "payment_received_finalizing": "Paiement reçu. Finalisation de votre réservation..."
+  },
+  "errors": {
+    "generic": "Le paiement a échoué. Veuillez réessayer.",
+    "profile_incomplete": "Veuillez compléter votre profil avant le paiement.",
+    "payment_method_required": "Veuillez ajouter un moyen de paiement pour {provider} pour continuer."
+  }
+}

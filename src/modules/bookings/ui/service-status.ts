@@ -8,9 +8,16 @@ export type NormalizedServiceStatus =
   | "accepted"
   | "disputed";
 
+export type BookingLegendKey =
+  | "available"
+  | "scheduled"
+  | "completed"
+  | "accepted"
+  | "disputed";
+
 //color for available slots without any service status yet
 export const AVAILABLE_STATUS_META = {
-  label: "Available",
+  key: "available",
   className: "bg-emerald-300",
   hex: "#86efac",
 } as const;
@@ -22,6 +29,17 @@ export const SERVICE_STATUS_ORDER: NormalizedServiceStatus[] = [
   "disputed",
 ];
 
+export const SERVICE_STATUS_KEYS: Record<
+  NormalizedServiceStatus,
+  Exclude<BookingLegendKey, "available">
+> = {
+  scheduled: "scheduled",
+  completed: "completed",
+  accepted: "accepted",
+  disputed: "disputed",
+};
+
+// Keep legacy labels for order tables until that wave migrates to translated UI keys.
 export const SERVICE_STATUS_LABELS: Record<NormalizedServiceStatus, string> = {
   scheduled: "Scheduled",
   completed: "Completed",
@@ -50,6 +68,12 @@ export function getServiceStatusLabel(
   ss: Booking["serviceStatus"] | null | undefined,
 ): string {
   return SERVICE_STATUS_LABELS[normalizeServiceStatus(ss)];
+}
+
+export function getServiceStatusKey(
+  ss: Booking["serviceStatus"] | null | undefined,
+): Exclude<BookingLegendKey, "available"> {
+  return SERVICE_STATUS_KEYS[normalizeServiceStatus(ss)];
 }
 
 export function getServiceStatusColorHex(

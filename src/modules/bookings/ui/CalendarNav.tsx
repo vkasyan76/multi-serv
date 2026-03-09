@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
@@ -31,6 +32,7 @@ export default function CalendarNav(props: Props) {
     compact = false,
     showWeekJumps = true,
   } = props;
+  const tBookings = useTranslations("bookings");
 
   const loc =
     locale || (typeof navigator !== "undefined" ? navigator.language : "en-GB");
@@ -58,11 +60,21 @@ export default function CalendarNav(props: Props) {
       ].join(" ")}
     >
       {showJumps && (
-        <Button variant="outline" size="icon" aria-label="Previous week" onClick={() => stepWeeks(-1)}>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label={tBookings("calendar.previous_week")}
+          onClick={() => stepWeeks(-1)}
+        >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
       )}
-      <Button variant="outline" size="icon" aria-label="Previous day" onClick={() => stepDays(-1)}>
+      <Button
+        variant="outline"
+        size="icon"
+        aria-label={tBookings("calendar.previous_day")}
+        onClick={() => stepDays(-1)}
+      >
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
@@ -77,11 +89,21 @@ export default function CalendarNav(props: Props) {
         {derivedLabel}
       </div>
 
-      <Button variant="outline" size="icon" aria-label="Next day" onClick={() => stepDays(1)}>
+      <Button
+        variant="outline"
+        size="icon"
+        aria-label={tBookings("calendar.next_day")}
+        onClick={() => stepDays(1)}
+      >
         <ChevronRight className="h-4 w-4" />
       </Button>
       {showJumps && (
-        <Button variant="outline" size="icon" aria-label="Next week" onClick={() => stepWeeks(1)}>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label={tBookings("calendar.next_week")}
+          onClick={() => stepWeeks(1)}
+        >
           <ChevronsRight className="h-4 w-4" />
         </Button>
       )}
@@ -93,7 +115,7 @@ export default function CalendarNav(props: Props) {
         className="ml-0 sm:ml-3"
         onClick={goToday}
       >
-        Today
+        {tBookings("calendar.today")}
       </Button>
     </div>
   );

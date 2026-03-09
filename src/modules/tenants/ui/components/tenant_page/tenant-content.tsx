@@ -13,6 +13,7 @@ import LoadingPage from "@/components/shared/loading";
 
 import type { Category } from "@/payload-types";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 
 import { BookingActionButton } from "./booking-action-button";
 
@@ -49,6 +50,7 @@ const PM_CART_TTL_MS = 5 * 60 * 1000;
 
 export default function TenantContent({ slug }: { slug: string }) {
   const homeHref = platformHomeHref();
+  const tBookings = useTranslations("bookings");
 
   // ensures "/plumbing" becomes "https://root-domain/plumbing" in prod,
   // and stays "/plumbing" in dev
@@ -140,8 +142,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const handleBookService = () => {
     scrollToCalendar();
-    if (signedState === false)
-      toast.info("Select slots, then sign in to book.");
+    if (signedState === false) toast.info(tBookings("cta.select_slots_then_sign_in"));
   };
 
   // conversation
@@ -308,7 +309,9 @@ export default function TenantContent({ slug }: { slug: string }) {
       // enforce selection cap
       if (prev.length >= MAX_SLOTS_PER_BOOKING) {
         toast.warning(
-          `You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`,
+          tBookings("selection.limit_reached", {
+            count: MAX_SLOTS_PER_BOOKING,
+          }),
         );
         return prev;
       }
@@ -615,7 +618,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                 height={64}
                 className="opacity-90"
               />
-              <span>Booking</span>
+              <span>{tBookings("section.title")}</span>
             </h2>
 
             <div className="relative min-h-[50vh]">
@@ -636,25 +639,16 @@ export default function TenantContent({ slug }: { slug: string }) {
             {selected.length === 0 && (
               <div className="mt-4 rounded-lg border bg-white/70 px-4 py-3 text-sm text-muted-foreground">
                 {!calendarAvail || calendarAvail.loading ? (
-                  <>Loading availability…</>
+                  <>{tBookings("availability.loading")}</>
                 ) : calendarAvail.hasAvailableSlots ? (
-                  <>Click on an available slot to book.</>
+                  <>{tBookings("availability.select_slot")}</>
                 ) : calendarAvail.view === "day" &&
                   calendarAvail.hasAnyAvailableSlots ? (
-                  <>
-                    No slots available on this date. Use the arrows to check
-                    other days.
-                  </>
+                  <>{tBookings("availability.no_slots_day")}</>
                 ) : calendarAvail.view === "week" ? (
-                  <>
-                    No free slots available this week. Use the arrows to check
-                    another week.
-                  </>
+                  <>{tBookings("availability.no_slots_week")}</>
                 ) : (
-                  <>
-                    No free slots are currently available. You can contact the
-                    provider regarding availability or check back later.
-                  </>
+                  <>{tBookings("availability.no_slots_any")}</>
                 )}
               </div>
             )}
@@ -675,7 +669,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                   onClick={handleClearSelection}
                   className="flex-1"
                 >
-                  Clear selection
+                  {tBookings("selection.clear")}
                 </Button>
               </div>
             )}

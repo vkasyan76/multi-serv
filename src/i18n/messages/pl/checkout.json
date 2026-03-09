@@ -1,0 +1,61 @@
+{
+  "cart": {
+    "open": "Otwórz koszyk",
+    "open_count": "Otwórz koszyk ({count})",
+    "empty": "Koszyk jest pusty.",
+    "title": "Twoja rezerwacja",
+    "select_service": "Wybierz usługę",
+    "remove_slot": "Usuń termin",
+    "remove": "Usuń",
+    "total": "Razem",
+    "checkout": "Zapłać",
+    "create_order": "Utwórz zamówienie",
+    "continue": "Kontynuuj"
+  },
+  "customer": {
+    "invoice_address": "Adres do faktury",
+    "loading_profile": "Ładowanie profilu...",
+    "invoice_address_required": "Adres do faktury jest wymagany",
+    "edit": "Edytuj",
+    "profile": "profil",
+    "complete_profile_before_checkout": "Uzupełnij onboarding (imię i nazwisko oraz adres) w swoim profilu przed płatnością."
+  },
+  "payment_method": {
+    "saving": "Zapisywanie metody płatności...",
+    "payment_method_for_provider": "Metoda płatności dla {provider}",
+    "add_payment_method_for_provider": "Dodaj metodę płatności dla {provider}, aby kontynuować",
+    "add_payment_method": "Dodaj metodę płatności",
+    "update_payment_method": "Zaktualizuj metodę płatności",
+    "card_setup_canceled": "Konfiguracja karty anulowana.",
+    "card_saved": "Karta została zapisana.",
+    "card_setup_finalize_failed": "Nie udało się zakończyć konfiguracji karty.",
+    "start_setup_failed": "Nie udało się rozpocząć konfiguracji.",
+    "no_charge_at_booking": "Brak opłaty przy rezerwacji. Opłata zostanie pobrana po akceptacji lub automatycznej akceptacji zakończenia usługi."
+  },
+  "terms": {
+    "title": "Warunki korzystania",
+    "accept": "Akceptuj",
+    "decline": "Odrzuć",
+    "accepted": "Warunki zaakceptowane.",
+    "accept_failed": "Nie udało się zapisać akceptacji. Spróbuj ponownie.",
+    "must_accept_terms": "Musisz zaakceptować",
+    "before_checkout": "przed płatnością."
+  },
+  "status": {
+    "please_wait": "Proszę czekać...",
+    "please_wait_loading_profile": "Proszę czekać... trwa ładowanie Twojego profilu.",
+    "please_sign_in": "Zaloguj się, aby kontynuować.",
+    "please_select_service_every_slot": "Wybierz usługę dla każdego terminu."
+  },
+  "toast": {
+    "checkout_failed": "Płatność nie powiodła się. Spróbuj ponownie.",
+    "checkout_started_failed": "Nie udało się rozpocząć płatności. Spróbuj ponownie.",
+    "order_created_pay_later": "Zamówienie utworzone. Płatność nastąpi później po akceptacji.",
+    "payment_received_finalizing": "Płatność otrzymana. Finalizowanie rezerwacji..."
+  },
+  "errors": {
+    "generic": "Płatność nie powiodła się. Spróbuj ponownie.",
+    "profile_incomplete": "Uzupełnij profil przed płatnością.",
+    "payment_method_required": "Dodaj metodę płatności dla {provider}, aby kontynuować."
+  }
+}

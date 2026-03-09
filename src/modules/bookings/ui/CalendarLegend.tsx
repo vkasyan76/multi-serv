@@ -1,13 +1,16 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   AVAILABLE_STATUS_META,
   SERVICE_STATUS_COLORS,
-  SERVICE_STATUS_LABELS,
+  SERVICE_STATUS_KEYS,
   SERVICE_STATUS_ORDER,
 } from "./service-status";
 
 export function CalendarLegend({ className = "" }: { className?: string }) {
+  const tBookings = useTranslations("bookings");
+
   const Square = ({ className }: { className: string }) => (
     <span className={`inline-block size-3 ${className}`} />
   );
@@ -19,12 +22,12 @@ export function CalendarLegend({ className = "" }: { className?: string }) {
     >
       <span className="flex items-center gap-1.5">
         <Square className={AVAILABLE_STATUS_META.className} />{" "}
-        {AVAILABLE_STATUS_META.label}
+        {tBookings(`legend.${AVAILABLE_STATUS_META.key}`)}
       </span>
       {SERVICE_STATUS_ORDER.map((status) => (
         <span key={status} className="flex items-center gap-1.5">
           <Square className={SERVICE_STATUS_COLORS[status].className} />{" "}
-          {SERVICE_STATUS_LABELS[status]}
+          {tBookings(`legend.${SERVICE_STATUS_KEYS[status]}`)}
         </span>
       ))}
     </div>

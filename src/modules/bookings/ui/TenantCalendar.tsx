@@ -31,7 +31,7 @@ import { BOOKING_CH } from "@/constants";
 import {
   AVAILABLE_STATUS_META,
   getServiceStatusColorHex,
-  getServiceStatusLabel,
+  getServiceStatusKey,
   normalizeServiceStatus,
 } from "./service-status";
 
@@ -43,6 +43,7 @@ import {
   rolling,
 } from "../utils/dates-utils";
 import { useMediaQuery } from "./use-media";
+import { useTranslations } from "next-intl";
 
 // Type definitions for type-safe BroadcastChannel operations
 type BookingBroadcast =
@@ -141,6 +142,7 @@ export default function TenantCalendar({
 }: Props) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const tBookings = useTranslations("bookings");
   // Responsive breakpoint detection
   const isMobile = useMediaQuery("(max-width: 640px)");
 
@@ -737,7 +739,10 @@ export default function TenantCalendar({
     if (b.status === "available") return null; // green blocks stay clean
 
     // Show customer name in the tenat dashboard and service status on public calendar
-    const who = displayName(b) ?? getServiceStatusLabel(b.serviceStatus);
+    const statusLabel = tBookings(
+      `legend.${getServiceStatusKey(b.serviceStatus)}`,
+    );
+    const who = displayName(b) ?? statusLabel;
 
     return <div className="rbc-dash-ev truncate">{who}</div>;
   };
@@ -759,7 +764,9 @@ export default function TenantCalendar({
         }
       })
       .map((b) => {
-        const statusLabel = getServiceStatusLabel(b.serviceStatus);
+        const statusLabel = tBookings(
+          `legend.${getServiceStatusKey(b.serviceStatus)}`,
+        );
         const eventTitle =
           b.status === "available"
             ? ""
@@ -775,7 +782,7 @@ export default function TenantCalendar({
           resource: b as BookingWithName,
         };
       });
-  }, [slotsQ.data, nowTick, dashboardMode, displayName]);
+  }, [slotsQ.data, nowTick, dashboardMode, displayName, tBookings]);
 
   // Handle slot selection (controlled - no internal state)
   const handleSlotSelect = useCallback(
@@ -849,7 +856,7 @@ export default function TenantCalendar({
               "repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 6px, #e5e7eb 6px, #e5e7eb 12px)",
           },
           title:
-            "Last 1-hour slot starts at 22:00. 23:00 would cross midnight.",
+            tBookings("calendar.crosses_midnight"),
         };
       }
 
@@ -862,7 +869,7 @@ export default function TenantCalendar({
 
       return {};
     },
-    [nowTick],
+    [nowTick, tBookings],
   );
 
   // Localized tooltip - concise format without time duplication
@@ -870,17 +877,24 @@ export default function TenantCalendar({
     (e: RbcEvent) => {
       if (e.resource.status === "available") {
         // Just show day and status (time already shown by RBC)
-        return `Available - ${dateFmt.format(e.start)}`;
+        return tBookings("tooltip.available", {
+          date: dateFmt.format(e.start),
+        });
       } else {
         // For booked events, show customer name on dashboard, status on public
-        const statusLabel = getServiceStatusLabel(e.resource.serviceStatus);
+        const statusLabel = tBookings(
+          `legend.${getServiceStatusKey(e.resource.serviceStatus)}`,
+        );
         const who = dashboardMode
           ? (displayName(e.resource as BookingWithName) ?? statusLabel)
           : statusLabel;
-        return `${who} - ${dateFmt.format(e.start)}`;
+        return tBookings("tooltip.status", {
+          label: who,
+          date: dateFmt.format(e.start),
+        });
       }
     },
-    [dateFmt, dashboardMode, displayName],
+    [dateFmt, dashboardMode, displayName, tBookings],
   );
 
   // DnD accessors - only "available" slots can be dragged/resized

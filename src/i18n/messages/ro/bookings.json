@@ -1,0 +1,43 @@
+{
+  "section": { "title": "Rezervare" },
+  "availability": {
+    "loading": "Se încarcă disponibilitatea...",
+    "select_slot": "Faceți clic pe un interval disponibil pentru a rezerva.",
+    "no_slots_day": "Nu există intervale disponibile la această dată. Folosiți săgețile pentru a verifica alte zile.",
+    "no_slots_week": "Nu există intervale libere disponibile în această săptămână. Folosiți săgețile pentru a verifica o altă săptămână.",
+    "no_slots_any": "Momentan nu există intervale libere disponibile. Puteți contacta prestatorul privind disponibilitatea sau puteți reveni mai târziu."
+  },
+  "selection": {
+    "clear": "Șterge selecția",
+    "limit_reached": "Puteți selecta până la {count} intervale pentru o rezervare."
+  },
+  "cta": {
+    "book_slots": "Rezervă intervale",
+    "book_slots_count": "Rezervă intervale ({count})",
+    "checking_sign_in": "Se verifică autentificarea...",
+    "sign_in_to_book_provider": "Autentificați-vă pentru a rezerva acest prestator.",
+    "select_slots_then_sign_in": "Selectați intervalele, apoi autentificați-vă pentru a rezerva."
+  },
+  "calendar": {
+    "today": "Astăzi",
+    "previous_day": "Ziua precedentă",
+    "next_day": "Ziua următoare",
+    "previous_week": "Săptămâna precedentă",
+    "next_week": "Săptămâna următoare",
+    "crosses_midnight": "Ultimul interval de 1 oră începe la 22:00. 23:00 ar trece de miezul nopții."
+  },
+  "legend": {
+    "available": "Disponibil",
+    "scheduled": "Programat",
+    "completed": "Finalizat",
+    "accepted": "Acceptat",
+    "disputed": "Contestat"
+  },
+  "tooltip": {
+    "available": "Disponibil - {date}",
+    "status": "{label} - {date}"
+  },
+  "errors": {
+    "generic": "Rezervarea a eșuat. Încercați din nou."
+  }
+}

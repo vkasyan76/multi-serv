@@ -1,0 +1,61 @@
+{
+  "cart": {
+    "open": "Warenkorb öffnen",
+    "open_count": "Warenkorb öffnen ({count})",
+    "empty": "Der Warenkorb ist leer.",
+    "title": "Ihre Buchung",
+    "select_service": "Service auswählen",
+    "remove_slot": "Zeitfenster entfernen",
+    "remove": "Entfernen",
+    "total": "Gesamt",
+    "checkout": "Zur Kasse",
+    "create_order": "Bestellung erstellen",
+    "continue": "Weiter"
+  },
+  "customer": {
+    "invoice_address": "Rechnungsadresse",
+    "loading_profile": "Profil wird geladen...",
+    "invoice_address_required": "Rechnungsadresse erforderlich",
+    "edit": "Bearbeiten",
+    "profile": "Profil",
+    "complete_profile_before_checkout": "Bitte vervollständigen Sie Ihr Onboarding (Name und Adresse) in Ihrem Profil vor dem Checkout."
+  },
+  "payment_method": {
+    "saving": "Zahlungsmethode wird gespeichert...",
+    "payment_method_for_provider": "Zahlungsmethode für {provider}",
+    "add_payment_method_for_provider": "Fügen Sie eine Zahlungsmethode für {provider} hinzu, um fortzufahren",
+    "add_payment_method": "Zahlungsmethode hinzufügen",
+    "update_payment_method": "Zahlungsmethode aktualisieren",
+    "card_setup_canceled": "Karteneinrichtung abgebrochen.",
+    "card_saved": "Karte gespeichert.",
+    "card_setup_finalize_failed": "Die Karteneinrichtung konnte nicht abgeschlossen werden.",
+    "start_setup_failed": "Die Einrichtung konnte nicht gestartet werden.",
+    "no_charge_at_booking": "Bei der Buchung erfolgt keine Belastung. Die Belastung erfolgt nach Annahme oder automatischer Annahme des abgeschlossenen Services."
+  },
+  "terms": {
+    "title": "Nutzungsbedingungen",
+    "accept": "Akzeptieren",
+    "decline": "Ablehnen",
+    "accepted": "Bedingungen akzeptiert.",
+    "accept_failed": "Die Annahme konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    "must_accept_terms": "Sie müssen die",
+    "before_checkout": "vor dem Checkout akzeptieren."
+  },
+  "status": {
+    "please_wait": "Bitte warten...",
+    "please_wait_loading_profile": "Bitte warten... Ihr Profil wird geladen.",
+    "please_sign_in": "Bitte melden Sie sich an, um fortzufahren.",
+    "please_select_service_every_slot": "Bitte wählen Sie für jedes Zeitfenster einen Service aus."
+  },
+  "toast": {
+    "checkout_failed": "Checkout fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "checkout_started_failed": "Checkout konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
+    "order_created_pay_later": "Bestellung erstellt. Die Zahlung erfolgt später nach Annahme.",
+    "payment_received_finalizing": "Zahlung erhalten. Ihre Buchung wird abgeschlossen..."
+  },
+  "errors": {
+    "generic": "Checkout fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "profile_incomplete": "Bitte vervollständigen Sie Ihr Profil vor dem Checkout.",
+    "payment_method_required": "Bitte fügen Sie eine Zahlungsmethode für {provider} hinzu, um fortzufahren."
+  }
+}

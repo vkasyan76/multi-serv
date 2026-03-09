@@ -15,7 +15,11 @@ export const LAUNCHED_APP_LANGS = [
 ] as const satisfies ReadonlyArray<AppLang>;
 
 // Required namespaces that must exist for each launched locale.
-export const REQUIRED_NAMESPACES = ["common"] as const;
+export const REQUIRED_NAMESPACES = [
+  "common",
+  "bookings",
+  "checkout",
+] as const;
 
 export type RequiredNamespace = (typeof REQUIRED_NAMESPACES)[number];
 

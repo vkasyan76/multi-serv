@@ -1,0 +1,61 @@
+{
+  "cart": {
+    "open": "Open cart",
+    "open_count": "Open cart ({count})",
+    "empty": "Cart is empty.",
+    "title": "Your booking",
+    "select_service": "Select service",
+    "remove_slot": "Remove slot",
+    "remove": "Remove",
+    "total": "Total",
+    "checkout": "Checkout",
+    "create_order": "Create order",
+    "continue": "Continue"
+  },
+  "customer": {
+    "invoice_address": "Invoice address",
+    "loading_profile": "Loading profile...",
+    "invoice_address_required": "Invoice address required",
+    "edit": "Edit",
+    "profile": "profile",
+    "complete_profile_before_checkout": "Please complete onboarding (name and address) in your profile before checkout."
+  },
+  "payment_method": {
+    "saving": "Saving payment method...",
+    "payment_method_for_provider": "Payment method for {provider}",
+    "add_payment_method_for_provider": "Add a payment method for {provider} to continue",
+    "add_payment_method": "Add payment method",
+    "update_payment_method": "Update payment method",
+    "card_setup_canceled": "Card setup canceled.",
+    "card_saved": "Card saved.",
+    "card_setup_finalize_failed": "Could not finalize card setup.",
+    "start_setup_failed": "Could not start setup.",
+    "no_charge_at_booking": "No charge at booking. You'll be charged after service completion is accepted (or auto-accepted)."
+  },
+  "terms": {
+    "title": "Terms of Use",
+    "accept": "Accept",
+    "decline": "Decline",
+    "accepted": "Terms accepted.",
+    "accept_failed": "Could not record acceptance. Please try again.",
+    "must_accept_terms": "You must accept the",
+    "before_checkout": "before checkout."
+  },
+  "status": {
+    "please_wait": "Please wait...",
+    "please_wait_loading_profile": "Please wait... loading your profile.",
+    "please_sign_in": "Please sign in to continue.",
+    "please_select_service_every_slot": "Please select a service for every slot."
+  },
+  "toast": {
+    "checkout_failed": "Checkout failed. Please try again.",
+    "checkout_started_failed": "Could not start checkout. Please try again.",
+    "order_created_pay_later": "Order created. Payment will happen later (after acceptance).",
+    "payment_received_finalizing": "Payment received. Finalizing your booking..."
+  },
+  "errors": {
+    "generic": "Checkout failed. Please try again.",
+    "profile_incomplete": "Please complete your profile before checkout.",
+    "payment_method_required": "Please add a payment method for {provider} to continue."
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "cart": {
+    "open": "Apri carrello",
+    "open_count": "Apri carrello ({count})",
+    "empty": "Il carrello è vuoto.",
+    "title": "La tua prenotazione",
+    "select_service": "Seleziona servizio",
+    "remove_slot": "Rimuovi slot",
+    "remove": "Rimuovi",
+    "total": "Totale",
+    "checkout": "Checkout",
+    "create_order": "Crea ordine",
+    "continue": "Continua"
+  },
+  "customer": {
+    "invoice_address": "Indirizzo di fatturazione",
+    "loading_profile": "Caricamento profilo...",
+    "invoice_address_required": "Indirizzo di fatturazione obbligatorio",
+    "edit": "Modifica",
+    "profile": "profilo",
+    "complete_profile_before_checkout": "Completa l'onboarding (nome e indirizzo) nel tuo profilo prima del checkout."
+  },
+  "payment_method": {
+    "saving": "Salvataggio metodo di pagamento...",
+    "payment_method_for_provider": "Metodo di pagamento per {provider}",
+    "add_payment_method_for_provider": "Aggiungi un metodo di pagamento per {provider} per continuare",
+    "add_payment_method": "Aggiungi metodo di pagamento",
+    "update_payment_method": "Aggiorna metodo di pagamento",
+    "card_setup_canceled": "Configurazione carta annullata.",
+    "card_saved": "Carta salvata.",
+    "card_setup_finalize_failed": "Impossibile finalizzare la configurazione della carta.",
+    "start_setup_failed": "Impossibile avviare la configurazione.",
+    "no_charge_at_booking": "Nessun addebito al momento della prenotazione. L'addebito avverrà dopo l'accettazione o l'accettazione automatica del servizio completato."
+  },
+  "terms": {
+    "title": "Termini di utilizzo",
+    "accept": "Accetta",
+    "decline": "Rifiuta",
+    "accepted": "Termini accettati.",
+    "accept_failed": "Impossibile registrare l'accettazione. Riprova.",
+    "must_accept_terms": "Devi accettare i",
+    "before_checkout": "prima del checkout."
+  },
+  "status": {
+    "please_wait": "Attendere...",
+    "please_wait_loading_profile": "Attendere... caricamento del profilo.",
+    "please_sign_in": "Accedi per continuare.",
+    "please_select_service_every_slot": "Seleziona un servizio per ogni slot."
+  },
+  "toast": {
+    "checkout_failed": "Checkout non riuscito. Riprova.",
+    "checkout_started_failed": "Impossibile avviare il checkout. Riprova.",
+    "order_created_pay_later": "Ordine creato. Il pagamento avverrà più tardi dopo l'accettazione.",
+    "payment_received_finalizing": "Pagamento ricevuto. Finalizzazione della prenotazione..."
+  },
+  "errors": {
+    "generic": "Checkout non riuscito. Riprova.",
+    "profile_incomplete": "Completa il tuo profilo prima del checkout.",
+    "payment_method_required": "Aggiungi un metodo di pagamento per {provider} per continuare."
+  }
+}

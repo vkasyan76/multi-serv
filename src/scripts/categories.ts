@@ -4,7 +4,11 @@ process.env.PAYLOAD_DISABLE_AUTH_FOR_SCRIPTS = "true";
 import "dotenv/config";
 import { getPayload, type Payload } from "payload";
 import config from "../payload.config.js";
-import { SUPPORTED_APP_LANGS, type AppLang } from "../lib/i18n/app-lang.ts";
+import {
+  DEFAULT_APP_LANG,
+  SUPPORTED_APP_LANGS,
+  type AppLang,
+} from "../lib/i18n/app-lang.ts";
 
 const NEW_ONLY = process.argv.includes("--new-only");
 // Payload supports locale="all" for reads, which lets this script compare the full localized name object.
@@ -879,7 +883,7 @@ async function upsertCategory(
   const created = await payload.create({
     collection: "categories",
     data: {
-      name: normalizedName.en,
+      name: normalizedName[DEFAULT_APP_LANG],
       slug: data.slug,
       color: data.color,
       icon: data.icon ?? null,
@@ -887,10 +891,15 @@ async function upsertCategory(
     } as never,
     overrideAccess: true,
     fallbackLocale: false,
-    locale: "en",
+    locale: DEFAULT_APP_LANG,
   });
 
-  await syncLocalizedName(payload, String(created.id), {}, normalizedName);
+  await syncLocalizedName(
+    payload,
+    String(created.id),
+    { [DEFAULT_APP_LANG]: normalizedName[DEFAULT_APP_LANG] },
+    normalizedName,
+  );
   return { id: String(created.id), action: "created" };
 }
 

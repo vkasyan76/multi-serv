@@ -23,6 +23,30 @@ const COMMON_LOADERS: Partial<Record<AppLang, Loader>> = {
   uk: async () => (await import("./messages/uk/common.json")).default,
 };
 
+const BOOKINGS_LOADERS: Partial<Record<AppLang, Loader>> = {
+  en: async () => (await import("./messages/en/bookings.json")).default,
+  de: async () => (await import("./messages/de/bookings.json")).default,
+  fr: async () => (await import("./messages/fr/bookings.json")).default,
+  it: async () => (await import("./messages/it/bookings.json")).default,
+  es: async () => (await import("./messages/es/bookings.json")).default,
+  pt: async () => (await import("./messages/pt/bookings.json")).default,
+  pl: async () => (await import("./messages/pl/bookings.json")).default,
+  ro: async () => (await import("./messages/ro/bookings.json")).default,
+  uk: async () => (await import("./messages/uk/bookings.json")).default,
+};
+
+const CHECKOUT_LOADERS: Partial<Record<AppLang, Loader>> = {
+  en: async () => (await import("./messages/en/checkout.json")).default,
+  de: async () => (await import("./messages/de/checkout.json")).default,
+  fr: async () => (await import("./messages/fr/checkout.json")).default,
+  it: async () => (await import("./messages/it/checkout.json")).default,
+  es: async () => (await import("./messages/es/checkout.json")).default,
+  pt: async () => (await import("./messages/pt/checkout.json")).default,
+  pl: async () => (await import("./messages/pl/checkout.json")).default,
+  ro: async () => (await import("./messages/ro/checkout.json")).default,
+  uk: async () => (await import("./messages/uk/checkout.json")).default,
+};
+
 function isPlainObject(value: unknown): value is MessageTree {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -44,15 +68,18 @@ function mergeDeep(base: MessageTree, override: MessageTree): MessageTree {
   return out;
 }
 
-async function loadCommon(appLang: AppLang): Promise<MessageTree> {
+async function loadNamespace(
+  appLang: AppLang,
+  loaders: Partial<Record<AppLang, Loader>>,
+): Promise<MessageTree> {
   // EN is the fallback baseline and must always exist.
-  const enCommon = await COMMON_LOADERS.en!();
-  const loader = COMMON_LOADERS[appLang];
+  const enNamespace = await loaders.en!();
+  const loader = loaders[appLang];
 
-  if (!loader || appLang === "en") return enCommon;
+  if (!loader || appLang === "en") return enNamespace;
 
-  const localizedCommon = await loader();
-  return mergeDeep(enCommon, localizedCommon);
+  const localizedNamespace = await loader();
+  return mergeDeep(enNamespace, localizedNamespace);
 }
 
 export default getRequestConfig(async ({ requestLocale }) => {
@@ -72,7 +99,9 @@ export default getRequestConfig(async ({ requestLocale }) => {
   return {
     locale: appLang,
     messages: {
-      common: await loadCommon(appLang),
+      common: await loadNamespace(appLang, COMMON_LOADERS),
+      bookings: await loadNamespace(appLang, BOOKINGS_LOADERS),
+      checkout: await loadNamespace(appLang, CHECKOUT_LOADERS),
     },
   };
 });

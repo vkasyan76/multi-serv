@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 // keep your existing hook path
 import { useCart } from "@/modules/checkout/hooks/use-cart";
 import {
@@ -39,6 +40,7 @@ export function BookSlotsButton({
   pricePerHourCents,
   onAdded,
 }: Props) {
+  const tBookings = useTranslations("bookings");
   const { addSelected, openCart, clearTenantCart } = useCart(tenantSlug);
   const qc = useQueryClient();
 
@@ -90,7 +92,9 @@ export function BookSlotsButton({
 
   return (
     <Button disabled={!selectedIds.length} onClick={onClick} className="w-full">
-      {selectedIds.length ? `Book slots (${selectedIds.length})` : "Book slots"}
+      {selectedIds.length
+        ? tBookings("cta.book_slots_count", { count: selectedIds.length })
+        : tBookings("cta.book_slots")}
     </Button>
   );
 }

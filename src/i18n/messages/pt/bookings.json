@@ -1,0 +1,43 @@
+{
+  "section": { "title": "Reserva" },
+  "availability": {
+    "loading": "A carregar disponibilidade...",
+    "select_slot": "Clique num horário disponível para reservar.",
+    "no_slots_day": "Não há horários disponíveis nesta data. Use as setas para verificar outros dias.",
+    "no_slots_week": "Não há horários livres disponíveis esta semana. Use as setas para verificar outra semana.",
+    "no_slots_any": "De momento não há horários livres disponíveis. Pode contactar o prestador sobre a disponibilidade ou voltar a verificar mais tarde."
+  },
+  "selection": {
+    "clear": "Limpar seleção",
+    "limit_reached": "Pode selecionar até {count} horários por reserva."
+  },
+  "cta": {
+    "book_slots": "Reservar horários",
+    "book_slots_count": "Reservar horários ({count})",
+    "checking_sign_in": "A verificar sessão...",
+    "sign_in_to_book_provider": "Inicie sessão para reservar este prestador.",
+    "select_slots_then_sign_in": "Selecione os horários e depois inicie sessão para reservar."
+  },
+  "calendar": {
+    "today": "Hoje",
+    "previous_day": "Dia anterior",
+    "next_day": "Dia seguinte",
+    "previous_week": "Semana anterior",
+    "next_week": "Semana seguinte",
+    "crosses_midnight": "O último horário de 1 hora começa às 22:00. 23:00 atravessaria a meia-noite."
+  },
+  "legend": {
+    "available": "Disponível",
+    "scheduled": "Agendado",
+    "completed": "Concluído",
+    "accepted": "Aceite",
+    "disputed": "Em disputa"
+  },
+  "tooltip": {
+    "available": "Disponível - {date}",
+    "status": "{label} - {date}"
+  },
+  "errors": {
+    "generic": "A reserva falhou. Tente novamente."
+  }
+}

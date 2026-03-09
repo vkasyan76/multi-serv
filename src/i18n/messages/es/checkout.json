@@ -1,0 +1,61 @@
+{
+  "cart": {
+    "open": "Abrir carrito",
+    "open_count": "Abrir carrito ({count})",
+    "empty": "El carrito está vacío.",
+    "title": "Tu reserva",
+    "select_service": "Seleccionar servicio",
+    "remove_slot": "Eliminar franja",
+    "remove": "Eliminar",
+    "total": "Total",
+    "checkout": "Pagar",
+    "create_order": "Crear pedido",
+    "continue": "Continuar"
+  },
+  "customer": {
+    "invoice_address": "Dirección de facturación",
+    "loading_profile": "Cargando perfil...",
+    "invoice_address_required": "Dirección de facturación obligatoria",
+    "edit": "Editar",
+    "profile": "perfil",
+    "complete_profile_before_checkout": "Completa el onboarding (nombre y dirección) en tu perfil antes del pago."
+  },
+  "payment_method": {
+    "saving": "Guardando método de pago...",
+    "payment_method_for_provider": "Método de pago para {provider}",
+    "add_payment_method_for_provider": "Añade un método de pago para {provider} para continuar",
+    "add_payment_method": "Añadir método de pago",
+    "update_payment_method": "Actualizar método de pago",
+    "card_setup_canceled": "Configuración de tarjeta cancelada.",
+    "card_saved": "Tarjeta guardada.",
+    "card_setup_finalize_failed": "No se pudo finalizar la configuración de la tarjeta.",
+    "start_setup_failed": "No se pudo iniciar la configuración.",
+    "no_charge_at_booking": "No se cobra al reservar. Se te cobrará después de la aceptación o autoaceptación de la finalización del servicio."
+  },
+  "terms": {
+    "title": "Términos de uso",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "accepted": "Términos aceptados.",
+    "accept_failed": "No se pudo registrar la aceptación. Inténtalo de nuevo.",
+    "must_accept_terms": "Debes aceptar los",
+    "before_checkout": "antes del pago."
+  },
+  "status": {
+    "please_wait": "Espera, por favor...",
+    "please_wait_loading_profile": "Espera, por favor... cargando tu perfil.",
+    "please_sign_in": "Inicia sesión para continuar.",
+    "please_select_service_every_slot": "Selecciona un servicio para cada franja."
+  },
+  "toast": {
+    "checkout_failed": "El pago ha fallado. Inténtalo de nuevo.",
+    "checkout_started_failed": "No se pudo iniciar el pago. Inténtalo de nuevo.",
+    "order_created_pay_later": "Pedido creado. El pago se realizará más tarde tras la aceptación.",
+    "payment_received_finalizing": "Pago recibido. Finalizando tu reserva..."
+  },
+  "errors": {
+    "generic": "El pago ha fallado. Inténtalo de nuevo.",
+    "profile_incomplete": "Completa tu perfil antes del pago.",
+    "payment_method_required": "Añade un método de pago para {provider} para continuar."
+  }
+}

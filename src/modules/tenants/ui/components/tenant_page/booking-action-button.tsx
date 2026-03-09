@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { BookSlotsButton } from "@/modules/checkout/ui/book-slots-button";
@@ -20,6 +21,8 @@ export function BookingActionButton({
   pricePerHourCents,
   className = "w-full",
 }: BookingActionButtonProps) {
+  const tBookings = useTranslations("bookings");
+
   if (signedState === true) {
     return (
       <BookSlotsButton
@@ -34,7 +37,7 @@ export function BookingActionButton({
     return (
       <Button className={className} disabled>
         <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-        Checking sign-in…
+        {tBookings("cta.checking_sign_in")}
       </Button>
     );
   }
@@ -42,9 +45,9 @@ export function BookingActionButton({
   return (
     <Button
       className={className}
-      onClick={() => toast.error("Sign in to book this provider.")}
+      onClick={() => toast.error(tBookings("cta.sign_in_to_book_provider"))}
     >
-      Book slots ({selectedIds.length})
+      {tBookings("cta.book_slots_count", { count: selectedIds.length })}
     </Button>
   );
 }
