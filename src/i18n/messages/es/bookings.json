@@ -1,5 +1,7 @@
 {
-  "section": { "title": "Reserva" },
+  "section": {
+    "title": "Reserva"
+  },
   "availability": {
     "loading": "Cargando disponibilidad...",
     "select_slot": "Haz clic en una franja disponible para reservar.",
@@ -16,7 +18,8 @@
     "book_slots_count": "Reservar franjas ({count})",
     "checking_sign_in": "Comprobando inicio de sesión...",
     "sign_in_to_book_provider": "Inicia sesión para reservar este proveedor.",
-    "select_slots_then_sign_in": "Selecciona franjas y luego inicia sesión para reservar."
+    "select_slots_then_sign_in": "Selecciona franjas y luego inicia sesión para reservar.",
+    "sign_in_to_contact": "Inicia sesión para contactar con este proveedor."
   },
   "calendar": {
     "today": "Hoy",

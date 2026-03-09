@@ -1,5 +1,7 @@
 {
-  "section": { "title": "Prenotazione" },
+  "section": {
+    "title": "Prenotazione"
+  },
   "availability": {
     "loading": "Caricamento disponibilità...",
     "select_slot": "Fai clic su uno slot disponibile per prenotare.",
@@ -16,7 +18,8 @@
     "book_slots_count": "Prenota slot ({count})",
     "checking_sign_in": "Verifica accesso...",
     "sign_in_to_book_provider": "Accedi per prenotare questo fornitore.",
-    "select_slots_then_sign_in": "Seleziona gli slot, poi accedi per prenotare."
+    "select_slots_then_sign_in": "Seleziona gli slot, poi accedi per prenotare.",
+    "sign_in_to_contact": "Accedi per contattare questo fornitore."
   },
   "calendar": {
     "today": "Oggi",

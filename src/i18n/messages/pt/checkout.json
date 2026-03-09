@@ -13,7 +13,8 @@
     "continue": "Continuar",
     "slot_id": "ID do horário",
     "pick_service": "Escolha um serviço",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "book": "Reservar"
   },
   "customer": {
     "invoice_address": "Endereço de faturação",

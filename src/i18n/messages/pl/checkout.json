@@ -13,7 +13,8 @@
     "continue": "Kontynuuj",
     "slot_id": "ID terminu",
     "pick_service": "Wybierz usługę",
-    "cancel": "Anuluj"
+    "cancel": "Anuluj",
+    "book": "Rezerwuj"
   },
   "customer": {
     "invoice_address": "Adres rozliczeniowy",

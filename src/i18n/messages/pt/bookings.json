@@ -1,5 +1,7 @@
 {
-  "section": { "title": "Reserva" },
+  "section": {
+    "title": "Reserva"
+  },
   "availability": {
     "loading": "A carregar disponibilidade...",
     "select_slot": "Clique num horário disponível para reservar.",
@@ -16,7 +18,8 @@
     "book_slots_count": "Reservar horários ({count})",
     "checking_sign_in": "A verificar sessão...",
     "sign_in_to_book_provider": "Inicie sessão para reservar este prestador.",
-    "select_slots_then_sign_in": "Selecione os horários e depois inicie sessão para reservar."
+    "select_slots_then_sign_in": "Selecione os horários e depois inicie sessão para reservar.",
+    "sign_in_to_contact": "Inicie sessão para contactar este prestador."
   },
   "calendar": {
     "today": "Hoje",

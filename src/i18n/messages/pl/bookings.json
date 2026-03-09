@@ -1,5 +1,7 @@
 {
-  "section": { "title": "Rezerwacja" },
+  "section": {
+    "title": "Rezerwacja"
+  },
   "availability": {
     "loading": "Ładowanie dostępności...",
     "select_slot": "Kliknij dostępny termin, aby zarezerwować.",
@@ -16,7 +18,8 @@
     "book_slots_count": "Rezerwuj terminy ({count})",
     "checking_sign_in": "Sprawdzanie logowania...",
     "sign_in_to_book_provider": "Zaloguj się, aby zarezerwować tego usługodawcę.",
-    "select_slots_then_sign_in": "Wybierz terminy, a następnie zaloguj się, aby zarezerwować."
+    "select_slots_then_sign_in": "Wybierz terminy, a następnie zaloguj się, aby zarezerwować.",
+    "sign_in_to_contact": "Zaloguj się, aby skontaktować się z tym usługodawcą."
   },
   "calendar": {
     "today": "Dzisiaj",

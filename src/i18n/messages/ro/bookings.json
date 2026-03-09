@@ -1,5 +1,7 @@
 {
-  "section": { "title": "Rezervare" },
+  "section": {
+    "title": "Rezervare"
+  },
   "availability": {
     "loading": "Se încarcă disponibilitatea...",
     "select_slot": "Faceți clic pe un interval disponibil pentru a rezerva.",
@@ -16,7 +18,8 @@
     "book_slots_count": "Rezervă intervale ({count})",
     "checking_sign_in": "Se verifică autentificarea...",
     "sign_in_to_book_provider": "Autentificați-vă pentru a rezerva acest prestator.",
-    "select_slots_then_sign_in": "Selectați intervalele, apoi autentificați-vă pentru a rezerva."
+    "select_slots_then_sign_in": "Selectați intervalele, apoi autentificați-vă pentru a rezerva.",
+    "sign_in_to_contact": "Autentificați-vă pentru a contacta acest prestator."
   },
   "calendar": {
     "today": "Astăzi",

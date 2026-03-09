@@ -13,7 +13,8 @@
     "continue": "Weiter",
     "slot_id": "Slot-ID",
     "pick_service": "Service auswählen",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "book": "Buchen"
   },
   "customer": {
     "invoice_address": "Rechnungsadresse",

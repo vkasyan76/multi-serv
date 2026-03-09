@@ -13,7 +13,8 @@
     "continue": "Continuă",
     "slot_id": "ID interval",
     "pick_service": "Alege un serviciu",
-    "cancel": "Anulează"
+    "cancel": "Anulează",
+    "book": "Rezervă"
   },
   "customer": {
     "invoice_address": "Adresă de facturare",

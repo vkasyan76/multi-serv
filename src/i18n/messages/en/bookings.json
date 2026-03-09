@@ -1,5 +1,7 @@
 {
-  "section": { "title": "Booking" },
+  "section": {
+    "title": "Booking"
+  },
   "availability": {
     "loading": "Loading availability...",
     "select_slot": "Click on an available slot to book.",
@@ -16,7 +18,8 @@
     "book_slots_count": "Book slots ({count})",
     "checking_sign_in": "Checking sign-in...",
     "sign_in_to_book_provider": "Sign in to book this provider.",
-    "select_slots_then_sign_in": "Select slots, then sign in to book."
+    "select_slots_then_sign_in": "Select slots, then sign in to book.",
+    "sign_in_to_contact": "Sign in to contact this provider."
   },
   "calendar": {
     "today": "Today",

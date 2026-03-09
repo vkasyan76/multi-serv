@@ -1,5 +1,7 @@
 {
-  "section": { "title": "Buchung" },
+  "section": {
+    "title": "Buchung"
+  },
   "availability": {
     "loading": "Verfügbarkeit wird geladen...",
     "select_slot": "Klicken Sie auf ein verfügbares Zeitfenster, um zu buchen.",
@@ -16,7 +18,8 @@
     "book_slots_count": "Zeitfenster buchen ({count})",
     "checking_sign_in": "Anmeldung wird geprüft...",
     "sign_in_to_book_provider": "Melden Sie sich an, um diesen Anbieter zu buchen.",
-    "select_slots_then_sign_in": "Wählen Sie Zeitfenster aus und melden Sie sich dann zur Buchung an."
+    "select_slots_then_sign_in": "Wählen Sie Zeitfenster aus und melden Sie sich dann zur Buchung an.",
+    "sign_in_to_contact": "Melden Sie sich an, um diesen Anbieter zu kontaktieren."
   },
   "calendar": {
     "today": "Heute",

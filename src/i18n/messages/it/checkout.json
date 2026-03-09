@@ -13,7 +13,8 @@
     "continue": "Continua",
     "slot_id": "ID fascia oraria",
     "pick_service": "Scegli un servizio",
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "book": "Prenota"
   },
   "customer": {
     "invoice_address": "Indirizzo di fatturazione",

@@ -1,5 +1,7 @@
 {
-  "section": { "title": "Réservation" },
+  "section": {
+    "title": "Réservation"
+  },
   "availability": {
     "loading": "Chargement des disponibilités...",
     "select_slot": "Cliquez sur un créneau disponible pour réserver.",
@@ -16,7 +18,8 @@
     "book_slots_count": "Réserver des créneaux ({count})",
     "checking_sign_in": "Vérification de la connexion...",
     "sign_in_to_book_provider": "Connectez-vous pour réserver ce prestataire.",
-    "select_slots_then_sign_in": "Sélectionnez des créneaux puis connectez-vous pour réserver."
+    "select_slots_then_sign_in": "Sélectionnez des créneaux puis connectez-vous pour réserver.",
+    "sign_in_to_contact": "Connectez-vous pour contacter ce prestataire."
   },
   "calendar": {
     "today": "Aujourd'hui",

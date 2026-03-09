@@ -13,7 +13,8 @@
     "continue": "Continuar",
     "slot_id": "ID de franja",
     "pick_service": "Elige un servicio",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "book": "Reservar"
   },
   "customer": {
     "invoice_address": "Dirección de facturación",

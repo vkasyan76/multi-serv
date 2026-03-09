@@ -13,7 +13,8 @@
     "continue": "Continuer",
     "slot_id": "ID du créneau",
     "pick_service": "Choisir un service",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "book": "Réserver"
   },
   "customer": {
     "invoice_address": "Adresse de facturation",

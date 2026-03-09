@@ -159,7 +159,7 @@ export default function TenantContent({ slug }: { slug: string }) {
     }
 
     if (signedState === false) {
-      toast.error("Sign in to contact this provider.");
+      toast.error(tBookings("cta.sign_in_to_contact"));
       return;
     }
 
@@ -167,9 +167,9 @@ export default function TenantContent({ slug }: { slug: string }) {
     try {
       const ok = await onBridgeResync();
       if (ok) setChatOpen(true);
-      else toast.error("Sign in to contact this provider.");
+      else toast.error(tBookings("cta.sign_in_to_contact"));
     } catch {
-      toast.error("Sign in to contact this provider.");
+      toast.error(tBookings("cta.sign_in_to_contact"));
     }
   };
 

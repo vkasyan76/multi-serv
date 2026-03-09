@@ -13,7 +13,8 @@
     "continue": "Продовжити",
     "slot_id": "ID слота",
     "pick_service": "Виберіть послугу",
-    "cancel": "Скасувати"
+    "cancel": "Скасувати",
+    "book": "Забронювати"
   },
   "customer": {
     "invoice_address": "Адреса для рахунку",

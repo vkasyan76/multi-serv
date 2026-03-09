@@ -485,7 +485,7 @@ export function SlotsCartDrawer({
                   !paymentOk
                 }
               >
-                {tCheckout("cart.checkout")}
+                {tCheckout("cart.book")}
               </LoadingButton>
 
               <Button
