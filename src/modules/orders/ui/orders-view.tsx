@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import {
   Table,
@@ -188,6 +188,8 @@ function OrdersTable({
   appLang: AppLang;
   locale: string;
 }) {
+  const params = useParams<{ lang?: string }>();
+
   const whenLabel = (startISO: string) => {
     const date = formatDateForLocale(startISO, {
       weekday: "short",
@@ -247,7 +249,11 @@ function OrdersTable({
           </DropdownMenuItem>
 
           <DropdownMenuItem asChild disabled={!r.tenantSlug}>
-            <Link href={r.tenantSlug ? generateTenantUrl(r.tenantSlug) : "#"}>
+            <Link
+              href={
+                r.tenantSlug ? generateTenantUrl(r.tenantSlug, params?.lang) : "#"
+              }
+            >
               Contact provider
             </Link>
           </DropdownMenuItem>
@@ -301,7 +307,7 @@ function OrdersTable({
               <TableCell className="truncate">
                 {r.tenantSlug ? (
                   <Link
-                    href={generateTenantUrl(r.tenantSlug)}
+                    href={generateTenantUrl(r.tenantSlug, params?.lang)}
                     className="underline underline-offset-2"
                   >
                     {r.vendorName || r.tenantSlug}

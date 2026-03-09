@@ -12,6 +12,7 @@ import TenantBillboard from "./TenantBillboard";
 import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 
 // import dynamic from "next/dynamic";
 
@@ -50,6 +51,7 @@ export default function TenantsCarousel({
   onActiveChange?: (slug: string) => void;
 }) {
   const [api, setApi] = useState<CarouselApi | undefined>(undefined);
+  const params = useParams<{ lang?: string }>();
   const slugToIndex = useMemo(() => {
     const m = new Map<string, number>();
     items.forEach((it, i) => m.set(it.slug, i));
@@ -89,7 +91,10 @@ export default function TenantsCarousel({
       <CarouselContent className="!ml-0">
         {items.map((t) => (
           <CarouselItem key={t.id} className="basis-auto lg:basis-full px-2">
-            <Link href={generateTenantUrl(t.slug)} className="block group">
+            <Link
+              href={generateTenantUrl(t.slug, params?.lang)}
+              className="block group"
+            >
               <TenantBillboard
                 className="w-full" // hover classes (they’re already inside TenantBillboard
                 imageSrc={t.imageSrc}

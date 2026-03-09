@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { Home, UserCog } from "lucide-react";
@@ -23,12 +24,13 @@ interface Props {
 
 export default function DashboardNavbar({ slug }: Props) {
   const trpc = useTRPC();
+  const params = useParams<{ lang?: string }>();
   const { data: tenant } = useSuspenseQuery(
     trpc.tenants.getOne.queryOptions({ slug })
   );
 
   const avatarUrl = tenant?.image?.url ?? null;
-  const publicHref = tenantPublicHref(slug); // avatar/name (tenant public)
+  const publicHref = tenantPublicHref(slug, params?.lang); // avatar/name (tenant public)
   const homeHref = platformHomeHref(); // home icon (platform root)
   const profileUrl = `${homeHref}${homeHref.endsWith("/") ? "" : "/"}profile?tab=vendor`; // profile icon (platform root + profile)
 

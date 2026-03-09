@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { Home } from "lucide-react";
 import {
   Tooltip,
@@ -21,6 +22,7 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["700"] });
 
 export default function NewReviewView({ slug }: { slug: string }) {
   const trpc = useTRPC();
+  const params = useParams<{ lang?: string }>();
   // const router = useRouter();
 
   const mine = useQuery(trpc.reviews.getMineForTenant.queryOptions({ slug }));
@@ -39,7 +41,7 @@ export default function NewReviewView({ slug }: { slug: string }) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href={generateTenantUrl(tenantSlug)}
+                  href={generateTenantUrl(tenantSlug, params?.lang)}
                   className={cn(
                     "text-lg sm:text-xl font-semibold truncate",
                     poppins.className

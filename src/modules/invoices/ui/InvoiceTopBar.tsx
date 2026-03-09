@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import { Home } from "lucide-react";
 import { platformHomeHref, tenantPublicHref } from "@/lib/utils";
 import {
@@ -22,8 +23,9 @@ export function InvoiceTopBar({
   tenantName,
   tenantAvatarUrl,
 }: InvoiceTopBarProps) {
+  const params = useParams<{ lang?: string }>();
   const homeHref = platformHomeHref();
-  const publicHref = tenantSlug ? tenantPublicHref(tenantSlug) : null;
+  const publicHref = tenantSlug ? tenantPublicHref(tenantSlug, params?.lang) : null;
   const displayName = tenantSlug || tenantName || "Public page";
 
   return (

@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
 import { useMemo } from "react";
+import { useParams } from "next/navigation";
 
 import {
   type AppLang,
@@ -28,6 +29,7 @@ interface Props {
 export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   const trpc = useTRPC();
   const [filters] = useTenantFilters();
+  const params = useParams<{ lang?: string }>();
 
   // Prefer route params; strip them out of filters to avoid duplicate keys:
   // You were sending duplicate keys for category (and sometimes subcategory) in your query: once from route params and once from filters. Depending on spread order, the filter value ("") could overwrite the route slug, leading to no category filtering. The TenantList merge below removes the duplication and prefers the route param.
@@ -149,7 +151,7 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
           return (
             <Link
               key={tenant.id}
-              href={generateTenantUrl(tenant.slug)}
+              href={generateTenantUrl(tenant.slug, params?.lang)}
               className="block hover:scale-[1.02] transition-transform duration-200"
             >
               <TenantCard
