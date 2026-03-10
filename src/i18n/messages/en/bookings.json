@@ -41,6 +41,12 @@
     "status": "{label} - {date}"
   },
   "errors": {
-    "generic": "Booking failed. Please try again."
+    "generic": "Booking failed. Please try again.",
+    "slot_not_found": "This slot is no longer available.",
+    "slot_not_reserved": "Some selected slots are no longer reserved.",
+    "slot_already_taken": "This slot is no longer available.",
+    "slots_changed": "Some selected slots changed. Please try again.",
+    "provider_not_ready": "This provider is not ready to take bookings yet.",
+    "profile_incomplete": "Please complete your profile before booking."
   }
 }

@@ -41,6 +41,12 @@
     "status": "{label} - {date}"
   },
   "errors": {
-    "generic": "Rezerwacja nie powiodła się. Spróbuj ponownie."
+    "generic": "Rezerwacja nie powiodła się. Spróbuj ponownie.",
+    "slot_not_found": "Ten termin nie jest już dostępny.",
+    "slot_not_reserved": "Niektóre wybrane terminy nie są już zarezerwowane.",
+    "slot_already_taken": "Ten termin nie jest już dostępny.",
+    "slots_changed": "Niektóre wybrane terminy uległy zmianie. Spróbuj ponownie.",
+    "provider_not_ready": "Ten usługodawca nie jest jeszcze gotowy do przyjmowania rezerwacji.",
+    "profile_incomplete": "Uzupełnij swój profil przed dokonaniem rezerwacji."
   }
 }

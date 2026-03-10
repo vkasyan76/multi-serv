@@ -119,7 +119,7 @@ export const slotCheckoutRouter = createTRPCRouter({
       if (bookings.length !== input.slotIds.length) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Some slots not found",
+          message: "bookings.errors.slot_not_found",
         });
       }
 
@@ -135,7 +135,7 @@ export const slotCheckoutRouter = createTRPCRouter({
         if (b.status !== "booked") {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "Some slots are not reserved",
+            message: "bookings.errors.slot_not_reserved",
           });
         }
 
@@ -190,7 +190,7 @@ export const slotCheckoutRouter = createTRPCRouter({
       if (tenant.onboardingStatus !== "completed") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Provider is not ready to take bookings yet.",
+          message: "bookings.errors.provider_not_ready",
         });
       }
 
@@ -203,8 +203,7 @@ export const slotCheckoutRouter = createTRPCRouter({
       if (!firstName || !lastName || !location || !country) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message:
-            "Please complete your profile (name and address) before booking.",
+          message: "bookings.errors.profile_incomplete",
         });
       }
 
@@ -351,7 +350,7 @@ export const slotCheckoutRouter = createTRPCRouter({
 
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Some slots changed while checking out. Please try again.",
+          message: "bookings.errors.slots_changed",
         });
       }
 

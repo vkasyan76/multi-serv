@@ -343,7 +343,10 @@ export const bookingRouter = createTRPCRouter({
       });
 
       if (!current)
-        throw new TRPCError({ code: "NOT_FOUND", message: "Slot not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "bookings.errors.slot_not_found",
+        });
 
       // set snapshot:
       const tenantId =
@@ -397,7 +400,7 @@ export const bookingRouter = createTRPCRouter({
         // Nothing matched our WHERE; someone else won the race, or slot is in the past
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Slot already taken or does not exist",
+          message: "bookings.errors.slot_already_taken",
         });
       }
 

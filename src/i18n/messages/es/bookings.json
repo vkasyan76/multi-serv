@@ -41,6 +41,12 @@
     "status": "{label} - {date}"
   },
   "errors": {
-    "generic": "La reserva ha fallado. Inténtalo de nuevo."
+    "generic": "La reserva ha fallado. Inténtalo de nuevo.",
+    "slot_not_found": "Esta franja ya no está disponible.",
+    "slot_not_reserved": "Algunas franjas seleccionadas ya no están reservadas.",
+    "slot_already_taken": "Esta franja ya no está disponible.",
+    "slots_changed": "Algunas franjas seleccionadas han cambiado. Inténtalo de nuevo.",
+    "provider_not_ready": "Este proveedor aún no está listo para aceptar reservas.",
+    "profile_incomplete": "Completa tu perfil antes de reservar."
   }
 }

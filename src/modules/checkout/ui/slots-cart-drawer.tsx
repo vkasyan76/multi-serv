@@ -53,6 +53,28 @@ type SlotsCartDrawerProps = {
   customer: CustomerSnapshot | null;
 };
 
+function mapBookingErrorMessage(
+  message: string | undefined,
+  tBookings: (key: string) => string,
+): string | null {
+  switch (message) {
+    case "bookings.errors.slot_not_found":
+      return tBookings("errors.slot_not_found");
+    case "bookings.errors.slot_not_reserved":
+      return tBookings("errors.slot_not_reserved");
+    case "bookings.errors.slot_already_taken":
+      return tBookings("errors.slot_already_taken");
+    case "bookings.errors.slots_changed":
+      return tBookings("errors.slots_changed");
+    case "bookings.errors.provider_not_ready":
+      return tBookings("errors.provider_not_ready");
+    case "bookings.errors.profile_incomplete":
+      return tBookings("errors.profile_incomplete");
+    default:
+      return null;
+  }
+}
+
 export function SlotsCartDrawer({
   authState,
   policyAcceptedAt,
@@ -60,6 +82,7 @@ export function SlotsCartDrawer({
   customer,
 }: SlotsCartDrawerProps) {
   const tCheckout = useTranslations("checkout");
+  const tBookings = useTranslations("bookings");
   const params = useParams<{ lang?: string }>();
   const appLang = normalizeToSupported(params?.lang);
 
@@ -262,12 +285,15 @@ export function SlotsCartDrawer({
         }
       }
 
-      let msg = tCheckout("errors.generic");
+      let msg = tBookings("errors.generic");
       if (err instanceof TRPCClientError) {
-        msg =
-          err.data?.code === "UNAUTHORIZED"
-            ? tCheckout("status.please_sign_in")
-            : err.message || msg;
+        if (err.data?.code === "UNAUTHORIZED") {
+          msg = tCheckout("status.please_sign_in");
+        } else {
+          msg =
+            mapBookingErrorMessage(err.message, tBookings) ??
+            tBookings("errors.generic");
+        }
       }
       toast.error(msg);
     }

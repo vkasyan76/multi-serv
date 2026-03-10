@@ -41,6 +41,12 @@
     "status": "{label} - {date}"
   },
   "errors": {
-    "generic": "Rezervarea a eșuat. Încercați din nou."
+    "generic": "Rezervarea a eșuat. Încercați din nou.",
+    "slot_not_found": "Acest interval nu mai este disponibil.",
+    "slot_not_reserved": "Unele intervale selectate nu mai sunt rezervate.",
+    "slot_already_taken": "Acest interval nu mai este disponibil.",
+    "slots_changed": "Unele intervale selectate s-au schimbat. Te rugăm să încerci din nou.",
+    "provider_not_ready": "Acest prestator nu este încă pregătit să accepte rezervări.",
+    "profile_incomplete": "Te rugăm să îți completezi profilul înainte de rezervare."
   }
 }

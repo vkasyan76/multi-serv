@@ -41,6 +41,12 @@
     "status": "{label} - {date}"
   },
   "errors": {
-    "generic": "Buchung fehlgeschlagen. Bitte versuchen Sie es erneut."
+    "generic": "Buchung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "slot_not_found": "Dieses Zeitfenster ist nicht mehr verfügbar.",
+    "slot_not_reserved": "Einige ausgewählte Zeitfenster sind nicht mehr reserviert.",
+    "slot_already_taken": "Dieses Zeitfenster ist nicht mehr verfügbar.",
+    "slots_changed": "Einige ausgewählte Zeitfenster haben sich geändert. Bitte versuchen Sie es erneut.",
+    "provider_not_ready": "Dieser Anbieter ist noch nicht bereit, Buchungen anzunehmen.",
+    "profile_incomplete": "Bitte vervollständigen Sie Ihr Profil vor der Buchung."
   }
 }

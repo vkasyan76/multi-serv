@@ -41,6 +41,12 @@
     "status": "{label} - {date}"
   },
   "errors": {
-    "generic": "A reserva falhou. Tente novamente."
+    "generic": "A reserva falhou. Tente novamente.",
+    "slot_not_found": "Este horário já não está disponível.",
+    "slot_not_reserved": "Alguns horários selecionados já não estão reservados.",
+    "slot_already_taken": "Este horário já não está disponível.",
+    "slots_changed": "Alguns horários selecionados foram alterados. Tente novamente.",
+    "provider_not_ready": "Este prestador ainda não está pronto para aceitar reservas.",
+    "profile_incomplete": "Conclua o seu perfil antes de reservar."
   }
 }

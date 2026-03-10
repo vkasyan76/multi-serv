@@ -41,6 +41,12 @@
     "status": "{label} - {date}"
   },
   "errors": {
-    "generic": "La réservation a échoué. Veuillez réessayer."
+    "generic": "La réservation a échoué. Veuillez réessayer.",
+    "slot_not_found": "Ce créneau n'est plus disponible.",
+    "slot_not_reserved": "Certains créneaux sélectionnés ne sont plus réservés.",
+    "slot_already_taken": "Ce créneau n'est plus disponible.",
+    "slots_changed": "Certains créneaux sélectionnés ont changé. Veuillez réessayer.",
+    "provider_not_ready": "Ce prestataire n'est pas encore prêt à accepter des réservations.",
+    "profile_incomplete": "Veuillez compléter votre profil avant de réserver."
   }
 }

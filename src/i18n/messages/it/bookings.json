@@ -41,6 +41,12 @@
     "status": "{label} - {date}"
   },
   "errors": {
-    "generic": "Prenotazione non riuscita. Riprova."
+    "generic": "Prenotazione non riuscita. Riprova.",
+    "slot_not_found": "Questa fascia oraria non è più disponibile.",
+    "slot_not_reserved": "Alcune fasce orarie selezionate non sono più riservate.",
+    "slot_already_taken": "Questa fascia oraria non è più disponibile.",
+    "slots_changed": "Alcune fasce orarie selezionate sono cambiate. Riprova.",
+    "provider_not_ready": "Questo fornitore non è ancora pronto ad accettare prenotazioni.",
+    "profile_incomplete": "Completa il tuo profilo prima di prenotare."
   }
 }
