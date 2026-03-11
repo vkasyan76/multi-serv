@@ -5,7 +5,7 @@
     "reviews": "Avis"
   },
   "bio": {
-    "empty": "Aucune description disponible."
+    "empty": "Aucune biographie disponible."
   },
   "services": {
     "competencies": "Mes compétences :",
@@ -27,7 +27,7 @@
     "rating_sr": "Note",
     "new": "Nouveau",
     "unavailable": "Indisponible",
-    "log_in_for_distance": "Connectez-vous pour la distance",
+    "log_in_for_distance": "Connectez-vous pour voir la distance",
     "on_site": "Sur place",
     "on_line": "En ligne",
     "order_one": "commande",
@@ -39,5 +39,43 @@
     "contact": "Contacter",
     "aria_book_service": "Réserver ce service",
     "aria_contact_provider": "Contacter le prestataire"
+  },
+  "reviews": {
+    "load_error": "Nous n'avons pas pu charger les avis pour le moment. Veuillez réessayer plus tard.",
+    "empty": "Aucun avis pour le moment. Dès que des clients laisseront un commentaire, leurs notes s'afficheront ici.",
+    "details_error": "Nous n'avons pas pu charger les détails des avis pour le moment. Veuillez réessayer plus tard.",
+    "out_of_five": "{rating} sur 5",
+    "rating_one": "avis",
+    "rating_other": "avis",
+    "star_label": "{star} étoile",
+    "show_less": "Afficher moins",
+    "show_more": "Afficher plus",
+    "loading": "Chargement...",
+    "load_more": "Charger plus"
+  },
+  "conversation": {
+    "sign_in_to_contact": "Connectez-vous pour contacter ce prestataire.",
+    "start_failed": "Impossible de démarrer la conversation. Veuillez réessayer.",
+    "checking_sign_in": "Vérification de la connexion...",
+    "starting": "Démarrage de la conversation...",
+    "ready": "Conversation prête",
+    "loading": "Chargement de la conversation...",
+    "empty": "Aucun message pour le moment. Commencez une conversation avec <provider>{name}</provider>.",
+    "load_earlier": "Charger les précédents",
+    "loading_messages": "Chargement des messages...",
+    "message_deleted": "Ce message a été supprimé",
+    "deleted": "Supprimé",
+    "edited": "Modifié",
+    "actions": "Actions",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "delete_title": "Supprimer le message ?",
+    "delete_description": "Cela supprimera le message pour les deux participants.",
+    "composer_disabled": "Désactivé...",
+    "composer_placeholder": "Écrire un message...",
+    "send": "Envoyer",
+    "composer_hint": "Appuyez sur Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne."
   }
 }

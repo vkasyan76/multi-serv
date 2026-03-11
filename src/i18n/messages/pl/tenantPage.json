@@ -39,5 +39,43 @@
     "contact": "Kontakt",
     "aria_book_service": "Zarezerwuj usługę",
     "aria_contact_provider": "Skontaktuj się z usługodawcą"
+  },
+  "reviews": {
+    "load_error": "Nie udało się teraz załadować opinii. Spróbuj ponownie później.",
+    "empty": "Nie ma jeszcze opinii. Gdy klienci zaczną zostawiać opinie, ich oceny pojawią się tutaj.",
+    "details_error": "Nie udało się teraz załadować szczegółów opinii. Spróbuj ponownie później.",
+    "out_of_five": "{rating} z 5",
+    "rating_one": "opinia",
+    "rating_other": "opinie",
+    "star_label": "{star} gwiazdka",
+    "show_less": "Pokaż mniej",
+    "show_more": "Pokaż więcej",
+    "loading": "Ładowanie...",
+    "load_more": "Załaduj więcej"
+  },
+  "conversation": {
+    "sign_in_to_contact": "Zaloguj się, aby skontaktować się z tym usługodawcą.",
+    "start_failed": "Nie udało się rozpocząć rozmowy. Spróbuj ponownie.",
+    "checking_sign_in": "Sprawdzanie logowania...",
+    "starting": "Rozpoczynanie rozmowy...",
+    "ready": "Rozmowa gotowa",
+    "loading": "Ładowanie rozmowy...",
+    "empty": "Brak wiadomości. Rozpocznij rozmowę z <provider>{name}</provider>.",
+    "load_earlier": "Załaduj wcześniejsze",
+    "loading_messages": "Ładowanie wiadomości...",
+    "message_deleted": "Ta wiadomość została usunięta",
+    "deleted": "Usunięto",
+    "edited": "Edytowano",
+    "actions": "Akcje",
+    "edit": "Edytuj",
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "delete_title": "Usunąć wiadomość?",
+    "delete_description": "To usunie wiadomość dla obu uczestników.",
+    "composer_disabled": "Wyłączone...",
+    "composer_placeholder": "Napisz wiadomość...",
+    "send": "Wyślij",
+    "composer_hint": "Naciśnij Enter, aby wysłać, Shift+Enter, aby przejść do nowej linii."
   }
 }

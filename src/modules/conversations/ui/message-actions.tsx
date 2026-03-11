@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,8 @@ export function MessageActions({
   onEditAction,
   onDeleteAction,
 }: MessageActionsProps) {
+  const tTenantPage = useTranslations("tenantPage");
+
   return (
     <TooltipProvider>
       <DropdownMenu open={open} onOpenChange={onOpenChangeAction}>
@@ -35,7 +38,7 @@ export function MessageActions({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label="Actions"
+                aria-label={tTenantPage("conversation.actions")}
                 onClick={(e) => e.stopPropagation()}
                 className={[
                   // OUTSIDE bubble, vertically centered relative to the bubble itself
@@ -62,17 +65,17 @@ export function MessageActions({
               </button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent>Actions</TooltipContent>
+          <TooltipContent>{tTenantPage("conversation.actions")}</TooltipContent>
         </Tooltip>
 
         <DropdownMenuContent align="end" side="top">
           <DropdownMenuItem onSelect={onEditAction}>
             <Pencil className="mr-2 h-4 w-4" />
-            Edit
+            {tTenantPage("conversation.edit")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={onDeleteAction}>
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            {tTenantPage("conversation.delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

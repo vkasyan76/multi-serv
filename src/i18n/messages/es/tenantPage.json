@@ -39,5 +39,43 @@
     "contact": "Contactar",
     "aria_book_service": "Reservar servicio",
     "aria_contact_provider": "Contactar con el proveedor"
+  },
+  "reviews": {
+    "load_error": "No hemos podido cargar las reseñas ahora mismo. Inténtalo de nuevo más tarde.",
+    "empty": "Todavía no hay reseñas. Cuando los clientes empiecen a dejar opiniones, sus valoraciones aparecerán aquí.",
+    "details_error": "No hemos podido cargar los detalles de las reseñas ahora mismo. Inténtalo de nuevo más tarde.",
+    "out_of_five": "{rating} de 5",
+    "rating_one": "reseña",
+    "rating_other": "reseñas",
+    "star_label": "{star} estrella",
+    "show_less": "Mostrar menos",
+    "show_more": "Mostrar más",
+    "loading": "Cargando...",
+    "load_more": "Cargar más"
+  },
+  "conversation": {
+    "sign_in_to_contact": "Inicia sesión para contactar con este proveedor.",
+    "start_failed": "No se pudo iniciar la conversación. Inténtalo de nuevo.",
+    "checking_sign_in": "Comprobando sesión...",
+    "starting": "Iniciando conversación...",
+    "ready": "Conversación lista",
+    "loading": "Cargando conversación...",
+    "empty": "Todavía no hay mensajes. Inicia una conversación con <provider>{name}</provider>.",
+    "load_earlier": "Cargar anteriores",
+    "loading_messages": "Cargando mensajes...",
+    "message_deleted": "Este mensaje fue eliminado",
+    "deleted": "Eliminado",
+    "edited": "Editado",
+    "actions": "Acciones",
+    "edit": "Editar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "delete_title": "¿Eliminar mensaje?",
+    "delete_description": "Esto eliminará el mensaje para ambos participantes.",
+    "composer_disabled": "Deshabilitado...",
+    "composer_placeholder": "Escribe un mensaje...",
+    "send": "Enviar",
+    "composer_hint": "Pulsa Enter para enviar y Shift+Enter para una nueva línea."
   }
 }

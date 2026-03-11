@@ -39,5 +39,43 @@
     "contact": "Contact",
     "aria_book_service": "Book service",
     "aria_contact_provider": "Contact provider"
+  },
+  "reviews": {
+    "load_error": "We couldn't load reviews right now. Please try again later.",
+    "empty": "No reviews yet. Once customers start leaving feedback, their ratings will be displayed here.",
+    "details_error": "We couldn't load review details right now. Please try again later.",
+    "out_of_five": "{rating} out of 5",
+    "rating_one": "rating",
+    "rating_other": "ratings",
+    "star_label": "{star} star",
+    "show_less": "Show less",
+    "show_more": "Show more",
+    "loading": "Loading...",
+    "load_more": "Load more"
+  },
+  "conversation": {
+    "sign_in_to_contact": "Sign in to contact this provider.",
+    "start_failed": "Couldn't start the conversation. Please try again.",
+    "checking_sign_in": "Checking sign-in...",
+    "starting": "Starting conversation...",
+    "ready": "Conversation ready",
+    "loading": "Loading conversation...",
+    "empty": "No messages yet. Start a conversation with <provider>{name}</provider>.",
+    "load_earlier": "Load earlier",
+    "loading_messages": "Loading messages...",
+    "message_deleted": "This message was deleted",
+    "deleted": "Deleted",
+    "edited": "Edited",
+    "actions": "Actions",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "delete_title": "Delete message?",
+    "delete_description": "This will remove the message for both participants.",
+    "composer_disabled": "Disabled...",
+    "composer_placeholder": "Write a message...",
+    "send": "Send",
+    "composer_hint": "Press Enter to send, Shift+Enter for a new line."
   }
 }

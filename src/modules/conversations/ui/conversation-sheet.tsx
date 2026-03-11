@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
@@ -29,9 +30,9 @@ type ConversationSheetProps = {
   tenantAvatarUrl?: string | null;
   myAvatarUrl?: string | null;
   disabled?: boolean;
-  authState?: boolean | null; // check if user is signed in via payload backend
-  viewerKey?: string | null; // NEW: resets sheet when auth user changes
-  onBridgeResync?: () => Promise<boolean>; //  one-shot “bridge handshake then retry” hook
+  authState?: boolean | null;
+  viewerKey?: string | null;
+  onBridgeResync?: () => Promise<boolean>;
   appLang?: AppLang;
 };
 
@@ -49,13 +50,11 @@ export function ConversationSheet({
   appLang,
 }: ConversationSheetProps) {
   const trpc = useTRPC();
+  const tTenantPage = useTranslations("tenantPage");
 
   const [conversationId, setConversationId] = useState<string | null>(null);
-
-  // prevent double upsert while open
   const startedRef = useRef(false);
-
-  const didResyncRef = useRef(false); // one retry after bridge resync (no hard reload)
+  const didResyncRef = useRef(false);
 
   const upsert = useMutation({
     ...trpc.conversations.upsertForTenant.mutationOptions(),
@@ -66,7 +65,6 @@ export function ConversationSheet({
       const code = (err as { data?: { code?: string } })?.data?.code;
 
       if (code === "UNAUTHORIZED") {
-        // If we EXPECT the user to be authed, do a one-time resync and retry.
         if (
           authState === true &&
           viewerKey &&
@@ -77,36 +75,31 @@ export function ConversationSheet({
 
           const ok = await onBridgeResync();
           if (ok) {
-            // retry once (no reload)
             upsert.mutate({ tenantSlug });
             return;
           }
         }
 
-        toast.error("Sign in to contact this provider.");
+        toast.error(tTenantPage("conversation.sign_in_to_contact"));
         onOpenChangeAction(false);
         return;
       }
 
-      toast.error("Couldn't start the conversation. Please try again.");
+      toast.error(tTenantPage("conversation.start_failed"));
     },
   });
 
-  // Reset when tenant changes: reset on tenant OR viewer change: don’t keep a previous user’s conversationId / mutation state when the auth user changes.
   const { reset } = upsert;
 
   useEffect(() => {
     setConversationId(null);
     startedRef.current = false;
-    didResyncRef.current = false; // allow one retry again on tenant/user change
+    didResyncRef.current = false;
     reset();
   }, [tenantSlug, viewerKey, reset]);
 
-  // Upsert when sheet opens
-  // Do not render ConversationThread until you have a conversationId (and are authed).
   const canStart = authState === true && !disabled;
 
-  // Upsert when sheet opens (only when authed)
   useEffect(() => {
     if (!open) return;
     if (!canStart) return;
@@ -141,13 +134,13 @@ export function ConversationSheet({
               </SheetTitle>
               <p className="text-xs text-muted-foreground truncate">
                 {authState === null
-                  ? "Checking sign-in…"
+                  ? tTenantPage("conversation.checking_sign_in")
                   : authState === false
-                    ? "Sign in to contact this provider."
+                    ? tTenantPage("conversation.sign_in_to_contact")
                     : upsert.isPending
-                      ? "Starting conversation…"
+                      ? tTenantPage("conversation.starting")
                       : conversationId
-                        ? "Conversation ready"
+                        ? tTenantPage("conversation.ready")
                         : " "}
               </p>
             </div>
@@ -161,20 +154,20 @@ export function ConversationSheet({
         <div className="flex-1 min-h-0">
           {authState === false ? (
             <div className="h-full grid place-items-center text-sm text-muted-foreground">
-              Sign in to contact this provider.
+              {tTenantPage("conversation.sign_in_to_contact")}
             </div>
           ) : authState === null ? (
             <div className="h-full grid place-items-center text-sm text-muted-foreground">
-              Checking sign-in…
+              {tTenantPage("conversation.checking_sign_in")}
             </div>
           ) : upsert.isError ? (
             <div className="h-full grid place-items-center text-sm text-muted-foreground">
-              Sign in to contact this provider.
+              {tTenantPage("conversation.start_failed")}
             </div>
           ) : upsert.isPending || !conversationId ? (
             <div className="h-full grid place-items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Loading conversation…
+              {tTenantPage("conversation.loading")}
             </div>
           ) : (
             <ConversationThread
@@ -185,12 +178,12 @@ export function ConversationSheet({
               otherAvatarUrl={tenantAvatarUrl ?? null}
               myAvatarUrl={myAvatarUrl ?? null}
               disabled={!!disabled}
-              emptyStateText={
-                <>
-                  No messages yet. Start a conversation with{" "}
-                  <span className="font-medium">{tenantSlug}</span>.
-                </>
-              }
+              emptyStateText={tTenantPage.rich("conversation.empty", {
+                provider: (chunks) => (
+                  <span className="font-medium">{chunks}</span>
+                ),
+                name: tenantSlug,
+              })}
             />
           )}
         </div>

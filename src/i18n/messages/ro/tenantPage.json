@@ -5,7 +5,7 @@
     "reviews": "Recenzii"
   },
   "bio": {
-    "empty": "Nu există nicio descriere."
+    "empty": "Nicio descriere disponibilă."
   },
   "services": {
     "competencies": "Competențele mele:",
@@ -27,7 +27,7 @@
     "rating_sr": "Evaluare",
     "new": "Nou",
     "unavailable": "Indisponibil",
-    "log_in_for_distance": "Autentifică-te pentru distanță",
+    "log_in_for_distance": "Autentificați-vă pentru a vedea distanța",
     "on_site": "La locație",
     "on_line": "Online",
     "order_one": "comandă",
@@ -39,5 +39,43 @@
     "contact": "Contactează",
     "aria_book_service": "Rezervă serviciul",
     "aria_contact_provider": "Contactează prestatorul"
+  },
+  "reviews": {
+    "load_error": "Nu am putut încărca recenziile acum. Te rugăm să încerci din nou mai târziu.",
+    "empty": "Nu există încă recenzii. Când clienții vor începe să lase feedback, evaluările lor vor fi afișate aici.",
+    "details_error": "Nu am putut încărca detaliile recenziilor acum. Te rugăm să încerci din nou mai târziu.",
+    "out_of_five": "{rating} din 5",
+    "rating_one": "recenzie",
+    "rating_other": "recenzii",
+    "star_label": "{star} stea",
+    "show_less": "Arată mai puțin",
+    "show_more": "Arată mai mult",
+    "loading": "Se încarcă...",
+    "load_more": "Încarcă mai mult"
+  },
+  "conversation": {
+    "sign_in_to_contact": "Autentificați-vă pentru a contacta acest prestator.",
+    "start_failed": "Nu s-a putut porni conversația. Te rugăm să încerci din nou.",
+    "checking_sign_in": "Se verifică autentificarea...",
+    "starting": "Se pornește conversația...",
+    "ready": "Conversația este pregătită",
+    "loading": "Se încarcă conversația...",
+    "empty": "Nu există mesaje încă. Începe o conversație cu <provider>{name}</provider>.",
+    "load_earlier": "Încarcă mesaje mai vechi",
+    "loading_messages": "Se încarcă mesajele...",
+    "message_deleted": "Acest mesaj a fost șters",
+    "deleted": "Șters",
+    "edited": "Editat",
+    "actions": "Acțiuni",
+    "edit": "Editează",
+    "save": "Salvează",
+    "cancel": "Anulează",
+    "delete": "Șterge",
+    "delete_title": "Ștergeți mesajul?",
+    "delete_description": "Acest lucru va elimina mesajul pentru ambii participanți.",
+    "composer_disabled": "Dezactivat...",
+    "composer_placeholder": "Scrie un mesaj...",
+    "send": "Trimite",
+    "composer_hint": "Apasă Enter pentru a trimite, Shift+Enter pentru un rând nou."
   }
 }
