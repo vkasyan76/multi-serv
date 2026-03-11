@@ -1,0 +1,59 @@
+{
+  "tabs": {
+    "general": "Param\u00e8tres g\u00e9n\u00e9raux",
+    "provider": "Prestataire de services",
+    "payments": "Paiements"
+  },
+  "header": {
+    "home": "Accueil",
+    "logo_alt": "Logo Infinisimo"
+  },
+  "general": {
+    "title": "Param\u00e8tres du profil",
+    "labels": {
+      "first_name": "Pr\u00e9nom",
+      "last_name": "Nom",
+      "username": "Nom d'utilisateur",
+      "email": "Adresse e-mail",
+      "address": "Adresse",
+      "country": "Pays",
+      "language": "Langue"
+    },
+    "placeholders": {
+      "first_name": "Entrez votre pr\u00e9nom",
+      "last_name": "Entrez votre nom",
+      "username": "Entrez votre nom d'utilisateur",
+      "address_search": "Recherchez votre adresse...",
+      "language": "S\u00e9lectionnez une langue"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* ne peut pas \u00eatre modifi\u00e9 une fois l'onboarding termin\u00e9",
+      "profile_updated": "Profil mis \u00e0 jour avec succ\u00e8s !",
+      "form_invalid": "Veuillez corriger les erreurs du formulaire."
+    },
+    "actions": {
+      "save": "Enregistrer le profil",
+      "update": "Mettre \u00e0 jour le profil",
+      "saving": "Enregistrement...",
+      "updating": "Mise \u00e0 jour..."
+    },
+    "errors": {
+      "save_failed": "Impossible de mettre \u00e0 jour le profil. Veuillez r\u00e9essayer.",
+      "full_street_address_required": "Veuillez choisir une adresse compl\u00e8te incluant un num\u00e9ro de rue.",
+      "location_details_failed": "Impossible de r\u00e9cup\u00e9rer les d\u00e9tails de localisation. Veuillez r\u00e9essayer.",
+      "select_address_from_suggestions": "Veuillez s\u00e9lectionner une adresse dans les suggestions.",
+      "house_number_required": "L'adresse doit inclure un num\u00e9ro de rue."
+    },
+    "validation": {
+      "first_name_required": "Le pr\u00e9nom est obligatoire",
+      "last_name_required": "Le nom est obligatoire",
+      "invalid_email": "Adresse e-mail invalide",
+      "username_min": "Le nom d'utilisateur doit comporter au moins 3 caract\u00e8res",
+      "username_max": "Le nom d'utilisateur doit comporter moins de 63 caract\u00e8res",
+      "username_format": "Le nom d'utilisateur ne peut contenir que des lettres, chiffres, points, tirets bas et traits d'union. Il doit commencer et se terminer par une lettre ou un chiffre",
+      "username_consecutive_separators": "Le nom d'utilisateur ne peut pas contenir de s\u00e9parateurs cons\u00e9cutifs (., _, -)",
+      "select_location": "Veuillez s\u00e9lectionner un emplacement",
+      "country_required": "Le pays est obligatoire"
+    }
+  }
+}

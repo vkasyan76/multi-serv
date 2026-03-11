@@ -1,0 +1,59 @@
+{
+  "tabs": {
+    "general": "Set\u0103ri generale",
+    "provider": "Prestator de servicii",
+    "payments": "Pl\u0103\u021bi"
+  },
+  "header": {
+    "home": "Acas\u0103",
+    "logo_alt": "Sigla Infinisimo"
+  },
+  "general": {
+    "title": "Set\u0103rile profilului",
+    "labels": {
+      "first_name": "Prenume",
+      "last_name": "Nume",
+      "username": "Nume de utilizator",
+      "email": "Adres\u0103 de e-mail",
+      "address": "Adres\u0103",
+      "country": "\u021aar\u0103",
+      "language": "Limb\u0103"
+    },
+    "placeholders": {
+      "first_name": "Introdu prenumele t\u0103u",
+      "last_name": "Introdu numele t\u0103u",
+      "username": "Introdu numele t\u0103u de utilizator",
+      "address_search": "Caut\u0103 adresa ta...",
+      "language": "Selecteaz\u0103 limba"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* nu poate fi modificat dup\u0103 finalizarea onboardingului",
+      "profile_updated": "Profil actualizat cu succes!",
+      "form_invalid": "Corecteaz\u0103 erorile din formular."
+    },
+    "actions": {
+      "save": "Salveaz\u0103 profilul",
+      "update": "Actualizeaz\u0103 profilul",
+      "saving": "Se salveaz\u0103...",
+      "updating": "Se actualizeaz\u0103..."
+    },
+    "errors": {
+      "save_failed": "Profilul nu a putut fi actualizat. \u00cencearc\u0103 din nou.",
+      "full_street_address_required": "Selecteaz\u0103 o adres\u0103 complet\u0103 care include num\u0103rul cl\u0103dirii.",
+      "location_details_failed": "Nu s-au putut ob\u021bine detaliile loca\u021biei. \u00cencearc\u0103 din nou.",
+      "select_address_from_suggestions": "Selecteaz\u0103 o adres\u0103 din sugestii.",
+      "house_number_required": "Adresa trebuie s\u0103 includ\u0103 un num\u0103r al cl\u0103dirii."
+    },
+    "validation": {
+      "first_name_required": "Prenumele este obligatoriu",
+      "last_name_required": "Numele este obligatoriu",
+      "invalid_email": "Adres\u0103 de e-mail invalid\u0103",
+      "username_min": "Numele de utilizator trebuie s\u0103 aib\u0103 cel pu\u021bin 3 caractere",
+      "username_max": "Numele de utilizator trebuie s\u0103 aib\u0103 mai pu\u021bin de 63 de caractere",
+      "username_format": "Numele de utilizator poate con\u021bine doar litere, cifre, puncte, underscore \u0219i cratime. Trebuie s\u0103 \u00eenceap\u0103 \u0219i s\u0103 se termine cu o liter\u0103 sau o cifr\u0103",
+      "username_consecutive_separators": "Numele de utilizator nu poate con\u021bine separatori consecutivi (., _, -)",
+      "select_location": "Selecteaz\u0103 o loca\u021bie",
+      "country_required": "\u021aara este obligatorie"
+    }
+  }
+}

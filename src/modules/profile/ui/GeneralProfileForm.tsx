@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useForm, useFormState, useWatch } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { profileSchema } from "@/modules/profile/schemas";
 import * as z from "zod";
@@ -39,7 +40,6 @@ import type {
 
 import { toast } from "sonner";
 import { FieldErrors } from "react-hook-form";
-import { PROFILE_FIELD_LABELS } from "@/modules/profile/schemas";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
@@ -51,6 +51,7 @@ interface GeneralProfileFormProps {
 }
 
 export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
+  const tProfile = useTranslations("profile");
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -62,7 +63,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const updateUserProfile = useMutation(
     trpc.auth.updateUserProfile.mutationOptions({
       onSuccess: async () => {
-        toast.success("Profile updated successfully!");
+        toast.success(tProfile("general.messages.profile_updated"));
         await queryClient.invalidateQueries({
           queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
         });
@@ -73,9 +74,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       onError: (error) => {
         setAllowProfileResync(false);
         console.error("Error updating profile:", error);
-        toast.error(
-          error.message || "Failed to update profile. Please try again."
-        );
+        toast.error(tProfile("general.errors.save_failed"));
       },
     })
   );
@@ -144,6 +143,45 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
     userProfile?.coordinates?.countryISO,
     watchedCountry,
   ]);
+
+  const fieldLabels = useMemo(
+    () => ({
+      firstName: tProfile("general.labels.first_name"),
+      lastName: tProfile("general.labels.last_name"),
+      username: tProfile("general.labels.username"),
+      email: tProfile("general.labels.email"),
+      location: tProfile("general.labels.address"),
+      country: tProfile("general.labels.country"),
+      language: tProfile("general.labels.language"),
+    }),
+    [tProfile]
+  );
+
+  const mapValidationMessage = (message: string | undefined) => {
+    // Keep this mapper aligned with the exact profileSchema messages in schemas.ts.
+    switch (message) {
+      case "First name is required":
+        return tProfile("general.validation.first_name_required");
+      case "Last name is required":
+        return tProfile("general.validation.last_name_required");
+      case "Invalid email address":
+        return tProfile("general.validation.invalid_email");
+      case "Username must be at least 3 characters":
+        return tProfile("general.validation.username_min");
+      case "Username must be less than 63 characters":
+        return tProfile("general.validation.username_max");
+      case "Username can only contain letters, numbers, dots, underscores and hyphens. It must start and end with a letter or number":
+        return tProfile("general.validation.username_format");
+      case "Username cannot contain consecutive separators (., _, -)":
+        return tProfile("general.validation.username_consecutive_separators");
+      case "Please select a location":
+        return tProfile("general.validation.select_location");
+      case "Country required":
+        return tProfile("general.validation.country_required");
+      default:
+        return tProfile("general.messages.form_invalid");
+    }
+  };
 
   // Add session token management
   useEffect(() => {
@@ -275,9 +313,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       // Check if the street number is included:
 
       if (!(addressComponents.streetNumber ?? "").trim()) {
-        toast.error(
-          "Please choose a full street address that includes a house number."
-        );
+        toast.error(tProfile("general.errors.full_street_address_required"));
         return;
       }
 
@@ -306,7 +342,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       });
     } catch (error) {
       console.error("Error fetching place details:", error);
-      toast.error("Failed to get location details. Please try again.");
+      toast.error(tProfile("general.errors.location_details_failed"));
     }
   };
 
@@ -316,9 +352,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       if (!selectedLocation) {
         form.setError("location", {
           type: "manual",
-          message: "Please select an address from the suggestions.",
+          message: tProfile("general.errors.select_address_from_suggestions"),
         });
-        toast.error("Please select an address from the suggestions.");
+        toast.error(tProfile("general.errors.select_address_from_suggestions"));
         return;
       }
 
@@ -327,9 +363,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       if (!streetNumber) {
         form.setError("location", {
           type: "manual",
-          message: "Address must include a house number.",
+          message: tProfile("general.errors.house_number_required"),
         });
-        toast.error("Address must include a house number.");
+        toast.error(tProfile("general.errors.house_number_required"));
         return;
       }
     }
@@ -382,19 +418,19 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const onError = (errors: FieldErrors<z.infer<typeof profileSchema>>) => {
     const messages = Object.entries(errors)
       .map(([field, err]) => {
-        const label =
-          PROFILE_FIELD_LABELS[field as keyof typeof PROFILE_FIELD_LABELS] ||
-          field;
+        const label = fieldLabels[field as keyof typeof fieldLabels] || field;
         if (Array.isArray(err)) {
-          return err.map((e) => `${label}: ${e?.message}`).join("\n");
+          return err
+            .map((e) => `${label}: ${mapValidationMessage(e?.message)}`)
+            .join("\n");
         }
-        return `${label}: ${err?.message}`;
+        return `${label}: ${mapValidationMessage(err?.message)}`;
       })
       .filter(Boolean)
       .join("\n");
     toast.error(
       <span style={{ whiteSpace: "pre-line" }}>
-        {messages || "Please fix the errors in the form."}
+        {messages || tProfile("general.messages.form_invalid")}
       </span>
     );
   };
@@ -412,7 +448,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         autoComplete="off"
         // Remove the key prop that was causing form re-renders
       >
-        <SettingsHeader title="Profile settings" />
+        <SettingsHeader title={tProfile("general.title")} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left column: identity */}
@@ -422,12 +458,12 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>First name</FormLabel>
+                  <FormLabel>{tProfile("general.labels.first_name")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       autoComplete="given-name"
-                      placeholder="Enter your first name"
+                      placeholder={tProfile("general.placeholders.first_name")}
                     />
                   </FormControl>
                 </FormItem>
@@ -439,12 +475,12 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Last name</FormLabel>
+                  <FormLabel>{tProfile("general.labels.last_name")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       autoComplete="family-name"
-                      placeholder="Enter your last name"
+                      placeholder={tProfile("general.placeholders.last_name")}
                     />
                   </FormControl>
                 </FormItem>
@@ -456,12 +492,12 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>{tProfile("general.labels.username")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       autoComplete="off"
-                      placeholder="Enter your username"
+                      placeholder={tProfile("general.placeholders.username")}
                       value={field.value}
                       disabled={usernameLocked}
                       className={
@@ -473,7 +509,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                   </FormControl>
                   {!usernameLocked && (
                     <span className="block text-xs text-gray-500 mt-1">
-                      * cannot be changed after onboarding is completed
+                      {tProfile(
+                        "general.messages.field_locked_after_onboarding"
+                      )}
                     </span>
                   )}
                 </FormItem>
@@ -485,7 +523,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email address</FormLabel>
+                  <FormLabel>{tProfile("general.labels.email")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -508,7 +546,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address</FormLabel>
+                  <FormLabel>{tProfile("general.labels.address")}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -526,7 +564,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                           }
                         }}
                         autoComplete="off"
-                        placeholder="Search for your address…"
+                        placeholder={tProfile("general.placeholders.address_search")}
                       />
                       {predictions.length > 0 &&
                         locationInput !==
@@ -554,7 +592,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Country</FormLabel>
+                  <FormLabel>{tProfile("general.labels.country")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -574,7 +612,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               render={({ field }) => {
                 return (
                   <FormItem>
-                    <FormLabel>Language</FormLabel>
+                    <FormLabel>{tProfile("general.labels.language")}</FormLabel>
                     <FormControl>
                       <Select
                         value={effectiveAppLang}
@@ -588,7 +626,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                         }
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select language" />
+                          <SelectValue
+                            placeholder={tProfile("general.placeholders.language")}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {SUPPORTED_LANGUAGES.map(({ code, label }) => (
@@ -610,17 +650,19 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
           type="submit"
           size="lg"
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
-          disabled={updateUserProfile.isPending || form.formState.isSubmitting} // ✅ block during mutation too
+          disabled={updateUserProfile.isPending || form.formState.isSubmitting}
         >
           {updateUserProfile.isPending || form.formState.isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isProfileCompleted ? "Updating..." : "Saving..."}
+              {isProfileCompleted
+                ? tProfile("general.actions.updating")
+                : tProfile("general.actions.saving")}
             </>
           ) : isProfileCompleted ? (
-            "Update Profile"
+            tProfile("general.actions.update")
           ) : (
-            "Save Profile"
+            tProfile("general.actions.save")
           )}
         </Button>
       </form>

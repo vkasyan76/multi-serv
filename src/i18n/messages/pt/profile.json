@@ -1,0 +1,59 @@
+{
+  "tabs": {
+    "general": "Defini\u00e7\u00f5es gerais",
+    "provider": "Prestador de servi\u00e7os",
+    "payments": "Pagamentos"
+  },
+  "header": {
+    "home": "In\u00edcio",
+    "logo_alt": "Log\u00f3tipo da Infinisimo"
+  },
+  "general": {
+    "title": "Defini\u00e7\u00f5es do perfil",
+    "labels": {
+      "first_name": "Nome",
+      "last_name": "Apelido",
+      "username": "Nome de utilizador",
+      "email": "Endere\u00e7o de e-mail",
+      "address": "Morada",
+      "country": "Pa\u00eds",
+      "language": "Idioma"
+    },
+    "placeholders": {
+      "first_name": "Introduza o seu nome",
+      "last_name": "Introduza o seu apelido",
+      "username": "Introduza o seu nome de utilizador",
+      "address_search": "Procure a sua morada...",
+      "language": "Selecione um idioma"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* n\u00e3o pode ser alterado ap\u00f3s a conclus\u00e3o do onboarding",
+      "profile_updated": "Perfil atualizado com sucesso!",
+      "form_invalid": "Corrija os erros no formul\u00e1rio."
+    },
+    "actions": {
+      "save": "Guardar perfil",
+      "update": "Atualizar perfil",
+      "saving": "A guardar...",
+      "updating": "A atualizar..."
+    },
+    "errors": {
+      "save_failed": "N\u00e3o foi poss\u00edvel atualizar o perfil. Tente novamente.",
+      "full_street_address_required": "Selecione uma morada completa que inclua n\u00famero de porta.",
+      "location_details_failed": "N\u00e3o foi poss\u00edvel obter os detalhes da localiza\u00e7\u00e3o. Tente novamente.",
+      "select_address_from_suggestions": "Selecione uma morada a partir das sugest\u00f5es.",
+      "house_number_required": "A morada deve incluir um n\u00famero de porta."
+    },
+    "validation": {
+      "first_name_required": "O nome \u00e9 obrigat\u00f3rio",
+      "last_name_required": "O apelido \u00e9 obrigat\u00f3rio",
+      "invalid_email": "Endere\u00e7o de e-mail inv\u00e1lido",
+      "username_min": "O nome de utilizador deve ter pelo menos 3 caracteres",
+      "username_max": "O nome de utilizador deve ter menos de 63 caracteres",
+      "username_format": "O nome de utilizador s\u00f3 pode conter letras, n\u00fameros, pontos, sublinhados e h\u00edfens. Deve come\u00e7ar e terminar com uma letra ou um n\u00famero",
+      "username_consecutive_separators": "O nome de utilizador n\u00e3o pode conter separadores consecutivos (., _, -)",
+      "select_location": "Selecione uma localiza\u00e7\u00e3o",
+      "country_required": "O pa\u00eds \u00e9 obrigat\u00f3rio"
+    }
+  }
+}

@@ -59,6 +59,18 @@ const TENANT_PAGE_LOADERS: Partial<Record<AppLang, Loader>> = {
   uk: async () => (await import("./messages/uk/tenantPage.json")).default,
 };
 
+const PROFILE_LOADERS: Partial<Record<AppLang, Loader>> = {
+  en: async () => (await import("./messages/en/profile.json")).default,
+  de: async () => (await import("./messages/de/profile.json")).default,
+  fr: async () => (await import("./messages/fr/profile.json")).default,
+  it: async () => (await import("./messages/it/profile.json")).default,
+  es: async () => (await import("./messages/es/profile.json")).default,
+  pt: async () => (await import("./messages/pt/profile.json")).default,
+  pl: async () => (await import("./messages/pl/profile.json")).default,
+  ro: async () => (await import("./messages/ro/profile.json")).default,
+  uk: async () => (await import("./messages/uk/profile.json")).default,
+};
+
 function isPlainObject(value: unknown): value is MessageTree {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -115,6 +127,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       bookings: await loadNamespace(appLang, BOOKINGS_LOADERS),
       checkout: await loadNamespace(appLang, CHECKOUT_LOADERS),
       tenantPage: await loadNamespace(appLang, TENANT_PAGE_LOADERS),
+      profile: await loadNamespace(appLang, PROFILE_LOADERS),
     },
   };
 });

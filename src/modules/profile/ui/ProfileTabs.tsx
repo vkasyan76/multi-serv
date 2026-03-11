@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { GeneralProfileForm } from "./GeneralProfileForm";
@@ -15,6 +16,7 @@ type TabKey = "general" | "vendor" | "payouts";
 
 // Main Tabs Component
 export function ProfileTabs() {
+  const tProfile = useTranslations("profile");
   const searchParams = useSearchParams();
   const router = useRouter();
   const trpc = useTRPC();
@@ -146,14 +148,14 @@ export function ProfileTabs() {
             value="general"
             className="px-3 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm rounded-xl min-w-[6.5rem] data-[state=active]:bg-white data-[state=active]:shadow-lg"
           >
-            General Settings
+            {tProfile("tabs.general")}
           </TabsTrigger>
 
           <TabsTrigger
             value="vendor"
             className="px-3 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm rounded-xl min-w-[6.5rem] data-[state=active]:bg-white data-[state=active]:shadow-lg"
           >
-            Service Provider
+            {tProfile("tabs.provider")}
           </TabsTrigger>
 
           {isProvider && (
@@ -161,7 +163,7 @@ export function ProfileTabs() {
               value="payouts"
               className="px-3 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm rounded-xl min-w-[6.5rem] data-[state=active]:bg-white data-[state=active]:shadow-lg"
             >
-              Payments
+              {tProfile("tabs.payments")}
             </TabsTrigger>
           )}
         </TabsList>

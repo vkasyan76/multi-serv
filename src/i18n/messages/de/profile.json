@@ -1,0 +1,59 @@
+{
+  "tabs": {
+    "general": "Allgemeine Einstellungen",
+    "provider": "Dienstleister",
+    "payments": "Zahlungen"
+  },
+  "header": {
+    "home": "Startseite",
+    "logo_alt": "Infinisimo-Logo"
+  },
+  "general": {
+    "title": "Profileinstellungen",
+    "labels": {
+      "first_name": "Vorname",
+      "last_name": "Nachname",
+      "username": "Benutzername",
+      "email": "E-Mail-Adresse",
+      "address": "Adresse",
+      "country": "Land",
+      "language": "Sprache"
+    },
+    "placeholders": {
+      "first_name": "Geben Sie Ihren Vornamen ein",
+      "last_name": "Geben Sie Ihren Nachnamen ein",
+      "username": "Geben Sie Ihren Benutzernamen ein",
+      "address_search": "Suchen Sie nach Ihrer Adresse...",
+      "language": "Sprache ausw\u00e4hlen"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* kann nach Abschluss des Onboardings nicht mehr ge\u00e4ndert werden",
+      "profile_updated": "Profil erfolgreich aktualisiert!",
+      "form_invalid": "Bitte korrigieren Sie die Fehler im Formular."
+    },
+    "actions": {
+      "save": "Profil speichern",
+      "update": "Profil aktualisieren",
+      "saving": "Wird gespeichert...",
+      "updating": "Wird aktualisiert..."
+    },
+    "errors": {
+      "save_failed": "Profil konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+      "full_street_address_required": "Bitte w\u00e4hlen Sie eine vollst\u00e4ndige Stra\u00dfenadresse mit Hausnummer aus.",
+      "location_details_failed": "Standortdetails konnten nicht abgerufen werden. Bitte versuchen Sie es erneut.",
+      "select_address_from_suggestions": "Bitte w\u00e4hlen Sie eine Adresse aus den Vorschl\u00e4gen aus.",
+      "house_number_required": "Die Adresse muss eine Hausnummer enthalten."
+    },
+    "validation": {
+      "first_name_required": "Vorname ist erforderlich",
+      "last_name_required": "Nachname ist erforderlich",
+      "invalid_email": "Ung\u00fcltige E-Mail-Adresse",
+      "username_min": "Der Benutzername muss mindestens 3 Zeichen lang sein",
+      "username_max": "Der Benutzername muss weniger als 63 Zeichen lang sein",
+      "username_format": "Der Benutzername darf nur Buchstaben, Zahlen, Punkte, Unterstriche und Bindestriche enthalten. Er muss mit einem Buchstaben oder einer Zahl beginnen und enden",
+      "username_consecutive_separators": "Der Benutzername darf keine aufeinanderfolgenden Trennzeichen enthalten (., _, -)",
+      "select_location": "Bitte w\u00e4hlen Sie einen Standort aus",
+      "country_required": "Land ist erforderlich"
+    }
+  }
+}

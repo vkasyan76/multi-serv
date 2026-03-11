@@ -1,0 +1,59 @@
+{
+  "tabs": {
+    "general": "Ustawienia og\u00f3lne",
+    "provider": "Us\u0142ugodawca",
+    "payments": "P\u0142atno\u015bci"
+  },
+  "header": {
+    "home": "Strona g\u0142\u00f3wna",
+    "logo_alt": "Logo Infinisimo"
+  },
+  "general": {
+    "title": "Ustawienia profilu",
+    "labels": {
+      "first_name": "Imi\u0119",
+      "last_name": "Nazwisko",
+      "username": "Nazwa u\u017cytkownika",
+      "email": "Adres e-mail",
+      "address": "Adres",
+      "country": "Kraj",
+      "language": "J\u0119zyk"
+    },
+    "placeholders": {
+      "first_name": "Wpisz swoje imi\u0119",
+      "last_name": "Wpisz swoje nazwisko",
+      "username": "Wpisz swoj\u0105 nazw\u0119 u\u017cytkownika",
+      "address_search": "Wyszukaj sw\u00f3j adres...",
+      "language": "Wybierz j\u0119zyk"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* nie mo\u017cna zmieni\u0107 po zako\u0144czeniu onboardingu",
+      "profile_updated": "Profil zosta\u0142 pomy\u015blnie zaktualizowany!",
+      "form_invalid": "Popraw b\u0142\u0119dy w formularzu."
+    },
+    "actions": {
+      "save": "Zapisz profil",
+      "update": "Zaktualizuj profil",
+      "saving": "Zapisywanie...",
+      "updating": "Aktualizowanie..."
+    },
+    "errors": {
+      "save_failed": "Nie uda\u0142o si\u0119 zaktualizowa\u0107 profilu. Spr\u00f3buj ponownie.",
+      "full_street_address_required": "Wybierz pe\u0142ny adres uliczny zawieraj\u0105cy numer domu.",
+      "location_details_failed": "Nie uda\u0142o si\u0119 pobra\u0107 szczeg\u00f3\u0142\u00f3w lokalizacji. Spr\u00f3buj ponownie.",
+      "select_address_from_suggestions": "Wybierz adres z podpowiedzi.",
+      "house_number_required": "Adres musi zawiera\u0107 numer domu."
+    },
+    "validation": {
+      "first_name_required": "Imi\u0119 jest wymagane",
+      "last_name_required": "Nazwisko jest wymagane",
+      "invalid_email": "Nieprawid\u0142owy adres e-mail",
+      "username_min": "Nazwa u\u017cytkownika musi mie\u0107 co najmniej 3 znaki",
+      "username_max": "Nazwa u\u017cytkownika musi mie\u0107 mniej ni\u017c 63 znaki",
+      "username_format": "Nazwa u\u017cytkownika mo\u017ce zawiera\u0107 tylko litery, cyfry, kropki, podkre\u015blenia i my\u015blniki. Musi zaczyna\u0107 si\u0119 i ko\u0144czy\u0107 liter\u0105 lub cyfr\u0105",
+      "username_consecutive_separators": "Nazwa u\u017cytkownika nie mo\u017ce zawiera\u0107 kolejnych separator\u00f3w (., _, -)",
+      "select_location": "Wybierz lokalizacj\u0119",
+      "country_required": "Kraj jest wymagany"
+    }
+  }
+}

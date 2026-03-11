@@ -1,0 +1,59 @@
+{
+  "tabs": {
+    "general": "Impostazioni generali",
+    "provider": "Fornitore di servizi",
+    "payments": "Pagamenti"
+  },
+  "header": {
+    "home": "Home",
+    "logo_alt": "Logo Infinisimo"
+  },
+  "general": {
+    "title": "Impostazioni del profilo",
+    "labels": {
+      "first_name": "Nome",
+      "last_name": "Cognome",
+      "username": "Nome utente",
+      "email": "Indirizzo e-mail",
+      "address": "Indirizzo",
+      "country": "Paese",
+      "language": "Lingua"
+    },
+    "placeholders": {
+      "first_name": "Inserisci il tuo nome",
+      "last_name": "Inserisci il tuo cognome",
+      "username": "Inserisci il tuo nome utente",
+      "address_search": "Cerca il tuo indirizzo...",
+      "language": "Seleziona una lingua"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* non pu\u00f2 essere modificato dopo il completamento dell'onboarding",
+      "profile_updated": "Profilo aggiornato con successo!",
+      "form_invalid": "Correggi gli errori nel modulo."
+    },
+    "actions": {
+      "save": "Salva profilo",
+      "update": "Aggiorna profilo",
+      "saving": "Salvataggio...",
+      "updating": "Aggiornamento..."
+    },
+    "errors": {
+      "save_failed": "Impossibile aggiornare il profilo. Riprova.",
+      "full_street_address_required": "Seleziona un indirizzo completo che includa il numero civico.",
+      "location_details_failed": "Impossibile ottenere i dettagli della posizione. Riprova.",
+      "select_address_from_suggestions": "Seleziona un indirizzo dai suggerimenti.",
+      "house_number_required": "L'indirizzo deve includere un numero civico."
+    },
+    "validation": {
+      "first_name_required": "Il nome \u00e8 obbligatorio",
+      "last_name_required": "Il cognome \u00e8 obbligatorio",
+      "invalid_email": "Indirizzo e-mail non valido",
+      "username_min": "Il nome utente deve contenere almeno 3 caratteri",
+      "username_max": "Il nome utente deve contenere meno di 63 caratteri",
+      "username_format": "Il nome utente pu\u00f2 contenere solo lettere, numeri, punti, trattini bassi e trattini. Deve iniziare e terminare con una lettera o un numero",
+      "username_consecutive_separators": "Il nome utente non pu\u00f2 contenere separatori consecutivi (., _, -)",
+      "select_location": "Seleziona una posizione",
+      "country_required": "Il paese \u00e8 obbligatorio"
+    }
+  }
+}

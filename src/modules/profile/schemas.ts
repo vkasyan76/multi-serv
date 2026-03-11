@@ -16,6 +16,7 @@ const usernameValidation = z
   .transform((val) => val.toLowerCase());
 
 export const profileSchema = z.object({
+  // Keep these exact profile validation messages aligned with GeneralProfileForm.tsx.
   firstName: z.string().trim().min(2, "First name is required"),
   lastName: z.string().trim().min(2, "Last name is required"),
 

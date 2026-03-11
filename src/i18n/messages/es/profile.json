@@ -1,0 +1,59 @@
+{
+  "tabs": {
+    "general": "Configuraci\u00f3n general",
+    "provider": "Proveedor de servicios",
+    "payments": "Pagos"
+  },
+  "header": {
+    "home": "Inicio",
+    "logo_alt": "Logotipo de Infinisimo"
+  },
+  "general": {
+    "title": "Configuraci\u00f3n del perfil",
+    "labels": {
+      "first_name": "Nombre",
+      "last_name": "Apellido",
+      "username": "Nombre de usuario",
+      "email": "Correo electr\u00f3nico",
+      "address": "Direcci\u00f3n",
+      "country": "Pa\u00eds",
+      "language": "Idioma"
+    },
+    "placeholders": {
+      "first_name": "Introduce tu nombre",
+      "last_name": "Introduce tu apellido",
+      "username": "Introduce tu nombre de usuario",
+      "address_search": "Busca tu direcci\u00f3n...",
+      "language": "Selecciona un idioma"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* no se puede cambiar despu\u00e9s de completar el registro",
+      "profile_updated": "\u00a1Perfil actualizado correctamente!",
+      "form_invalid": "Corrige los errores del formulario."
+    },
+    "actions": {
+      "save": "Guardar perfil",
+      "update": "Actualizar perfil",
+      "saving": "Guardando...",
+      "updating": "Actualizando..."
+    },
+    "errors": {
+      "save_failed": "No se pudo actualizar el perfil. Int\u00e9ntalo de nuevo.",
+      "full_street_address_required": "Selecciona una direcci\u00f3n completa que incluya un n\u00famero de puerta.",
+      "location_details_failed": "No se pudieron obtener los detalles de la ubicaci\u00f3n. Int\u00e9ntalo de nuevo.",
+      "select_address_from_suggestions": "Selecciona una direcci\u00f3n de las sugerencias.",
+      "house_number_required": "La direcci\u00f3n debe incluir un n\u00famero de puerta."
+    },
+    "validation": {
+      "first_name_required": "El nombre es obligatorio",
+      "last_name_required": "El apellido es obligatorio",
+      "invalid_email": "Correo electr\u00f3nico no v\u00e1lido",
+      "username_min": "El nombre de usuario debe tener al menos 3 caracteres",
+      "username_max": "El nombre de usuario debe tener menos de 63 caracteres",
+      "username_format": "El nombre de usuario solo puede contener letras, n\u00fameros, puntos, guiones bajos y guiones. Debe empezar y terminar con una letra o un n\u00famero",
+      "username_consecutive_separators": "El nombre de usuario no puede contener separadores consecutivos (., _, -)",
+      "select_location": "Selecciona una ubicaci\u00f3n",
+      "country_required": "El pa\u00eds es obligatorio"
+    }
+  }
+}
