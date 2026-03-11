@@ -22,5 +22,22 @@
     "home_tooltip": "Startseite",
     "home_aria": "Infinisimo Startseite",
     "tenant_alt": "Anbieter"
+  },
+  "card": {
+    "rating_sr": "Bewertung",
+    "new": "Neu",
+    "unavailable": "Nicht verfügbar",
+    "log_in_for_distance": "Anmelden für Distanz",
+    "on_site": "Vor Ort",
+    "on_line": "Online",
+    "order_one": "Auftrag",
+    "order_other": "Aufträge",
+    "since": "Seit:",
+    "dashboard": "Dashboard",
+    "profile": "Profil",
+    "book_service": "Service buchen",
+    "contact": "Kontakt",
+    "aria_book_service": "Service buchen",
+    "aria_contact_provider": "Anbieter kontaktieren"
   }
 }

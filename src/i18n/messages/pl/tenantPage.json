@@ -18,9 +18,26 @@
     "reviews": "Opinie"
   },
   "navbar": {
-    "powered_by": "Działa dzięki",
+    "powered_by": "Obsługiwane przez",
     "home_tooltip": "Strona główna",
     "home_aria": "Strona główna Infinisimo",
     "tenant_alt": "Usługodawca"
+  },
+  "card": {
+    "rating_sr": "Ocena",
+    "new": "Nowy",
+    "unavailable": "Niedostępne",
+    "log_in_for_distance": "Zaloguj się, aby zobaczyć dystans",
+    "on_site": "Na miejscu",
+    "on_line": "Online",
+    "order_one": "zamówienie",
+    "order_other": "zamówienia",
+    "since": "Od:",
+    "dashboard": "Panel",
+    "profile": "Profil",
+    "book_service": "Zarezerwuj usługę",
+    "contact": "Kontakt",
+    "aria_book_service": "Zarezerwuj usługę",
+    "aria_contact_provider": "Skontaktuj się z usługodawcą"
   }
 }

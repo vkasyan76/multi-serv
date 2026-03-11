@@ -22,5 +22,22 @@
     "home_tooltip": "Inicio",
     "home_aria": "Inicio de Infinisimo",
     "tenant_alt": "Proveedor"
+  },
+  "card": {
+    "rating_sr": "Valoración",
+    "new": "Nuevo",
+    "unavailable": "No disponible",
+    "log_in_for_distance": "Inicia sesión para ver la distancia",
+    "on_site": "Presencial",
+    "on_line": "En línea",
+    "order_one": "pedido",
+    "order_other": "pedidos",
+    "since": "Desde:",
+    "dashboard": "Panel",
+    "profile": "Perfil",
+    "book_service": "Reservar servicio",
+    "contact": "Contactar",
+    "aria_book_service": "Reservar servicio",
+    "aria_contact_provider": "Contactar con el proveedor"
   }
 }

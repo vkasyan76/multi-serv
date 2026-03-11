@@ -5,7 +5,7 @@
     "reviews": "Avis"
   },
   "bio": {
-    "empty": "Aucune présentation disponible."
+    "empty": "Aucune description disponible."
   },
   "services": {
     "competencies": "Mes compétences :",
@@ -22,5 +22,22 @@
     "home_tooltip": "Accueil",
     "home_aria": "Accueil Infinisimo",
     "tenant_alt": "Prestataire"
+  },
+  "card": {
+    "rating_sr": "Note",
+    "new": "Nouveau",
+    "unavailable": "Indisponible",
+    "log_in_for_distance": "Connectez-vous pour la distance",
+    "on_site": "Sur place",
+    "on_line": "En ligne",
+    "order_one": "commande",
+    "order_other": "commandes",
+    "since": "Depuis :",
+    "dashboard": "Tableau de bord",
+    "profile": "Profil",
+    "book_service": "Réserver",
+    "contact": "Contacter",
+    "aria_book_service": "Réserver ce service",
+    "aria_contact_provider": "Contacter le prestataire"
   }
 }

@@ -20,7 +20,24 @@
   "navbar": {
     "powered_by": "Працює на базі",
     "home_tooltip": "Головна",
-    "home_aria": "Головна Infinisimo",
+    "home_aria": "Головна сторінка Infinisimo",
     "tenant_alt": "Виконавець"
+  },
+  "card": {
+    "rating_sr": "Рейтинг",
+    "new": "Новий",
+    "unavailable": "Недоступно",
+    "log_in_for_distance": "Увійдіть, щоб побачити відстань",
+    "on_site": "На місці",
+    "on_line": "Онлайн",
+    "order_one": "замовлення",
+    "order_other": "замовлень",
+    "since": "З:",
+    "dashboard": "Панель",
+    "profile": "Профіль",
+    "book_service": "Замовити послугу",
+    "contact": "Контакт",
+    "aria_book_service": "Замовити послугу",
+    "aria_contact_provider": "Зв’язатися з виконавцем"
   }
 }

@@ -20,7 +20,24 @@
   "navbar": {
     "powered_by": "Offerto da",
     "home_tooltip": "Home",
-    "home_aria": "Home Infinisimo",
+    "home_aria": "Home di Infinisimo",
     "tenant_alt": "Fornitore"
+  },
+  "card": {
+    "rating_sr": "Valutazione",
+    "new": "Nuovo",
+    "unavailable": "Non disponibile",
+    "log_in_for_distance": "Accedi per la distanza",
+    "on_site": "In sede",
+    "on_line": "Online",
+    "order_one": "ordine",
+    "order_other": "ordini",
+    "since": "Dal:",
+    "dashboard": "Dashboard",
+    "profile": "Profilo",
+    "book_service": "Prenota",
+    "contact": "Contatta",
+    "aria_book_service": "Prenota il servizio",
+    "aria_contact_provider": "Contatta il fornitore"
   }
 }

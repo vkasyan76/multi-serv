@@ -22,5 +22,22 @@
     "home_tooltip": "Home",
     "home_aria": "Infinisimo Home",
     "tenant_alt": "Tenant"
+  },
+  "card": {
+    "rating_sr": "Rating",
+    "new": "New",
+    "unavailable": "Unavailable",
+    "log_in_for_distance": "Log in for distance",
+    "on_site": "On-site",
+    "on_line": "On-line",
+    "order_one": "order",
+    "order_other": "orders",
+    "since": "Since:",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "book_service": "Book service",
+    "contact": "Contact",
+    "aria_book_service": "Book service",
+    "aria_contact_provider": "Contact provider"
   }
 }
