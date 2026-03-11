@@ -369,15 +369,16 @@ export const TenantCard = ({
                 >
                   {tTenantPage("card.book_service")}
                 </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full"
-                  aria-label={tTenantPage("card.aria_contact_provider")}
-                  onClick={onContact ?? (() => console.log("TODO: Contact"))}
-                >
-                  {tTenantPage("card.contact")}
-                </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full"
+                    aria-label={tTenantPage("card.aria_contact_provider")}
+                    onClick={onContact}
+                    disabled={!onContact}
+                  >
+                    {tTenantPage("card.contact")}
+                  </Button>
               </>
             )}
           </div>
