@@ -1,14 +1,8 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEffect, useState, useRef } from "react";
-
-const SECTIONS = [
-  { id: "about", label: "About" },
-  { id: "services", label: "Services" },
-  { id: "booking", label: "Booking" },
-  { id: "reviews", label: "Reviews" },
-];
+import { useEffect, useState, useRef, useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 interface TenantSubnavProps {
   headerOffsetPx?: { base: number; sm: number };
@@ -17,17 +11,28 @@ interface TenantSubnavProps {
 export function TenantSubnav({
   headerOffsetPx = { base: 56, sm: 64 }, // height of this single sticky row
 }: TenantSubnavProps) {
+  const tTenantPage = useTranslations("tenantPage");
   const [active, setActive] = useState("about");
   const [, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const lastClickTimeRef = useRef<number>(0);
+  const sections = useMemo(
+    () =>
+      [
+        { id: "about", label: tTenantPage("subnav.about") },
+        { id: "services", label: tTenantPage("subnav.services") },
+        { id: "booking", label: tTenantPage("subnav.booking") },
+        { id: "reviews", label: tTenantPage("subnav.reviews") },
+      ] as const,
+    [tTenantPage]
+  );
 
   // Optional: read hash once on mount, then never touch URL again
   useEffect(() => {
     const id = window.location.hash.slice(1);
-    if (SECTIONS.some((s) => s.id === id)) setActive(id);
+    if (sections.some((s) => s.id === id)) setActive(id);
     // No hashchange listener; we no longer mutate the hash
-  }, []);
+  }, [sections]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -104,7 +109,7 @@ export function TenantSubnav({
       }
     };
 
-    SECTIONS.forEach(({ id }) => {
+    sections.forEach(({ id }) => {
       const el = document.getElementById(id);
       if (el) io.observe(el);
     });
@@ -116,7 +121,7 @@ export function TenantSubnav({
       io.disconnect();
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [headerOffsetPx.base, headerOffsetPx.sm]);
+  }, [headerOffsetPx.base, headerOffsetPx.sm, sections]);
 
   const onSelect = (id: string) => {
     // Track click time to prevent IntersectionObserver interference
@@ -162,7 +167,7 @@ export function TenantSubnav({
             rounded-full border bg-white/80 shadow-sm px-2 py-1
           "
         >
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <TabsTrigger
               key={s.id}
               value={s.id}

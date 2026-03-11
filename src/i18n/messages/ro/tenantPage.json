@@ -1,0 +1,26 @@
+{
+  "sections": {
+    "about": "Despre mine",
+    "services": "Servicii",
+    "reviews": "Recenzii"
+  },
+  "bio": {
+    "empty": "Nicio descriere disponibilă."
+  },
+  "services": {
+    "competencies": "Competențele mele:",
+    "specialisation": "Specializare:"
+  },
+  "subnav": {
+    "about": "Despre mine",
+    "services": "Servicii",
+    "booking": "Rezervare",
+    "reviews": "Recenzii"
+  },
+  "navbar": {
+    "powered_by": "Susținut de",
+    "home_tooltip": "Pagina principală",
+    "home_aria": "Pagina principală Infinisimo",
+    "tenant_alt": "Prestator"
+  }
+}

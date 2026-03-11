@@ -1,0 +1,26 @@
+{
+  "sections": {
+    "about": "Chi sono",
+    "services": "Servizi",
+    "reviews": "Recensioni"
+  },
+  "bio": {
+    "empty": "Nessuna descrizione disponibile."
+  },
+  "services": {
+    "competencies": "Le mie competenze:",
+    "specialisation": "Specializzazione:"
+  },
+  "subnav": {
+    "about": "Chi sono",
+    "services": "Servizi",
+    "booking": "Prenotazione",
+    "reviews": "Recensioni"
+  },
+  "navbar": {
+    "powered_by": "Offerto da",
+    "home_tooltip": "Home",
+    "home_aria": "Home Infinisimo",
+    "tenant_alt": "Fornitore"
+  }
+}

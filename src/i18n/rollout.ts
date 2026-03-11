@@ -19,6 +19,7 @@ export const REQUIRED_NAMESPACES = [
   "common",
   "bookings",
   "checkout",
+  "tenantPage",
 ] as const;
 
 export type RequiredNamespace = (typeof REQUIRED_NAMESPACES)[number];

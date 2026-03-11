@@ -1,0 +1,26 @@
+{
+  "sections": {
+    "about": "À propos",
+    "services": "Services",
+    "reviews": "Avis"
+  },
+  "bio": {
+    "empty": "Aucune présentation disponible."
+  },
+  "services": {
+    "competencies": "Mes compétences :",
+    "specialisation": "Spécialisation :"
+  },
+  "subnav": {
+    "about": "À propos",
+    "services": "Services",
+    "booking": "Réservation",
+    "reviews": "Avis"
+  },
+  "navbar": {
+    "powered_by": "Propulsé par",
+    "home_tooltip": "Accueil",
+    "home_aria": "Accueil Infinisimo",
+    "tenant_alt": "Prestataire"
+  }
+}

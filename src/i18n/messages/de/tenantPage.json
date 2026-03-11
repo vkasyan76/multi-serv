@@ -1,0 +1,26 @@
+{
+  "sections": {
+    "about": "Über mich",
+    "services": "Dienstleistungen",
+    "reviews": "Bewertungen"
+  },
+  "bio": {
+    "empty": "Keine Beschreibung verfügbar."
+  },
+  "services": {
+    "competencies": "Meine Kompetenzen:",
+    "specialisation": "Spezialisierung:"
+  },
+  "subnav": {
+    "about": "Über mich",
+    "services": "Dienstleistungen",
+    "booking": "Buchung",
+    "reviews": "Bewertungen"
+  },
+  "navbar": {
+    "powered_by": "Bereitgestellt von",
+    "home_tooltip": "Startseite",
+    "home_aria": "Infinisimo Startseite",
+    "tenant_alt": "Anbieter"
+  }
+}

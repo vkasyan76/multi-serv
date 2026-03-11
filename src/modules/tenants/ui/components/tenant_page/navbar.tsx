@@ -14,6 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslations } from "next-intl";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["700"] });
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export const Navbar = ({ slug }: Props) => {
+  const tTenantPage = useTranslations("tenantPage");
   const trpc = useTRPC();
   const { data: tenant } = useSuspenseQuery(
     trpc.tenants.getOne.queryOptions({ slug })
@@ -40,7 +42,7 @@ export const Navbar = ({ slug }: Props) => {
                 width={32}
                 height={32}
                 className="rounded-full border shrink-0 size-8"
-                alt={tenant?.name ?? "Tenant"}
+                alt={tenant?.name ?? tTenantPage("navbar.tenant_alt")}
               />
             )}
 
@@ -74,10 +76,10 @@ export const Navbar = ({ slug }: Props) => {
                     href={process.env.NEXT_PUBLIC_APP_URL ?? "/"}
                     prefetch={false}
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                    aria-label="Infinisimo Home"
+                    aria-label={tTenantPage("navbar.home_aria")}
                   >
                     <span className="text-[10px] sm:text-xs text-muted-foreground">
-                      Powered by
+                      {tTenantPage("navbar.powered_by")}
                     </span>
 
                     <Image
@@ -98,7 +100,7 @@ export const Navbar = ({ slug }: Props) => {
                     </span>
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent>Home</TooltipContent>
+                <TooltipContent>{tTenantPage("navbar.home_tooltip")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -116,7 +118,7 @@ export const Navbar = ({ slug }: Props) => {
                   width={32}
                   height={32}
                   className="rounded-full border shrink-0 size-6 sm:size-8"
-                  alt={tenant?.name ?? "Tenant"}
+                  alt={tenant?.name ?? tTenantPage("navbar.tenant_alt")}
                 />
               )}
 
@@ -143,7 +145,7 @@ export const Navbar = ({ slug }: Props) => {
               href={process.env.NEXT_PUBLIC_APP_URL ?? "/"}
               prefetch={false}
               className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity"
-              aria-label="Infinisimo Home"
+              aria-label={tTenantPage("navbar.home_aria")}
             >
               <Image
                 src="/images/infinisimo_logo_illustrator.png"

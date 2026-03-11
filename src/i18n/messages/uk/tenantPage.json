@@ -1,0 +1,26 @@
+{
+  "sections": {
+    "about": "Про мене",
+    "services": "Послуги",
+    "reviews": "Відгуки"
+  },
+  "bio": {
+    "empty": "Опис відсутній."
+  },
+  "services": {
+    "competencies": "Мої компетенції:",
+    "specialisation": "Спеціалізація:"
+  },
+  "subnav": {
+    "about": "Про мене",
+    "services": "Послуги",
+    "booking": "Бронювання",
+    "reviews": "Відгуки"
+  },
+  "navbar": {
+    "powered_by": "Працює на базі",
+    "home_tooltip": "Головна",
+    "home_aria": "Головна Infinisimo",
+    "tenant_alt": "Виконавець"
+  }
+}

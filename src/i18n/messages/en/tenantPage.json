@@ -1,0 +1,26 @@
+{
+  "sections": {
+    "about": "About",
+    "services": "Services",
+    "reviews": "Reviews"
+  },
+  "bio": {
+    "empty": "No bio available."
+  },
+  "services": {
+    "competencies": "My Competencies:",
+    "specialisation": "Specialisation:"
+  },
+  "subnav": {
+    "about": "About",
+    "services": "Services",
+    "booking": "Booking",
+    "reviews": "Reviews"
+  },
+  "navbar": {
+    "powered_by": "Powered by",
+    "home_tooltip": "Home",
+    "home_aria": "Infinisimo Home",
+    "tenant_alt": "Tenant"
+  }
+}

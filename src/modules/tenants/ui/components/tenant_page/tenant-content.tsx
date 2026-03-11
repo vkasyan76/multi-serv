@@ -52,6 +52,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   const homeHref = platformHomeHref();
   const tBookings = useTranslations("bookings");
   const tCheckout = useTranslations("checkout");
+  const tTenantPage = useTranslations("tenantPage");
 
   // ensures "/plumbing" becomes "https://root-domain/plumbing" in prod,
   // and stays "/plumbing" in dev
@@ -428,11 +429,11 @@ export default function TenantContent({ slug }: { slug: string }) {
                 height={56}
                 className="opacity-90"
               />
-              <span>About</span>
+              <span>{tTenantPage("sections.about")}</span>
             </h2>
             <div className="rounded-2xl border bg-white/70 p-5 shadow-sm">
               <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed wrap-break-word">
-                {cardTenant?.bio || "No bio available."}
+                {cardTenant?.bio || tTenantPage("bio.empty")}
               </p>
             </div>
           </section>
@@ -451,7 +452,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                 height={64}
                 className="opacity-90"
               />
-              <span>Services</span>
+              <span>{tTenantPage("sections.services")}</span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -476,7 +477,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                     </div>
 
                     <h3 className="text-base font-semibold leading-6">
-                      My Competencies:
+                      {tTenantPage("services.competencies")}
                     </h3>
                   </div>
 
@@ -557,7 +558,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                         </div>
 
                         <h3 className="text-base font-semibold leading-6">
-                          Specialisation:
+                          {tTenantPage("services.specialisation")}
                         </h3>
                       </div>
 
@@ -729,7 +730,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                 height={56}
                 className="opacity-90"
               />
-              <span>Reviews</span>
+              <span>{tTenantPage("sections.reviews")}</span>
             </h2>
 
             <TenantReviewSummary

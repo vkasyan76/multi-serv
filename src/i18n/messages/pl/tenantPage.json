@@ -1,0 +1,26 @@
+{
+  "sections": {
+    "about": "O mnie",
+    "services": "Usługi",
+    "reviews": "Opinie"
+  },
+  "bio": {
+    "empty": "Brak opisu."
+  },
+  "services": {
+    "competencies": "Moje kompetencje:",
+    "specialisation": "Specjalizacja:"
+  },
+  "subnav": {
+    "about": "O mnie",
+    "services": "Usługi",
+    "booking": "Rezerwacja",
+    "reviews": "Opinie"
+  },
+  "navbar": {
+    "powered_by": "Działa dzięki",
+    "home_tooltip": "Strona główna",
+    "home_aria": "Strona główna Infinisimo",
+    "tenant_alt": "Usługodawca"
+  }
+}
