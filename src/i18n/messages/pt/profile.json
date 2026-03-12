@@ -1,22 +1,22 @@
 {
   "tabs": {
-    "general": "Defini\u00e7\u00f5es gerais",
-    "provider": "Prestador de servi\u00e7os",
+    "general": "Definições gerais",
+    "provider": "Prestador de serviços",
     "payments": "Pagamentos"
   },
   "header": {
-    "home": "In\u00edcio",
-    "logo_alt": "Log\u00f3tipo da Infinisimo"
+    "home": "Início",
+    "logo_alt": "Logótipo da Infinisimo"
   },
   "general": {
-    "title": "Defini\u00e7\u00f5es do perfil",
+    "title": "Definições do perfil",
     "labels": {
       "first_name": "Nome",
       "last_name": "Apelido",
       "username": "Nome de utilizador",
-      "email": "Endere\u00e7o de e-mail",
+      "email": "Endereço de e-mail",
       "address": "Morada",
-      "country": "Pa\u00eds",
+      "country": "País",
       "language": "Idioma"
     },
     "placeholders": {
@@ -27,9 +27,9 @@
       "language": "Selecione um idioma"
     },
     "messages": {
-      "field_locked_after_onboarding": "* n\u00e3o pode ser alterado ap\u00f3s a conclus\u00e3o do onboarding",
+      "field_locked_after_onboarding": "* não pode ser alterado após a conclusão do onboarding",
       "profile_updated": "Perfil atualizado com sucesso!",
-      "form_invalid": "Corrija os erros no formul\u00e1rio."
+      "form_invalid": "Corrija os erros no formulário."
     },
     "actions": {
       "save": "Guardar perfil",
@@ -38,22 +38,127 @@
       "updating": "A atualizar..."
     },
     "errors": {
-      "save_failed": "N\u00e3o foi poss\u00edvel atualizar o perfil. Tente novamente.",
-      "full_street_address_required": "Selecione uma morada completa que inclua n\u00famero de porta.",
-      "location_details_failed": "N\u00e3o foi poss\u00edvel obter os detalhes da localiza\u00e7\u00e3o. Tente novamente.",
-      "select_address_from_suggestions": "Selecione uma morada a partir das sugest\u00f5es.",
-      "house_number_required": "A morada deve incluir um n\u00famero de porta."
+      "save_failed": "Não foi possível atualizar o perfil. Tente novamente.",
+      "full_street_address_required": "Selecione uma morada completa que inclua número de porta.",
+      "location_details_failed": "Não foi possível obter os detalhes da localização. Tente novamente.",
+      "select_address_from_suggestions": "Selecione uma morada a partir das sugestões.",
+      "house_number_required": "A morada deve incluir um número de porta."
     },
     "validation": {
-      "first_name_required": "O nome \u00e9 obrigat\u00f3rio",
-      "last_name_required": "O apelido \u00e9 obrigat\u00f3rio",
-      "invalid_email": "Endere\u00e7o de e-mail inv\u00e1lido",
+      "first_name_required": "O nome é obrigatório",
+      "last_name_required": "O apelido é obrigatório",
+      "invalid_email": "Endereço de e-mail inválido",
       "username_min": "O nome de utilizador deve ter pelo menos 3 caracteres",
       "username_max": "O nome de utilizador deve ter menos de 63 caracteres",
-      "username_format": "O nome de utilizador s\u00f3 pode conter letras, n\u00fameros, pontos, sublinhados e h\u00edfens. Deve come\u00e7ar e terminar com uma letra ou um n\u00famero",
-      "username_consecutive_separators": "O nome de utilizador n\u00e3o pode conter separadores consecutivos (., _, -)",
-      "select_location": "Selecione uma localiza\u00e7\u00e3o",
-      "country_required": "O pa\u00eds \u00e9 obrigat\u00f3rio"
+      "username_format": "O nome de utilizador só pode conter letras, números, pontos, sublinhados e hífens. Deve começar e terminar com uma letra ou um número",
+      "username_consecutive_separators": "O nome de utilizador não pode conter separadores consecutivos (., _, -)",
+      "select_location": "Selecione uma localização",
+      "country_required": "O país é obrigatório"
+    }
+  },
+  "provider": {
+    "title": "Configurações do prestador de serviços",
+    "labels": {
+      "business_name": "Nome do negócio (para o URL da sua página)",
+      "hourly_rate": "Tarifa horária ({currency})",
+      "service_types": "Tipo de serviço",
+      "categories": "Categorias",
+      "subcategories": "Subcategorias",
+      "business_country": "País do negócio",
+      "vat_registered": "Tem número de IVA? (opcional)",
+      "vat_id": "Número de IVA",
+      "phone": "Número de telefone (opcional)",
+      "description": "Descrição"
+    },
+    "service_options": {
+      "on_site": "No local",
+      "online": "Online"
+    },
+    "placeholders": {
+      "business_name": "Introduza o nome do negócio",
+      "hourly_rate": "Introduza a tarifa horária em {currency}",
+      "services": "Selecione tipos de serviço",
+      "categories": "Selecione categorias",
+      "subcategories_first": "Selecione primeiro as categorias",
+      "subcategories": "Selecione subcategorias",
+      "vat_id": "DE123456789",
+      "phone": "+49 123 4567",
+      "website": "Site (opcional)",
+      "description": "Descreva os seus serviços, a sua experiência e o que o torna único..."
+    },
+    "actions": {
+      "validate_vat": "Validar",
+      "validating_vat": "A validar...",
+      "select_image": "Selecionar imagem para envio (máx. 5 MB)",
+      "uploading": "A enviar...",
+      "updating": "A atualizar...",
+      "creating": "A criar...",
+      "update_profile": "Atualizar perfil de prestador",
+      "create_profile": "Criar perfil de prestador"
+    },
+    "messages": {
+      "form_invalid": "Corrija os erros no formulário.",
+      "updated_success": "Perfil de prestador atualizado com sucesso!",
+      "image_upload_partial_success": "O perfil foi criado com sucesso, mas o envio da imagem falhou. Pode adicioná-la mais tarde no editor de perfil.",
+      "created_next_payouts": "Perfil de prestador criado. Próximo passo: configurar pagamentos.",
+      "complete_payments_onboarding": "Concluir configuração de pagamentos",
+      "finish_stripe_onboarding": "Para receber pagamentos, conclua o onboarding da Stripe. <link>Ir para Pagamentos</link>",
+      "name_locked": "* não pode ser alterado após a criação (utilizado no URL da sua página)",
+      "country_from_profile": "Preenchido automaticamente a partir do seu perfil de utilizador. Para o alterar, abra as <link>Definições Gerais</link>.",
+      "vat_valid_vies": "O número de IVA é válido via VIES.",
+      "vat_valid_status": "Número de IVA válido",
+      "image_preview_alt": "Pré-visualização do perfil",
+      "character_count": "{count}/{max} caracteres"
+    },
+    "errors": {
+      "vat_validation_failed": "A validação do IVA falhou. Tente novamente.",
+      "vat_eu_only": "O IVA só pode ser definido para países da UE.",
+      "update_failed": "Não foi possível atualizar o perfil. Tente novamente.",
+      "name_taken": "Esse nome de negócio já está em uso. Escolha outro.",
+      "create_failed": "Não foi possível criar o perfil de prestador. Tente novamente.",
+      "upload_failed": "Não foi possível enviar a imagem. Tente novamente.",
+      "vat_invalid_vies": "O número de IVA não é válido.",
+      "vat_invalid_status": "Número de IVA inválido"
+    },
+    "validation": {
+      "name_required": "O nome do negócio é obrigatório",
+      "name_max": "O nome do negócio deve ter menos de 50 caracteres",
+      "name_format": "O nome do negócio pode conter letras, números, hífens e sublinhados",
+      "bio_max": "A descrição deve ter menos de 1200 caracteres",
+      "services_required": "Selecione pelo menos um tipo de serviço",
+      "categories_required": "Selecione pelo menos uma categoria",
+      "website_invalid": "O site tem de ser um URL válido.",
+      "phone_invalid": "Tem de ser um número de telefone internacional válido no formato E.164",
+      "hourly_rate_number": "A tarifa horária tem de ser um número",
+      "hourly_rate_min": "A tarifa horária tem de ser pelo menos 1 EUR",
+      "hourly_rate_max": "A tarifa horária parece demasiado elevada",
+      "country_iso": "Utilize um código ISO-2",
+      "vat_required": "O número de IVA é obrigatório quando o registo de IVA está selecionado."
+    }
+  },
+  "confirmation": {
+    "titles": {
+      "prereq": "Conclua o seu perfil geral para continuar",
+      "confirm": "Torne-se um prestador de serviços"
+    },
+    "messages": {
+      "prereq_intro": "A sua localização é necessária para que os clientes o encontrem.",
+      "prereq_location": "Adicione a sua localização para aparecer nas pesquisas locais",
+      "confirm_intro": "Comece a oferecer os seus serviços e ligue-se a clientes na sua área",
+      "search_visibility": "Apareça nos resultados de pesquisa da sua área",
+      "pricing_setup": "Defina a sua tarifa horária e categorias de serviço",
+      "availability": "Gira a sua disponibilidade e reservas"
+    },
+    "actions": {
+      "close": "Fechar e voltar às definições gerais",
+      "complete_general": "Concluir Definições Gerais",
+      "loading": "A carregar...",
+      "create_provider": "Criar perfil de prestador",
+      "maybe_later": "Talvez mais tarde",
+      "retry": "Tentar novamente"
+    },
+    "errors": {
+      "profile_load_failed": "Não foi possível carregar o seu perfil. Tente novamente."
     }
   }
 }

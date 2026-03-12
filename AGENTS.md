@@ -145,6 +145,36 @@ Required env groups are defined in `README.md`:
     `src/modules/legal/cookies/ui/cookie-preferences-dialog.tsx`,
     `src/modules/home/ui/components/referral-notice.tsx`
   - governance checks are in `src/i18n/rollout.ts` + `src/scripts/i18n-check.ts`, executed via `npm run test:i18n:messages`
+- Phase 4 (formatting consolidation) is implemented:
+  - canonical locale/format helpers live in `src/lib/i18n/locale.ts`
+  - `src/modules/profile/location-utils.ts` remains a compatibility surface for older imports
+  - key formatting consumers now import from the canonical locale module
+- Phase 4A (CMS/category localization) is implemented:
+  - Payload localization is configured from the canonical app-language registry
+  - `categories.name` is localized in Payload while `slug` remains canonical
+  - category seed/upsert runs with localized names for all launched locales
+  - category and tenant reads resolve localized category labels with `en` fallback
+- Phase 5 Wave 1 (checkout + bookings) is implemented:
+  - `bookings` and `checkout` namespaces are loaded and governed for all launched locales
+  - tenant booking UI, calendar, pay-later drawer, payment setup, and terms dialog chrome are localized
+  - pay-later booking flow no longer leaks raw English server errors in the customer path
+- Tenant public page completion pass is implemented:
+  - `tenantPage` namespace is loaded and governed for all launched locales
+  - tenant page shell, shared tenant card, review summary, and conversation UI are localized
+  - tenant-page review dates use route-aware locale formatting
+- Phase 5 Wave 3 Commit 1 (profile shell + general profile form) is implemented:
+  - `profile` namespace is loaded and governed for all launched locales
+  - `ProfileTabs`, `SettingsHeader`, and `GeneralProfileForm` are localized
+  - live profile validation-summary mapping is aligned with `src/modules/profile/schemas.ts`
+
+### i18n Rollout Status (Still Open)
+
+- Phase 5 Wave 2 (orders) is outside this note and should be tracked separately if completed on another branch/PR.
+- Phase 5 Wave 3 remaining work:
+  - Commit 2: `VendorProfileForm.tsx` + `ProviderConfirmation.tsx`
+  - Commit 3: `PayoutsPanel.tsx`
+  - Commit 4: auth leftovers only if confirmed live
+- Phase 5 Wave 4 (finance/admin long-tail), Phase 6, Phase 6A, and Phase 7 remain open.
 
 ## Promotions Reservation (Phase 3)
 

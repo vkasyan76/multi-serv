@@ -27,7 +27,7 @@
       "language": "Seleziona una lingua"
     },
     "messages": {
-      "field_locked_after_onboarding": "* non pu\u00f2 essere modificato dopo il completamento dell'onboarding",
+      "field_locked_after_onboarding": "* non può essere modificato dopo il completamento dell'onboarding",
       "profile_updated": "Profilo aggiornato con successo!",
       "form_invalid": "Correggi gli errori nel modulo."
     },
@@ -45,15 +45,120 @@
       "house_number_required": "L'indirizzo deve includere un numero civico."
     },
     "validation": {
-      "first_name_required": "Il nome \u00e8 obbligatorio",
-      "last_name_required": "Il cognome \u00e8 obbligatorio",
+      "first_name_required": "Il nome è obbligatorio",
+      "last_name_required": "Il cognome è obbligatorio",
       "invalid_email": "Indirizzo e-mail non valido",
       "username_min": "Il nome utente deve contenere almeno 3 caratteri",
       "username_max": "Il nome utente deve contenere meno di 63 caratteri",
-      "username_format": "Il nome utente pu\u00f2 contenere solo lettere, numeri, punti, trattini bassi e trattini. Deve iniziare e terminare con una lettera o un numero",
-      "username_consecutive_separators": "Il nome utente non pu\u00f2 contenere separatori consecutivi (., _, -)",
+      "username_format": "Il nome utente può contenere solo lettere, numeri, punti, trattini bassi e trattini. Deve iniziare e terminare con una lettera o un numero",
+      "username_consecutive_separators": "Il nome utente non può contenere separatori consecutivi (., _, -)",
       "select_location": "Seleziona una posizione",
-      "country_required": "Il paese \u00e8 obbligatorio"
+      "country_required": "Il paese è obbligatorio"
+    }
+  },
+  "provider": {
+    "title": "Impostazioni del fornitore di servizi",
+    "labels": {
+      "business_name": "Nome dell'attività (per l'URL della tua pagina)",
+      "hourly_rate": "Tariffa oraria ({currency})",
+      "service_types": "Tipo di servizio",
+      "categories": "Categorie",
+      "subcategories": "Sottocategorie",
+      "business_country": "Paese dell'attività",
+      "vat_registered": "Hai una partita IVA? (opzionale)",
+      "vat_id": "Partita IVA",
+      "phone": "Numero di telefono (opzionale)",
+      "description": "Descrizione"
+    },
+    "service_options": {
+      "on_site": "In sede",
+      "online": "Online"
+    },
+    "placeholders": {
+      "business_name": "Inserisci il nome dell'attività",
+      "hourly_rate": "Inserisci la tariffa oraria in {currency}",
+      "services": "Seleziona i tipi di servizio",
+      "categories": "Seleziona le categorie",
+      "subcategories_first": "Seleziona prima le categorie",
+      "subcategories": "Seleziona le sottocategorie",
+      "vat_id": "DE123456789",
+      "phone": "+49 123 4567",
+      "website": "Sito web (opzionale)",
+      "description": "Descrivi i tuoi servizi, la tua esperienza e cosa ti rende unico..."
+    },
+    "actions": {
+      "validate_vat": "Verifica",
+      "validating_vat": "Verifica in corso...",
+      "select_image": "Seleziona un'immagine da caricare (max 5 MB)",
+      "uploading": "Caricamento...",
+      "updating": "Aggiornamento...",
+      "creating": "Creazione...",
+      "update_profile": "Aggiorna il profilo fornitore",
+      "create_profile": "Crea il profilo fornitore"
+    },
+    "messages": {
+      "form_invalid": "Correggi gli errori nel modulo.",
+      "updated_success": "Profilo fornitore aggiornato con successo!",
+      "image_upload_partial_success": "Il profilo è stato creato correttamente, ma il caricamento dell'immagine non è riuscito. Potrai aggiungerla più tardi dall'editor del profilo.",
+      "created_next_payouts": "Profilo fornitore creato. Passaggio successivo: configura i pagamenti.",
+      "complete_payments_onboarding": "Completa la configurazione dei pagamenti",
+      "finish_stripe_onboarding": "Per ricevere pagamenti, completa l'onboarding Stripe. <link>Vai ai pagamenti</link>",
+      "name_locked": "* non può essere modificato dopo la creazione (usato nell'URL della tua pagina)",
+      "country_from_profile": "Precompilato dal tuo profilo utente. Per modificarlo, apri le <link>Impostazioni generali</link>.",
+      "vat_valid_vies": "La partita IVA è valida tramite VIES.",
+      "vat_valid_status": "Partita IVA valida",
+      "image_preview_alt": "Anteprima del profilo",
+      "character_count": "{count}/{max} caratteri"
+    },
+    "errors": {
+      "vat_validation_failed": "La verifica della partita IVA non è riuscita. Riprova.",
+      "vat_eu_only": "La partita IVA può essere impostata solo per i paesi UE.",
+      "update_failed": "Impossibile aggiornare il profilo. Riprova.",
+      "name_taken": "Questo nome attività è già in uso. Scegline un altro.",
+      "create_failed": "Impossibile creare il profilo fornitore. Riprova.",
+      "upload_failed": "Impossibile caricare l'immagine. Riprova.",
+      "vat_invalid_vies": "La partita IVA non è valida.",
+      "vat_invalid_status": "Partita IVA non valida"
+    },
+    "validation": {
+      "name_required": "Il nome dell'attività è obbligatorio",
+      "name_max": "Il nome dell'attività deve contenere meno di 50 caratteri",
+      "name_format": "Il nome dell'attività può contenere lettere, numeri, trattini e trattini bassi",
+      "bio_max": "La descrizione deve contenere meno di 1200 caratteri",
+      "services_required": "Seleziona almeno un tipo di servizio",
+      "categories_required": "Seleziona almeno una categoria",
+      "website_invalid": "Il sito web deve essere un URL valido.",
+      "phone_invalid": "Deve essere un numero di telefono internazionale valido in formato E.164",
+      "hourly_rate_number": "La tariffa oraria deve essere un numero",
+      "hourly_rate_min": "La tariffa oraria deve essere almeno 1 EUR",
+      "hourly_rate_max": "La tariffa oraria sembra troppo alta",
+      "country_iso": "Usa un codice ISO-2",
+      "vat_required": "La partita IVA è obbligatoria quando è selezionata la registrazione IVA."
+    }
+  },
+  "confirmation": {
+    "titles": {
+      "prereq": "Completa il tuo profilo generale per continuare",
+      "confirm": "Diventa un fornitore di servizi"
+    },
+    "messages": {
+      "prereq_intro": "La tua posizione è necessaria perché i clienti possano trovarti.",
+      "prereq_location": "Aggiungi la tua posizione per comparire nelle ricerche locali",
+      "confirm_intro": "Inizia a offrire i tuoi servizi e connettiti con clienti nella tua zona",
+      "search_visibility": "Compari nei risultati di ricerca della tua zona",
+      "pricing_setup": "Imposta la tua tariffa oraria e le categorie di servizio",
+      "availability": "Gestisci disponibilità e prenotazioni"
+    },
+    "actions": {
+      "close": "Chiudi e torna alle impostazioni generali",
+      "complete_general": "Completa le impostazioni generali",
+      "loading": "Caricamento...",
+      "create_provider": "Crea il profilo fornitore",
+      "maybe_later": "Forse più tardi",
+      "retry": "Riprova"
+    },
+    "errors": {
+      "profile_load_failed": "Impossibile caricare il tuo profilo. Riprova."
     }
   }
 }

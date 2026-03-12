@@ -22,7 +22,6 @@ import Image from "next/image";
 import {
   vendorSchema,
   type VendorFormValues,
-  VENDOR_FIELD_LABELS,
   SERVICE_OPTIONS,
 } from "../schemas";
 import { toast } from "sonner";
@@ -39,13 +38,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useUser } from "@clerk/nextjs";
+import { useTranslations } from "next-intl";
 import {
   getLocaleAndCurrency,
   getCountryCodeFromName,
   countryNameFromCode,
 } from "../location-utils";
 import LoadingPage from "@/components/shared/loading";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 
 import { NumericFormat, NumberFormatValues } from "react-number-format";
 import PhoneInput from "react-phone-number-input";
@@ -64,6 +65,9 @@ export function VendorProfileForm() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const params = useParams<{ lang?: string }>();
+  const searchParams = useSearchParams();
+  const tProfile = useTranslations("profile");
   const { data: categories } = useQuery(trpc.categories.getMany.queryOptions());
 
   // Fetch vendor profile data from database
@@ -90,7 +94,92 @@ export function VendorProfileForm() {
     trpc.auth.getStripeStatus.queryOptions()
   );
 
-  const [intlConfig] = useState(getLocaleAndCurrency()); // cache the locale/currency (do not run on every render)
+  const appLang = normalizeToSupported(params?.lang);
+  const intlConfig = useMemo(() => getLocaleAndCurrency(appLang), [appLang]);
+
+  // Preserve locale and target tab when onboarding links bounce between profile steps.
+  const profileTabHref = (
+    tab: "general" | "vendor" | "payouts",
+    extra?: Record<string, string | null>
+  ) => {
+    const query = new URLSearchParams(searchParams.toString());
+    query.set("tab", tab);
+    for (const [key, value] of Object.entries(extra ?? {})) {
+      if (value === null) {
+        query.delete(key);
+      } else {
+        query.set(key, value);
+      }
+    }
+    return `/${appLang}/profile?${query.toString()}`;
+  };
+
+  const serviceLabels = {
+    "on-site": tProfile("provider.service_options.on_site"),
+    "on-line": tProfile("provider.service_options.online"),
+  } as const;
+  const serviceOptions = SERVICE_OPTIONS.map((option) => ({
+    ...option,
+    label:
+      serviceLabels[option.value as keyof typeof serviceLabels] ?? option.label,
+  }));
+
+  const fieldLabels = {
+    name: tProfile("provider.labels.business_name"),
+    hourlyRate: tProfile("provider.labels.hourly_rate", {
+      currency: intlConfig.currency,
+    }),
+    services: tProfile("provider.labels.service_types"),
+    categories: tProfile("provider.labels.categories"),
+    subcategories: tProfile("provider.labels.subcategories"),
+    country: tProfile("provider.labels.business_country"),
+    vatId: tProfile("provider.labels.vat_id"),
+    phone: tProfile("provider.labels.phone"),
+    website: tProfile("provider.placeholders.website"),
+    bio: tProfile("provider.labels.description"),
+  } as const;
+
+  function mapCreateErrorMessage(error: unknown) {
+    if (error instanceof Error && error.message.includes("already taken")) {
+      return tProfile("provider.errors.name_taken");
+    }
+
+    return tProfile("provider.errors.create_failed");
+  }
+
+  // Keep this mapper aligned with surfaced vendorSchema validation strings.
+  function mapValidationMessage(message: string | undefined) {
+    switch (message) {
+      case "Business name is required":
+        return tProfile("provider.validation.name_required");
+      case "Business name must be less than 50 characters":
+        return tProfile("provider.validation.name_max");
+      case "Business name can contain letters, numbers, hyphens, and underscores":
+        return tProfile("provider.validation.name_format");
+      case "Description must be under 1200 characters":
+        return tProfile("provider.validation.bio_max");
+      case "Select at least one service type":
+        return tProfile("provider.validation.services_required");
+      case "Select at least one category":
+        return tProfile("provider.validation.categories_required");
+      case "Website must be a valid URL.":
+        return tProfile("provider.validation.website_invalid");
+      case "Must be a valid international phone number in E.164 format":
+        return tProfile("provider.validation.phone_invalid");
+      case "Hourly rate must be a number":
+        return tProfile("provider.validation.hourly_rate_number");
+      case "Hourly rate must be at least 1 EUR":
+        return tProfile("provider.validation.hourly_rate_min");
+      case "Hourly rate seems too high":
+        return tProfile("provider.validation.hourly_rate_max");
+      case "Use ISO-2 code":
+        return tProfile("provider.validation.country_iso");
+      case "VAT number required when VAT-registered is selected.":
+        return tProfile("provider.validation.vat_required");
+      default:
+        return tProfile("provider.messages.form_invalid");
+    }
+  }
 
   // ✅ add a mutation for the VIES check (matches your trpc client pattern)
   const validateVat = useMutation(trpc.vat.validate.mutationOptions());
@@ -119,11 +208,10 @@ export function VendorProfileForm() {
       setVatChecked(true);
 
       return res.valid;
-    } catch (e: unknown) {
+    } catch {
       form.setValue("vatIdValid", false);
       setVatChecked(true);
-      const msg = e instanceof Error ? e.message : String(e);
-      toast.error(`VAT validation failed: ${msg}`);
+      toast.error(tProfile("provider.errors.vat_validation_failed"));
       return false;
     }
   };
@@ -224,7 +312,7 @@ export function VendorProfileForm() {
   useEffect(() => {
     if (watchedVatRegistered && !isEUCountry) {
       if (lastVatToastRef.current !== watchedCountry) {
-        toast.error("VAT can be set only for EU countries.");
+        toast.error(tProfile("provider.errors.vat_eu_only"));
         lastVatToastRef.current = watchedCountry ?? "unknown";
       }
       form.setValue("vatRegistered", false, {
@@ -237,7 +325,7 @@ export function VendorProfileForm() {
         shouldValidate: true,
       });
     }
-  }, [watchedVatRegistered, isEUCountry, watchedCountry, form]);
+  }, [watchedVatRegistered, isEUCountry, watchedCountry, form, tProfile]);
 
   // useEffect(() => {
   //   if (!watchedVatRegistered) {
@@ -255,11 +343,16 @@ export function VendorProfileForm() {
 
     // If we have current services
     if (servicesArray.length > 0) {
-      return servicesArray.join(", ");
+      return servicesArray
+        .map(
+          (service) =>
+            serviceLabels[service as keyof typeof serviceLabels] ?? service
+        )
+        .join(", ");
     }
 
     // If no services are selected
-    return "Select service types";
+    return tProfile("provider.placeholders.services");
   };
 
   const getCategoriesPlaceholder = () => {
@@ -280,7 +373,7 @@ export function VendorProfileForm() {
     }
 
     // If no categories are selected
-    return "Select categories";
+    return tProfile("provider.placeholders.categories");
   };
 
   const getSubcategoriesPlaceholder = () => {
@@ -310,11 +403,11 @@ export function VendorProfileForm() {
 
     // If no categories are selected, show "Select categories first"
     if (selectedCategories.length === 0) {
-      return "Select categories first";
+      return tProfile("provider.placeholders.subcategories_first");
     }
 
     // If categories are selected but no subcategories are chosen
-    return "Select subcategories";
+    return tProfile("provider.placeholders.subcategories");
   };
 
   // Helper function to determine if we should use black font for better visibility
@@ -416,9 +509,6 @@ export function VendorProfileForm() {
       },
       onError: (error) => {
         console.error("Error creating vendor profile:", error);
-        toast.error(
-          error.message || "Failed to create vendor profile. Please try again."
-        );
       },
     })
   );
@@ -426,7 +516,7 @@ export function VendorProfileForm() {
   const updateVendorProfile = useMutation(
     trpc.auth.updateVendorProfile.mutationOptions({
       onSuccess: () => {
-        toast.success("Vendor profile updated successfully!");
+        toast.success(tProfile("provider.messages.updated_success"));
         // Invalidate the getVendorProfile query to update the cache
         queryClient.invalidateQueries({
           queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
@@ -434,9 +524,6 @@ export function VendorProfileForm() {
       },
       onError: (error) => {
         console.error("Error updating profile:", error);
-        toast.error(
-          error.message || "Failed to update profile. Please try again."
-        );
       },
     })
   );
@@ -494,15 +581,25 @@ export function VendorProfileForm() {
 
             const uploadResult = await uploadResponse.json();
             imageData = uploadResult.file.id;
+          } catch (error) {
+            console.error("Error uploading image:", error);
+            toast.error(tProfile("provider.errors.upload_failed"));
+            return;
           } finally {
             setIsUploading(false);
           }
         }
         // Await to avoid races
-        await updateVendorProfile.mutateAsync({
-          ...payload,
-          image: imageData,
-        });
+        try {
+          await updateVendorProfile.mutateAsync({
+            ...payload,
+            image: imageData,
+          });
+        } catch (error) {
+          console.error("Error updating profile:", error);
+          toast.error(tProfile("provider.errors.update_failed"));
+          return;
+        }
 
         // Then invalidate/refetch to update UI
         await queryClient.invalidateQueries({
@@ -542,7 +639,7 @@ export function VendorProfileForm() {
                   errorData
                 );
                 toast.warning(
-                  "Profile created successfully, but image upload failed. You can add the image later from the profile editor."
+                  tProfile("provider.messages.image_upload_partial_success")
                 );
               } else {
                 console.log("Image uploaded successfully");
@@ -554,7 +651,7 @@ export function VendorProfileForm() {
             }
           }
 
-          toast.success("Vendor profile created. Next: set up payouts.");
+          toast.success(tProfile("provider.messages.created_next_payouts"));
 
           // Step 4: Hydrate cache and stay on vendor tab
           // Invalidate and refetch to get the complete profile data
@@ -562,25 +659,15 @@ export function VendorProfileForm() {
             queryKey: trpc.auth.getVendorProfile.queryOptions().queryKey,
           });
           // Show vendor first, then ProfileTabs will auto-hop to payouts
-          router.replace("/profile?tab=vendor&autopayout=1");
+          router.replace(profileTabHref("vendor", { autopayout: "1" }));
         } catch (error) {
           console.error("Error creating profile:", error);
-
-          if (
-            error instanceof Error &&
-            error.message.includes("already taken")
-          ) {
-            toast.error(
-              "Business name is already taken. Please choose a different name."
-            );
-          } else {
-            toast.error("Failed to create vendor profile. Please try again.");
-          }
+          toast.error(mapCreateErrorMessage(error));
         }
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      toast.error("Failed to upload image. Please try again.");
+      toast.error(tProfile("provider.errors.upload_failed"));
     }
   };
 
@@ -588,18 +675,20 @@ export function VendorProfileForm() {
     const messages = Object.entries(errors)
       .map(([field, err]) => {
         const label =
-          VENDOR_FIELD_LABELS[field as keyof typeof VENDOR_FIELD_LABELS] ||
-          field;
+          fieldLabels[field as keyof typeof fieldLabels] ??
+          tProfile("provider.title");
         if (Array.isArray(err)) {
-          return err.map((e) => `${label}: ${e?.message}`).join("\n");
+          return err
+            .map((e) => `${label}: ${mapValidationMessage(e?.message)}`)
+            .join("\n");
         }
-        return `${label}: ${err?.message}`;
+        return `${label}: ${mapValidationMessage(err?.message)}`;
       })
       .filter(Boolean)
       .join("\n");
     toast.error(
       <span style={{ whiteSpace: "pre-line" }}>
-        {messages || "Please fix the errors in the form."}
+        {messages || tProfile("provider.messages.form_invalid")}
       </span>
     );
   };
@@ -634,22 +723,27 @@ export function VendorProfileForm() {
         className="flex flex-col gap-2 p-4 lg:p-7 overflow-y-auto max-h-[80vh]"
         autoComplete="off"
       >
-        <SettingsHeader title="Service Provider Settings" />
+        <SettingsHeader title={tProfile("provider.title")} />
 
         {/* payments onboarding reminder */}
         {vendorProfile &&
           stripeStatus &&
           stripeStatus.onboardingStatus !== "completed" && (
             <Alert className="mb-4">
-              <AlertTitle>Complete payments onboarding</AlertTitle>
+              <AlertTitle>
+                {tProfile("provider.messages.complete_payments_onboarding")}
+              </AlertTitle>
               <AlertDescription>
-                To receive payouts, finish your Stripe onboarding.{" "}
-                <Link
-                  href="/profile?tab=payouts"
-                  className="underline font-medium"
-                >
-                  Go to Payments
-                </Link>
+                {tProfile.rich("provider.messages.finish_stripe_onboarding", {
+                  link: (chunks) => (
+                    <Link
+                      href={profileTabHref("payouts", { autopayout: null })}
+                      className="underline font-medium"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+                })}
               </AlertDescription>
             </Alert>
           )}
@@ -664,7 +758,7 @@ export function VendorProfileForm() {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Business Name (for your page URL)</FormLabel>
+                  <FormLabel>{tProfile("provider.labels.business_name")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -674,12 +768,12 @@ export function VendorProfileForm() {
                           ? "bg-gray-100 cursor-not-allowed"
                           : undefined
                       }
-                      placeholder="Enter business name"
+                      placeholder={tProfile("provider.placeholders.business_name")}
                     />
                   </FormControl>
                   {!vendorProfile && (
                     <span className="block text-xs text-gray-500 mt-1">
-                      * cannot be changed after creation (used in your page URL)
+                      {tProfile("provider.messages.name_locked")}
                     </span>
                   )}
                 </FormItem>
@@ -691,7 +785,11 @@ export function VendorProfileForm() {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Hourly Rate ({intlConfig.currency})</FormLabel>
+                  <FormLabel>
+                    {tProfile("provider.labels.hourly_rate", {
+                      currency: intlConfig.currency,
+                    })}
+                  </FormLabel>
                   <FormControl>
                     <NumericFormat
                       className="w-full border rounded px-2 py-2"
@@ -700,8 +798,10 @@ export function VendorProfileForm() {
                       fixedDecimalScale
                       allowNegative={false}
                       allowLeadingZeros={false}
-                      prefix={intlConfig.currency === "EUR" ? "€ " : ""}
-                      placeholder={`Enter hourly rate in ${intlConfig.currency}`}
+                      prefix={intlConfig.currency === "EUR" ? "\u20ac " : ""}
+                      placeholder={tProfile("provider.placeholders.hourly_rate", {
+                        currency: intlConfig.currency,
+                      })}
                       value={field.value}
                       valueIsNumericString={false}
                       onBlur={field.onBlur}
@@ -733,10 +833,10 @@ export function VendorProfileForm() {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type of Service</FormLabel>
+                  <FormLabel>{tProfile("provider.labels.service_types")}</FormLabel>
                   <FormControl>
                     <MultiSelect
-                      options={SERVICE_OPTIONS}
+                      options={serviceOptions}
                       value={field.value || []}
                       onValueChange={field.onChange}
                       placeholder={getServicesPlaceholder()}
@@ -759,7 +859,7 @@ export function VendorProfileForm() {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Categories</FormLabel>
+                  <FormLabel>{tProfile("provider.labels.categories")}</FormLabel>
                   <FormControl>
                     <MultiSelect
                       options={
@@ -790,7 +890,7 @@ export function VendorProfileForm() {
               render={({ field }) => (
                 // extra bottom space so the border that follows the grid never visually “cuts” chips
                 <FormItem className="mb-2">
-                  <FormLabel>Subcategories</FormLabel>
+                  <FormLabel>{tProfile("provider.labels.subcategories")}</FormLabel>
                   <FormControl>
                     <MultiSelect
                       disabled={availableSubcategories.length === 0}
@@ -828,16 +928,22 @@ export function VendorProfileForm() {
 
                     {/* Label row with inline helper copy */}
                     <div className="flex items-center justify-between gap-3">
-                      <FormLabel className="m-0">Business country</FormLabel>
+                      <FormLabel className="m-0">
+                        {tProfile("provider.labels.business_country")}
+                      </FormLabel>
                       <span className="text-xs text-muted-foreground">
-                        Prepopulated from your user profile. To change it, edit{" "}
-                        <Link
-                          href="/profile?tab=general"
-                          className="underline font-medium"
-                        >
-                          General settings
-                        </Link>
-                        .
+                        {tProfile.rich("provider.messages.country_from_profile", {
+                          link: (chunks) => (
+                            <Link
+                              href={profileTabHref("general", {
+                                autopayout: null,
+                              })}
+                              className="underline font-medium"
+                            >
+                              {chunks}
+                            </Link>
+                          ),
+                        })}
                       </span>
                     </div>
 
@@ -883,7 +989,7 @@ export function VendorProfileForm() {
                             }}
                           />
                           <FormLabel htmlFor="vat-registered" className="m-0">
-                            Do you have VAT ID? (optional)
+                            {tProfile("provider.labels.vat_registered")}
                           </FormLabel>
                         </div>
                         <FormMessage />
@@ -898,7 +1004,9 @@ export function VendorProfileForm() {
                       control={form.control}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="m-0">VAT ID</FormLabel>
+                          <FormLabel className="m-0">
+                            {tProfile("provider.labels.vat_id")}
+                          </FormLabel>
 
                           <div className="flex flex-col sm:flex-row gap-2">
                             <div className="flex-1 min-w-0">
@@ -907,7 +1015,7 @@ export function VendorProfileForm() {
                                   {...field}
                                   autoComplete="off"
                                   value={field.value ?? ""}
-                                  placeholder="DE123456789"
+                                  placeholder={tProfile("provider.placeholders.vat_id")}
                                   className="min-w-0"
                                   onChange={(e) => {
                                     field.onChange(e);
@@ -937,15 +1045,15 @@ export function VendorProfileForm() {
                                 if (valid !== undefined) {
                                   toast[valid ? "success" : "error"](
                                     valid
-                                      ? "VAT number is valid via VIES."
-                                      : "VAT number is NOT valid."
+                                      ? tProfile("provider.messages.vat_valid_vies")
+                                      : tProfile("provider.errors.vat_invalid_vies")
                                   );
                                 }
                               }}
                             >
                               {validateVat.isPending
-                                ? "Validating..."
-                                : "Validate"}
+                                ? tProfile("provider.actions.validating_vat")
+                                : tProfile("provider.actions.validate_vat")}
                             </Button>
                           </div>
 
@@ -953,11 +1061,11 @@ export function VendorProfileForm() {
                             {vatChecked ? (
                               form.watch("vatIdValid") ? (
                                 <span className="text-green-600">
-                                  Valid VAT ID
+                                  {tProfile("provider.messages.vat_valid_status")}
                                 </span>
                               ) : (
                                 <span className="text-red-600">
-                                  Invalid VAT ID
+                                  {tProfile("provider.errors.vat_invalid_status")}
                                 </span>
                               )
                             ) : null}
@@ -989,7 +1097,7 @@ export function VendorProfileForm() {
                     imageUrl ||
                     "https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=256&h=256&facepad=2"
                   }
-                  alt="Profile preview"
+                  alt={tProfile("provider.messages.image_preview_alt")}
                   fill
                   className="object-cover w-full h-full"
                   priority
@@ -1007,7 +1115,7 @@ export function VendorProfileForm() {
               >
                 {selectedFile
                   ? selectedFile.name
-                  : "Select Image for upload (max 5MB)"}
+                  : tProfile("provider.actions.select_image")}
                 <input
                   type="file"
                   accept="image/*"
@@ -1028,7 +1136,7 @@ export function VendorProfileForm() {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number (optional)</FormLabel>
+                  <FormLabel>{tProfile("provider.labels.phone")}</FormLabel>
                   <FormControl>
                     <PhoneInput
                       international
@@ -1076,7 +1184,7 @@ export function VendorProfileForm() {
                         // Ensure empty string is converted to undefined for proper clearing
                         field.onChange(value ?? undefined);
                       }}
-                      placeholder="+49 123 4567"
+                      placeholder={tProfile("provider.placeholders.phone")}
                       className="w-full border rounded px-2 py-2"
                     />
                   </FormControl>
@@ -1095,7 +1203,7 @@ export function VendorProfileForm() {
                     <Input
                       {...field}
                       autoComplete="off"
-                      placeholder="Website (optional)"
+                      placeholder={tProfile("provider.placeholders.website")}
                     />
                   </FormControl>
                 </FormItem>
@@ -1108,7 +1216,7 @@ export function VendorProfileForm() {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{tProfile("provider.labels.description")}</FormLabel>
                   <FormControl>
                     <textarea
                       {...field}
@@ -1119,11 +1227,14 @@ export function VendorProfileForm() {
                         height: "120px", // Fixed height instead of h-full
                         minHeight: "120px",
                       }}
-                      placeholder="Describe your services, experience, and what makes you unique..."
+                      placeholder={tProfile("provider.placeholders.description")}
                     />
                   </FormControl>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {field.value?.length || 0}/1200 characters
+                    {tProfile("provider.messages.character_count", {
+                      count: field.value?.length || 0,
+                      max: 1200,
+                    })}
                   </div>
                   <FormMessage />
                 </FormItem>
@@ -1144,10 +1255,10 @@ export function VendorProfileForm() {
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               {isUploading
-                ? "Uploading…"
+                ? tProfile("provider.actions.uploading")
                 : vendorProfile
-                  ? "Updating..."
-                  : "Creating..."}
+                  ? tProfile("provider.actions.updating")
+                  : tProfile("provider.actions.creating")}
             </>
           ) : vendorProfile &&
             (vendorProfile.name ||
@@ -1158,9 +1269,9 @@ export function VendorProfileForm() {
               vendorProfile.image ||
               vendorProfile.phone ||
               vendorProfile.hourlyRate > 1) ? (
-            "Update Provider Profile"
+            tProfile("provider.actions.update_profile")
           ) : (
-            "Create Provider Profile"
+            tProfile("provider.actions.create_profile")
           )}
         </Button>
       </form>

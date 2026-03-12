@@ -1,6 +1,6 @@
 {
   "tabs": {
-    "general": "Param\u00e8tres g\u00e9n\u00e9raux",
+    "general": "Paramètres généraux",
     "provider": "Prestataire de services",
     "payments": "Paiements"
   },
@@ -9,9 +9,9 @@
     "logo_alt": "Logo Infinisimo"
   },
   "general": {
-    "title": "Param\u00e8tres du profil",
+    "title": "Paramètres du profil",
     "labels": {
-      "first_name": "Pr\u00e9nom",
+      "first_name": "Prénom",
       "last_name": "Nom",
       "username": "Nom d'utilisateur",
       "email": "Adresse e-mail",
@@ -20,40 +20,145 @@
       "language": "Langue"
     },
     "placeholders": {
-      "first_name": "Entrez votre pr\u00e9nom",
+      "first_name": "Entrez votre prénom",
       "last_name": "Entrez votre nom",
       "username": "Entrez votre nom d'utilisateur",
       "address_search": "Recherchez votre adresse...",
-      "language": "S\u00e9lectionnez une langue"
+      "language": "Sélectionnez une langue"
     },
     "messages": {
-      "field_locked_after_onboarding": "* ne peut pas \u00eatre modifi\u00e9 une fois l'onboarding termin\u00e9",
-      "profile_updated": "Profil mis \u00e0 jour avec succ\u00e8s !",
+      "field_locked_after_onboarding": "* ne peut pas être modifié une fois l'onboarding terminé",
+      "profile_updated": "Profil mis à jour avec succès !",
       "form_invalid": "Veuillez corriger les erreurs du formulaire."
     },
     "actions": {
       "save": "Enregistrer le profil",
-      "update": "Mettre \u00e0 jour le profil",
+      "update": "Mettre à jour le profil",
       "saving": "Enregistrement...",
-      "updating": "Mise \u00e0 jour..."
+      "updating": "Mise à jour..."
     },
     "errors": {
-      "save_failed": "Impossible de mettre \u00e0 jour le profil. Veuillez r\u00e9essayer.",
-      "full_street_address_required": "Veuillez choisir une adresse compl\u00e8te incluant un num\u00e9ro de rue.",
-      "location_details_failed": "Impossible de r\u00e9cup\u00e9rer les d\u00e9tails de localisation. Veuillez r\u00e9essayer.",
-      "select_address_from_suggestions": "Veuillez s\u00e9lectionner une adresse dans les suggestions.",
-      "house_number_required": "L'adresse doit inclure un num\u00e9ro de rue."
+      "save_failed": "Impossible de mettre à jour le profil. Veuillez réessayer.",
+      "full_street_address_required": "Veuillez choisir une adresse complète incluant un numéro de rue.",
+      "location_details_failed": "Impossible de récupérer les détails de localisation. Veuillez réessayer.",
+      "select_address_from_suggestions": "Veuillez sélectionner une adresse dans les suggestions.",
+      "house_number_required": "L'adresse doit inclure un numéro de rue."
     },
     "validation": {
-      "first_name_required": "Le pr\u00e9nom est obligatoire",
+      "first_name_required": "Le prénom est obligatoire",
       "last_name_required": "Le nom est obligatoire",
       "invalid_email": "Adresse e-mail invalide",
-      "username_min": "Le nom d'utilisateur doit comporter au moins 3 caract\u00e8res",
-      "username_max": "Le nom d'utilisateur doit comporter moins de 63 caract\u00e8res",
+      "username_min": "Le nom d'utilisateur doit comporter au moins 3 caractères",
+      "username_max": "Le nom d'utilisateur doit comporter moins de 63 caractères",
       "username_format": "Le nom d'utilisateur ne peut contenir que des lettres, chiffres, points, tirets bas et traits d'union. Il doit commencer et se terminer par une lettre ou un chiffre",
-      "username_consecutive_separators": "Le nom d'utilisateur ne peut pas contenir de s\u00e9parateurs cons\u00e9cutifs (., _, -)",
-      "select_location": "Veuillez s\u00e9lectionner un emplacement",
+      "username_consecutive_separators": "Le nom d'utilisateur ne peut pas contenir de séparateurs consécutifs (., _, -)",
+      "select_location": "Veuillez sélectionner un emplacement",
       "country_required": "Le pays est obligatoire"
+    }
+  },
+  "provider": {
+    "title": "Paramètres du prestataire",
+    "labels": {
+      "business_name": "Nom de l'entreprise (pour l'URL de votre page)",
+      "hourly_rate": "Tarif horaire ({currency})",
+      "service_types": "Type de service",
+      "categories": "Catégories",
+      "subcategories": "Sous-catégories",
+      "business_country": "Pays de l'entreprise",
+      "vat_registered": "Avez-vous un numéro de TVA ? (optionnel)",
+      "vat_id": "Numéro de TVA",
+      "phone": "Numéro de téléphone (optionnel)",
+      "description": "Description"
+    },
+    "service_options": {
+      "on_site": "Sur site",
+      "online": "En ligne"
+    },
+    "placeholders": {
+      "business_name": "Saisissez le nom de l'entreprise",
+      "hourly_rate": "Saisissez le tarif horaire en {currency}",
+      "services": "Sélectionnez des types de service",
+      "categories": "Sélectionnez des catégories",
+      "subcategories_first": "Sélectionnez d'abord des catégories",
+      "subcategories": "Sélectionnez des sous-catégories",
+      "vat_id": "DE123456789",
+      "phone": "+49 123 4567",
+      "website": "Site web (optionnel)",
+      "description": "Décrivez vos services, votre expérience et ce qui vous distingue..."
+    },
+    "actions": {
+      "validate_vat": "Vérifier",
+      "validating_vat": "Vérification...",
+      "select_image": "Sélectionner une image à téléverser (max. 5 Mo)",
+      "uploading": "Téléversement...",
+      "updating": "Mise à jour...",
+      "creating": "Création...",
+      "update_profile": "Mettre à jour le profil prestataire",
+      "create_profile": "Créer le profil prestataire"
+    },
+    "messages": {
+      "form_invalid": "Veuillez corriger les erreurs du formulaire.",
+      "updated_success": "Profil prestataire mis à jour avec succès !",
+      "image_upload_partial_success": "Le profil a bien été créé, mais l'image n'a pas pu être téléversée. Vous pourrez l'ajouter plus tard dans l'éditeur de profil.",
+      "created_next_payouts": "Profil prestataire créé. Étape suivante : configurer les paiements.",
+      "complete_payments_onboarding": "Terminer la configuration des paiements",
+      "finish_stripe_onboarding": "Pour recevoir des paiements, terminez votre onboarding Stripe. <link>Aller aux paiements</link>",
+      "name_locked": "* ne peut pas être modifié après la création (utilisé dans l'URL de votre page)",
+      "country_from_profile": "Prérempli à partir de votre profil utilisateur. Pour le modifier, ouvrez les <link>Paramètres généraux</link>.",
+      "vat_valid_vies": "Le numéro de TVA est valide via VIES.",
+      "vat_valid_status": "Numéro de TVA valide",
+      "image_preview_alt": "Aperçu du profil",
+      "character_count": "{count}/{max} caractères"
+    },
+    "errors": {
+      "vat_validation_failed": "La validation du numéro de TVA a échoué. Veuillez réessayer.",
+      "vat_eu_only": "La TVA ne peut être définie que pour les pays de l'UE.",
+      "update_failed": "La mise à jour du profil a échoué. Veuillez réessayer.",
+      "name_taken": "Ce nom d'entreprise est déjà pris. Veuillez en choisir un autre.",
+      "create_failed": "La création du profil prestataire a échoué. Veuillez réessayer.",
+      "upload_failed": "Le téléversement de l'image a échoué. Veuillez réessayer.",
+      "vat_invalid_vies": "Le numéro de TVA n'est pas valide.",
+      "vat_invalid_status": "Numéro de TVA invalide"
+    },
+    "validation": {
+      "name_required": "Le nom de l'entreprise est obligatoire",
+      "name_max": "Le nom de l'entreprise doit contenir moins de 50 caractères",
+      "name_format": "Le nom de l'entreprise peut contenir des lettres, des chiffres, des tirets et des tirets bas",
+      "bio_max": "La description doit contenir moins de 1200 caractères",
+      "services_required": "Sélectionnez au moins un type de service",
+      "categories_required": "Sélectionnez au moins une catégorie",
+      "website_invalid": "Le site web doit être une URL valide.",
+      "phone_invalid": "Le numéro doit être un numéro international valide au format E.164",
+      "hourly_rate_number": "Le tarif horaire doit être un nombre",
+      "hourly_rate_min": "Le tarif horaire doit être au minimum de 1 EUR",
+      "hourly_rate_max": "Le tarif horaire semble trop élevé",
+      "country_iso": "Utilisez un code ISO-2",
+      "vat_required": "Le numéro de TVA est requis lorsque l'inscription à la TVA est sélectionnée."
+    }
+  },
+  "confirmation": {
+    "titles": {
+      "prereq": "Complétez votre profil général pour continuer",
+      "confirm": "Devenir prestataire"
+    },
+    "messages": {
+      "prereq_intro": "Votre position est nécessaire pour que les clients puissent vous trouver.",
+      "prereq_location": "Ajoutez votre position pour apparaître dans les recherches locales",
+      "confirm_intro": "Commencez à proposer vos services et entrez en contact avec des clients dans votre zone",
+      "search_visibility": "Apparaître dans les résultats de recherche pour votre zone",
+      "pricing_setup": "Définissez votre tarif horaire et vos catégories de service",
+      "availability": "Gérez vos disponibilités et vos réservations"
+    },
+    "actions": {
+      "close": "Fermer et revenir aux paramètres généraux",
+      "complete_general": "Compléter les paramètres généraux",
+      "loading": "Chargement...",
+      "create_provider": "Créer le profil prestataire",
+      "maybe_later": "Peut-être plus tard",
+      "retry": "Réessayer"
+    },
+    "errors": {
+      "profile_load_failed": "Le chargement de votre profil a échoué. Veuillez réessayer."
     }
   }
 }

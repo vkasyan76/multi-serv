@@ -1,35 +1,35 @@
 {
   "tabs": {
-    "general": "Ustawienia og\u00f3lne",
-    "provider": "Us\u0142ugodawca",
-    "payments": "P\u0142atno\u015bci"
+    "general": "Ustawienia ogólne",
+    "provider": "Usługodawca",
+    "payments": "Płatności"
   },
   "header": {
-    "home": "Strona g\u0142\u00f3wna",
+    "home": "Strona główna",
     "logo_alt": "Logo Infinisimo"
   },
   "general": {
     "title": "Ustawienia profilu",
     "labels": {
-      "first_name": "Imi\u0119",
+      "first_name": "Imię",
       "last_name": "Nazwisko",
-      "username": "Nazwa u\u017cytkownika",
+      "username": "Nazwa użytkownika",
       "email": "Adres e-mail",
       "address": "Adres",
       "country": "Kraj",
-      "language": "J\u0119zyk"
+      "language": "Język"
     },
     "placeholders": {
-      "first_name": "Wpisz swoje imi\u0119",
+      "first_name": "Wpisz swoje imię",
       "last_name": "Wpisz swoje nazwisko",
-      "username": "Wpisz swoj\u0105 nazw\u0119 u\u017cytkownika",
-      "address_search": "Wyszukaj sw\u00f3j adres...",
-      "language": "Wybierz j\u0119zyk"
+      "username": "Wpisz swoją nazwę użytkownika",
+      "address_search": "Wyszukaj swój adres...",
+      "language": "Wybierz język"
     },
     "messages": {
-      "field_locked_after_onboarding": "* nie mo\u017cna zmieni\u0107 po zako\u0144czeniu onboardingu",
-      "profile_updated": "Profil zosta\u0142 pomy\u015blnie zaktualizowany!",
-      "form_invalid": "Popraw b\u0142\u0119dy w formularzu."
+      "field_locked_after_onboarding": "* nie można zmienić po zakończeniu onboardingu",
+      "profile_updated": "Profil został zaktualizowany!",
+      "form_invalid": "Popraw błędy w formularzu."
     },
     "actions": {
       "save": "Zapisz profil",
@@ -38,22 +38,127 @@
       "updating": "Aktualizowanie..."
     },
     "errors": {
-      "save_failed": "Nie uda\u0142o si\u0119 zaktualizowa\u0107 profilu. Spr\u00f3buj ponownie.",
-      "full_street_address_required": "Wybierz pe\u0142ny adres uliczny zawieraj\u0105cy numer domu.",
-      "location_details_failed": "Nie uda\u0142o si\u0119 pobra\u0107 szczeg\u00f3\u0142\u00f3w lokalizacji. Spr\u00f3buj ponownie.",
+      "save_failed": "Nie udało się zaktualizować profilu. Spróbuj ponownie.",
+      "full_street_address_required": "Wybierz pełny adres ulicy z numerem domu.",
+      "location_details_failed": "Nie udało się pobrać szczegółów lokalizacji. Spróbuj ponownie.",
       "select_address_from_suggestions": "Wybierz adres z podpowiedzi.",
-      "house_number_required": "Adres musi zawiera\u0107 numer domu."
+      "house_number_required": "Adres musi zawierać numer domu."
     },
     "validation": {
-      "first_name_required": "Imi\u0119 jest wymagane",
+      "first_name_required": "Imię jest wymagane",
       "last_name_required": "Nazwisko jest wymagane",
-      "invalid_email": "Nieprawid\u0142owy adres e-mail",
-      "username_min": "Nazwa u\u017cytkownika musi mie\u0107 co najmniej 3 znaki",
-      "username_max": "Nazwa u\u017cytkownika musi mie\u0107 mniej ni\u017c 63 znaki",
-      "username_format": "Nazwa u\u017cytkownika mo\u017ce zawiera\u0107 tylko litery, cyfry, kropki, podkre\u015blenia i my\u015blniki. Musi zaczyna\u0107 si\u0119 i ko\u0144czy\u0107 liter\u0105 lub cyfr\u0105",
-      "username_consecutive_separators": "Nazwa u\u017cytkownika nie mo\u017ce zawiera\u0107 kolejnych separator\u00f3w (., _, -)",
-      "select_location": "Wybierz lokalizacj\u0119",
+      "invalid_email": "Nieprawidłowy adres e-mail",
+      "username_min": "Nazwa użytkownika musi mieć co najmniej 3 znaki",
+      "username_max": "Nazwa użytkownika musi mieć mniej niż 63 znaki",
+      "username_format": "Nazwa użytkownika może zawierać tylko litery, cyfry, kropki, podkreślenia i myślniki. Musi zaczynać się i kończyć literą lub cyfrą",
+      "username_consecutive_separators": "Nazwa użytkownika nie może zawierać kolejnych separatorów (., _, -)",
+      "select_location": "Wybierz lokalizację",
       "country_required": "Kraj jest wymagany"
+    }
+  },
+  "provider": {
+    "title": "Ustawienia usługodawcy",
+    "labels": {
+      "business_name": "Nazwa firmy (dla adresu URL Twojej strony)",
+      "hourly_rate": "Stawka godzinowa ({currency})",
+      "service_types": "Rodzaj usługi",
+      "categories": "Kategorie",
+      "subcategories": "Podkategorie",
+      "business_country": "Kraj działalności",
+      "vat_registered": "Czy masz numer VAT? (opcjonalnie)",
+      "vat_id": "Numer VAT",
+      "phone": "Numer telefonu (opcjonalnie)",
+      "description": "Opis"
+    },
+    "service_options": {
+      "on_site": "Na miejscu",
+      "online": "Online"
+    },
+    "placeholders": {
+      "business_name": "Wpisz nazwę firmy",
+      "hourly_rate": "Wpisz stawkę godzinową w {currency}",
+      "services": "Wybierz rodzaje usług",
+      "categories": "Wybierz kategorie",
+      "subcategories_first": "Najpierw wybierz kategorie",
+      "subcategories": "Wybierz podkategorie",
+      "vat_id": "DE123456789",
+      "phone": "+49 123 4567",
+      "website": "Strona internetowa (opcjonalnie)",
+      "description": "Opisz swoje usługi, doświadczenie i to, co Cię wyróżnia..."
+    },
+    "actions": {
+      "validate_vat": "Zweryfikuj",
+      "validating_vat": "Weryfikacja...",
+      "select_image": "Wybierz obraz do przesłania (maks. 5 MB)",
+      "uploading": "Przesyłanie...",
+      "updating": "Aktualizowanie...",
+      "creating": "Tworzenie...",
+      "update_profile": "Zaktualizuj profil usługodawcy",
+      "create_profile": "Utwórz profil usługodawcy"
+    },
+    "messages": {
+      "form_invalid": "Popraw błędy w formularzu.",
+      "updated_success": "Profil usługodawcy został zaktualizowany!",
+      "image_upload_partial_success": "Profil został utworzony, ale nie udało się przesłać obrazu. Możesz dodać go później w edytorze profilu.",
+      "created_next_payouts": "Profil usługodawcy utworzony. Następny krok: skonfiguruj wypłaty.",
+      "complete_payments_onboarding": "Dokończ konfigurację płatności",
+      "finish_stripe_onboarding": "Aby otrzymywać wypłaty, dokończ onboarding Stripe. <link>Przejdź do płatności</link>",
+      "name_locked": "* nie może zostać zmieniona po utworzeniu (jest używana w adresie URL Twojej strony)",
+      "country_from_profile": "Pole jest uzupełniane na podstawie Twojego profilu użytkownika. Aby je zmienić, otwórz <link>Ustawienia ogólne</link>.",
+      "vat_valid_vies": "Numer VAT jest prawidłowy w systemie VIES.",
+      "vat_valid_status": "Prawidłowy numer VAT",
+      "image_preview_alt": "Podgląd profilu",
+      "character_count": "{count}/{max} znaków"
+    },
+    "errors": {
+      "vat_validation_failed": "Weryfikacja numeru VAT nie powiodła się. Spróbuj ponownie.",
+      "vat_eu_only": "VAT można ustawić tylko dla krajów UE.",
+      "update_failed": "Nie udało się zaktualizować profilu. Spróbuj ponownie.",
+      "name_taken": "Ta nazwa firmy jest już zajęta. Wybierz inną.",
+      "create_failed": "Nie udało się utworzyć profilu usługodawcy. Spróbuj ponownie.",
+      "upload_failed": "Nie udało się przesłać obrazu. Spróbuj ponownie.",
+      "vat_invalid_vies": "Numer VAT jest nieprawidłowy.",
+      "vat_invalid_status": "Nieprawidłowy numer VAT"
+    },
+    "validation": {
+      "name_required": "Nazwa firmy jest wymagana",
+      "name_max": "Nazwa firmy musi mieć mniej niż 50 znaków",
+      "name_format": "Nazwa firmy może zawierać litery, cyfry, myślniki i podkreślenia",
+      "bio_max": "Opis musi mieć mniej niż 1200 znaków",
+      "services_required": "Wybierz co najmniej jeden rodzaj usługi",
+      "categories_required": "Wybierz co najmniej jedną kategorię",
+      "website_invalid": "Strona internetowa musi być prawidłowym adresem URL.",
+      "phone_invalid": "Musi to być prawidłowy międzynarodowy numer telefonu w formacie E.164",
+      "hourly_rate_number": "Stawka godzinowa musi być liczbą",
+      "hourly_rate_min": "Stawka godzinowa musi wynosić co najmniej 1 EUR",
+      "hourly_rate_max": "Stawka godzinowa wydaje się zbyt wysoka",
+      "country_iso": "Użyj kodu ISO-2",
+      "vat_required": "Numer VAT jest wymagany po zaznaczeniu rejestracji VAT."
+    }
+  },
+  "confirmation": {
+    "titles": {
+      "prereq": "Uzupełnij swój profil ogólny, aby kontynuować",
+      "confirm": "Zostań usługodawcą"
+    },
+    "messages": {
+      "prereq_intro": "Twoja lokalizacja jest potrzebna, aby klienci mogli Cię znaleźć.",
+      "prereq_location": "Dodaj lokalizację, aby pojawiać się w lokalnych wyszukiwaniach",
+      "confirm_intro": "Zacznij oferować swoje usługi i nawiązuj kontakt z klientami w swojej okolicy",
+      "search_visibility": "Pojawiaj się w wynikach wyszukiwania dla swojej lokalizacji",
+      "pricing_setup": "Ustaw stawkę godzinową i kategorie usług",
+      "availability": "Zarządzaj dostępnością i rezerwacjami"
+    },
+    "actions": {
+      "close": "Zamknij i wróć do ustawień ogólnych",
+      "complete_general": "Uzupełnij ustawienia ogólne",
+      "loading": "Ładowanie...",
+      "create_provider": "Utwórz profil usługodawcy",
+      "maybe_later": "Może następnym razem",
+      "retry": "Spróbuj ponownie"
+    },
+    "errors": {
+      "profile_load_failed": "Nie udało się załadować Twojego profilu. Spróbuj ponownie."
     }
   }
 }

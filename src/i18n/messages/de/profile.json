@@ -24,10 +24,10 @@
       "last_name": "Geben Sie Ihren Nachnamen ein",
       "username": "Geben Sie Ihren Benutzernamen ein",
       "address_search": "Suchen Sie nach Ihrer Adresse...",
-      "language": "Sprache ausw\u00e4hlen"
+      "language": "Sprache auswählen"
     },
     "messages": {
-      "field_locked_after_onboarding": "* kann nach Abschluss des Onboardings nicht mehr ge\u00e4ndert werden",
+      "field_locked_after_onboarding": "* kann nach Abschluss des Onboardings nicht mehr geändert werden",
       "profile_updated": "Profil erfolgreich aktualisiert!",
       "form_invalid": "Bitte korrigieren Sie die Fehler im Formular."
     },
@@ -39,21 +39,126 @@
     },
     "errors": {
       "save_failed": "Profil konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
-      "full_street_address_required": "Bitte w\u00e4hlen Sie eine vollst\u00e4ndige Stra\u00dfenadresse mit Hausnummer aus.",
+      "full_street_address_required": "Bitte wählen Sie eine vollständige Straßenadresse mit Hausnummer aus.",
       "location_details_failed": "Standortdetails konnten nicht abgerufen werden. Bitte versuchen Sie es erneut.",
-      "select_address_from_suggestions": "Bitte w\u00e4hlen Sie eine Adresse aus den Vorschl\u00e4gen aus.",
+      "select_address_from_suggestions": "Bitte wählen Sie eine Adresse aus den Vorschlägen aus.",
       "house_number_required": "Die Adresse muss eine Hausnummer enthalten."
     },
     "validation": {
       "first_name_required": "Vorname ist erforderlich",
       "last_name_required": "Nachname ist erforderlich",
-      "invalid_email": "Ung\u00fcltige E-Mail-Adresse",
+      "invalid_email": "Ungültige E-Mail-Adresse",
       "username_min": "Der Benutzername muss mindestens 3 Zeichen lang sein",
       "username_max": "Der Benutzername muss weniger als 63 Zeichen lang sein",
       "username_format": "Der Benutzername darf nur Buchstaben, Zahlen, Punkte, Unterstriche und Bindestriche enthalten. Er muss mit einem Buchstaben oder einer Zahl beginnen und enden",
       "username_consecutive_separators": "Der Benutzername darf keine aufeinanderfolgenden Trennzeichen enthalten (., _, -)",
-      "select_location": "Bitte w\u00e4hlen Sie einen Standort aus",
+      "select_location": "Bitte wählen Sie einen Standort aus",
       "country_required": "Land ist erforderlich"
+    }
+  },
+  "provider": {
+    "title": "Dienstleister-Einstellungen",
+    "labels": {
+      "business_name": "Firmenname (für Ihre Seiten-URL)",
+      "hourly_rate": "Stundensatz ({currency})",
+      "service_types": "Art der Dienstleistung",
+      "categories": "Kategorien",
+      "subcategories": "Unterkategorien",
+      "business_country": "Geschäftsland",
+      "vat_registered": "Haben Sie eine USt-IdNr.? (optional)",
+      "vat_id": "USt-IdNr.",
+      "phone": "Telefonnummer (optional)",
+      "description": "Beschreibung"
+    },
+    "service_options": {
+      "on_site": "Vor Ort",
+      "online": "Online"
+    },
+    "placeholders": {
+      "business_name": "Firmennamen eingeben",
+      "hourly_rate": "Stundensatz in {currency} eingeben",
+      "services": "Dienstleistungsarten auswählen",
+      "categories": "Kategorien auswählen",
+      "subcategories_first": "Wählen Sie zuerst Kategorien aus",
+      "subcategories": "Unterkategorien auswählen",
+      "vat_id": "DE123456789",
+      "phone": "+49 123 4567",
+      "website": "Optionale Website",
+      "description": "Beschreiben Sie Ihre Leistungen, Ihre Erfahrung und was Sie besonders macht..."
+    },
+    "actions": {
+      "validate_vat": "Prüfen",
+      "validating_vat": "Wird geprüft...",
+      "select_image": "Bild zum Hochladen auswählen (max. 5 MB)",
+      "uploading": "Wird hochgeladen...",
+      "updating": "Wird aktualisiert...",
+      "creating": "Wird erstellt...",
+      "update_profile": "Dienstleisterprofil aktualisieren",
+      "create_profile": "Dienstleisterprofil erstellen"
+    },
+    "messages": {
+      "form_invalid": "Bitte korrigieren Sie die Fehler im Formular.",
+      "updated_success": "Dienstleisterprofil erfolgreich aktualisiert!",
+      "image_upload_partial_success": "Das Profil wurde erfolgreich erstellt, aber das Bild konnte nicht hochgeladen werden. Sie können es später im Profil-Editor hinzufügen.",
+      "created_next_payouts": "Dienstleisterprofil erstellt. Als Nächstes: Auszahlungen einrichten.",
+      "complete_payments_onboarding": "Zahlungs-Onboarding abschließen",
+      "finish_stripe_onboarding": "Schließen Sie Ihr Stripe-Onboarding ab, um Auszahlungen zu erhalten. <link>Zu Zahlungen</link>",
+      "name_locked": "* kann nach der Erstellung nicht mehr geändert werden (wird in Ihrer Seiten-URL verwendet)",
+      "country_from_profile": "Wird aus Ihrem Benutzerprofil übernommen. Um es zu ändern, bearbeiten Sie <link>Allgemeine Einstellungen</link>.",
+      "vat_valid_vies": "Die USt-IdNr. ist über VIES gültig.",
+      "vat_valid_status": "Gültige USt-IdNr.",
+      "image_preview_alt": "Profilvorschau",
+      "character_count": "{count}/{max} Zeichen"
+    },
+    "errors": {
+      "vat_validation_failed": "Die USt-IdNr. konnte nicht geprüft werden. Bitte versuchen Sie es erneut.",
+      "vat_eu_only": "Die USt-IdNr. kann nur für EU-Länder gesetzt werden.",
+      "update_failed": "Das Profil konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+      "name_taken": "Dieser Firmenname ist bereits vergeben. Bitte wählen Sie einen anderen Namen.",
+      "create_failed": "Das Dienstleisterprofil konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+      "upload_failed": "Das Bild konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.",
+      "vat_invalid_vies": "Die USt-IdNr. ist nicht gültig.",
+      "vat_invalid_status": "Ungültige USt-IdNr."
+    },
+    "validation": {
+      "name_required": "Firmenname ist erforderlich",
+      "name_max": "Der Firmenname darf höchstens 50 Zeichen lang sein",
+      "name_format": "Der Firmenname darf Buchstaben, Zahlen, Bindestriche und Unterstriche enthalten",
+      "bio_max": "Die Beschreibung darf maximal 1200 Zeichen lang sein",
+      "services_required": "Wählen Sie mindestens eine Dienstleistungsart aus",
+      "categories_required": "Wählen Sie mindestens eine Kategorie aus",
+      "website_invalid": "Die Website muss eine gültige URL sein.",
+      "phone_invalid": "Es muss eine gültige internationale Telefonnummer im E.164-Format sein",
+      "hourly_rate_number": "Der Stundensatz muss eine Zahl sein",
+      "hourly_rate_min": "Der Stundensatz muss mindestens 1 EUR betragen",
+      "hourly_rate_max": "Der Stundensatz scheint zu hoch zu sein",
+      "country_iso": "Verwenden Sie einen ISO-2-Code",
+      "vat_required": "Eine USt-IdNr. ist erforderlich, wenn die USt-Registrierung ausgewählt ist."
+    }
+  },
+  "confirmation": {
+    "titles": {
+      "prereq": "Vervollständigen Sie Ihr allgemeines Profil, um fortzufahren",
+      "confirm": "Werden Sie Dienstleister"
+    },
+    "messages": {
+      "prereq_intro": "Ihr Standort wird benötigt, damit Kundinnen und Kunden Sie finden können.",
+      "prereq_location": "Fügen Sie Ihren Standort hinzu, um in lokalen Suchen zu erscheinen",
+      "confirm_intro": "Bieten Sie Ihre Dienstleistungen an und vernetzen Sie sich mit Kundinnen und Kunden in Ihrer Nähe",
+      "search_visibility": "Erscheinen Sie in Suchergebnissen für Ihren Standort",
+      "pricing_setup": "Legen Sie Ihren Stundensatz und Ihre Dienstleistungskategorien fest",
+      "availability": "Verwalten Sie Ihre Verfügbarkeit und Buchungen"
+    },
+    "actions": {
+      "close": "Schließen und zu den allgemeinen Einstellungen zurückkehren",
+      "complete_general": "Allgemeine Einstellungen abschließen",
+      "loading": "Wird geladen...",
+      "create_provider": "Dienstleisterprofil erstellen",
+      "maybe_later": "Vielleicht später",
+      "retry": "Erneut versuchen"
+    },
+    "errors": {
+      "profile_load_failed": "Ihr Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut."
     }
   }
 }

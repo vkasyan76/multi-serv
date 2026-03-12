@@ -24,12 +24,17 @@ Explicitly decide (in/out) in Phase 0:
 - internal admin diagnostics and system logs
 - CMS long-form marketing content (optional v1/v2)
 
-## Implementation Status (as of 2026-03-06)
+## Implementation Status (as of 2026-03-12)
 
 - Phase 0 - conventions and rollout doc locked.
 - Completed Phase 1 on Next 15 using `src/middleware.ts` + `src/i18n/routing.ts`.
 - Phase 2 now runs on localized app routes under `src/app/(app)/[lang]/...`.
 - Phase 3 runtime i18n and shell/common migration is complete.
+- Phase 4 formatting consolidation is complete.
+- Phase 4A category/CMS localization is complete.
+- Phase 5 Wave 1 checkout/bookings is complete.
+- Tenant public page completion pass is complete.
+- Phase 5 Wave 3 Commit 1 (profile shell + general profile form) is complete.
 
 Completed fixes across Phase 1/2/3:
 
@@ -47,12 +52,18 @@ Completed fixes across Phase 1/2/3:
 - `src/app/(app)/[lang]/layout.tsx` validates/pins URL locale only (`setRequestLocale`), without a nested provider.
 - shell/common UI now uses `useTranslations("common")` in navbar/sidebar/footer/cookie/referral components.
 - launched-locale governance checks are active via `src/i18n/rollout.ts`, `src/scripts/i18n-check.ts`, and `npm run test:i18n:messages`.
+- launched locales are now `en,de,fr,it,es,pt,pl,ro,uk`.
+- `checkout`, `bookings`, `tenantPage`, and `profile` namespaces are wired into runtime loading and governance.
+- category labels are localized from Payload reads with `en` fallback.
+- pay-later booking flow surfaces stable localized customer errors instead of raw English server text.
+- tenant public page shell, shared tenant card, reviews, and conversation surfaces are localized.
+- profile shell and general profile form are localized under the new `profile` namespace.
 
 ## Guiding Decisions
 
 ### URL strategy
 
-Locale-prefixed URLs: `/{lang}/...` where `{lang}` is AppLang short code (`en,de,fr,it,es,pt`).
+Locale-prefixed URLs: `/{lang}/...` where `{lang}` is AppLang short code (`en,de,fr,it,es,pt,pl,ro,uk`).
 
 ### Single edge entrypoint
 
@@ -72,10 +83,11 @@ All routing concerns are composed in one edge entrypoint (`src/middleware.ts`) f
 
 ### Incremental rollout
 
-- Phase 1 proves routing integrity
-- Phase 2 restructures routes
+- Phase 1 proves routing integrity (complete)
+- Phase 2 restructures routes (complete)
 - Phase 3 introduces dictionaries and shell/common migration (complete)
-- Phase 4/4A covers formatting + CMS localization
+- Phase 4/4A covers formatting + CMS localization (complete)
+- Phase 5 is being executed in feature waves
 - Phase 6/6A covers preference + emails
 - Phase 7 locks quality gates
 
@@ -257,7 +269,7 @@ CI governance rule:
 - missing keys visible in dev (no prod crash)
 - fallback works as locked (`en`)
 
-## Phase 4 - Formatting Consolidation (compat-first)
+## Phase 4 - Formatting Consolidation (Implemented)
 
 ### Goals
 
@@ -282,7 +294,7 @@ Move runtime locale mapping helpers (`mapAppLangToLocale`, `getLocaleAndCurrency
 - old imports still compile
 - new code uses canonical module
 
-## Phase 4A - Payload/CMS Content Localization Foundation
+## Phase 4A - Payload/CMS Content Localization Foundation (Implemented)
 
 ### Goals
 
@@ -333,13 +345,19 @@ If category text is snapshotted into orders/bookings:
 
 Translate incrementally in releasable waves.
 
-### Recommended waves
+### Current phase status
 
-1. Shell/Auth/Common
-2. Home/discovery (including category browsing UI)
-3. Checkout/booking funnel
-4. Orders (customer/tenant/admin)
-5. Finance/admin long-tail
+- Wave 1 - Checkout/booking funnel: complete
+- Tenant public page completion pass: complete
+- Wave 2 - Orders: track separately if implemented outside this doc
+- Wave 3 - Profile/auth leftovers: in progress
+- Wave 4 - Finance/admin long-tail: open
+
+### Recommended remaining waves
+
+1. Orders (customer/tenant/admin)
+2. Profile/auth leftovers
+3. Finance/admin long-tail
 
 ### Wave checklist
 
@@ -354,6 +372,36 @@ Translate incrementally in releasable waves.
 - no hardcoded user-facing strings in migrated modules
 - locale routing consistent
 - critical path translated end-to-end
+
+### Wave 1 completion note
+
+Implemented:
+
+- `checkout` and `bookings` namespaces with launched-locale coverage
+- booking UI, pay-later checkout UI, payment setup, and terms dialog translation
+- pay-later booking error localization in the customer flow
+
+### Tenant public page completion note
+
+Implemented:
+
+- `tenantPage` namespace with launched-locale coverage
+- tenant page shell, shared tenant card, review summary, and conversation surfaces
+- route-aware review date formatting
+
+### Wave 3 current status
+
+Implemented:
+
+- `profile` namespace plumbing
+- `ProfileTabs`, `SettingsHeader`, and `GeneralProfileForm`
+
+Still open:
+
+- `VendorProfileForm`
+- `ProviderConfirmation`
+- `PayoutsPanel`
+- auth leftovers only if confirmed live
 
 ## Phase 6 - Preference Persistence + Language Switch UX
 
@@ -464,16 +512,19 @@ Add one explicit test ensuring missing locale key/content falls back to `en` for
 
 ## Immediate Next Step
 
-Phase 1/2/3 are complete. Start Phase 4:
+Current next step:
 
-1. consolidate locale formatting helpers into `src/lib/i18n/locale.ts`
-2. keep `src/modules/profile/location-utils.ts` as compatibility re-export during transition
-3. migrate new and touched formatting callsites to canonical `src/lib/i18n/*` helpers
-4. validate no date/currency regression in Berlin timezone behavior
+1. Finish Phase 5 Wave 3 Commit 2:
+   - `src/modules/profile/ui/VendorProfileForm.tsx`
+   - `src/modules/profile/ui/ProviderConfirmation.tsx`
+   - `src/i18n/messages/{lang}/profile.json`
+2. Then finish Phase 5 Wave 3 Commit 3:
+   - `src/modules/profile/ui/PayoutsPanel.tsx`
+3. Only after that, decide whether Wave 3 Commit 4 is needed by verifying whether legacy auth views are still live.
 
-Recommended order after that:
+Recommended order after the current profile work:
 
-Phase 4 -> Phase 4A -> Phase 5 -> Phase 6 -> Phase 6A -> Phase 7.
+Phase 5 Wave 3 -> Phase 5 Wave 4 -> Phase 6 -> Phase 6A -> Phase 7.
 
 Future migration note:
 
