@@ -27,8 +27,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getLocaleAndCurrency } from "@/modules/profile/location-utils";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { getLocaleAndCurrency } from "@/lib/i18n/locale";
 import SettingsHeader from "./SettingsHeader";
 
 export default function PayoutsPanel() {
