@@ -160,5 +160,55 @@
     "errors": {
       "profile_load_failed": "Le chargement de votre profil a échoué. Veuillez réessayer."
     }
+  },
+  "payouts": {
+    "title": "Paiements et versements",
+    "messages": {
+      "provider_required": "Créez d'abord votre profil de prestataire de services.",
+      "active": "Les versements sont actifs. Gérez votre compte Stripe depuis le tableau de bord.",
+      "finish_onboarding": "Terminez la configuration Stripe pour activer les versements.",
+      "no_balance": "Aucun solde pour le moment"
+    },
+    "actions": {
+      "onboarding": "Configuration Stripe",
+      "update_details": "Mettre à jour les informations Stripe",
+      "open_dashboard": "Ouvrir le tableau de bord Stripe",
+      "create_provider": "Créer le profil de prestataire",
+      "retry": "Réessayer"
+    },
+    "errors": {
+      "open_onboarding_failed": "Impossible d'ouvrir la configuration Stripe. Veuillez réessayer.",
+      "open_dashboard_failed": "Impossible d'ouvrir le tableau de bord Stripe. Veuillez réessayer.",
+      "status_load_failed": "Impossible de charger le statut des versements.",
+      "balance_load_failed": "Impossible de charger les soldes."
+    },
+    "table": {
+      "field": "Champ",
+      "status": "Statut",
+      "onboarding": "Configuration",
+      "charges": "Paiements",
+      "payouts": "Versements",
+      "mode": "Mode",
+      "currency": "Devise",
+      "available": "Disponible",
+      "pending": "En attente",
+      "total": "Total",
+      "next_payout": "Prochain versement :"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Activé",
+      "disabled": "Désactivé",
+      "completed": "Terminé",
+      "in_progress": "En cours",
+      "restricted": "Restreint",
+      "not_started": "Non commencé",
+      "loading": "Chargement"
+    },
+    "aria": {
+      "open_onboarding": "Ouvrir la configuration Stripe dans un nouvel onglet",
+      "open_dashboard": "Ouvrir le tableau de bord Stripe dans un nouvel onglet"
+    }
   }
 }

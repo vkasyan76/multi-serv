@@ -160,5 +160,55 @@
     "errors": {
       "profile_load_failed": "Impossibile caricare il tuo profilo. Riprova."
     }
+  },
+  "payouts": {
+    "title": "Pagamenti e accrediti",
+    "messages": {
+      "provider_required": "Crea prima il tuo profilo di fornitore di servizi.",
+      "active": "Gli accrediti sono attivi. Gestisci il tuo account Stripe dalla dashboard.",
+      "finish_onboarding": "Completa la configurazione Stripe per abilitare gli accrediti.",
+      "no_balance": "Nessun saldo al momento"
+    },
+    "actions": {
+      "onboarding": "Configurazione Stripe",
+      "update_details": "Aggiorna dettagli Stripe",
+      "open_dashboard": "Apri dashboard Stripe",
+      "create_provider": "Crea profilo fornitore",
+      "retry": "Riprova"
+    },
+    "errors": {
+      "open_onboarding_failed": "Impossibile aprire la configurazione Stripe. Riprova.",
+      "open_dashboard_failed": "Impossibile aprire la dashboard Stripe. Riprova.",
+      "status_load_failed": "Impossibile caricare lo stato degli accrediti.",
+      "balance_load_failed": "Impossibile caricare i saldi."
+    },
+    "table": {
+      "field": "Campo",
+      "status": "Stato",
+      "onboarding": "Configurazione",
+      "charges": "Pagamenti",
+      "payouts": "Accrediti",
+      "mode": "Modalità",
+      "currency": "Valuta",
+      "available": "Disponibile",
+      "pending": "In sospeso",
+      "total": "Totale",
+      "next_payout": "Prossimo accredito:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Attivato",
+      "disabled": "Disattivato",
+      "completed": "Completato",
+      "in_progress": "In corso",
+      "restricted": "Limitato",
+      "not_started": "Non iniziato",
+      "loading": "Caricamento"
+    },
+    "aria": {
+      "open_onboarding": "Apri la configurazione Stripe in una nuova scheda",
+      "open_dashboard": "Apri la dashboard Stripe in una nuova scheda"
+    }
   }
 }

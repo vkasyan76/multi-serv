@@ -160,5 +160,55 @@
     "errors": {
       "profile_load_failed": "Profilul tău nu a putut fi încărcat. Încercați din nou."
     }
+  },
+  "payouts": {
+    "title": "Plăți și retrageri",
+    "messages": {
+      "provider_required": "Creați mai întâi profilul dvs. de furnizor de servicii.",
+      "active": "Retragerile sunt active. Gestionați contul Stripe din panou.",
+      "finish_onboarding": "Finalizați configurarea Stripe pentru a activa retragerile.",
+      "no_balance": "Încă nu există sold"
+    },
+    "actions": {
+      "onboarding": "Configurare Stripe",
+      "update_details": "Actualizați detaliile Stripe",
+      "open_dashboard": "Deschideți panoul Stripe",
+      "create_provider": "Creați profilul furnizorului",
+      "retry": "Încercați din nou"
+    },
+    "errors": {
+      "open_onboarding_failed": "Nu s-a putut deschide configurarea Stripe. Încercați din nou.",
+      "open_dashboard_failed": "Nu s-a putut deschide panoul Stripe. Încercați din nou.",
+      "status_load_failed": "Nu s-a putut încărca starea retragerilor.",
+      "balance_load_failed": "Nu s-au putut încărca soldurile."
+    },
+    "table": {
+      "field": "Câmp",
+      "status": "Stare",
+      "onboarding": "Configurare",
+      "charges": "Încasări",
+      "payouts": "Retrageri",
+      "mode": "Mod",
+      "currency": "Monedă",
+      "available": "Disponibil",
+      "pending": "În așteptare",
+      "total": "Total",
+      "next_payout": "Următoarea retragere:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Activat",
+      "disabled": "Dezactivat",
+      "completed": "Finalizat",
+      "in_progress": "În curs",
+      "restricted": "Restricționat",
+      "not_started": "Neînceput",
+      "loading": "Se încarcă"
+    },
+    "aria": {
+      "open_onboarding": "Deschideți configurarea Stripe într-o filă nouă",
+      "open_dashboard": "Deschideți panoul Stripe într-o filă nouă"
+    }
   }
 }

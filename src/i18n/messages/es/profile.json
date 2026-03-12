@@ -160,5 +160,55 @@
     "errors": {
       "profile_load_failed": "No se pudo cargar tu perfil. Inténtalo de nuevo."
     }
+  },
+  "payouts": {
+    "title": "Pagos y retiros",
+    "messages": {
+      "provider_required": "Crea primero tu perfil de proveedor de servicios.",
+      "active": "Los retiros están activos. Gestiona tu cuenta de Stripe desde el panel.",
+      "finish_onboarding": "Completa la configuración de Stripe para habilitar los retiros.",
+      "no_balance": "Aún no hay saldo"
+    },
+    "actions": {
+      "onboarding": "Configuración de Stripe",
+      "update_details": "Actualizar datos de Stripe",
+      "open_dashboard": "Abrir panel de Stripe",
+      "create_provider": "Crear perfil de proveedor",
+      "retry": "Reintentar"
+    },
+    "errors": {
+      "open_onboarding_failed": "No se pudo abrir la configuración de Stripe. Inténtalo de nuevo.",
+      "open_dashboard_failed": "No se pudo abrir el panel de Stripe. Inténtalo de nuevo.",
+      "status_load_failed": "No se pudo cargar el estado de los retiros.",
+      "balance_load_failed": "No se pudieron cargar los saldos."
+    },
+    "table": {
+      "field": "Campo",
+      "status": "Estado",
+      "onboarding": "Configuración",
+      "charges": "Cobros",
+      "payouts": "Retiros",
+      "mode": "Modo",
+      "currency": "Moneda",
+      "available": "Disponible",
+      "pending": "Pendiente",
+      "total": "Total",
+      "next_payout": "Próximo retiro:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Activado",
+      "disabled": "Desactivado",
+      "completed": "Completado",
+      "in_progress": "En curso",
+      "restricted": "Restringido",
+      "not_started": "No iniciado",
+      "loading": "Cargando"
+    },
+    "aria": {
+      "open_onboarding": "Abrir la configuración de Stripe en una pestaña nueva",
+      "open_dashboard": "Abrir el panel de Stripe en una pestaña nueva"
+    }
   }
 }

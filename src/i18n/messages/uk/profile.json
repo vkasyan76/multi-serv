@@ -160,5 +160,55 @@
     "errors": {
       "profile_load_failed": "Не вдалося завантажити ваш профіль. Спробуйте ще раз."
     }
+  },
+  "payouts": {
+    "title": "Платежі та виплати",
+    "messages": {
+      "provider_required": "Спочатку створіть профіль надавача послуг.",
+      "active": "Виплати активні. Керуйте своїм обліковим записом Stripe з панелі.",
+      "finish_onboarding": "Завершіть налаштування Stripe, щоб увімкнути виплати.",
+      "no_balance": "Балансу ще немає"
+    },
+    "actions": {
+      "onboarding": "Налаштування Stripe",
+      "update_details": "Оновити дані Stripe",
+      "open_dashboard": "Відкрити панель Stripe",
+      "create_provider": "Створити профіль надавача",
+      "retry": "Повторити"
+    },
+    "errors": {
+      "open_onboarding_failed": "Не вдалося відкрити налаштування Stripe. Спробуйте ще раз.",
+      "open_dashboard_failed": "Не вдалося відкрити панель Stripe. Спробуйте ще раз.",
+      "status_load_failed": "Не вдалося завантажити статус виплат.",
+      "balance_load_failed": "Не вдалося завантажити баланси."
+    },
+    "table": {
+      "field": "Поле",
+      "status": "Статус",
+      "onboarding": "Налаштування",
+      "charges": "Платежі",
+      "payouts": "Виплати",
+      "mode": "Режим",
+      "currency": "Валюта",
+      "available": "Доступно",
+      "pending": "Очікується",
+      "total": "Усього",
+      "next_payout": "Наступна виплата:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Увімкнено",
+      "disabled": "Вимкнено",
+      "completed": "Завершено",
+      "in_progress": "Триває",
+      "restricted": "Обмежено",
+      "not_started": "Не розпочато",
+      "loading": "Завантаження"
+    },
+    "aria": {
+      "open_onboarding": "Відкрити налаштування Stripe в новій вкладці",
+      "open_dashboard": "Відкрити панель Stripe в новій вкладці"
+    }
   }
 }

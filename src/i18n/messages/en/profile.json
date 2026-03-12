@@ -160,5 +160,55 @@
     "errors": {
       "profile_load_failed": "Failed to load your profile. Please try again."
     }
+  },
+  "payouts": {
+    "title": "Payments & Payouts",
+    "messages": {
+      "provider_required": "Create your Service Provider profile first.",
+      "active": "Payouts are active. Manage your Stripe account from the dashboard.",
+      "finish_onboarding": "Finish Stripe onboarding to enable payouts.",
+      "no_balance": "No balance yet"
+    },
+    "actions": {
+      "onboarding": "Stripe Onboarding",
+      "update_details": "Update Stripe Details",
+      "open_dashboard": "Open Stripe Dashboard",
+      "create_provider": "Create Service Provider profile",
+      "retry": "Retry"
+    },
+    "errors": {
+      "open_onboarding_failed": "Couldn't open Stripe onboarding. Please try again.",
+      "open_dashboard_failed": "Couldn't open Stripe dashboard. Please try again.",
+      "status_load_failed": "Failed to load payout status.",
+      "balance_load_failed": "Failed to load balances."
+    },
+    "table": {
+      "field": "Field",
+      "status": "Status",
+      "onboarding": "Onboarding",
+      "charges": "Charges",
+      "payouts": "Payouts",
+      "mode": "Mode",
+      "currency": "Currency",
+      "available": "Available",
+      "pending": "Pending",
+      "total": "Total",
+      "next_payout": "Next Payout:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "completed": "Completed",
+      "in_progress": "In progress",
+      "restricted": "Restricted",
+      "not_started": "Not started",
+      "loading": "Loading"
+    },
+    "aria": {
+      "open_onboarding": "Open Stripe onboarding in a new tab",
+      "open_dashboard": "Open Stripe dashboard in a new tab"
+    }
   }
 }

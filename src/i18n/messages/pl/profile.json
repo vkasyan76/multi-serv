@@ -160,5 +160,55 @@
     "errors": {
       "profile_load_failed": "Nie udało się załadować Twojego profilu. Spróbuj ponownie."
     }
+  },
+  "payouts": {
+    "title": "Płatności i wypłaty",
+    "messages": {
+      "provider_required": "Najpierw utwórz profil usługodawcy.",
+      "active": "Wypłaty są aktywne. Zarządzaj kontem Stripe z poziomu panelu.",
+      "finish_onboarding": "Dokończ konfigurację Stripe, aby włączyć wypłaty.",
+      "no_balance": "Brak salda"
+    },
+    "actions": {
+      "onboarding": "Konfiguracja Stripe",
+      "update_details": "Zaktualizuj dane Stripe",
+      "open_dashboard": "Otwórz panel Stripe",
+      "create_provider": "Utwórz profil usługodawcy",
+      "retry": "Spróbuj ponownie"
+    },
+    "errors": {
+      "open_onboarding_failed": "Nie udało się otworzyć konfiguracji Stripe. Spróbuj ponownie.",
+      "open_dashboard_failed": "Nie udało się otworzyć panelu Stripe. Spróbuj ponownie.",
+      "status_load_failed": "Nie udało się wczytać statusu wypłat.",
+      "balance_load_failed": "Nie udało się wczytać sald."
+    },
+    "table": {
+      "field": "Pole",
+      "status": "Status",
+      "onboarding": "Konfiguracja",
+      "charges": "Płatności",
+      "payouts": "Wypłaty",
+      "mode": "Tryb",
+      "currency": "Waluta",
+      "available": "Dostępne",
+      "pending": "Oczekujące",
+      "total": "Razem",
+      "next_payout": "Następna wypłata:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Włączone",
+      "disabled": "Wyłączone",
+      "completed": "Zakończono",
+      "in_progress": "W toku",
+      "restricted": "Ograniczone",
+      "not_started": "Nie rozpoczęto",
+      "loading": "Ładowanie"
+    },
+    "aria": {
+      "open_onboarding": "Otwórz konfigurację Stripe w nowej karcie",
+      "open_dashboard": "Otwórz panel Stripe w nowej karcie"
+    }
   }
 }

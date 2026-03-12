@@ -160,5 +160,55 @@
     "errors": {
       "profile_load_failed": "Ihr Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut."
     }
+  },
+  "payouts": {
+    "title": "Zahlungen & Auszahlungen",
+    "messages": {
+      "provider_required": "Erstellen Sie zuerst Ihr Dienstleisterprofil.",
+      "active": "Auszahlungen sind aktiv. Verwalten Sie Ihr Stripe-Konto im Dashboard.",
+      "finish_onboarding": "Schließen Sie die Stripe-Einrichtung ab, um Auszahlungen zu aktivieren.",
+      "no_balance": "Noch kein Guthaben"
+    },
+    "actions": {
+      "onboarding": "Stripe-Einrichtung",
+      "update_details": "Stripe-Details aktualisieren",
+      "open_dashboard": "Stripe-Dashboard öffnen",
+      "create_provider": "Dienstleisterprofil erstellen",
+      "retry": "Erneut versuchen"
+    },
+    "errors": {
+      "open_onboarding_failed": "Die Stripe-Einrichtung konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.",
+      "open_dashboard_failed": "Stripe-Dashboard konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.",
+      "status_load_failed": "Der Auszahlungsstatus konnte nicht geladen werden.",
+      "balance_load_failed": "Die Guthaben konnten nicht geladen werden."
+    },
+    "table": {
+      "field": "Feld",
+      "status": "Status",
+      "onboarding": "Einrichtung",
+      "charges": "Zahlungen",
+      "payouts": "Auszahlungen",
+      "mode": "Modus",
+      "currency": "Währung",
+      "available": "Verfügbar",
+      "pending": "Ausstehend",
+      "total": "Gesamt",
+      "next_payout": "Nächste Auszahlung:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Aktiviert",
+      "disabled": "Deaktiviert",
+      "completed": "Abgeschlossen",
+      "in_progress": "In Bearbeitung",
+      "restricted": "Eingeschränkt",
+      "not_started": "Nicht begonnen",
+      "loading": "Wird geladen"
+    },
+    "aria": {
+      "open_onboarding": "Stripe-Einrichtung in einem neuen Tab öffnen",
+      "open_dashboard": "Stripe-Dashboard in einem neuen Tab öffnen"
+    }
   }
 }
