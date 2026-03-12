@@ -10,15 +10,15 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WALLET_CURRENCY } from "@/constants";
+import type { AppLang } from "@/lib/i18n/app-lang";
 import Image from "next/image";
 import type { TenantWithRelations } from "../../types";
 import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
 import {
   formatMonthYearForLocale,
   formatNumberForLocale,
-  formatIntegerForLocale,
   formatOneDecimalForLocale,
-  type AppLang,
   getInitialLanguage,
   formatCurrency,
 } from "@/modules/profile/location-utils";
@@ -212,7 +212,8 @@ export const TenantCard = ({
                 )}
                 suppressHydrationWarning
               >
-                {formatCurrency(tenant.hourlyRate, "EUR", effectiveLang)} /h
+                {formatCurrency(tenant.hourlyRate, WALLET_CURRENCY, effectiveLang)}{" "}
+                /h
               </span>
             )}
           </div>
@@ -321,10 +322,7 @@ export const TenantCard = ({
               <div className="flex items-center gap-1">
                 <BadgeCheck className="h-4 w-4 text-emerald-600" />
                 <span suppressHydrationWarning>
-                  {formatIntegerForLocale(ordersCount ?? 0, effectiveLang)}{" "}
-                  {(ordersCount ?? 0) === 1
-                    ? tTenantPage("card.order_one")
-                    : tTenantPage("card.order_other")}
+                  {tTenantPage("card.orders", { count: ordersCount ?? 0 })}
                 </span>
               </div>
             )}

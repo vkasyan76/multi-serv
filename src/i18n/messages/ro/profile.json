@@ -142,10 +142,10 @@
       "confirm": "Deveniți furnizor de servicii"
     },
     "messages": {
-      "prereq_intro": "Locația ta este necesară pentru ca clienții să te poată găsi.",
+      "prereq_intro": "Locația dvs. este necesară pentru ca clienții să vă poată găsi.",
       "prereq_location": "Adăugați locația pentru a apărea în căutările locale",
-      "confirm_intro": "Începeți să oferiți servicii și conectați-vă cu clienți din zona voastră",
-      "search_visibility": "Apăreți în rezultatele de căutare pentru zona voastră",
+      "confirm_intro": "Începeți să oferiți servicii și conectați-vă cu clienți din zona dvs.",
+      "search_visibility": "Apăreți în rezultatele de căutare pentru zona dvs.",
       "pricing_setup": "Stabiliți tariful orar și categoriile de servicii",
       "availability": "Gestionați disponibilitatea și rezervările"
     },
