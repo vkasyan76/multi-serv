@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -15,7 +16,7 @@ import Image from "next/image";
 
 import { useTRPC } from "@/trpc/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { TenantOrdersLifecycleView } from "@/modules/orders/ui/tenant-orders-lifecycle-view";
 import { WalletSummaryCard } from "@/modules/commissions/ui/wallet-summary-card";
 import { WalletTransactionsTable } from "@/modules/commissions/ui/wallet-transactions-table";
@@ -30,11 +31,8 @@ import {
   deriveInvoiceRangeIso,
   walletRowsToCsv,
 } from "@/modules/commissions/ui/wallet-filter-utils";
-import {
-  type AppLang,
-  getInitialLanguage,
-  normalizeToSupported,
-} from "@/modules/profile/location-utils";
+import { withLocalePrefix } from "@/i18n/routing";
+import { type AppLang, normalizeToSupported } from "@/lib/i18n/app-lang";
 
 // Heavy calendar (RBC + DnD) – load like on the tenant page to avoid SSR/hydration issues
 const TenantCalendar = dynamic(
@@ -90,14 +88,9 @@ function SectionTitle({
 export default function DashboardContent({ slug }: { slug: string }) {
   const trpc = useTRPC();
   const qc = useQueryClient();
+  const params = useParams<{ lang?: string }>();
   const tenantQ = useQuery(trpc.tenants.getOne.queryOptions({ slug }));
-  const profileQ = useQuery(trpc.auth.getUserProfile.queryOptions());
-
-  const appLang: AppLang = useMemo(() => {
-    const profileLang = profileQ.data?.language;
-    if (profileLang) return normalizeToSupported(profileLang);
-    return getInitialLanguage();
-  }, [profileQ.data?.language]);
+  const appLang: AppLang = normalizeToSupported(params?.lang);
 
   const [walletFilters, setWalletFilters] = useState<WalletFilters>({
     period: { mode: "all" },
@@ -145,7 +138,10 @@ export default function DashboardContent({ slug }: { slug: string }) {
         {tenantQ.data && !canEditCalendar && (
           <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             After completing the{" "}
-            <Link href="/profile?tab=payouts" className="underline font-medium">
+            <Link
+              href={withLocalePrefix("/profile?tab=payouts", appLang)}
+              className="underline font-medium"
+            >
               payment set-up
             </Link>{" "}
             you’ll be able to add the slots in your calendar.
@@ -229,7 +225,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
               Open your payouts & balances panel in Profile.
             </p>
             <Button asChild variant="elevated">
-              <Link href="/profile?tab=payouts">
+              <Link href={withLocalePrefix("/profile?tab=payouts", appLang)}>
                 Open Payouts
                 <ExternalLink className="ml-2 h-4 w-4 opacity-70" />
               </Link>
