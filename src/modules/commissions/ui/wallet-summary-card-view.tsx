@@ -1,15 +1,12 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   type AppLang,
   formatCurrency,
 } from "@/modules/profile/location-utils";
 import type { WalletFilters } from "./wallet-types";
-import {
-  FULL_HISTORY_LABEL,
-  formatPeriodLabel,
-  getWalletStatusLabel,
-} from "./wallet-filter-utils";
+import { formatPeriodLabel } from "./wallet-filter-utils";
 
 type WalletSummaryCardViewProps = {
   appLang: AppLang;
@@ -32,10 +29,12 @@ export function WalletSummaryCardView({
   isError,
   data,
 }: WalletSummaryCardViewProps) {
+  const tFinance = useTranslations("finance");
+
   if (isLoading) {
     return (
       <div className="rounded-lg border bg-white p-5 text-sm text-muted-foreground">
-        Loading wallet summary...
+        {tFinance("wallet.summary.loading")}
       </div>
     );
   }
@@ -43,7 +42,7 @@ export function WalletSummaryCardView({
   if (isError) {
     return (
       <div className="rounded-lg border bg-white p-5 text-sm text-muted-foreground">
-        Failed to load wallet summary.
+        {tFinance("wallet.summary.load_error")}
       </div>
     );
   }
@@ -56,8 +55,17 @@ export function WalletSummaryCardView({
   const totalInvoicedCents = grossReceivedCents + dueFromCustomersCents;
   const periodLabel = formatPeriodLabel(filters.period, appLang);
   const statusLabel =
-    filters.status === "all" ? "" : getWalletStatusLabel(filters.status);
-  const summaryLabel = [periodLabel || FULL_HISTORY_LABEL, statusLabel]
+    filters.status === "all"
+      ? ""
+      : filters.status === "paid"
+        ? tFinance("wallet.status.paid")
+        : filters.status === "payment_due"
+          ? tFinance("wallet.status.payment_due")
+          : tFinance("wallet.status.fees");
+  const summaryLabel = [
+    periodLabel || tFinance("wallet.summary.full_history"),
+    statusLabel,
+  ]
     .filter(Boolean)
     .join(" \u2022 ");
 
@@ -68,25 +76,33 @@ export function WalletSummaryCardView({
       </div>
       <div className="space-y-3 text-sm">
         <div className="flex items-center justify-between gap-4">
-          <span className="text-muted-foreground">Payments received</span>
+          <span className="text-muted-foreground">
+            {tFinance("wallet.summary.payments_received")}
+          </span>
           <span className="text-lg font-semibold">
             {formatCurrency(grossReceivedCents / 100, currency, appLang)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-muted-foreground">Due from customers</span>
+          <span className="text-muted-foreground">
+            {tFinance("wallet.summary.due_from_customers")}
+          </span>
           <span className="text-lg font-semibold">
             {formatCurrency(dueFromCustomersCents / 100, currency, appLang)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="font-medium">Total invoiced</span>
+          <span className="font-medium">
+            {tFinance("wallet.summary.total_invoiced")}
+          </span>
           <span className="text-lg font-semibold">
             {formatCurrency(totalInvoicedCents / 100, currency, appLang)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-4 border-t pt-3">
-          <span className="text-muted-foreground">Platform fees</span>
+          <span className="text-muted-foreground">
+            {tFinance("wallet.summary.platform_fees")}
+          </span>
           <span className="text-lg font-semibold">
             {formatCurrency(-platformFeesCents / 100, currency, appLang)}
           </span>

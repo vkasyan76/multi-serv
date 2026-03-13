@@ -1,0 +1,70 @@
+{
+  "wallet": {
+    "filters": {
+      "labels": {
+        "period": "Період",
+        "year": "Рік",
+        "month": "Місяць",
+        "invoice_date_range": "Діапазон дат рахунку",
+        "status": "Статус",
+        "tenant": "Надавач"
+      },
+      "placeholders": {
+        "select_period": "Оберіть період",
+        "pick_date_range": "Оберіть діапазон дат",
+        "select_status": "Оберіть статус",
+        "loading_tenants": "Завантаження...",
+        "all_tenants": "Усі надавачі"
+      },
+      "options": {
+        "full_history": "Повна історія",
+        "year": "Рік",
+        "month": "Місяць",
+        "custom_range": "Власний діапазон"
+      }
+    },
+    "summary": {
+      "loading": "Завантаження підсумку гаманця...",
+      "load_error": "Не вдалося завантажити підсумок гаманця.",
+      "full_history": "Повна історія",
+      "payments_received": "Отримані платежі",
+      "due_from_customers": "До отримання від клієнтів",
+      "total_invoiced": "Усього виставлено",
+      "platform_fees": "Комісії платформи"
+    },
+    "table": {
+      "title": "Транзакції",
+      "updating": "Оновлення...",
+      "loading": "Завантаження транзакцій...",
+      "load_error": "Не вдалося завантажити транзакції.",
+      "empty": "Транзакцій ще немає.",
+      "headers": {
+        "invoice_date": "Дата рахунку",
+        "status": "Статус",
+        "tenant": "Надавач",
+        "amount": "Сума",
+        "fee_percent": "Комісія %",
+        "promo": "Промо",
+        "order_date": "Дата замовлення",
+        "actions": "Дії"
+      },
+      "unknown_tenant": "Невідомий надавач",
+      "no_promo": "Немає"
+    },
+    "actions": {
+      "clear_filters": "Очистити фільтри",
+      "download_csv": "Завантажити CSV",
+      "view_invoice": "Переглянути рахунок",
+      "load_more": "Показати ще"
+    },
+    "status": {
+      "all": "Усі",
+      "paid": "Оплачено",
+      "payment_due": "Очікується оплата",
+      "fees": "Комісії",
+      "fee": "Комісія",
+      "paid_on": "Оплачено {date}",
+      "fee_on": "Комісія {date}"
+    }
+  }
+}

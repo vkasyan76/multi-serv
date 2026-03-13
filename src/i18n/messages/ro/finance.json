@@ -1,0 +1,70 @@
+{
+  "wallet": {
+    "filters": {
+      "labels": {
+        "period": "Perioadă",
+        "year": "An",
+        "month": "Lună",
+        "invoice_date_range": "Interval dată factură",
+        "status": "Stare",
+        "tenant": "Prestator"
+      },
+      "placeholders": {
+        "select_period": "Selectați perioada",
+        "pick_date_range": "Selectați intervalul de date",
+        "select_status": "Selectați starea",
+        "loading_tenants": "Se încarcă...",
+        "all_tenants": "Toți prestatorii"
+      },
+      "options": {
+        "full_history": "Istoric complet",
+        "year": "An",
+        "month": "Lună",
+        "custom_range": "Interval personalizat"
+      }
+    },
+    "summary": {
+      "loading": "Se încarcă rezumatul portofelului...",
+      "load_error": "Rezumatul portofelului nu a putut fi încărcat.",
+      "full_history": "Istoric complet",
+      "payments_received": "Plăți primite",
+      "due_from_customers": "De încasat de la clienți",
+      "total_invoiced": "Total facturat",
+      "platform_fees": "Taxe de platformă"
+    },
+    "table": {
+      "title": "Tranzacții",
+      "updating": "Se actualizează...",
+      "loading": "Se încarcă tranzacțiile...",
+      "load_error": "Tranzacțiile nu au putut fi încărcate.",
+      "empty": "Încă nu există tranzacții.",
+      "headers": {
+        "invoice_date": "Data facturii",
+        "status": "Stare",
+        "tenant": "Prestator",
+        "amount": "Sumă",
+        "fee_percent": "Taxă %",
+        "promo": "Promo",
+        "order_date": "Data comenzii",
+        "actions": "Acțiuni"
+      },
+      "unknown_tenant": "Prestator necunoscut",
+      "no_promo": "Niciuna"
+    },
+    "actions": {
+      "clear_filters": "Șterge filtrele",
+      "download_csv": "Descarcă CSV",
+      "view_invoice": "Vezi factura",
+      "load_more": "Încarcă mai mult"
+    },
+    "status": {
+      "all": "Toate",
+      "paid": "Plătit",
+      "payment_due": "Plată datorată",
+      "fees": "Taxe",
+      "fee": "Taxă",
+      "paid_on": "Plătit {date}",
+      "fee_on": "Taxă {date}"
+    }
+  }
+}

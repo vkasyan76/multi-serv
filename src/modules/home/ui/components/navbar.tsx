@@ -96,6 +96,9 @@ export const Navbar = () => {
   const dashHref = hasTenant
     ? platformHref("/dashboard")
     : href("/profile?tab=vendor");
+  const dashboardLabel = hasTenant
+    ? t("nav.dashboard_cta")
+    : t("nav.start_business_cta");
 
   // Only disable when session says user has a tenant but getMine hasn't returned it yet.
   const isDashLoading = hasTenant && !myTenant && isMineLoading;
@@ -185,8 +188,7 @@ export const Navbar = () => {
                   aria-disabled={isDashLoading}
                   aria-busy={isDashLoading}
                 >
-                  {/* Keep href, label, and SR announcement driven by the same tenant-membership signal. */}
-                  {hasTenant ? t("nav.dashboard") : t("nav.start_business")}
+                  {dashboardLabel}
                 </Link>
               </LoadingButton>
             </>

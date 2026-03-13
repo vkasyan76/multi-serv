@@ -71,6 +71,18 @@ const PROFILE_LOADERS: Partial<Record<AppLang, Loader>> = {
   uk: async () => (await import("./messages/uk/profile.json")).default,
 };
 
+const FINANCE_LOADERS: Partial<Record<AppLang, Loader>> = {
+  en: async () => (await import("./messages/en/finance.json")).default,
+  de: async () => (await import("./messages/de/finance.json")).default,
+  fr: async () => (await import("./messages/fr/finance.json")).default,
+  it: async () => (await import("./messages/it/finance.json")).default,
+  es: async () => (await import("./messages/es/finance.json")).default,
+  pt: async () => (await import("./messages/pt/finance.json")).default,
+  pl: async () => (await import("./messages/pl/finance.json")).default,
+  ro: async () => (await import("./messages/ro/finance.json")).default,
+  uk: async () => (await import("./messages/uk/finance.json")).default,
+};
+
 function isPlainObject(value: unknown): value is MessageTree {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -128,6 +140,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       checkout: await loadNamespace(appLang, CHECKOUT_LOADERS),
       tenantPage: await loadNamespace(appLang, TENANT_PAGE_LOADERS),
       profile: await loadNamespace(appLang, PROFILE_LOADERS),
+      finance: await loadNamespace(appLang, FINANCE_LOADERS),
     },
   };
 });

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import { withLocalePrefix } from "@/i18n/routing";
 import {
   formatCurrency,
   mapAppLangToLocale,
@@ -81,6 +83,7 @@ export function WalletTransactionsTableView({
   showTenantColumns = false,
   showPromotionColumns = false,
 }: WalletTransactionsTableViewProps) {
+  const tFinance = useTranslations("finance");
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
     key: "date",
     dir: "desc",
@@ -149,7 +152,7 @@ export function WalletTransactionsTableView({
   if (isLoading && rows.length === 0) {
     return (
       <div className="rounded-lg border bg-white p-5 text-sm text-muted-foreground">
-        Loading transactions...
+        {tFinance("wallet.table.loading")}
       </div>
     );
   }
@@ -157,7 +160,7 @@ export function WalletTransactionsTableView({
   if (isError && rows.length === 0) {
     return (
       <div className="rounded-lg border bg-white p-5 text-sm text-muted-foreground">
-        Failed to load transactions.
+        {tFinance("wallet.table.load_error")}
       </div>
     );
   }
@@ -165,7 +168,7 @@ export function WalletTransactionsTableView({
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border bg-white p-5 text-sm text-muted-foreground">
-        No transactions yet.
+        {tFinance("wallet.table.empty")}
       </div>
     );
   }
@@ -173,9 +176,13 @@ export function WalletTransactionsTableView({
   return (
     <div className="rounded-lg border bg-white p-5 space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold">Transactions</h3>
+        <h3 className="text-base font-semibold">
+          {tFinance("wallet.table.title")}
+        </h3>
         {isFetching && (
-          <span className="text-xs text-muted-foreground">Updating...</span>
+          <span className="text-xs text-muted-foreground">
+            {tFinance("wallet.table.updating")}
+          </span>
         )}
       </div>
       <div className="max-h-[420px] overflow-auto">
@@ -189,7 +196,7 @@ export function WalletTransactionsTableView({
                   className="px-0"
                   onClick={() => toggleSort("invoice_date")}
                 >
-                  Invoice Date
+                  {tFinance("wallet.table.headers.invoice_date")}
                   <SortIcon active={sort.key === "invoice_date"} dir={sort.dir} />
                 </Button>
               </th>
@@ -200,7 +207,7 @@ export function WalletTransactionsTableView({
                   className="px-0"
                   onClick={() => toggleSort("description")}
                 >
-                  Status
+                  {tFinance("wallet.table.headers.status")}
                   <SortIcon active={sort.key === "description"} dir={sort.dir} />
                 </Button>
               </th>
@@ -212,7 +219,7 @@ export function WalletTransactionsTableView({
                     className="px-0"
                     onClick={() => toggleSort("tenant")}
                   >
-                    Tenant
+                    {tFinance("wallet.table.headers.tenant")}
                     <SortIcon active={sort.key === "tenant"} dir={sort.dir} />
                   </Button>
                 </th>
@@ -224,18 +231,18 @@ export function WalletTransactionsTableView({
                   className="px-0"
                   onClick={() => toggleSort("amount")}
                 >
-                  Amount
+                  {tFinance("wallet.table.headers.amount")}
                   <SortIcon active={sort.key === "amount"} dir={sort.dir} />
                 </Button>
               </th>
               {showPromotionColumns && (
                 <th className="py-2 pr-3 font-medium sticky top-0 z-20 bg-white">
-                  Fee %
+                  {tFinance("wallet.table.headers.fee_percent")}
                 </th>
               )}
               {showPromotionColumns && (
                 <th className="py-2 pr-3 font-medium sticky top-0 z-20 bg-white">
-                  Promo
+                  {tFinance("wallet.table.headers.promo")}
                 </th>
               )}
               <th className="py-2 pr-3 font-medium sticky top-0 z-20 bg-white">
@@ -245,12 +252,12 @@ export function WalletTransactionsTableView({
                   className="px-0"
                   onClick={() => toggleSort("date")}
                 >
-                  Order Date
+                  {tFinance("wallet.table.headers.order_date")}
                   <SortIcon active={sort.key === "date"} dir={sort.dir} />
                 </Button>
               </th>
               <th className="py-2 font-medium sticky top-0 z-20 bg-white">
-                Actions
+                {tFinance("wallet.table.headers.actions")}
               </th>
             </tr>
           </thead>
@@ -276,17 +283,27 @@ export function WalletTransactionsTableView({
               const promoLabel = row.promotionId
                 ? (row.promotionName?.trim() ||
                   `promo:${row.promotionId.slice(-6)}`)
-                : "None";
-              const statusLabel =
-                row.type === "payment_received" && row.occurredAt
-                  ? `Paid ${formatBerlinDate(row.occurredAt, appLang)}`
-                  : row.type === "payment_outstanding"
-                    ? "Payment due"
-                    : row.type === "platform_fee" && row.occurredAt
-                      ? `Fee ${formatBerlinDate(row.occurredAt, appLang)}`
-                      : row.type === "platform_fee"
-                        ? "Fee"
-                        : row.description;
+                : tFinance("wallet.table.no_promo");
+              const statusLabel = (() => {
+                switch (row.type) {
+                  case "payment_received":
+                    return row.occurredAt
+                      ? tFinance("wallet.status.paid_on", {
+                          date: formatBerlinDate(row.occurredAt, appLang),
+                        })
+                      : tFinance("wallet.status.paid");
+                  case "payment_outstanding":
+                    return tFinance("wallet.status.payment_due");
+                  case "platform_fee":
+                    return row.occurredAt
+                      ? tFinance("wallet.status.fee_on", {
+                          date: formatBerlinDate(row.occurredAt, appLang),
+                        })
+                      : tFinance("wallet.status.fee");
+                  default:
+                    return row.description;
+                }
+              })();
 
               return (
                 <tr key={row.id} className="border-b last:border-b-0">
@@ -301,7 +318,7 @@ export function WalletTransactionsTableView({
                   {showTenantColumns && (
                     <td className="py-2 pr-3 whitespace-nowrap">
                       <div className="font-medium">
-                        {row.tenantName ?? "Unknown tenant"}
+                        {row.tenantName ?? tFinance("wallet.table.unknown_tenant")}
                       </div>
                       {(() => {
                         const fallback = row.tenantSlug
@@ -371,7 +388,16 @@ export function WalletTransactionsTableView({
                       <span className="text-muted-foreground">--</span>
                     ) : (
                       <Button asChild size="sm" variant="ghost">
-                        <Link href={`/invoices/${row.invoiceId}`}>View invoice</Link>
+                        <Link
+                          href={withLocalePrefix(
+                            `/invoices/${row.invoiceId}`,
+                            appLang,
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {tFinance("wallet.actions.view_invoice")}
+                        </Link>
                       </Button>
                     )}
                   </td>
@@ -384,7 +410,7 @@ export function WalletTransactionsTableView({
       {canLoadMore && (
         <div className="flex justify-end">
           <Button variant="outline" size="sm" onClick={onLoadMore}>
-            Load more
+            {tFinance("wallet.actions.load_more")}
           </Button>
         </div>
       )}

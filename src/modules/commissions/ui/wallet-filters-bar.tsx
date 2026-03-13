@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarIcon, Download, FilterX } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -29,10 +30,7 @@ import type {
   WalletStatusFilter,
   WalletTenantOption,
 } from "./wallet-types";
-import {
-  FULL_HISTORY_LABEL,
-  WALLET_STATUS_LABELS,
-} from "./wallet-filter-utils";
+import { WALLET_STATUS_ORDER } from "./wallet-filter-utils";
 
 type WalletFiltersBarProps = {
   filters: WalletFilters;
@@ -54,13 +52,6 @@ type WalletFiltersBarProps = {
   };
 };
 
-const PERIOD_LABELS: Record<PeriodMode, string> = {
-  all: FULL_HISTORY_LABEL,
-  year: "Year",
-  month: "Month",
-  range: "Custom range",
-};
-
 export function WalletFiltersBar({
   filters,
   appLang,
@@ -69,6 +60,7 @@ export function WalletFiltersBar({
   tenantScope,
   download,
 }: WalletFiltersBarProps) {
+  const tFinance = useTranslations("finance");
   const locale = mapAppLangToLocale(appLang);
   const berlinYear = Number(
     new Intl.DateTimeFormat("en-US", {
@@ -98,17 +90,38 @@ export function WalletFiltersBar({
     filters.period.mode === "range" && (filters.period.start || filters.period.end)
       ? { from: filters.period.start, to: filters.period.end }
       : undefined;
+  const periodOptions: Array<{ value: PeriodMode; label: string }> = [
+    { value: "all", label: tFinance("wallet.filters.options.full_history") },
+    { value: "year", label: tFinance("wallet.filters.options.year") },
+    { value: "month", label: tFinance("wallet.filters.options.month") },
+    { value: "range", label: tFinance("wallet.filters.options.custom_range") },
+  ];
+
+  const getStatusLabel = (status: WalletStatusFilter) => {
+    switch (status) {
+      case "all":
+        return tFinance("wallet.status.all");
+      case "paid":
+        return tFinance("wallet.status.paid");
+      case "payment_due":
+        return tFinance("wallet.status.payment_due");
+      case "platform_fee":
+        return tFinance("wallet.status.fees");
+    }
+  };
 
   const dateLabel = range?.from
     ? range.to
       ? `${formatDateForLocale(range.from, { timeZone: "Europe/Berlin" }, appLang)} - ${formatDateForLocale(range.to, { timeZone: "Europe/Berlin" }, appLang)}`
       : formatDateForLocale(range.from, { timeZone: "Europe/Berlin" }, appLang)
-    : "Pick date range";
+    : tFinance("wallet.filters.placeholders.pick_date_range");
 
   return (
     <div className="rounded-lg border bg-white p-4 flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Period</span>
+        <span className="text-xs text-muted-foreground">
+          {tFinance("wallet.filters.labels.period")}
+        </span>
         <Select
           value={filters.period.mode}
           onValueChange={(value) => {
@@ -149,10 +162,12 @@ export function WalletFiltersBar({
           }}
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select period" />
+            <SelectValue
+              placeholder={tFinance("wallet.filters.placeholders.select_period")}
+            />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(PERIOD_LABELS).map(([value, label]) => (
+            {periodOptions.map(({ value, label }) => (
               <SelectItem key={value} value={value}>
                 {label}
               </SelectItem>
@@ -163,7 +178,9 @@ export function WalletFiltersBar({
 
       {filters.period.mode === "year" && (
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Year</span>
+          <span className="text-xs text-muted-foreground">
+            {tFinance("wallet.filters.labels.year")}
+          </span>
           <Select
             value={String(filters.period.year ?? berlinYear)}
             onValueChange={(value) =>
@@ -177,7 +194,7 @@ export function WalletFiltersBar({
             }
           >
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Year" />
+              <SelectValue placeholder={tFinance("wallet.filters.labels.year")} />
             </SelectTrigger>
             <SelectContent>
               {yearOptions.map((year) => (
@@ -193,7 +210,9 @@ export function WalletFiltersBar({
       {filters.period.mode === "month" && (
         <>
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Month</span>
+            <span className="text-xs text-muted-foreground">
+              {tFinance("wallet.filters.labels.month")}
+            </span>
             <Select
               value={String(filters.period.month ?? berlinMonth)}
               onValueChange={(value) =>
@@ -208,7 +227,9 @@ export function WalletFiltersBar({
               }
             >
               <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Month" />
+                <SelectValue
+                  placeholder={tFinance("wallet.filters.labels.month")}
+                />
               </SelectTrigger>
               <SelectContent>
                 {monthOptions.map((option) => (
@@ -223,7 +244,9 @@ export function WalletFiltersBar({
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Year</span>
+            <span className="text-xs text-muted-foreground">
+              {tFinance("wallet.filters.labels.year")}
+            </span>
             <Select
               value={String(filters.period.year ?? berlinYear)}
               onValueChange={(value) =>
@@ -238,7 +261,7 @@ export function WalletFiltersBar({
               }
             >
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Year" />
+                <SelectValue placeholder={tFinance("wallet.filters.labels.year")} />
               </SelectTrigger>
               <SelectContent>
                 {yearOptions.map((year) => (
@@ -255,7 +278,7 @@ export function WalletFiltersBar({
       {filters.period.mode === "range" && (
         <div className="flex flex-col gap-1">
           <span className="text-xs text-muted-foreground">
-            Invoice date range
+            {tFinance("wallet.filters.labels.invoice_date_range")}
           </span>
           <Popover>
             <PopoverTrigger asChild>
@@ -293,7 +316,9 @@ export function WalletFiltersBar({
       )}
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Status</span>
+        <span className="text-xs text-muted-foreground">
+          {tFinance("wallet.filters.labels.status")}
+        </span>
         <Select
           value={filters.status}
           onValueChange={(value) =>
@@ -301,12 +326,14 @@ export function WalletFiltersBar({
           }
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select status" />
+            <SelectValue
+              placeholder={tFinance("wallet.filters.placeholders.select_status")}
+            />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(WALLET_STATUS_LABELS).map(([value, label]) => (
+            {WALLET_STATUS_ORDER.map((value) => (
               <SelectItem key={value} value={value}>
-                {label}
+                {getStatusLabel(value)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -315,7 +342,9 @@ export function WalletFiltersBar({
 
       {tenantScope && (
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Tenant</span>
+          <span className="text-xs text-muted-foreground">
+            {tFinance("wallet.filters.labels.tenant")}
+          </span>
           {tenantScope.variant === "combobox" ? (
             // Admin tenant lists can grow large; searchable single-select keeps the same scope semantics.
             <div className="w-[220px]">
@@ -334,12 +363,16 @@ export function WalletFiltersBar({
               <SelectTrigger className="w-[220px]">
                 <SelectValue
                   placeholder={
-                    tenantScope.loading ? "Loading..." : "All tenants"
+                    tenantScope.loading
+                      ? tFinance("wallet.filters.placeholders.loading_tenants")
+                      : tFinance("wallet.filters.placeholders.all_tenants")
                   }
                 />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All tenants</SelectItem>
+                <SelectItem value="all">
+                  {tFinance("wallet.filters.placeholders.all_tenants")}
+                </SelectItem>
                 {tenantScope.options.map((tenant) => (
                   <SelectItem key={tenant.id} value={tenant.id}>
                     {tenant.name}
@@ -356,14 +389,14 @@ export function WalletFiltersBar({
       {onClear && (
         <Button variant="ghost" onClick={onClear}>
           <FilterX className="mr-2 h-4 w-4" />
-          Clear filters
+          {tFinance("wallet.actions.clear_filters")}
         </Button>
       )}
 
       {download && (
         <Button onClick={download.onClick} disabled={!download.enabled}>
           <Download className="mr-2 h-4 w-4" />
-          Download CSV
+          {tFinance("wallet.actions.download_csv")}
         </Button>
       )}
     </div>

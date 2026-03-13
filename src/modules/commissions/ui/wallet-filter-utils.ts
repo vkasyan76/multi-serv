@@ -14,17 +14,19 @@ import type {
 } from "./wallet-types";
 
 const WALLET_TZ = "Europe/Berlin";
-export const FULL_HISTORY_LABEL = "Full History";
-export const WALLET_STATUS_LABELS: Record<WalletStatusFilter, string> = {
-  all: "All",
-  paid: "Paid",
-  payment_due: "Payment due",
-  platform_fee: "Fees",
+const FULL_HISTORY_FILENAME_SEGMENT = "full-history";
+const WALLET_STATUS_FILENAME_SEGMENTS: Record<WalletStatusFilter, string> = {
+  all: "",
+  paid: "paid",
+  payment_due: "payment-due",
+  platform_fee: "fees",
 };
-
-export function getWalletStatusLabel(status: WalletStatusFilter) {
-  return WALLET_STATUS_LABELS[status];
-}
+export const WALLET_STATUS_ORDER: WalletStatusFilter[] = [
+  "all",
+  "paid",
+  "payment_due",
+  "platform_fee",
+];
 
 export function toBerlinRangeIso(start?: Date, end?: Date) {
   const startIso = start
@@ -105,6 +107,31 @@ export function formatPeriodLabel(period: WalletPeriodFilter, appLang: AppLang) 
   return "";
 }
 
+function formatDateSegment(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getWalletPeriodFilenameSegment(period: WalletPeriodFilter) {
+  switch (period.mode) {
+    case "year":
+      return period.year ? String(period.year) : FULL_HISTORY_FILENAME_SEGMENT;
+    case "month":
+      return period.year && period.month
+        ? `${period.year}-${String(period.month).padStart(2, "0")}`
+        : "month";
+    case "range":
+      if (!period.start) return "custom-range";
+      if (!period.end) return formatDateSegment(period.start);
+      return `${formatDateSegment(period.start)}_to_${formatDateSegment(period.end)}`;
+    case "all":
+    default:
+      return FULL_HISTORY_FILENAME_SEGMENT;
+  }
+}
+
 function sanitizeFilenameSegment(input: string) {
   const normalized = input
     .normalize("NFKD")
@@ -122,10 +149,8 @@ export function buildWalletCsvFilename(options: {
   appLang: AppLang;
   scopeLabel?: string;
 }) {
-  const periodLabel =
-    formatPeriodLabel(options.period, options.appLang) || FULL_HISTORY_LABEL;
-  const statusLabel =
-    options.status === "all" ? "" : getWalletStatusLabel(options.status);
+  const periodLabel = getWalletPeriodFilenameSegment(options.period);
+  const statusLabel = WALLET_STATUS_FILENAME_SEGMENTS[options.status];
   const descriptorRaw = [options.scopeLabel, periodLabel, statusLabel]
     .filter(Boolean)
     .join(" ");

@@ -1,0 +1,70 @@
+{
+  "wallet": {
+    "filters": {
+      "labels": {
+        "period": "Period",
+        "year": "Year",
+        "month": "Month",
+        "invoice_date_range": "Invoice date range",
+        "status": "Status",
+        "tenant": "Tenant"
+      },
+      "placeholders": {
+        "select_period": "Select period",
+        "pick_date_range": "Pick date range",
+        "select_status": "Select status",
+        "loading_tenants": "Loading...",
+        "all_tenants": "All tenants"
+      },
+      "options": {
+        "full_history": "Full History",
+        "year": "Year",
+        "month": "Month",
+        "custom_range": "Custom range"
+      }
+    },
+    "summary": {
+      "loading": "Loading wallet summary...",
+      "load_error": "Failed to load wallet summary.",
+      "full_history": "Full History",
+      "payments_received": "Payments received",
+      "due_from_customers": "Due from customers",
+      "total_invoiced": "Total invoiced",
+      "platform_fees": "Platform fees"
+    },
+    "table": {
+      "title": "Transactions",
+      "updating": "Updating...",
+      "loading": "Loading transactions...",
+      "load_error": "Failed to load transactions.",
+      "empty": "No transactions yet.",
+      "headers": {
+        "invoice_date": "Invoice Date",
+        "status": "Status",
+        "tenant": "Tenant",
+        "amount": "Amount",
+        "fee_percent": "Fee %",
+        "promo": "Promo",
+        "order_date": "Order Date",
+        "actions": "Actions"
+      },
+      "unknown_tenant": "Unknown tenant",
+      "no_promo": "None"
+    },
+    "actions": {
+      "clear_filters": "Clear filters",
+      "download_csv": "Download CSV",
+      "view_invoice": "View invoice",
+      "load_more": "Load more"
+    },
+    "status": {
+      "all": "All",
+      "paid": "Paid",
+      "payment_due": "Payment due",
+      "fees": "Fees",
+      "fee": "Fee",
+      "paid_on": "Paid {date}",
+      "fee_on": "Fee {date}"
+    }
+  }
+}
