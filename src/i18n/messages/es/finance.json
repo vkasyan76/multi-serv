@@ -66,5 +66,17 @@
       "paid_on": "Pagado {date}",
       "fee_on": "Comisión {date}"
     }
+  },
+  "dashboard": {
+    "title": "Finanzas"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Después de completar la <link>configuración de pagos</link>, podrás añadir franjas a tu calendario.",
+      "open_panel": "Abre tu panel de pagos y saldos en tu perfil."
+    },
+    "actions": {
+      "open": "Abrir pagos"
+    }
   }
 }

@@ -66,5 +66,17 @@
       "paid_on": "Paid {date}",
       "fee_on": "Fee {date}"
     }
+  },
+  "dashboard": {
+    "title": "Finance"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "After completing the <link>payout setup</link> you'll be able to add slots to your calendar.",
+      "open_panel": "Open your payouts and balances panel in your profile."
+    },
+    "actions": {
+      "open": "Open payouts"
+    }
   }
 }

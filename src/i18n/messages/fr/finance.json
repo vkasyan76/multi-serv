@@ -66,5 +66,17 @@
       "paid_on": "Payé {date}",
       "fee_on": "Frais {date}"
     }
+  },
+  "dashboard": {
+    "title": "Finances"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Après avoir terminé la <link>configuration des paiements</link>, vous pourrez ajouter des créneaux à votre calendrier.",
+      "open_panel": "Ouvrez votre panneau de paiements et de soldes dans votre profil."
+    },
+    "actions": {
+      "open": "Ouvrir les paiements"
+    }
   }
 }

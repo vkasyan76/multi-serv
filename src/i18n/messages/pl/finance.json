@@ -66,5 +66,17 @@
       "paid_on": "Opłacone {date}",
       "fee_on": "Opłata {date}"
     }
+  },
+  "dashboard": {
+    "title": "Finanse"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Po ukończeniu <link>konfiguracji wypłat</link> będzie można dodawać terminy do kalendarza.",
+      "open_panel": "Otwórz panel wypłat i sald w swoim profilu."
+    },
+    "actions": {
+      "open": "Otwórz wypłaty"
+    }
   }
 }

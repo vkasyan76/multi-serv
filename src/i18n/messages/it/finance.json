@@ -66,5 +66,17 @@
       "paid_on": "Pagato {date}",
       "fee_on": "Commissione {date}"
     }
+  },
+  "dashboard": {
+    "title": "Finanze"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Dopo aver completato la <link>configurazione dei pagamenti</link>, potrai aggiungere slot al tuo calendario.",
+      "open_panel": "Apri il pannello pagamenti e saldi nel tuo profilo."
+    },
+    "actions": {
+      "open": "Apri pagamenti"
+    }
   }
 }

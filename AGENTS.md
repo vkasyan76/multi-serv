@@ -166,15 +166,31 @@ Required env groups are defined in `README.md`:
   - `profile` namespace is loaded and governed for all launched locales
   - `ProfileTabs`, `SettingsHeader`, and `GeneralProfileForm` are localized
   - live profile validation-summary mapping is aligned with `src/modules/profile/schemas.ts`
+- Phase 5 Wave 3 Commit 2 (vendor onboarding + provider confirmation) is implemented:
+  - `VendorProfileForm` and `ProviderConfirmation` are localized under `profile`
+  - vendor onboarding preserves locale-aware profile tab links and avoids raw user-facing error passthrough in the main vendor flow
+  - launched-locale `profile.json` coverage now includes the vendor/provider confirmation surfaces
+- Phase 5 Wave 3 Commit 3 (payouts panel) is implemented:
+  - `PayoutsPanel` is localized under `profile`
+  - Stripe onboarding/dashboard fallback copy and payouts panel states are localized
+  - payouts/profile prerequisite links preserve the active locale
+- Phase 5 Wave 4 Commit 1 (finance namespace + shared wallet UI) is implemented:
+  - `finance` namespace is loaded and governed for all launched locales
+  - shared wallet filters, summary cards, transactions table, and common finance status labels are localized
+  - wallet export filenames now use stable filename-safe segments instead of visible UI labels
+- Phase 5 Wave 4 wrapper locale-source follow-up is partially implemented:
+  - tenant/admin finance wrappers now derive finance `appLang` from the active route locale instead of profile/browser fallback
+  - tenant finance payouts links preserve locale when linking back into profile
 
 ### i18n Rollout Status (Still Open)
 
 - Phase 5 Wave 2 (orders) is outside this note and should be tracked separately if completed on another branch/PR.
-- Phase 5 Wave 3 remaining work:
-  - Commit 2: `VendorProfileForm.tsx` + `ProviderConfirmation.tsx`
-  - Commit 3: `PayoutsPanel.tsx`
-  - Commit 4: auth leftovers only if confirmed live
-- Phase 5 Wave 4 (finance/admin long-tail), Phase 6, Phase 6A, and Phase 7 remain open.
+- Phase 5 Wave 3:
+  - Commit 4 remains conditional: auth leftovers only if confirmed live
+- Phase 5 Wave 4 remains in progress:
+  - translate the tenant/admin finance wrapper chrome still left in English
+  - localize the invoice viewer and PDF download path
+- Phase 6, Phase 6A, and Phase 7 remain open.
 
 ## Promotions Reservation (Phase 3)
 

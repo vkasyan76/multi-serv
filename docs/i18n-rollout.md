@@ -24,7 +24,7 @@ Explicitly decide (in/out) in Phase 0:
 - internal admin diagnostics and system logs
 - CMS long-form marketing content (optional v1/v2)
 
-## Implementation Status (as of 2026-03-12)
+## Implementation Status (as of 2026-03-13)
 
 - Phase 0 - conventions and rollout doc locked.
 - Completed Phase 1 on Next 15 using `src/middleware.ts` + `src/i18n/routing.ts`.
@@ -35,6 +35,10 @@ Explicitly decide (in/out) in Phase 0:
 - Phase 5 Wave 1 checkout/bookings is complete.
 - Tenant public page completion pass is complete.
 - Phase 5 Wave 3 Commit 1 (profile shell + general profile form) is complete.
+- Phase 5 Wave 3 Commit 2 (vendor onboarding + provider confirmation) is complete.
+- Phase 5 Wave 3 Commit 3 (payouts panel) is complete.
+- Phase 5 Wave 4 Commit 1 (finance namespace + shared wallet UI) is complete.
+- Phase 5 Wave 4 wrapper locale-source fix is applied for tenant/admin finance wrappers.
 
 Completed fixes across Phase 1/2/3:
 
@@ -54,10 +58,14 @@ Completed fixes across Phase 1/2/3:
 - launched-locale governance checks are active via `src/i18n/rollout.ts`, `src/scripts/i18n-check.ts`, and `npm run test:i18n:messages`.
 - launched locales are now `en,de,fr,it,es,pt,pl,ro,uk`.
 - `checkout`, `bookings`, `tenantPage`, and `profile` namespaces are wired into runtime loading and governance.
+- `finance` namespace is wired into runtime loading and governance.
 - category labels are localized from Payload reads with `en` fallback.
 - pay-later booking flow surfaces stable localized customer errors instead of raw English server text.
 - tenant public page shell, shared tenant card, reviews, and conversation surfaces are localized.
 - profile shell and general profile form are localized under the new `profile` namespace.
+- vendor onboarding, provider confirmation, and payouts panel are localized under the `profile` namespace.
+- shared wallet filters, summary cards, transactions table, and common finance status copy are localized under the new `finance` namespace.
+- tenant/admin finance wrappers now pass route-authoritative locale into shared wallet UI, preventing profile/browser fallback from leaking the wrong locale into finance actions.
 
 ## Guiding Decisions
 
@@ -350,8 +358,8 @@ Translate incrementally in releasable waves.
 - Wave 1 - Checkout/booking funnel: complete
 - Tenant public page completion pass: complete
 - Wave 2 - Orders: track separately if implemented outside this doc
-- Wave 3 - Profile/auth leftovers: in progress
-- Wave 4 - Finance/admin long-tail: open
+- Wave 3 - Profile/auth leftovers: functionally complete except auth leftovers if those views are confirmed live
+- Wave 4 - Finance/admin long-tail: in progress
 
 ### Recommended remaining waves
 
@@ -395,13 +403,28 @@ Implemented:
 
 - `profile` namespace plumbing
 - `ProfileTabs`, `SettingsHeader`, and `GeneralProfileForm`
-
-Still open:
-
 - `VendorProfileForm`
 - `ProviderConfirmation`
 - `PayoutsPanel`
+
+Still open:
+
 - auth leftovers only if confirmed live
+
+### Wave 4 current status
+
+Implemented:
+
+- `finance` namespace plumbing
+- shared wallet filters, summary cards, and transactions table
+- shared finance status/action copy in launched locales
+- route-authoritative locale source for tenant/admin finance wrappers
+
+Still open:
+
+- tenant/admin finance wrapper chrome translation that is not yet in the shared wallet components
+- invoice viewer localization
+- invoice PDF download/output localization
 
 ## Phase 6 - Preference Persistence + Language Switch UX
 
@@ -514,17 +537,17 @@ Add one explicit test ensuring missing locale key/content falls back to `en` for
 
 Current next step:
 
-1. Finish Phase 5 Wave 3 Commit 2:
-   - `src/modules/profile/ui/VendorProfileForm.tsx`
-   - `src/modules/profile/ui/ProviderConfirmation.tsx`
-   - `src/i18n/messages/{lang}/profile.json`
-2. Then finish Phase 5 Wave 3 Commit 3:
-   - `src/modules/profile/ui/PayoutsPanel.tsx`
-3. Only after that, decide whether Wave 3 Commit 4 is needed by verifying whether legacy auth views are still live.
+1. Finish Phase 5 Wave 4 Commit 2:
+   - tenant/admin finance wrapper translation cleanup
+   - preserve route-authoritative locale behavior for finance wrapper actions/links
+2. Then finish Phase 5 Wave 4 Commit 3:
+   - invoice viewer
+   - invoice PDF download path/output
+3. After Wave 4, decide whether Wave 3 Commit 4 is needed by verifying whether legacy auth views are still live.
 
-Recommended order after the current profile work:
+Recommended order from here:
 
-Phase 5 Wave 3 -> Phase 5 Wave 4 -> Phase 6 -> Phase 6A -> Phase 7.
+Phase 5 Wave 4 -> Phase 6 -> Phase 6A -> Phase 7.
 
 Future migration note:
 

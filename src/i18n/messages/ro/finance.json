@@ -66,5 +66,17 @@
       "paid_on": "Plătit {date}",
       "fee_on": "Taxă {date}"
     }
+  },
+  "dashboard": {
+    "title": "Finanțe"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "După finalizarea <link>configurării plăților</link>, veți putea adăuga intervale în calendar.",
+      "open_panel": "Deschideți panoul de plăți și solduri din profilul dvs."
+    },
+    "actions": {
+      "open": "Deschideți plățile"
+    }
   }
 }

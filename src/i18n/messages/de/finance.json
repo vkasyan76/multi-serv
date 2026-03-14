@@ -66,5 +66,17 @@
       "paid_on": "Bezahlt {date}",
       "fee_on": "Gebühr {date}"
     }
+  },
+  "dashboard": {
+    "title": "Finanzen"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Sobald Sie die <link>Auszahlungseinrichtung</link> abgeschlossen haben, können Sie Zeitfenster in Ihrem Kalender hinzufügen.",
+      "open_panel": "Öffnen Sie den Bereich für Auszahlungen und Guthaben in Ihrem Profil."
+    },
+    "actions": {
+      "open": "Auszahlungen öffnen"
+    }
   }
 }

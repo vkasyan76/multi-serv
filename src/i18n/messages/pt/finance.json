@@ -66,5 +66,17 @@
       "paid_on": "Pago {date}",
       "fee_on": "Taxa {date}"
     }
+  },
+  "dashboard": {
+    "title": "Finanças"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Depois de concluir a <link>configuração dos levantamentos</link>, poderá adicionar horários ao seu calendário.",
+      "open_panel": "Abra o painel de levantamentos e saldos no seu perfil."
+    },
+    "actions": {
+      "open": "Abrir levantamentos"
+    }
   }
 }
