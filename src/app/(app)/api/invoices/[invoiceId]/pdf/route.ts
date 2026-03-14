@@ -509,10 +509,14 @@ export async function GET(
         : host
           ? `${proto}://${host}${avatarUrl}`
           : avatarUrl;
-      const res = await fetch(absoluteUrl);
-      if (res.ok) {
-        const arr = await res.arrayBuffer();
-        avatarBuffer = Buffer.from(arr);
+      try {
+        const res = await fetch(absoluteUrl);
+        const contentType = res.headers.get("content-type") ?? "";
+        if (res.ok && contentType.startsWith("image/")) {
+          avatarBuffer = Buffer.from(await res.arrayBuffer());
+        }
+      } catch {
+        avatarBuffer = null;
       }
     }
     const pdf = await buildPdf({

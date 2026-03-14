@@ -31,15 +31,23 @@ export async function resolveInvoiceLineItemLabels(params: {
     return lineItems.map((li) => li.title?.trim() ?? "");
   }
 
-  const bookingsRes = await payload.find({
-    collection: "bookings",
-    where: { id: { in: slotIds } },
-    pagination: false,
-    depth: 0,
-    overrideAccess: true,
-  });
+  let bookings: BookingDoc[] = [];
+  try {
+    const bookingsRes = await payload.find({
+      collection: "bookings",
+      where: { id: { in: slotIds } },
+      pagination: false,
+      depth: 0,
+      overrideAccess: true,
+    });
+    bookings = (bookingsRes.docs ?? []) as BookingDoc[];
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[invoice labels] bookings lookup failed", error);
+    }
+    return lineItems.map((li) => li.title?.trim() ?? "");
+  }
 
-  const bookings = (bookingsRes.docs ?? []) as BookingDoc[];
   const bookingById = new Map(bookings.map((b) => [b.id, b]));
 
   const serviceSlugs = Array.from(
@@ -53,22 +61,28 @@ export async function resolveInvoiceLineItemLabels(params: {
   const localizedNameBySlug = new Map<string, string>();
 
   if (serviceSlugs.length) {
-    const categoriesRes = await payload.find({
-      collection: "categories",
-      where: { slug: { in: serviceSlugs } },
-      pagination: false,
-      depth: 0,
-      overrideAccess: true,
-      locale: appLang,
-      fallbackLocale: DEFAULT_APP_LANG,
-    });
+    try {
+      const categoriesRes = await payload.find({
+        collection: "categories",
+        where: { slug: { in: serviceSlugs } },
+        pagination: false,
+        depth: 0,
+        overrideAccess: true,
+        locale: appLang,
+        fallbackLocale: DEFAULT_APP_LANG,
+      });
 
-    const categories = (categoriesRes.docs ?? []) as CategoryDoc[];
-    for (const category of categories) {
-      const slug = category.slug?.trim();
-      const name = category.name?.trim();
-      if (slug && name) {
-        localizedNameBySlug.set(slug, name);
+      const categories = (categoriesRes.docs ?? []) as CategoryDoc[];
+      for (const category of categories) {
+        const slug = category.slug?.trim();
+        const name = category.name?.trim();
+        if (slug && name) {
+          localizedNameBySlug.set(slug, name);
+        }
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[invoice labels] categories lookup failed", error);
       }
     }
   }

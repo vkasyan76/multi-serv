@@ -53,7 +53,7 @@
     },
     "actions": {
       "clear_filters": "Limpar filtros",
-      "download_csv": "Transferir CSV",
+      "download_csv": "Descarregar CSV",
       "view_invoice": "Ver fatura",
       "load_more": "Carregar mais"
     },
