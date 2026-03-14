@@ -16,6 +16,7 @@ import {
   formatNumberForLocale,
   getLocaleAndCurrency,
 } from "@/lib/i18n/locale";
+import { resolveInvoiceLineItemLabels } from "@/modules/invoices/server/invoice-line-item-labels";
 import { getAppLangFromHeaders } from "@/modules/profile/location-utils";
 
 export const runtime = "nodejs";
@@ -61,8 +62,16 @@ async function buildPdf(params: {
   tenantName?: string | null;
   providerName?: string | null;
   avatarBuffer?: Buffer | null;
+  lineItemLabels: string[];
 }): Promise<Buffer> {
-  const { invoice, appLang, tenantName, providerName, avatarBuffer } = params;
+  const {
+    invoice,
+    appLang,
+    tenantName,
+    providerName,
+    avatarBuffer,
+    lineItemLabels,
+  } = params;
   type PDFDocumentCtor = PDFKit.PDFDocument;
   const mod = await import("pdfkit");
   const tFinance = await getTranslations({
@@ -313,7 +322,7 @@ async function buildPdf(params: {
 
       let y = tableTop + rowHeight;
       const lineItems = invoice.lineItems ?? [];
-      lineItems.forEach((li) => {
+      lineItems.forEach((li, index) => {
         doc
           .strokeColor("#E5E7EB")
           .moveTo(margin, y)
@@ -324,8 +333,11 @@ async function buildPdf(params: {
         const qty = Number(li.qty ?? 0);
         const unit = Number(li.unitAmountCents ?? 0);
         const amount = Number(li.amountCents ?? 0);
+        const displayTitle = lineItemLabels[index]?.trim()
+          ? lineItemLabels[index]
+          : tFinance("invoice.fallbacks.service");
         doc.text(
-          li.title?.trim() ? li.title : tFinance("invoice.fallbacks.service"),
+          displayTitle,
           colItem + 6,
           y + 4,
           {
@@ -480,6 +492,14 @@ export async function GET(
     const requestUrl = new URL(req.url);
     const explicitLang = readExplicitAppLang(requestUrl.searchParams.get("lang"));
     const appLang = explicitLang ?? getAppLangFromHeaders(h) ?? DEFAULT_APP_LANG;
+    const lineItemLabels = await resolveInvoiceLineItemLabels({
+      payload,
+      lineItems: (invoice.lineItems ?? []).map((li) => ({
+        slotId: li.slotId,
+        title: li.title,
+      })),
+      appLang,
+    });
     let avatarBuffer: Buffer | null = null;
     if (avatarUrl) {
       const proto = h.get("x-forwarded-proto") ?? "http";
@@ -501,6 +521,7 @@ export async function GET(
       tenantName,
       providerName,
       avatarBuffer,
+      lineItemLabels,
     });
 
     const pdfBody = new Uint8Array(pdf);

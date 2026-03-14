@@ -6,6 +6,7 @@ import config from "@payload-config";
 import { Badge } from "@/components/ui/badge";
 import { DownloadPdfButton } from "@/modules/invoices/ui/DownloadPdfButton";
 import { InvoiceTopBar } from "@/modules/invoices/ui/InvoiceTopBar";
+import { resolveInvoiceLineItemLabels } from "@/modules/invoices/server/invoice-line-item-labels";
 import {
   Table,
   TableBody,
@@ -105,6 +106,14 @@ const Page = async ({
     countryNameFromCode(invoice.buyerCountryISO, appLang) ??
     invoice.buyerCountryISO ??
     "";
+  const resolvedLineItemLabels = await resolveInvoiceLineItemLabels({
+    payload,
+    lineItems: (invoice.lineItems ?? []).map((li) => ({
+      slotId: li.slotId,
+      title: li.title,
+    })),
+    appLang,
+  });
 
   const subtotalMajor = Number(invoice.amountSubtotalCents ?? 0) / 100;
   const vatMajor = Number(invoice.vatAmountCents ?? 0) / 100;
@@ -273,8 +282,8 @@ const Page = async ({
                 <TableRow key={`${li.slotId}-${idx}`}>
                   <TableCell>
                     <div className="font-medium">
-                      {li.title?.trim()
-                        ? li.title
+                      {resolvedLineItemLabels[idx]?.trim()
+                        ? resolvedLineItemLabels[idx]
                         : tFinance("invoice.fallbacks.service")}
                     </div>
                     <div className="text-xs text-muted-foreground">
