@@ -78,5 +78,55 @@
     "actions": {
       "open": "Відкрити виплати"
     }
+  },
+  "invoice": {
+    "title": "Рахунок",
+    "topbar": {
+      "public_page": "Публічна сторінка",
+      "home": "Головна"
+    },
+    "sections": {
+      "service_provider": "Постачальник послуг",
+      "client": "Клієнт",
+      "details": "Деталі"
+    },
+    "fields": {
+      "issued": "Виставлено",
+      "paid": "Оплачено",
+      "currency": "Валюта",
+      "vat": "ПДВ",
+      "vat_id": "ІПН ПДВ"
+    },
+    "table": {
+      "service": "Послуга",
+      "hours": "Години",
+      "hourly_rate": "Погодинна ставка",
+      "amount": "Сума"
+    },
+    "totals": {
+      "subtotal": "Проміжний підсумок",
+      "total": "Усього"
+    },
+    "status": {
+      "paid": "Оплачено",
+      "issued": "Виставлено",
+      "overdue": "Прострочено",
+      "draft": "Чернетка",
+      "void": "Скасовано",
+      "unknown": "Невідомо"
+    },
+    "fallbacks": {
+      "service": "Послуга",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Завантажити PDF",
+      "downloading": "Завантаження..."
+    },
+    "errors": {
+      "download_failed": "Не вдалося завантажити PDF. Спробуйте ще раз."
+    }
   }
 }

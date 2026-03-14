@@ -78,5 +78,55 @@
     "actions": {
       "open": "Otwórz wypłaty"
     }
+  },
+  "invoice": {
+    "title": "Faktura",
+    "topbar": {
+      "public_page": "Strona publiczna",
+      "home": "Strona główna"
+    },
+    "sections": {
+      "service_provider": "Usługodawca",
+      "client": "Klient",
+      "details": "Szczegóły"
+    },
+    "fields": {
+      "issued": "Wystawiona",
+      "paid": "Opłacona",
+      "currency": "Waluta",
+      "vat": "VAT",
+      "vat_id": "NIP VAT"
+    },
+    "table": {
+      "service": "Usługa",
+      "hours": "Godziny",
+      "hourly_rate": "Stawka godzinowa",
+      "amount": "Kwota"
+    },
+    "totals": {
+      "subtotal": "Suma częściowa",
+      "total": "Razem"
+    },
+    "status": {
+      "paid": "Opłacona",
+      "issued": "Wystawiona",
+      "overdue": "Przeterminowana",
+      "draft": "Szkic",
+      "void": "Anulowana",
+      "unknown": "Nieznana"
+    },
+    "fallbacks": {
+      "service": "Usługa",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Pobierz PDF",
+      "downloading": "Pobieranie..."
+    },
+    "errors": {
+      "download_failed": "Nie udało się pobrać pliku PDF. Spróbuj ponownie."
+    }
   }
 }

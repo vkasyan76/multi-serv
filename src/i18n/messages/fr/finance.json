@@ -78,5 +78,55 @@
     "actions": {
       "open": "Ouvrir les paiements"
     }
+  },
+  "invoice": {
+    "title": "Facture",
+    "topbar": {
+      "public_page": "Page publique",
+      "home": "Accueil"
+    },
+    "sections": {
+      "service_provider": "Prestataire",
+      "client": "Client",
+      "details": "Détails"
+    },
+    "fields": {
+      "issued": "Émise",
+      "paid": "Payée",
+      "currency": "Devise",
+      "vat": "TVA",
+      "vat_id": "N° de TVA"
+    },
+    "table": {
+      "service": "Service",
+      "hours": "Heures",
+      "hourly_rate": "Taux horaire",
+      "amount": "Montant"
+    },
+    "totals": {
+      "subtotal": "Sous-total",
+      "total": "Total"
+    },
+    "status": {
+      "paid": "Payée",
+      "issued": "Émise",
+      "overdue": "En retard",
+      "draft": "Brouillon",
+      "void": "Annulée",
+      "unknown": "Inconnue"
+    },
+    "fallbacks": {
+      "service": "Service",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Télécharger le PDF",
+      "downloading": "Téléchargement..."
+    },
+    "errors": {
+      "download_failed": "Impossible de télécharger le PDF. Veuillez réessayer."
+    }
   }
 }

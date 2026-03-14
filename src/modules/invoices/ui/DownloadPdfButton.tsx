@@ -1,10 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { type AppLang } from "@/lib/i18n/app-lang";
 
-export function DownloadPdfButton({ invoiceId }: { invoiceId: string }) {
+export function DownloadPdfButton({
+  invoiceId,
+  appLang,
+}: {
+  invoiceId: string;
+  appLang: AppLang;
+}) {
+  const tFinance = useTranslations("finance");
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -12,7 +21,7 @@ export function DownloadPdfButton({ invoiceId }: { invoiceId: string }) {
     setIsDownloading(true);
 
     try {
-      const res = await fetch(`/api/invoices/${invoiceId}/pdf`, {
+      const res = await fetch(`/api/invoices/${invoiceId}/pdf?lang=${appLang}`, {
         method: "GET",
         cache: "no-store",
       });
@@ -31,7 +40,7 @@ export function DownloadPdfButton({ invoiceId }: { invoiceId: string }) {
       link.remove();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error("Failed to download PDF. Please try again.");
+      toast.error(tFinance("pdf.errors.download_failed"));
     } finally {
       setIsDownloading(false);
     }
@@ -43,7 +52,9 @@ export function DownloadPdfButton({ invoiceId }: { invoiceId: string }) {
       onClick={handleDownload}
       disabled={isDownloading}
     >
-      {isDownloading ? "Downloading..." : "Download PDF"}
+      {isDownloading
+        ? tFinance("pdf.actions.downloading")
+        : tFinance("pdf.actions.download")}
     </Button>
   );
 }

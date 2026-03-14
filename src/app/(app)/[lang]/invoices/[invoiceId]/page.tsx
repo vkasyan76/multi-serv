@@ -1,5 +1,6 @@
 import { caller } from "@/trpc/server";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import {
   formatCurrency,
   countryNameFromCode,
   formatDateForLocale,
+  formatNumberForLocale,
   getLocaleAndCurrency,
 } from "@/lib/i18n/locale";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
@@ -38,6 +40,12 @@ const Page = async ({
 }) => {
   const { lang, invoiceId } = await params;
   if (!invoiceId) notFound();
+
+  const appLang = normalizeToSupported(lang);
+  const tFinance = await getTranslations({
+    locale: appLang,
+    namespace: "finance",
+  });
 
   let invoice: Awaited<ReturnType<typeof caller.invoices.getById>> | null =
     null;
@@ -66,7 +74,9 @@ const Page = async ({
   const tenantName =
     typeof tenant?.name === "string" && tenant.name.trim()
       ? tenant.name.trim()
-      : (tenant?.slug ?? invoice.sellerLegalName ?? "Service Provider");
+      : (tenant?.slug ??
+        invoice.sellerLegalName ??
+        tFinance("invoice.sections.service_provider"));
   const tenantSlug =
     typeof tenant?.slug === "string" && tenant.slug.trim()
       ? tenant.slug.trim()
@@ -82,9 +92,9 @@ const Page = async ({
     .join(" ")
     .trim();
   const providerName =
-    providerFullName || invoice.sellerLegalName || "Service Provider";
-  // In /[lang] routes, URL locale is authoritative.
-  const appLang = normalizeToSupported(lang);
+    providerFullName ||
+    invoice.sellerLegalName ||
+    tFinance("invoice.sections.service_provider");
   const { locale } = getLocaleAndCurrency(appLang);
   const currency = (invoice.currency ?? "eur").toUpperCase();
   const sellerCountry =
@@ -100,6 +110,7 @@ const Page = async ({
   const vatMajor = Number(invoice.vatAmountCents ?? 0) / 100;
   const totalMajor = Number(invoice.amountTotalCents ?? 0) / 100;
   const vatRate = Number(invoice.vatRateBps ?? 0) / 100;
+  const emptyValue = tFinance("invoice.fallbacks.empty_value");
 
   const formatSlotDateTime = (start?: string | null, end?: string | null) => {
     if (!start) return "";
@@ -130,6 +141,23 @@ const Page = async ({
     return `${startLabel}, ${startTime} \u2013 ${endLabel}, ${endTime}`;
   };
 
+  const statusLabel = (() => {
+    switch (invoice.status) {
+      case "paid":
+        return tFinance("invoice.status.paid");
+      case "issued":
+        return tFinance("invoice.status.issued");
+      case "overdue":
+        return tFinance("invoice.status.overdue");
+      case "draft":
+        return tFinance("invoice.status.draft");
+      case "void":
+        return tFinance("invoice.status.void");
+      default:
+        return tFinance("invoice.status.unknown");
+    }
+  })();
+
   return (
     <div className="min-h-screen bg-white">
       <InvoiceTopBar
@@ -137,26 +165,28 @@ const Page = async ({
         tenantName={tenantName}
         tenantAvatarUrl={tenantAvatarUrl}
       />
-      <header className="bg-[#F4F4F0] py-8 border-b">
-        <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex items-center justify-between">
+      <header className="border-b bg-[#F4F4F0] py-8">
+        <div className="mx-auto flex max-w-(--breakpoint-xl) items-center justify-between px-4 lg:px-12">
           <div>
-            <h1 className="text-[28px] font-medium">Invoice</h1>
+            <h1 className="text-[28px] font-medium">
+              {tFinance("invoice.title")}
+            </h1>
             <p className="text-sm text-muted-foreground">{invoice.id}</p>
           </div>
           <Badge
             variant="secondary"
             className={`border-0 ${statusClass[String(invoice.status ?? "")] ?? "bg-slate-200 text-slate-900"}`}
           >
-            {String(invoice.status ?? "unknown")}
+            {statusLabel}
           </Badge>
         </div>
       </header>
 
-      <section className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 py-10 space-y-8">
+      <section className="mx-auto max-w-(--breakpoint-xl) space-y-8 px-4 py-10 lg:px-12">
         <div className="flex flex-col gap-6 md:flex-row md:justify-between">
           <div>
             <h2 className="text-sm uppercase text-muted-foreground">
-              Service Provider
+              {tFinance("invoice.sections.service_provider")}
             </h2>
             <div className="mt-2 text-sm">
               <div className="font-medium">{providerName}</div>
@@ -167,13 +197,17 @@ const Page = async ({
               <div>{sellerCountry}</div>
               {invoice.sellerEmail ? <div>{invoice.sellerEmail}</div> : null}
               {invoice.sellerVatId ? (
-                <div>VAT ID: {invoice.sellerVatId}</div>
+                <div>
+                  {tFinance("invoice.fields.vat_id")}: {invoice.sellerVatId}
+                </div>
               ) : null}
             </div>
           </div>
 
           <div>
-            <h2 className="text-sm uppercase text-muted-foreground">Client</h2>
+            <h2 className="text-sm uppercase text-muted-foreground">
+              {tFinance("invoice.sections.client")}
+            </h2>
             <div className="mt-2 text-sm">
               <div className="font-medium">{invoice.buyerName}</div>
               <div>{invoice.buyerAddressLine1}</div>
@@ -186,22 +220,34 @@ const Page = async ({
           </div>
 
           <div>
-            <h2 className="text-sm uppercase text-muted-foreground">Details</h2>
-            <div className="mt-2 text-sm space-y-1">
+            <h2 className="text-sm uppercase text-muted-foreground">
+              {tFinance("invoice.sections.details")}
+            </h2>
+            <div className="mt-2 space-y-1 text-sm">
               <div>
-                Issued:{" "}
+                {tFinance("invoice.fields.issued")}:{" "}
                 {invoice.issuedAt
                   ? formatDateForLocale(invoice.issuedAt, {}, appLang)
-                  : "—"}
+                  : emptyValue}
               </div>
               <div>
-                Paid:{" "}
+                {tFinance("invoice.fields.paid")}:{" "}
                 {invoice.paidAt
                   ? formatDateForLocale(invoice.paidAt, {}, appLang)
-                  : "—"}
+                  : emptyValue}
               </div>
-              <div>Currency: {currency}</div>
-              <div>VAT: {vatRate.toFixed(2)}%</div>
+              <div>
+                {tFinance("invoice.fields.currency")}: {currency}
+              </div>
+              <div>
+                {tFinance("invoice.fields.vat")}:{" "}
+                {formatNumberForLocale(
+                  vatRate,
+                  { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+                  appLang,
+                )}
+                %
+              </div>
             </div>
           </div>
         </div>
@@ -210,17 +256,27 @@ const Page = async ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Service</TableHead>
-                <TableHead className="text-right">Hours</TableHead>
-                <TableHead className="text-right">Hourly Rate</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>{tFinance("invoice.table.service")}</TableHead>
+                <TableHead className="text-right">
+                  {tFinance("invoice.table.hours")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {tFinance("invoice.table.hourly_rate")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {tFinance("invoice.table.amount")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {(invoice.lineItems ?? []).map((li, idx) => (
                 <TableRow key={`${li.slotId}-${idx}`}>
                   <TableCell>
-                    <div className="font-medium">{li.title}</div>
+                    <div className="font-medium">
+                      {li.title?.trim()
+                        ? li.title
+                        : tFinance("invoice.fallbacks.service")}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {formatSlotDateTime(li.start, li.end)}
                     </div>
@@ -246,21 +302,21 @@ const Page = async ({
           </Table>
         </div>
 
-        <div className="flex flex-col gap-2 items-end text-sm">
-          <div className="flex justify-between w-full max-w-sm">
-            <span>Subtotal</span>
+        <div className="flex flex-col items-end gap-2 text-sm">
+          <div className="flex w-full max-w-sm justify-between">
+            <span>{tFinance("invoice.totals.subtotal")}</span>
             <span>{formatCurrency(subtotalMajor, currency, appLang)}</span>
           </div>
-          <div className="flex justify-between w-full max-w-sm">
-            <span>VAT</span>
+          <div className="flex w-full max-w-sm justify-between">
+            <span>{tFinance("invoice.fields.vat")}</span>
             <span>{formatCurrency(vatMajor, currency, appLang)}</span>
           </div>
-          <div className="flex justify-between w-full max-w-sm font-medium text-base">
-            <span>Total</span>
+          <div className="flex w-full max-w-sm justify-between text-base font-medium">
+            <span>{tFinance("invoice.totals.total")}</span>
             <span>{formatCurrency(totalMajor, currency, appLang)}</span>
           </div>
           <div className="pt-4">
-            <DownloadPdfButton invoiceId={invoiceId} />
+            <DownloadPdfButton invoiceId={invoiceId} appLang={appLang} />
           </div>
         </div>
       </section>

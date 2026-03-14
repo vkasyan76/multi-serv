@@ -78,5 +78,55 @@
     "actions": {
       "open": "Apri pagamenti"
     }
+  },
+  "invoice": {
+    "title": "Fattura",
+    "topbar": {
+      "public_page": "Pagina pubblica",
+      "home": "Home"
+    },
+    "sections": {
+      "service_provider": "Fornitore di servizi",
+      "client": "Cliente",
+      "details": "Dettagli"
+    },
+    "fields": {
+      "issued": "Emessa",
+      "paid": "Pagata",
+      "currency": "Valuta",
+      "vat": "IVA",
+      "vat_id": "Partita IVA"
+    },
+    "table": {
+      "service": "Servizio",
+      "hours": "Ore",
+      "hourly_rate": "Tariffa oraria",
+      "amount": "Importo"
+    },
+    "totals": {
+      "subtotal": "Subtotale",
+      "total": "Totale"
+    },
+    "status": {
+      "paid": "Pagata",
+      "issued": "Emessa",
+      "overdue": "Scaduta",
+      "draft": "Bozza",
+      "void": "Annullata",
+      "unknown": "Sconosciuta"
+    },
+    "fallbacks": {
+      "service": "Servizio",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Scarica PDF",
+      "downloading": "Download in corso..."
+    },
+    "errors": {
+      "download_failed": "Impossibile scaricare il PDF. Riprova."
+    }
   }
 }

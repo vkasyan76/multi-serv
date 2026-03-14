@@ -78,5 +78,55 @@
     "actions": {
       "open": "Abrir pagos"
     }
+  },
+  "invoice": {
+    "title": "Factura",
+    "topbar": {
+      "public_page": "Página pública",
+      "home": "Inicio"
+    },
+    "sections": {
+      "service_provider": "Proveedor de servicios",
+      "client": "Cliente",
+      "details": "Detalles"
+    },
+    "fields": {
+      "issued": "Emitida",
+      "paid": "Pagada",
+      "currency": "Moneda",
+      "vat": "IVA",
+      "vat_id": "NIF-IVA"
+    },
+    "table": {
+      "service": "Servicio",
+      "hours": "Horas",
+      "hourly_rate": "Tarifa por hora",
+      "amount": "Importe"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "total": "Total"
+    },
+    "status": {
+      "paid": "Pagada",
+      "issued": "Emitida",
+      "overdue": "Vencida",
+      "draft": "Borrador",
+      "void": "Anulada",
+      "unknown": "Desconocida"
+    },
+    "fallbacks": {
+      "service": "Servicio",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Descargar PDF",
+      "downloading": "Descargando..."
+    },
+    "errors": {
+      "download_failed": "No se pudo descargar el PDF. Inténtalo de nuevo."
+    }
   }
 }

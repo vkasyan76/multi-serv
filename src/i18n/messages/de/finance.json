@@ -78,5 +78,55 @@
     "actions": {
       "open": "Auszahlungen öffnen"
     }
+  },
+  "invoice": {
+    "title": "Rechnung",
+    "topbar": {
+      "public_page": "Öffentliche Seite",
+      "home": "Startseite"
+    },
+    "sections": {
+      "service_provider": "Dienstleister",
+      "client": "Kunde",
+      "details": "Details"
+    },
+    "fields": {
+      "issued": "Ausgestellt",
+      "paid": "Bezahlt",
+      "currency": "Währung",
+      "vat": "MwSt.",
+      "vat_id": "USt-IdNr."
+    },
+    "table": {
+      "service": "Leistung",
+      "hours": "Stunden",
+      "hourly_rate": "Stundensatz",
+      "amount": "Betrag"
+    },
+    "totals": {
+      "subtotal": "Zwischensumme",
+      "total": "Gesamt"
+    },
+    "status": {
+      "paid": "Bezahlt",
+      "issued": "Ausgestellt",
+      "overdue": "Überfällig",
+      "draft": "Entwurf",
+      "void": "Storniert",
+      "unknown": "Unbekannt"
+    },
+    "fallbacks": {
+      "service": "Leistung",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "PDF herunterladen",
+      "downloading": "Wird heruntergeladen..."
+    },
+    "errors": {
+      "download_failed": "PDF konnte nicht heruntergeladen werden. Bitte versuchen Sie es erneut."
+    }
   }
 }

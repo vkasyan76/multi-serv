@@ -78,5 +78,55 @@
     "actions": {
       "open": "Open payouts"
     }
+  },
+  "invoice": {
+    "title": "Invoice",
+    "topbar": {
+      "public_page": "Public page",
+      "home": "Home"
+    },
+    "sections": {
+      "service_provider": "Service Provider",
+      "client": "Client",
+      "details": "Details"
+    },
+    "fields": {
+      "issued": "Issued",
+      "paid": "Paid",
+      "currency": "Currency",
+      "vat": "VAT",
+      "vat_id": "VAT ID"
+    },
+    "table": {
+      "service": "Service",
+      "hours": "Hours",
+      "hourly_rate": "Hourly Rate",
+      "amount": "Amount"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "total": "Total"
+    },
+    "status": {
+      "paid": "Paid",
+      "issued": "Issued",
+      "overdue": "Overdue",
+      "draft": "Draft",
+      "void": "Void",
+      "unknown": "Unknown"
+    },
+    "fallbacks": {
+      "service": "Service",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Download PDF",
+      "downloading": "Downloading..."
+    },
+    "errors": {
+      "download_failed": "Failed to download PDF. Please try again."
+    }
   }
 }
