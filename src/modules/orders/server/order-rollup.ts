@@ -8,9 +8,10 @@ import type { TRPCContext } from "@/trpc/init";
 import { DEFAULT_LIMIT } from "@/constants";
 import { sendDomainEmail } from "@/modules/email/events";
 import type { EmailDeliverability } from "@/modules/email/types";
+import { resolveOrderServiceLabels } from "./order-service-labels";
 
 type DocWithId<T> = T & { id: string };
-type CtxLike = Pick<TRPCContext, "db" | "userId">; // for Stage 1C queries we also need ctx.userId
+type CtxLike = Pick<TRPCContext, "db" | "userId" | "appLang">; // lifecycle reads need db, auth, and route locale
 type DbOnlyCtx = Pick<TRPCContext, "db">;
 type ServiceStatus = Order["serviceStatus"];
 const ADMIN_ORDERS_EXPORT_PAGE_SIZE = 200;
@@ -20,6 +21,7 @@ type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
   serviceStatus: ServiceStatus;
   disputeReason: string | null;
   serviceSnapshot: NonNullable<Booking["serviceSnapshot"]> | null;
+  displayServiceName?: string | null;
 };
 
 type TenantLifecycleListItem = {
@@ -221,6 +223,42 @@ function mapTenantLifecycleItem(o: DocWithId<Order>): TenantLifecycleListItem {
   };
 }
 
+async function applyLocalizedServiceLabels<T extends { slots: SlotLifecycleSlot[] }>(
+  ctx: Pick<TRPCContext, "db" | "appLang">,
+  items: T[],
+): Promise<T[]> {
+  const allSlots = items.flatMap((item) => item.slots ?? []);
+  if (!allSlots.length) return items;
+
+  const labelBySlotId = await resolveOrderServiceLabels({
+    payload: ctx.db,
+    slots: allSlots.map((slot) => ({
+      id: slot.id,
+      serviceSnapshot: slot.serviceSnapshot
+        ? {
+            serviceSlug: slot.serviceSnapshot.serviceSlug,
+            serviceName: slot.serviceSnapshot.serviceName,
+          }
+        : null,
+    })),
+    appLang: ctx.appLang,
+  });
+
+  return items.map((item) => ({
+    ...item,
+    slots: (item.slots ?? []).map((slot) => {
+      const slotId = slot.id?.trim();
+      return {
+        ...slot,
+        displayServiceName:
+          (slotId ? labelBySlotId.get(slotId)?.trim() : "") ||
+          slot.serviceSnapshot?.serviceName?.trim() ||
+          null,
+      };
+    }),
+  }));
+}
+
 function tenantMetaFromOrder(
   o: DocWithId<Order>,
   slots: SlotLifecycleSlot[],
@@ -334,7 +372,7 @@ export async function listMineSlotLifecycle(ctx: CtxLike) {
     overrideAccess: true,
   })) as { docs?: Array<DocWithId<Order>> };
 
-  return (res.docs ?? []).map((o) => {
+  const items = (res.docs ?? []).map((o) => {
     const slots = mapSlotsFromOrder(o);
     return {
       id: o.id,
@@ -345,6 +383,8 @@ export async function listMineSlotLifecycle(ctx: CtxLike) {
       slots,
     };
   });
+
+  return applyLocalizedServiceLabels(ctx, items);
 }
 
 /**
@@ -386,7 +426,8 @@ export async function listForMyTenantSlotLifecycle(
     hasPrevPage?: boolean;
   };
 
-  const items = (res.docs ?? []).map((o) => mapTenantLifecycleItem(o));
+  const rawItems = (res.docs ?? []).map((o) => mapTenantLifecycleItem(o));
+  const items = await applyLocalizedServiceLabels(ctx, rawItems);
 
   return {
     items,

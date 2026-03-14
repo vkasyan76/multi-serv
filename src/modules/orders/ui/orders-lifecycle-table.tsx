@@ -614,7 +614,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                     {formatDateTime(s.start, locale)}
                                   </TableCell>
                                   <TableCell>
-                                    {s.serviceSnapshot?.serviceName ?? EM_DASH}
+                                    {s.displayServiceName?.trim() ||
+                                      s.serviceSnapshot?.serviceName?.trim() ||
+                                      EM_DASH}
                                   </TableCell>
                                   <TableCell>
                                     <div className="h-10 flex items-center">

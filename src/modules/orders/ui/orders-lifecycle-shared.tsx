@@ -21,6 +21,7 @@ export type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
   serviceStatus: SlotServiceStatus;
   disputeReason: string | null;
   serviceSnapshot: NonNullable<Booking["serviceSnapshot"]> | null;
+  displayServiceName?: string | null;
 };
 
 export type OrdersLifecycleCustomerRow = Pick<
