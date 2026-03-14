@@ -71,6 +71,14 @@ export const Navbar = () => {
     const localized = href(pathnameWithQuery);
     const base = platformHomeHref();
     if (!base.startsWith("http")) return localized;
+
+    try {
+      const url = new URL(base);
+      if (!url.hostname || url.hostname === "undefined") return localized;
+    } catch {
+      return localized;
+    }
+
     return `${base.replace(/\/+$/, "")}${localized}`;
   };
 
