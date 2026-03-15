@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Home, Info } from "lucide-react";
 import {
   Tooltip,
@@ -12,23 +13,17 @@ import {
 } from "@/components/ui/tooltip";
 import { CustomerOrdersLifecycleView } from "@/modules/orders/ui/customer-orders-lifecycle-view";
 import { useTRPC } from "@/trpc/client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  type AppLang,
-  getInitialLanguage,
-  normalizeToSupported,
-} from "@/modules/profile/location-utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 import { toast } from "sonner";
 
 export function CustomerSlotOrdersView() {
   const trpc = useTRPC();
   const qc = useQueryClient();
-  const profileQ = useQuery(trpc.auth.getUserProfile.queryOptions());
-  const appLang: AppLang = useMemo(() => {
-    const profileLang = profileQ.data?.language;
-    if (profileLang) return normalizeToSupported(profileLang);
-    return getInitialLanguage();
-  }, [profileQ.data?.language]);
+  const tOrders = useTranslations("orders");
+  const params = useParams<{ lang?: string }>();
+  const appLang = normalizeToSupported(params?.lang);
 
   const router = useRouter();
   const search = useSearchParams();
@@ -55,12 +50,12 @@ export function CustomerSlotOrdersView() {
           await qc.invalidateQueries({
             queryKey: trpc.invoices.getForOrder.queryKey(),
           });
-          router.replace("/orders");
+          router.replace(withLocalePrefix("/orders", appLang));
         },
         onError: () => {
           // allow retry on next render if needed
           finalizeOnceRef.current = false;
-          toast.error("Failed to finalize invoice. Please try again.");
+          toast.error(tOrders("toasts.invoice_finalize_failed"));
         },
       },
     );
@@ -70,6 +65,8 @@ export function CustomerSlotOrdersView() {
     finalizeInvoice,
     qc,
     router,
+    appLang,
+    tOrders,
     trpc.orders,
     trpc.invoices,
   ]);
@@ -83,14 +80,14 @@ export function CustomerSlotOrdersView() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href="/"
+                  href={withLocalePrefix("/", appLang)}
                   className="p-2 rounded-full hover:bg-muted"
-                  aria-label="Home"
+                  aria-label={tOrders("page.home")}
                 >
                   <Home className="h-7 w-7" />
                 </Link>
               </TooltipTrigger>
-              <TooltipContent>Home</TooltipContent>
+              <TooltipContent>{tOrders("page.home")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -100,21 +97,22 @@ export function CustomerSlotOrdersView() {
       <header className="bg-[#F4F4F0] py-8 border-b">
         <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex flex-col gap-y-2">
           <div className="flex items-center gap-2">
-            <h1 className="text-[32px] font-medium">My Orders</h1>
+            <h1 className="text-[32px] font-medium">
+              {tOrders("page.title")}
+            </h1>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground hover:text-foreground"
-                    aria-label="Order flow info"
+                    aria-label={tOrders("page.flow_info_label")}
                   >
                     <Info className="h-4 w-4" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={6}>
-                  Provider marks the service completed - you accept/dispute - you
-                  pay when requested.
+                  {tOrders("page.flow_info_tooltip")}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

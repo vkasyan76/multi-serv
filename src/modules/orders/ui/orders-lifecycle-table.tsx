@@ -1,6 +1,7 @@
 "use client";
 import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import {
   ChevronDown,
   ChevronRight,
@@ -13,7 +14,6 @@ import type { NormalizedServiceStatus } from "@/modules/bookings/ui/service-stat
 import {
   normalizeServiceStatus,
   SERVICE_STATUS_COLORS,
-  SERVICE_STATUS_LABELS,
 } from "@/modules/bookings/ui/service-status";
 
 import { Button } from "@/components/ui/button";
@@ -55,10 +55,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AppLang } from "@/lib/i18n/app-lang";
-import {
-  getInitialLanguage,
-  getLocaleAndCurrency,
-} from "@/modules/profile/location-utils";
+import { getLocaleAndCurrency } from "@/lib/i18n/locale";
+import { withLocalePrefix } from "@/i18n/routing";
 import { toast } from "sonner";
 import {
   type OrdersLifecycleBaseSortKey,
@@ -81,14 +79,16 @@ type Mode = "customer" | "tenant";
 type Props = {
   mode: Mode;
   orders: Array<OrdersLifecycleCustomerRow | OrdersLifecycleTenantRow>;
-  appLang?: AppLang;
+  appLang: AppLang;
 };
 
 function StatusSelectItem({
   value,
+  label,
   disabled,
 }: {
   value: NormalizedServiceStatus;
+  label: string;
   disabled?: boolean;
 }) {
   return (
@@ -98,15 +98,15 @@ function StatusSelectItem({
           className={`inline-block h-2 w-2 shrink-0 rounded-full ${SERVICE_STATUS_COLORS[value].className}`}
           aria-hidden="true"
         />
-        {SERVICE_STATUS_LABELS[value]}
+        {label}
       </span>
     </SelectItem>
   );
 }
 
 export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
-  const effectiveLang = appLang ?? getInitialLanguage();
-  const { locale } = getLocaleAndCurrency(effectiveLang);
+  const tOrders = useTranslations("orders");
+  const { locale } = getLocaleAndCurrency(appLang);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [sort, setSort] = useState<{
     key: OrdersLifecycleBaseSortKey;
@@ -122,6 +122,43 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
   const [pendingDisputeId, setPendingDisputeId] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
+
+  const getStatusLabel = (
+    value:
+      | OrdersLifecycleCustomerRow["serviceStatus"]
+      | NormalizedServiceStatus
+      | null
+      | undefined,
+  ) => {
+    switch (normalizeServiceStatus(value)) {
+      case "completed":
+        return tOrders("status.completed");
+      case "accepted":
+        return tOrders("status.accepted");
+      case "disputed":
+        return tOrders("status.disputed");
+      case "scheduled":
+      default:
+        return tOrders("status.scheduled");
+    }
+  };
+
+  const getPaymentStatusLabel = (
+    value: OrdersLifecycleCustomerRow["invoiceStatus"] | null | undefined,
+  ) => {
+    switch (value) {
+      case "paid":
+        return tOrders("payment_status.paid");
+      case "issued":
+      case "overdue":
+        return tOrders("payment_status.payment_due");
+      case "draft":
+      case "void":
+      case "none":
+      default:
+        return tOrders("payment_status.not_invoiced_yet");
+    }
+  };
 
   const findTenantSlugForBooking = (bookingId: string) => {
     for (const order of orders ?? []) {
@@ -153,7 +190,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   const markSlotCompleted = useMutation({
     ...trpc.bookings.vendorMarkCompleted.mutationOptions(),
     onSuccess: async (_data, variables) => {
-      toast.success("Slot marked as completed.");
+      toast.success(tOrders("toasts.slot_completed"));
       if (mode === "tenant") {
         const tenantSlug = findTenantSlugForBooking(variables.bookingId);
         if (tenantSlug) {
@@ -164,15 +201,15 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
         queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
       });
     },
-    onError: (err) => {
-      toast.error(err.message || "Failed to update slot.");
+    onError: () => {
+      toast.error(tOrders("toasts.slot_update_failed"));
     },
   });
 
   const acceptSlot = useMutation({
     ...trpc.bookings.customerAcceptSlot.mutationOptions(),
     onSuccess: async (_data, variables) => {
-      toast.success("Slot accepted.");
+      toast.success(tOrders("toasts.slot_accepted"));
       if (mode === "customer") {
         const tenantSlug = findTenantSlugForBooking(variables.bookingId);
         if (tenantSlug) {
@@ -183,15 +220,15 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
         queryKey: trpc.orders.listMineSlotLifecycle.queryKey(),
       });
     },
-    onError: (err) => {
-      toast.error(err.message || "Failed to accept slot.");
+    onError: () => {
+      toast.error(tOrders("toasts.slot_accept_failed"));
     },
   });
 
   const disputeSlot = useMutation({
     ...trpc.bookings.customerDisputeSlot.mutationOptions(),
     onSuccess: async (_data, variables) => {
-      toast.success("Dispute submitted.");
+      toast.success(tOrders("toasts.dispute_submitted"));
       setDisputeDialogOpen(false);
       setPendingDisputeId(null);
       setDisputeReason("");
@@ -205,8 +242,8 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
         queryKey: trpc.orders.listMineSlotLifecycle.queryKey(),
       });
     },
-    onError: (err) => {
-      toast.error(err.message || "Failed to dispute slot.");
+    onError: () => {
+      toast.error(tOrders("toasts.dispute_failed"));
     },
   });
 
@@ -214,13 +251,13 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   const issueInvoice = useMutation({
     ...trpc.invoices.issueForOrder.mutationOptions(),
     onSuccess: async () => {
-      toast.success("Invoice issued.");
+      toast.success(tOrders("toasts.invoice_issued"));
       await qc.invalidateQueries({
         queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
       });
     },
-    onError: (err) => {
-      toast.error(err.message || "Failed to issue invoice.");
+    onError: () => {
+      toast.error(tOrders("toasts.invoice_issue_failed"));
     },
   });
 
@@ -231,11 +268,11 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        toast.error("Checkout URL missing.");
+        toast.error(tOrders("toasts.checkout_url_missing"));
       }
     },
-    onError: (err) => {
-      toast.error(err.message || "Failed to start checkout.");
+    onError: () => {
+      toast.error(tOrders("toasts.checkout_start_failed"));
     },
   });
 
@@ -278,23 +315,27 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
         trpc.invoices.getLatestForOrderAnyStatus.queryOptions({ orderId }),
       );
       if (!invoice?.id) {
-        toast.error("No invoice found for this order yet.");
+        toast.error(tOrders("toasts.invoice_missing"));
         return;
       }
-      router.push(`/invoices/${invoice.id}`);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to open invoice.";
-      toast.error(message);
+      const href = withLocalePrefix(`/invoices/${invoice.id}`, appLang);
+      window.open(href, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error(tOrders("toasts.invoice_open_failed"));
     }
   };
 
   const goWriteReview = (orderId: string, tenantSlug?: string) => {
     if (!tenantSlug) {
-      toast.error("Missing tenant slug for review.");
+      toast.error(tOrders("toasts.review_slug_missing"));
       return;
     }
-    router.push(`/tenants/${tenantSlug}/reviews/new?order=${orderId}`);
+    router.push(
+      withLocalePrefix(
+        `/tenants/${tenantSlug}/reviews/new?order=${encodeURIComponent(orderId)}`,
+        appLang,
+      ),
+    );
   };
 
   function toggleSort(key: OrdersLifecycleBaseSortKey) {
@@ -345,7 +386,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                 className="px-0"
                 onClick={() => toggleSort("name")}
               >
-                {mode === "customer" ? "Provider" : "Customer"}
+                {mode === "customer"
+                  ? tOrders("table.provider")
+                  : tOrders("table.customer")}
                 <OrdersLifecycleSortIcon
                   active={sort.key === "name"}
                   dir={sort.dir}
@@ -359,7 +402,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                 className="px-0"
                 onClick={() => toggleSort("date")}
               >
-                Date range
+                {tOrders("table.date_range")}
                 <OrdersLifecycleSortIcon
                   active={sort.key === "date"}
                   dir={sort.dir}
@@ -373,7 +416,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                 className="px-0"
                 onClick={() => toggleSort("status")}
               >
-                Status
+                {tOrders("table.status")}
                 <OrdersLifecycleSortIcon
                   active={sort.key === "status"}
                   dir={sort.dir}
@@ -387,7 +430,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                 className="px-0"
                 onClick={() => toggleSort("payment")}
               >
-                Payment
+                {tOrders("table.payment")}
                 <OrdersLifecycleSortIcon
                   active={sort.key === "payment"}
                   dir={sort.dir}
@@ -395,7 +438,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               </Button>
             </TableHead>
             <TableHead className="sticky top-0 z-20 bg-background text-right whitespace-nowrap">
-              Actions
+              {tOrders("table.actions")}
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -422,11 +465,8 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
             const canViewInvoice =
               o.invoiceStatus != null && o.invoiceStatus !== "none";
             const canWriteReview = o.invoiceStatus === "paid";
-            const requestPaymentTooltip =
-              o.serviceStatus !== "accepted"
-                ? "You can request payment after user acceptance."
-                : "Invoice already issued.";
-            const reviewTooltip = "You can write a review after payment.";
+            const requestPaymentTooltip = tOrders("tooltips.request_payment");
+            const reviewTooltip = tOrders("tooltips.write_review");
             const tenantSlug =
               o.slots
                 ?.find((s) => s.serviceSnapshot?.tenantSlug)
@@ -441,7 +481,13 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                       variant="ghost"
                       size="icon"
                       onClick={() => toggle(o.id)}
-                      aria-label={isOpen ? "Collapse order" : "Expand order"}
+                      aria-label={
+                        isOpen
+                          ? tOrders("table.collapse")
+                          : tOrders("table.expand")
+                      }
+                      aria-expanded={isOpen}
+                      aria-controls={`order-${o.id}-details`}
                     >
                       {isOpen ? (
                         <ChevronDown className="h-4 w-4" />
@@ -455,10 +501,16 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                   <TableCell className="pr-6">{range}</TableCell>
 
                   <TableCell>
-                    <StatusBadge value={o.serviceStatus} />
+                    <StatusBadge
+                      value={o.serviceStatus}
+                      label={getStatusLabel(o.serviceStatus)}
+                    />
                   </TableCell>
                   <TableCell>
-                    <PaymentStatusBadge value={o.invoiceStatus} />
+                    <PaymentStatusBadge
+                      value={o.invoiceStatus}
+                      label={getPaymentStatusLabel(o.invoiceStatus)}
+                    />
                   </TableCell>
 
                   <TableCell className="text-right">
@@ -481,7 +533,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                     issueInvoice.isPending
                                   }
                                 >
-                                  Request payment
+                                  {tOrders("actions.request_payment")}
                                 </Button>
                               </span>
                             </TooltipTrigger>
@@ -506,7 +558,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                               }}
                               disabled={createInvoiceCheckout.isPending}
                             >
-                              Pay
+                              {tOrders("actions.pay")}
                             </Button>
                           </span>
                         ) : null
@@ -514,7 +566,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
+                            <span className="sr-only">
+                              {tOrders("table.open_menu")}
+                            </span>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -523,7 +577,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                             onClick={() => goViewInvoice(o.id)}
                             disabled={!canViewInvoice}
                           >
-                            View invoice
+                            {tOrders("actions.view_invoice")}
                           </DropdownMenuItem>
                           {mode === "customer" ? (
                             <>
@@ -535,14 +589,14 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                   }
                                   disabled={!tenantSlug}
                                 >
-                                  Write a review
+                                  {tOrders("actions.write_review")}
                                 </DropdownMenuItem>
                               ) : (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span className="block w-full">
                                       <DropdownMenuItem disabled>
-                                        Write a review
+                                        {tOrders("actions.write_review")}
                                       </DropdownMenuItem>
                                     </span>
                                   </TooltipTrigger>
@@ -562,7 +616,11 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                 {/* expanded panel */}
                 {isOpen && (
                   <TableRow>
-                    <TableCell colSpan={6} className="bg-muted/30 p-0">
+                    <TableCell
+                      id={`order-${o.id}-details`}
+                      colSpan={6}
+                      className="bg-muted/30 p-0"
+                    >
                       <div className="py-2">
                         <table className="w-full caption-bottom text-sm table-fixed">
                           <colgroup>
@@ -576,9 +634,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                           <TableHeader>
                             <TableRow>
                               <TableHead aria-hidden="true" />
-                              <TableHead>Date/time</TableHead>
-                              <TableHead>Service</TableHead>
-                              <TableHead>Status</TableHead>
+                              <TableHead>{tOrders("table.date_time")}</TableHead>
+                              <TableHead>{tOrders("table.service")}</TableHead>
+                              <TableHead>{tOrders("table.status")}</TableHead>
                               <TableHead aria-hidden="true" />
                               <TableHead aria-hidden="true" />
                             </TableRow>
@@ -620,6 +678,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                   </TableCell>
                                   <TableCell>
                                     <div className="h-10 flex items-center">
+                                      {/* The trigger shows current state, so these labels stay on orders.status.*. */}
                                       {showTenantSelect ? (
                                         <Select
                                           value={normalizedStatus}
@@ -636,8 +695,14 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                             <SelectValue />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            <StatusSelectItem value="scheduled" />
-                                            <StatusSelectItem value="completed" />
+                                            <StatusSelectItem
+                                              value="scheduled"
+                                              label={tOrders("status.scheduled")}
+                                            />
+                                            <StatusSelectItem
+                                              value="completed"
+                                              label={tOrders("status.completed")}
+                                            />
                                           </SelectContent>
                                         </Select>
                                       ) : showCustomerSelect ? (
@@ -662,14 +727,24 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                           <SelectContent>
                                             <StatusSelectItem
                                               value="completed"
+                                              label={tOrders("status.completed")}
                                               disabled
                                             />
-                                            <StatusSelectItem value="accepted" />
-                                            <StatusSelectItem value="disputed" />
+                                            <StatusSelectItem
+                                              value="accepted"
+                                              label={tOrders("status.accepted")}
+                                            />
+                                            <StatusSelectItem
+                                              value="disputed"
+                                              label={tOrders("status.disputed")}
+                                            />
                                           </SelectContent>
                                         </Select>
                                       ) : (
-                                        <StatusBadge value={s.serviceStatus} />
+                                        <StatusBadge
+                                          value={s.serviceStatus}
+                                          label={getStatusLabel(s.serviceStatus)}
+                                        />
                                       )}
                                     </div>
                                     {normalizedStatus === "disputed" &&
@@ -707,19 +782,20 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Dispute this slot?</DialogTitle>
+            <DialogTitle>{tOrders("dialog.dispute_title")}</DialogTitle>
             <DialogDescription>
-              You can add an optional reason. This helps the provider understand
-              what needs fixing.
+              {tOrders("dialog.dispute_body")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="dispute-reason">Reason (optional)</Label>
+            <Label htmlFor="dispute-reason">
+              {tOrders("dialog.dispute_reason")}
+            </Label>
             <Textarea
               id="dispute-reason"
               value={disputeReason}
               onChange={(e) => setDisputeReason(e.target.value)}
-              placeholder="Share what went wrong..."
+              placeholder={tOrders("dialog.dispute_placeholder")}
               rows={4}
               maxLength={500}
             />
@@ -730,10 +806,12 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               onClick={() => setDisputeDialogOpen(false)}
               disabled={disputeSlot.isPending}
             >
-              Cancel
+              {tOrders("dialog.cancel")}
             </Button>
             <Button onClick={submitDispute} disabled={disputeSlot.isPending}>
-              {disputeSlot.isPending ? "Submitting..." : "Submit dispute"}
+              {disputeSlot.isPending
+                ? tOrders("dialog.submitting")
+                : tOrders("dialog.submit_dispute")}
             </Button>
           </DialogFooter>
         </DialogContent>

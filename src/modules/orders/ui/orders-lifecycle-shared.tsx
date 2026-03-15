@@ -69,8 +69,10 @@ function statusTextClass(s: NormalizedServiceStatus) {
 
 export function StatusBadge({
   value,
+  label,
 }: {
   value: OrderServiceStatus | SlotServiceStatus;
+  label?: string;
 }) {
   const st = normalizeDisplayServiceStatus(value);
   return (
@@ -78,7 +80,8 @@ export function StatusBadge({
       variant="secondary"
       className={`border-0 ${SERVICE_STATUS_COLORS[st].className} ${statusTextClass(st)}`}
     >
-      {SERVICE_STATUS_LABELS[st]}
+      {/* Keep default English fallback for admin and older callers. */}
+      {label ?? SERVICE_STATUS_LABELS[st]}
     </Badge>
   );
 }
@@ -103,13 +106,15 @@ function paymentBadgeMeta(status: InvoiceStatus | null | undefined) {
 
 export function PaymentStatusBadge({
   value,
+  label,
 }: {
   value?: InvoiceStatus | null;
+  label?: string;
 }) {
   const meta = paymentBadgeMeta(value);
   return (
     <Badge variant="secondary" className={`border-0 ${meta.className}`}>
-      {meta.label}
+      {label ?? meta.label}
     </Badge>
   );
 }

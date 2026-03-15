@@ -1,72 +1,72 @@
 {
   "page": {
-    "title": "My Orders",
-    "flow_info_label": "Order flow info",
-    "flow_info_tooltip": "Provider marks the service completed - you accept/dispute - you pay when requested.",
-    "home": "Home"
+    "title": "Comenzile mele",
+    "flow_info_label": "Informații despre fluxul comenzii",
+    "flow_info_tooltip": "Prestatorul marchează serviciul ca finalizat, îl accepți sau îl contești, apoi plătești când este solicitată plata.",
+    "home": "Acasă"
   },
   "table": {
-    "provider": "Provider",
-    "customer": "Customer",
-    "date_range": "Date range",
+    "provider": "Prestator",
+    "customer": "Client",
+    "date_range": "Interval de date",
     "status": "Status",
-    "payment": "Payment",
-    "actions": "Actions",
-    "date_time": "Date/time",
-    "service": "Service",
-    "expand": "Expand order",
-    "collapse": "Collapse order",
-    "open_menu": "Open menu"
+    "payment": "Plată",
+    "actions": "Acțiuni",
+    "date_time": "Dată/oră",
+    "service": "Serviciu",
+    "expand": "Extinde comanda",
+    "collapse": "Restrânge comanda",
+    "open_menu": "Deschide meniul"
   },
   "status": {
-    "scheduled": "Scheduled",
-    "accepted": "Accepted",
-    "completed": "Completed",
-    "disputed": "Disputed"
+    "scheduled": "Programat",
+    "accepted": "Acceptat",
+    "completed": "Finalizat",
+    "disputed": "Contestat"
   },
   "payment_status": {
-    "paid": "paid",
-    "payment_due": "payment due",
-    "not_invoiced_yet": "not invoiced yet"
+    "paid": "plătit",
+    "payment_due": "plată datorată",
+    "not_invoiced_yet": "încă nefacturat"
   },
   "actions": {
-    "request_payment": "Request payment",
-    "pay": "Pay",
-    "view_invoice": "View invoice",
-    "write_review": "Write a review"
+    "request_payment": "Solicită plata",
+    "pay": "Plătește",
+    "view_invoice": "Vezi factura",
+    "write_review": "Scrie o recenzie"
   },
   "tooltips": {
-    "request_payment": "You can request payment after user acceptance.",
-    "invoice_already_issued": "Invoice already issued.",
-    "write_review": "You can write a review after payment."
+    "request_payment": "Poți solicita plata după acceptarea clientului.",
+    "invoice_already_issued": "Factura a fost deja emisă.",
+    "write_review": "Poți scrie o recenzie după efectuarea plății."
   },
   "dialog": {
-    "dispute_title": "Dispute this slot?",
-    "dispute_body": "You can add an optional reason. This helps the provider understand what needs fixing.",
-    "dispute_reason": "Reason (optional)",
-    "dispute_placeholder": "Share what went wrong...",
-    "cancel": "Cancel",
-    "submitting": "Submitting...",
-    "submit_dispute": "Submit dispute"
+    "dispute_title": "Contești acest interval?",
+    "dispute_body": "Poți adăuga un motiv opțional. Acest lucru îl ajută pe prestator să înțeleagă ce trebuie corectat.",
+    "dispute_reason": "Motiv (opțional)",
+    "dispute_placeholder": "Spune ce nu a mers bine...",
+    "cancel": "Anulează",
+    "submitting": "Se trimite...",
+    "submit_dispute": "Trimite contestația"
   },
   "states": {
-    "load_error": "Failed to load orders.",
-    "tenant_empty": "As soon as you receive any orders from your customers, they will appear in this section."
+    "load_error": "Nu s-au putut încărca comenzile.",
+    "tenant_empty": "De îndată ce primești comenzi de la clienții tăi, acestea vor apărea în această secțiune."
   },
   "toasts": {
-    "slot_completed": "Slot marked as completed.",
-    "slot_update_failed": "Failed to update slot.",
-    "slot_accepted": "Slot accepted.",
-    "slot_accept_failed": "Failed to accept slot.",
-    "dispute_submitted": "Dispute submitted.",
-    "dispute_failed": "Failed to dispute slot.",
-    "invoice_issued": "Invoice issued.",
-    "invoice_issue_failed": "Failed to issue invoice.",
-    "checkout_url_missing": "Checkout URL missing.",
-    "checkout_start_failed": "Failed to start checkout.",
-    "invoice_missing": "No invoice found for this order yet.",
-    "invoice_open_failed": "Failed to open invoice.",
-    "review_slug_missing": "Missing tenant slug for review.",
-    "invoice_finalize_failed": "Failed to finalize invoice. Please try again."
+    "slot_completed": "Intervalul a fost marcat ca finalizat.",
+    "slot_update_failed": "Nu s-a putut actualiza intervalul.",
+    "slot_accepted": "Intervalul a fost acceptat.",
+    "slot_accept_failed": "Nu s-a putut accepta intervalul.",
+    "dispute_submitted": "Contestația a fost trimisă.",
+    "dispute_failed": "Nu s-a putut trimite contestația.",
+    "invoice_issued": "Factura a fost emisă.",
+    "invoice_issue_failed": "Nu s-a putut emite factura.",
+    "checkout_url_missing": "Lipsește URL-ul de plată.",
+    "checkout_start_failed": "Nu s-a putut porni plata.",
+    "invoice_missing": "Nu este încă disponibilă nicio factură pentru această comandă.",
+    "invoice_open_failed": "Nu s-a putut deschide factura.",
+    "review_slug_missing": "Lipsește slug-ul prestatorului pentru recenzie.",
+    "invoice_finalize_failed": "Nu s-a putut finaliza factura. Încearcă din nou."
   }
 }

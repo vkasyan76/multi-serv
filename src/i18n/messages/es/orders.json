@@ -1,72 +1,72 @@
 {
   "page": {
-    "title": "My Orders",
-    "flow_info_label": "Order flow info",
-    "flow_info_tooltip": "Provider marks the service completed - you accept/dispute - you pay when requested.",
-    "home": "Home"
+    "title": "Mis pedidos",
+    "flow_info_label": "Información sobre el flujo del pedido",
+    "flow_info_tooltip": "El proveedor marca el servicio como completado, usted lo acepta o lo impugna, y paga cuando se solicita el pago.",
+    "home": "Inicio"
   },
   "table": {
-    "provider": "Provider",
-    "customer": "Customer",
-    "date_range": "Date range",
-    "status": "Status",
-    "payment": "Payment",
-    "actions": "Actions",
-    "date_time": "Date/time",
-    "service": "Service",
-    "expand": "Expand order",
-    "collapse": "Collapse order",
-    "open_menu": "Open menu"
+    "provider": "Proveedor",
+    "customer": "Cliente",
+    "date_range": "Rango de fechas",
+    "status": "Estado",
+    "payment": "Pago",
+    "actions": "Acciones",
+    "date_time": "Fecha/hora",
+    "service": "Servicio",
+    "expand": "Expandir pedido",
+    "collapse": "Contraer pedido",
+    "open_menu": "Abrir menú"
   },
   "status": {
-    "scheduled": "Scheduled",
-    "accepted": "Accepted",
-    "completed": "Completed",
-    "disputed": "Disputed"
+    "scheduled": "Programado",
+    "accepted": "Aceptado",
+    "completed": "Completado",
+    "disputed": "Impugnado"
   },
   "payment_status": {
-    "paid": "paid",
-    "payment_due": "payment due",
-    "not_invoiced_yet": "not invoiced yet"
+    "paid": "pagado",
+    "payment_due": "pago pendiente",
+    "not_invoiced_yet": "aún no facturado"
   },
   "actions": {
-    "request_payment": "Request payment",
-    "pay": "Pay",
-    "view_invoice": "View invoice",
-    "write_review": "Write a review"
+    "request_payment": "Solicitar pago",
+    "pay": "Pagar",
+    "view_invoice": "Ver factura",
+    "write_review": "Escribir una reseña"
   },
   "tooltips": {
-    "request_payment": "You can request payment after user acceptance.",
-    "invoice_already_issued": "Invoice already issued.",
-    "write_review": "You can write a review after payment."
+    "request_payment": "Puede solicitar el pago después de que el cliente haya aceptado el servicio.",
+    "invoice_already_issued": "La factura ya fue emitida.",
+    "write_review": "Puede escribir una reseña después del pago."
   },
   "dialog": {
-    "dispute_title": "Dispute this slot?",
-    "dispute_body": "You can add an optional reason. This helps the provider understand what needs fixing.",
-    "dispute_reason": "Reason (optional)",
-    "dispute_placeholder": "Share what went wrong...",
-    "cancel": "Cancel",
-    "submitting": "Submitting...",
-    "submit_dispute": "Submit dispute"
+    "dispute_title": "¿Impugnar esta franja?",
+    "dispute_body": "Puede añadir un motivo opcional. Esto ayuda al proveedor a entender qué debe corregirse.",
+    "dispute_reason": "Motivo (opcional)",
+    "dispute_placeholder": "Cuente qué salió mal...",
+    "cancel": "Cancelar",
+    "submitting": "Enviando...",
+    "submit_dispute": "Enviar impugnación"
   },
   "states": {
-    "load_error": "Failed to load orders.",
-    "tenant_empty": "As soon as you receive any orders from your customers, they will appear in this section."
+    "load_error": "No se pudieron cargar los pedidos.",
+    "tenant_empty": "En cuanto reciba pedidos de sus clientes, aparecerán en esta sección."
   },
   "toasts": {
-    "slot_completed": "Slot marked as completed.",
-    "slot_update_failed": "Failed to update slot.",
-    "slot_accepted": "Slot accepted.",
-    "slot_accept_failed": "Failed to accept slot.",
-    "dispute_submitted": "Dispute submitted.",
-    "dispute_failed": "Failed to dispute slot.",
-    "invoice_issued": "Invoice issued.",
-    "invoice_issue_failed": "Failed to issue invoice.",
-    "checkout_url_missing": "Checkout URL missing.",
-    "checkout_start_failed": "Failed to start checkout.",
-    "invoice_missing": "No invoice found for this order yet.",
-    "invoice_open_failed": "Failed to open invoice.",
-    "review_slug_missing": "Missing tenant slug for review.",
-    "invoice_finalize_failed": "Failed to finalize invoice. Please try again."
+    "slot_completed": "La franja se marcó como completada.",
+    "slot_update_failed": "No se pudo actualizar la franja.",
+    "slot_accepted": "La franja fue aceptada.",
+    "slot_accept_failed": "No se pudo aceptar la franja.",
+    "dispute_submitted": "La impugnación se envió correctamente.",
+    "dispute_failed": "No se pudo enviar la impugnación.",
+    "invoice_issued": "La factura fue emitida.",
+    "invoice_issue_failed": "No se pudo emitir la factura.",
+    "checkout_url_missing": "Falta la URL de pago.",
+    "checkout_start_failed": "No se pudo iniciar el pago.",
+    "invoice_missing": "Aún no se encontró ninguna factura para este pedido.",
+    "invoice_open_failed": "No se pudo abrir la factura.",
+    "review_slug_missing": "Falta el slug del proveedor para la reseña.",
+    "invoice_finalize_failed": "No se pudo finalizar la factura. Inténtelo de nuevo."
   }
 }
