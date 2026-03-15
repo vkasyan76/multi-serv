@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useTRPC } from "@/trpc/client";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,8 @@ import { Loader2, ArrowUpDown } from "lucide-react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
 import { Input } from "@/components/ui/input";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { getLocaleAndCurrency } from "@/lib/i18n/locale";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type InboxPage = RouterOutputs["conversations"]["listForTenant"];
@@ -27,20 +31,21 @@ export function TenantInbox({
   onSelectAction,
 }: TenantInboxProps) {
   const trpc = useTRPC();
+  const tDashboard = useTranslations("dashboard");
+  const params = useParams<{ lang?: string }>();
+  const appLang = normalizeToSupported(params?.lang);
+  const locale = getLocaleAndCurrency(appLang).locale;
 
   // Fetch messages with interval.
-  // useQuery for the newest chunk, and useState/useEffect for the “history enabled” toggle.
-
+  // useQuery for the newest chunk, and useState/useEffect for the "history enabled" toggle.
   const [historyEnabled, setHistoryEnabled] = useState(false);
 
-  const [search, setSearch] = useState(""); // Search by customer name
+  const [search, setSearch] = useState("");
 
-  const [dateOrder, setDateOrder] = useState<"desc" | "asc">("desc"); // Date sort toggle (Recent ⇄ Oldest)(local UI state)
+  const [dateOrder, setDateOrder] = useState<"desc" | "asc">("desc");
 
   useEffect(() => {
     setHistoryEnabled(false);
-
-    // Optional: reset search/sort when switching tenant
     setSearch("");
     setDateOrder("desc");
   }, [tenantSlug]);
@@ -49,14 +54,14 @@ export function TenantInbox({
     ...trpc.conversations.listForTenant.queryOptions({
       tenantSlug,
       limit: 10,
-      cursor: 1, // newest page
+      cursor: 1,
     }),
     refetchInterval: 8000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });
 
-  // infinite query (only when user clicks “Load more”): historyEnabled keeps older fetching “opt-in”
+  // Infinite query is opt-in after "Load more" to avoid eagerly fetching older pages.
   const olderQ = useInfiniteQuery({
     ...trpc.conversations.listForTenant.infiniteQueryOptions({
       tenantSlug,
@@ -64,39 +69,32 @@ export function TenantInbox({
     }),
     enabled: historyEnabled && !!latestQ.data?.hasNextPage,
     initialPageParam: latestQ.data?.nextPage ?? 2,
-    getNextPageParam: (last) => last.nextPage, // returns undefined when done. Prevents “Load more” from staying available forever. Prevents cursor: null calls.
-
-    // optional but recommended: don't auto-refetch old pages
+    getNextPageParam: (last) => last.nextPage,
     refetchOnWindowFocus: false,
   });
-
-  // Merge newest + older + dedupe by id
 
   const items = useMemo(() => {
     const latestDocs = latestQ.data?.docs ?? [];
     const olderDocs = (olderQ.data?.pages ?? []).flatMap((p) => p.docs);
 
-    // Dedupe: conversations can move between pages when updatedAt changes
     const seen = new Set<string>();
     const merged: InboxItem[] = [];
 
-    for (const c of [...latestDocs, ...olderDocs]) {
-      if (seen.has(c.id)) continue;
-      seen.add(c.id);
-      merged.push(c);
+    for (const conversation of [...latestDocs, ...olderDocs]) {
+      if (seen.has(conversation.id)) continue;
+      seen.add(conversation.id);
+      merged.push(conversation);
     }
 
     return merged;
   }, [latestQ.data?.docs, olderQ.data]);
 
-  // ✅ Apply: hide empty convos + date sort + search-by-name
   const visibleItems = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const customerFallback = tDashboard("inbox.customer_fallback");
 
-    // 1) Hide conversations without messages (UI safety net)
-    const withMessages = items.filter((c) => !!c.lastMessageAt);
+    const withMessages = items.filter((conversation) => !!conversation.lastMessageAt);
 
-    // 2) Sort by date (Recent ⇄ Oldest)
     const sorted = [...withMessages].sort((a, b) => {
       const aTs = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
       const bTs = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
@@ -104,26 +102,32 @@ export function TenantInbox({
       return dateOrder === "desc" ? bTs - aTs : aTs - bTs;
     });
 
-    // 3) Search by customer name
     if (!q) return sorted;
 
-    return sorted.filter((c) =>
-      (c.customer?.name ?? "Customer").toLowerCase().includes(q)
+    return sorted.filter((conversation) =>
+      (conversation.customer?.name ?? customerFallback)
+        .toLowerCase()
+        .includes(q),
     );
-  }, [items, search, dateOrder]);
+  }, [items, search, dateOrder, tDashboard]);
 
-  // params for refetcging older messages
   const hasMore = !historyEnabled
     ? !!latestQ.data?.hasNextPage
     : olderQ.hasNextPage;
 
+  const sortLabel =
+    dateOrder === "desc"
+      ? tDashboard("inbox.recent")
+      : tDashboard("inbox.oldest");
+
   return (
-    // (italki-style: search box + date sort toggle in the header area)
     <div className="h-full min-h-0 flex flex-col bg-background md:border-r border-b md:border-b-0">
       <div className="px-4 py-3 border-b space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className="text-sm font-semibold">Inbox</div>
+            <div className="text-sm font-semibold">
+              {tDashboard("inbox.title")}
+            </div>
             <div className="text-xs text-muted-foreground truncate">
               {tenantSlug}
             </div>
@@ -133,17 +137,17 @@ export function TenantInbox({
             type="button"
             variant="ghost"
             className="shrink-0"
-            onClick={() => setDateOrder((p) => (p === "desc" ? "asc" : "desc"))}
-            title={dateOrder === "desc" ? "Sort: Recent" : "Sort: Oldest"}
+            onClick={() => setDateOrder((prev) => (prev === "desc" ? "asc" : "desc"))}
+            title={sortLabel}
           >
             <ArrowUpDown className="h-4 w-4 mr-2" />
-            {dateOrder === "desc" ? "Recent" : "Oldest"}
+            {sortLabel}
           </Button>
         </div>
 
         <Input
           type="search"
-          placeholder="Search by name"
+          placeholder={tDashboard("inbox.search_placeholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-11 text-sm placeholder:text-sm"
@@ -152,36 +156,41 @@ export function TenantInbox({
 
       <div className="flex-1 overflow-auto">
         {latestQ.isLoading ? (
-          <div className="p-4 text-xs text-muted-foreground">Loading…</div>
+          <div className="p-4 text-xs text-muted-foreground">
+            {tDashboard("inbox.loading")}
+          </div>
         ) : visibleItems.length === 0 ? (
           <div className="p-4 text-xs text-muted-foreground">
             {search.trim()
-              ? "No matching conversations."
-              : "No conversations yet."}
+              ? tDashboard("inbox.empty_search")
+              : tDashboard("inbox.empty")}
           </div>
         ) : (
           <div className="p-2 space-y-1">
-            {visibleItems.map((c) => {
-              const active = c.id === activeConversationId;
-              const preview = (c.lastMessagePreview ?? "").slice(0, 80);
+            {visibleItems.map((conversation) => {
+              const active = conversation.id === activeConversationId;
+              const preview = (conversation.lastMessagePreview ?? "").slice(0, 80);
 
               return (
                 <button
-                  key={c.id}
+                  key={conversation.id}
                   type="button"
-                  onClick={() => onSelectAction(c)}
+                  onClick={() => onSelectAction(conversation)}
                   className={cn(
                     "w-full rounded-lg px-3 py-2 text-left hover:bg-muted/60 transition-colors",
-                    active && "bg-muted"
+                    active && "bg-muted",
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-medium truncate">
-                      {c.customer?.name ?? "Customer"}
+                      {conversation.customer?.name ??
+                        tDashboard("inbox.customer_fallback")}
                     </div>
                     <div className="text-[11px] text-muted-foreground shrink-0">
-                      {c.lastMessageAt
-                        ? new Date(c.lastMessageAt).toLocaleDateString()
+                      {conversation.lastMessageAt
+                        ? new Intl.DateTimeFormat(locale).format(
+                            new Date(conversation.lastMessageAt),
+                          )
                         : ""}
                     </div>
                   </div>
@@ -211,7 +220,7 @@ export function TenantInbox({
             {olderQ.isFetchingNextPage || olderQ.isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              "Load more"
+              tDashboard("inbox.load_more")
             )}
           </Button>
         </div>

@@ -1,3 +1,4 @@
+import "server-only";
 import { cookies, headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
 import {
@@ -150,8 +151,12 @@ async function loadNamespace(
 
   if (!loader || appLang === "en") return enNamespace;
 
-  const localizedNamespace = await loader();
-  return mergeDeep(enNamespace, localizedNamespace);
+  try {
+    const localizedNamespace = await loader();
+    return mergeDeep(enNamespace, localizedNamespace);
+  } catch {
+    return enNamespace;
+  }
 }
 
 export default getRequestConfig(async ({ requestLocale }) => {

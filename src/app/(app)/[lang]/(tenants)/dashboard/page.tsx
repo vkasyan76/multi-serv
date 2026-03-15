@@ -3,6 +3,8 @@ import DashboardContent from "@/modules/tenants/ui/components/tenant_dashboard/d
 import TenantMismatchNotice from "@/modules/tenants/ui/components/tenant_dashboard/tenant-mismatch-notice";
 import { LayoutDashboard } from "lucide-react";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { caller, getQueryClient, trpc } from "@/trpc/server";
 
 type DashboardPageProps = {
@@ -16,6 +18,11 @@ export default async function DashboardPage({
 }: DashboardPageProps) {
   const { lang } = await paramsPromise;
   const searchParams = await searchParamsPromise;
+  const appLang = normalizeToSupported(lang);
+  const tDashboard = await getTranslations({
+    locale: appLang,
+    namespace: "dashboard",
+  });
 
   // Guard dashboard behind auth so email deep-links prompt sign-in if needed.
   const session = await caller.auth.session();
@@ -36,9 +43,11 @@ export default async function DashboardPage({
     const suffix = params.toString();
     // Phase 2: preserve locale in post-auth return target.
     const redirectUrl = suffix
-      ? `/${lang}/dashboard?${suffix}`
-      : `/${lang}/dashboard`;
-    redirect(`/${lang}/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`);
+      ? `/${appLang}/dashboard?${suffix}`
+      : `/${appLang}/dashboard`;
+    redirect(
+      `/${appLang}/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`,
+    );
   }
 
   const qc = getQueryClient();
@@ -48,7 +57,7 @@ export default async function DashboardPage({
 
   // If user is not a vendor yet (no tenant), send them to vendor onboarding
   if (!mine?.slug) {
-    redirect(`/${lang}/profile?tab=vendor`);
+    redirect(`/${appLang}/profile?tab=vendor`);
   }
 
   const tenantSlug = mine.slug;
@@ -61,12 +70,12 @@ export default async function DashboardPage({
   // If a tenant context is provided, block mismatched dashboards.
   if (expectedTenant && expectedTenant !== tenantSlug) {
     const params = new URLSearchParams({ tenant: expectedTenant });
-    const redirectUrl = `/${lang}/dashboard?${params.toString()}`;
+    const redirectUrl = `/${appLang}/dashboard?${params.toString()}`;
     return (
       <TenantMismatchNotice
         expectedSlug={expectedTenant}
         actualSlug={tenantSlug}
-        signInUrl={`/${lang}/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`}
+        signInUrl={`/${appLang}/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`}
       />
     );
   }
@@ -82,7 +91,9 @@ export default async function DashboardPage({
     <div className="container mx-auto px-4 py-8 space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold inline-flex items-center gap-3">
         <LayoutDashboard className="opacity-90 w-8 h-8 sm:w-10 sm:h-10" />
-        <span>{tenantName}&apos;s Dashboard</span>
+        <span>
+          {tenantName} · {tDashboard("page.title")}
+        </span>
       </h1>
 
       <DashboardContent slug={tenantSlug} />

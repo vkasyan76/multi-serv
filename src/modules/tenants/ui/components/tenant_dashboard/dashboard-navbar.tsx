@@ -3,10 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { Home, UserCog } from "lucide-react";
 import { cn, tenantPublicHref, platformHomeHref } from "@/lib/utils";
+import { type AppLang, normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 import { Poppins } from "next/font/google";
 import DashboardSubnav from "./dashboard-subnav";
 import {
@@ -22,17 +25,38 @@ interface Props {
   slug: string;
 }
 
+function getLocalizedPlatformHref(pathname: string, appLang: AppLang) {
+  const localizedPath = withLocalePrefix(pathname, appLang);
+  const platformHref = platformHomeHref();
+
+  // Keep locale when production root-domain rewrites route the app via the platform origin.
+  if (!platformHref.startsWith("http")) return localizedPath;
+
+  try {
+    const url = new URL(platformHref);
+    if (!url.hostname || url.hostname === "undefined") {
+      return localizedPath;
+    }
+  } catch {
+    return localizedPath;
+  }
+
+  return `${platformHref.replace(/\/+$/, "")}${localizedPath}`;
+}
+
 export default function DashboardNavbar({ slug }: Props) {
   const trpc = useTRPC();
+  const tDashboard = useTranslations("dashboard");
   const params = useParams<{ lang?: string }>();
+  const appLang = normalizeToSupported(params?.lang);
   const { data: tenant } = useSuspenseQuery(
     trpc.tenants.getOne.queryOptions({ slug })
   );
 
   const avatarUrl = tenant?.image?.url ?? null;
-  const publicHref = tenantPublicHref(slug, params?.lang); // avatar/name (tenant public)
-  const homeHref = platformHomeHref(); // home icon (platform root)
-  const profileUrl = `${homeHref}${homeHref.endsWith("/") ? "" : "/"}profile?tab=vendor`; // profile icon (platform root + profile)
+  const publicHref = tenantPublicHref(slug, appLang);
+  const homeHref = getLocalizedPlatformHref("/", appLang);
+  const profileUrl = getLocalizedPlatformHref("/profile?tab=vendor", appLang);
 
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
@@ -46,12 +70,12 @@ export default function DashboardNavbar({ slug }: Props) {
                 <Link
                   href={publicHref}
                   className="flex items-center gap-2 min-w-0"
-                  aria-label="View my Page"
+                  aria-label={tDashboard("navbar.public_page")}
                 >
                   {avatarUrl && (
                     <Image
                       src={avatarUrl}
-                      alt={tenant?.name ?? "Tenant"}
+                      alt={tenant?.name ?? tDashboard("navbar.tenant_alt")}
                       width={32}
                       height={32}
                       className="size-8 rounded-full border shrink-0"
@@ -67,7 +91,7 @@ export default function DashboardNavbar({ slug }: Props) {
                   </p>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent>View my Page</TooltipContent>
+              <TooltipContent>{tDashboard("navbar.public_page")}</TooltipContent>
             </Tooltip>
 
             {/* Center: subnav */}
@@ -82,25 +106,25 @@ export default function DashboardNavbar({ slug }: Props) {
                   <Link
                     href={profileUrl}
                     className="p-2 rounded-full hover:bg-muted"
-                    aria-label="My Profile"
+                    aria-label={tDashboard("navbar.profile")}
                   >
                     <UserCog className="h-7 w-7" />
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent>My Profile</TooltipContent>
+                <TooltipContent>{tDashboard("navbar.profile")}</TooltipContent>
               </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
-                    href={homeHref} // due to domain re-write in production, this goes to home
+                    href={homeHref}
                     className="p-2 rounded-full hover:bg-muted"
-                    aria-label="Home"
+                    aria-label={tDashboard("navbar.home")}
                   >
                     <Home className="h-7 w-7" />
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent>Home</TooltipContent>
+                <TooltipContent>{tDashboard("navbar.home")}</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -113,12 +137,12 @@ export default function DashboardNavbar({ slug }: Props) {
                   <Link
                     href={publicHref}
                     className="flex items-center gap-2 min-w-0"
-                    aria-label="Open public page"
+                    aria-label={tDashboard("navbar.open_public_page")}
                   >
                     {avatarUrl && (
                       <Image
                         src={avatarUrl}
-                        alt={tenant?.name ?? "Tenant"}
+                        alt={tenant?.name ?? tDashboard("navbar.tenant_alt")}
                         width={32}
                         height={32}
                         className="size-8 rounded-full border shrink-0"
@@ -134,21 +158,23 @@ export default function DashboardNavbar({ slug }: Props) {
                     </p>
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent>Open public page</TooltipContent>
+                <TooltipContent>
+                  {tDashboard("navbar.open_public_page")}
+                </TooltipContent>
               </Tooltip>
 
               <div className="flex items-center gap-3">
                 <Link
                   href={profileUrl}
                   className="p-2 rounded-full hover:bg-muted"
-                  aria-label="Vendor profile"
+                  aria-label={tDashboard("navbar.vendor_profile")}
                 >
                   <UserCog className="h-7 w-7" />
                 </Link>
                 <Link
-                  href={homeHref} // due to domain re-write in production, this goes to home
+                  href={homeHref}
                   className="p-2 rounded-full hover:bg-muted"
-                  aria-label="Home"
+                  aria-label={tDashboard("navbar.home")}
                 >
                   <Home className="h-7 w-7" />
                 </Link>

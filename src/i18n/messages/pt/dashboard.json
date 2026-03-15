@@ -3,44 +3,49 @@
     "title": "Painel"
   },
   "nav": {
-    "calendar": "Calendar",
-    "orders": "Orders",
-    "messages": "Messages",
-    "finance": "Finance"
+    "calendar": "Calendário",
+    "orders": "Encomendas",
+    "messages": "Mensagens",
+    "finance": "Finanças"
   },
   "navbar": {
-    "public_page": "View my page",
-    "open_public_page": "Open public page",
-    "profile": "My profile",
-    "vendor_profile": "Vendor profile",
-    "home": "Home",
-    "tenant_alt": "Tenant"
+    "public_page": "Ver a minha página",
+    "open_public_page": "Abrir página pública",
+    "profile": "O meu perfil",
+    "vendor_profile": "Perfil do prestador",
+    "home": "Início",
+    "tenant_alt": "Prestador"
   },
   "sections": {
-    "calendar": "Calendar",
-    "orders": "Orders",
-    "messages": "Messages"
+    "calendar": "Calendário",
+    "orders": "Encomendas",
+    "messages": "Mensagens"
   },
   "tooltips": {
-    "calendar": "Click to add/remove available slots.",
-    "orders": "Mark slots as completed, then issue invoices after client acceptance."
+    "calendar": "Clique para adicionar ou remover horários disponíveis.",
+    "orders": "Marque os horários como concluídos e depois emita faturas após a aceitação do cliente."
   },
   "mismatch": {
-    "title": "Account mismatch",
-    "body": "This link is for {expectedSlug}, but you are signed in as {actualSlug}.",
-    "hint": "Sign out to continue with the correct account.",
-    "action": "Sign out and continue"
+    "title": "Conta incorreta",
+    "body": "Esta ligação é para {expectedSlug}, mas iniciou sessão como {actualSlug}.",
+    "hint": "Termine a sessão para continuar com a conta correta.",
+    "action": "Terminar sessão e continuar"
+  },
+  "states": {
+    "loading": "A carregar...",
+    "unavailable": "Não foi possível carregar o painel."
   },
   "inbox": {
-    "title": "Inbox",
-    "recent": "Recent",
-    "oldest": "Oldest",
-    "search_placeholder": "Search by name",
-    "loading": "Loading...",
-    "empty": "No conversations yet.",
-    "empty_search": "No matching conversations.",
-    "load_more": "Load more",
-    "customer_fallback": "Customer",
-    "mobile_title": "Conversation with {customerName}"
+    "title": "Caixa de entrada",
+    "recent": "Recentes",
+    "oldest": "Antigas",
+    "search_placeholder": "Pesquisar por nome",
+    "loading": "A carregar...",
+    "empty": "Ainda não há conversas.",
+    "empty_search": "Não há conversas correspondentes.",
+    "load_more": "Carregar mais",
+    "customer_fallback": "Cliente",
+    "mobile_title": "Conversa com {customerName}",
+    "select_conversation": "Selecione uma conversa à esquerda."
   }
 }

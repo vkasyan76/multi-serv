@@ -633,6 +633,7 @@ export default function TenantContent({ slug }: { slug: string }) {
               <TenantCalendar
                 key={slug}
                 tenantSlug={slug}
+                appLang={appLang}
                 editable={false}
                 selectForBooking={true}
                 selectedIds={selected}

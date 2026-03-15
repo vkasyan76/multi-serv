@@ -3,44 +3,49 @@
     "title": "Панель"
   },
   "nav": {
-    "calendar": "Calendar",
-    "orders": "Orders",
-    "messages": "Messages",
-    "finance": "Finance"
+    "calendar": "Календар",
+    "orders": "Замовлення",
+    "messages": "Повідомлення",
+    "finance": "Фінанси"
   },
   "navbar": {
-    "public_page": "View my page",
-    "open_public_page": "Open public page",
-    "profile": "My profile",
-    "vendor_profile": "Vendor profile",
-    "home": "Home",
-    "tenant_alt": "Tenant"
+    "public_page": "Переглянути мою сторінку",
+    "open_public_page": "Відкрити публічну сторінку",
+    "profile": "Мій профіль",
+    "vendor_profile": "Профіль виконавця",
+    "home": "Головна",
+    "tenant_alt": "Виконавець"
   },
   "sections": {
-    "calendar": "Calendar",
-    "orders": "Orders",
-    "messages": "Messages"
+    "calendar": "Календар",
+    "orders": "Замовлення",
+    "messages": "Повідомлення"
   },
   "tooltips": {
-    "calendar": "Click to add/remove available slots.",
-    "orders": "Mark slots as completed, then issue invoices after client acceptance."
+    "calendar": "Натисніть, щоб додати або прибрати доступні слоти.",
+    "orders": "Позначайте слоти як завершені, а потім виставляйте рахунки після підтвердження клієнта."
   },
   "mismatch": {
-    "title": "Account mismatch",
-    "body": "This link is for {expectedSlug}, but you are signed in as {actualSlug}.",
-    "hint": "Sign out to continue with the correct account.",
-    "action": "Sign out and continue"
+    "title": "Невідповідний обліковий запис",
+    "body": "Це посилання призначене для {expectedSlug}, але ви увійшли як {actualSlug}.",
+    "hint": "Вийдіть, щоб продовжити з правильним обліковим записом.",
+    "action": "Вийти і продовжити"
+  },
+  "states": {
+    "loading": "Завантаження...",
+    "unavailable": "Не вдалося завантажити панель."
   },
   "inbox": {
-    "title": "Inbox",
-    "recent": "Recent",
-    "oldest": "Oldest",
-    "search_placeholder": "Search by name",
-    "loading": "Loading...",
-    "empty": "No conversations yet.",
-    "empty_search": "No matching conversations.",
-    "load_more": "Load more",
-    "customer_fallback": "Customer",
-    "mobile_title": "Conversation with {customerName}"
+    "title": "Вхідні",
+    "recent": "Останні",
+    "oldest": "Найстаріші",
+    "search_placeholder": "Пошук за ім'ям",
+    "loading": "Завантаження...",
+    "empty": "Розмов поки що немає.",
+    "empty_search": "Відповідних розмов не знайдено.",
+    "load_more": "Завантажити ще",
+    "customer_fallback": "Клієнт",
+    "mobile_title": "Розмова з {customerName}",
+    "select_conversation": "Виберіть розмову ліворуч."
   }
 }

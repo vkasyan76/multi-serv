@@ -88,6 +88,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
   const trpc = useTRPC();
   const qc = useQueryClient();
   const params = useParams<{ lang?: string }>();
+  const tDashboard = useTranslations("dashboard");
   const tFinance = useTranslations("finance");
   const tenantQ = useQuery(trpc.tenants.getOne.queryOptions({ slug }));
   const appLang: AppLang = normalizeToSupported(params?.lang);
@@ -130,8 +131,8 @@ export default function DashboardContent({ slug }: { slug: string }) {
       <section id="calendar" className="scroll-mt-28 sm:scroll-mt-32">
         <SectionTitle
           iconSrc="/SVGs/Dashboard/Calendar_Icon.svg"
-          label="Calendar"
-          tooltip="Click to add/remove available slots."
+          label={tDashboard("sections.calendar")}
+          tooltip={tDashboard("tooltips.calendar")}
         />
 
         {tenantQ.data && !canEditCalendar && (
@@ -151,6 +152,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
 
         <TenantCalendar
           tenantSlug={slug}
+          appLang={appLang}
           dashboardMode
           editable={!!canEditCalendar}
         />
@@ -159,8 +161,8 @@ export default function DashboardContent({ slug }: { slug: string }) {
       <section id="orders" className="scroll-mt-28 sm:scroll-mt-32">
         <SectionTitle
           iconSrc="/SVGs/Dashboard/Orders_Icon.svg"
-          label="Orders"
-          tooltip="Mark slots as completed, then issue invoices after client acceptance."
+          label={tDashboard("sections.orders")}
+          tooltip={tDashboard("tooltips.orders")}
         />
         <TenantOrdersLifecycleView appLang={appLang} />
       </section>
@@ -168,7 +170,7 @@ export default function DashboardContent({ slug }: { slug: string }) {
       <section id="messages" className="scroll-mt-28 sm:scroll-mt-32">
         <SectionTitle
           iconSrc="/SVGs/Dashboard/Messages_Icon.svg"
-          label="Messages"
+          label={tDashboard("sections.messages")}
         />
         <div className="rounded-lg border bg-white p-5">
           <TenantMessagesSection tenantSlug={slug} />

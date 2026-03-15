@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import { ConversationThread } from "@/modules/conversations/ui/conversation-thread";
 import { ChevronLeft } from "lucide-react";
 
@@ -30,6 +31,8 @@ export function TenantConversationPanel({
   disabled,
   onBackAction,
 }: TenantConversationPanelProps) {
+  const tDashboard = useTranslations("dashboard");
+
   return (
     <div className="h-full min-h-0 flex flex-col">
       {/* ✅ Grey-ish header for optical separation */}
@@ -65,11 +68,10 @@ export function TenantConversationPanel({
           myName={tenantName}
           myAvatarUrl={tenantAvatarUrl ?? null}
           disabled={disabled || !conversationId}
+          // Keep the selected-thread empty state on the shared localized default.
           emptyStateText={
-            conversationId ? (
-              <span>No messages yet.</span>
-            ) : (
-              <span>Select a conversation on the left.</span>
+            conversationId ? undefined : (
+              <span>{tDashboard("inbox.select_conversation")}</span>
             )
           }
         />

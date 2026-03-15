@@ -1,6 +1,7 @@
 "use client";
 
 import { useClerk } from "@clerk/nextjs";
+import { useTranslations } from "next-intl";
 
 type TenantMismatchNoticeProps = {
   expectedSlug: string;
@@ -14,16 +15,18 @@ export default function TenantMismatchNotice({
   signInUrl,
 }: TenantMismatchNoticeProps) {
   const { signOut } = useClerk();
+  const tDashboard = useTranslations("dashboard");
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold">Account mismatch</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold">
+        {tDashboard("mismatch.title")}
+      </h1>
       <p className="text-base text-muted-foreground">
-        This link is for <strong>{expectedSlug}</strong>, but you are signed in
-        as <strong>{actualSlug}</strong>.
+        {tDashboard("mismatch.body", { expectedSlug, actualSlug })}
       </p>
       <p className="text-sm text-muted-foreground">
-        Sign out to continue with the correct account.
+        {tDashboard("mismatch.hint")}
       </p>
       <button
         type="button"
@@ -38,7 +41,7 @@ export default function TenantMismatchNotice({
           window.location.href = signInUrl;
         }}
       >
-        Sign out and continue
+        {tDashboard("mismatch.action")}
       </button>
     </div>
   );

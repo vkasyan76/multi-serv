@@ -24,7 +24,7 @@ import {
 import { useTRPC } from "@/trpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Booking, User } from "@/payload-types";
-import { getLocaleAndCurrency } from "@/modules/profile/location-utils";
+import { getLocaleAndCurrency } from "@/lib/i18n/locale";
 import CalendarNav from "@/modules/bookings/ui/CalendarNav";
 import { CalendarLegend } from "./CalendarLegend";
 import { BOOKING_CH } from "@/constants";
@@ -44,6 +44,7 @@ import {
 } from "../utils/dates-utils";
 import { useMediaQuery } from "./use-media";
 import { useTranslations } from "next-intl";
+import { DEFAULT_APP_LANG, type AppLang } from "@/lib/i18n/app-lang";
 
 // Type definitions for type-safe BroadcastChannel operations
 type BookingBroadcast =
@@ -87,6 +88,7 @@ type Props = {
   defaultStartHour?: number; // default 8 - used to build scrollToTime
   editable?: boolean; // default false - controls DnD and mutation features
   dashboardMode?: boolean; // NEW: controls which query to use on dashboard
+  appLang?: AppLang;
   selectForBooking?: boolean; // default false - controls if slots can be selected for booking
   selectedIds?: string[]; // default [] - list of selected booking IDs
   onToggleSelect?: (id: string) => void; // callback to toggle selection
@@ -134,6 +136,7 @@ export default function TenantCalendar({
   defaultStartHour = 8,
   editable = false,
   dashboardMode = false, // NEW for dashboard mode payments onboarding check
+  appLang = DEFAULT_APP_LANG,
   selectForBooking = false,
   selectedIds = [],
   onToggleSelect,
@@ -142,6 +145,7 @@ export default function TenantCalendar({
 }: Props) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const tDashboard = useTranslations("dashboard");
   const tBookings = useTranslations("bookings");
   // Responsive breakpoint detection
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -149,10 +153,10 @@ export default function TenantCalendar({
   // DnD enabled only when editable and not mobile
   const dndEnabled = editable && !isMobile;
 
-  // Get culture from profile utility (consistent with rest of app)
+  // In dashboard mode, visible calendar labels should follow the route locale.
   const culture = useMemo(
-    () => getCultureFromProfile(getLocaleAndCurrency),
-    [],
+    () => getCultureFromProfile(() => getLocaleAndCurrency(appLang)),
+    [appLang],
   );
 
   // Get Intl formatters for tooltips (consistent with RBC localization)
@@ -1160,11 +1164,11 @@ export default function TenantCalendar({
   );
 
   if (tenantQ.isLoading) {
-    return <div>Loading tenant...</div>;
+    return <div>{tDashboard("states.loading")}</div>;
   }
 
   if (tenantQ.error) {
-    return <div>Error loading tenant: {tenantQ.error.message}</div>;
+    return <div>{tDashboard("states.unavailable")}</div>;
   }
 
   return (

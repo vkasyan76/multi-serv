@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SECTIONS = [
-  { id: "calendar", label: "Calendar" },
-  { id: "orders", label: "Orders" },
-  { id: "messages", label: "Messages" },
-  { id: "finance", label: "Finance" },
+  { id: "calendar", key: "nav.calendar" },
+  { id: "orders", key: "nav.orders" },
+  { id: "messages", key: "nav.messages" },
+  { id: "finance", key: "nav.finance" },
 ] as const;
 
 export default function DashboardSubnav() {
+  const tDashboard = useTranslations("dashboard");
   const [active, setActive] = useState<string>("calendar");
 
   // light scrollspy so the pill stays in sync when you scroll
@@ -52,7 +54,7 @@ export default function DashboardSubnav() {
             className="rounded-full px-3 sm:px-4 py-2 text-sm
                        data-[state=active]:bg-black data-[state=active]:text-white"
           >
-            {s.label}
+            {tDashboard(s.key)}
           </TabsTrigger>
         ))}
       </TabsList>

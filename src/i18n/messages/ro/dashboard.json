@@ -3,44 +3,49 @@
     "title": "Panou"
   },
   "nav": {
-    "calendar": "Calendar",
-    "orders": "Orders",
-    "messages": "Messages",
-    "finance": "Finance"
+    "calendar": "Program",
+    "orders": "Comenzi",
+    "messages": "Mesaje",
+    "finance": "Finanțe"
   },
   "navbar": {
-    "public_page": "View my page",
-    "open_public_page": "Open public page",
-    "profile": "My profile",
-    "vendor_profile": "Vendor profile",
-    "home": "Home",
-    "tenant_alt": "Tenant"
+    "public_page": "Vezi pagina mea",
+    "open_public_page": "Deschide pagina publică",
+    "profile": "Profilul meu",
+    "vendor_profile": "Profil prestator",
+    "home": "Acasă",
+    "tenant_alt": "Prestator"
   },
   "sections": {
-    "calendar": "Calendar",
-    "orders": "Orders",
-    "messages": "Messages"
+    "calendar": "Program",
+    "orders": "Comenzi",
+    "messages": "Mesaje"
   },
   "tooltips": {
-    "calendar": "Click to add/remove available slots.",
-    "orders": "Mark slots as completed, then issue invoices after client acceptance."
+    "calendar": "Dă clic pentru a adăuga sau elimina intervale disponibile.",
+    "orders": "Marchează intervalele ca finalizate, apoi emite facturi după acceptarea clientului."
   },
   "mismatch": {
-    "title": "Account mismatch",
-    "body": "This link is for {expectedSlug}, but you are signed in as {actualSlug}.",
-    "hint": "Sign out to continue with the correct account.",
-    "action": "Sign out and continue"
+    "title": "Cont greșit",
+    "body": "Acest link este pentru {expectedSlug}, dar ești autentificat ca {actualSlug}.",
+    "hint": "Deconectează-te pentru a continua cu contul corect.",
+    "action": "Deconectează-te și continuă"
+  },
+  "states": {
+    "loading": "Se încarcă...",
+    "unavailable": "Panoul nu a putut fi încărcat."
   },
   "inbox": {
-    "title": "Inbox",
-    "recent": "Recent",
-    "oldest": "Oldest",
-    "search_placeholder": "Search by name",
-    "loading": "Loading...",
-    "empty": "No conversations yet.",
-    "empty_search": "No matching conversations.",
-    "load_more": "Load more",
-    "customer_fallback": "Customer",
-    "mobile_title": "Conversation with {customerName}"
+    "title": "Mesaje primite",
+    "recent": "Recente",
+    "oldest": "Cele mai vechi",
+    "search_placeholder": "Caută după nume",
+    "loading": "Se încarcă...",
+    "empty": "Nu există încă nicio conversație.",
+    "empty_search": "Nu există conversații potrivite.",
+    "load_more": "Încarcă mai mult",
+    "customer_fallback": "Client",
+    "mobile_title": "Conversație cu {customerName}",
+    "select_conversation": "Selectați o conversație din stânga."
   }
 }

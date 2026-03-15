@@ -14,7 +14,7 @@ type Props = {
   onAnchorChange: (next: Date) => void;
   /** Optional precomputed label. If omitted, we derive from locale/anchor. */
   label?: string;
-  /** Locale for label (defaults to browser). */
+  /** Locale for label; dashboard passes the route locale explicitly. */
   locale?: string;
   className?: string;
   /** Compact layout for mobile: wrap, truncate label, hide week jumps */
