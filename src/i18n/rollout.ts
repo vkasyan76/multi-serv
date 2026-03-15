@@ -22,6 +22,9 @@ export const REQUIRED_NAMESPACES = [
   "tenantPage",
   "profile",
   "finance",
+  "dashboard",
+  "orders",
+  "reviews",
 ] as const;
 
 export type RequiredNamespace = (typeof REQUIRED_NAMESPACES)[number];

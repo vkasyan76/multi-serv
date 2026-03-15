@@ -1,0 +1,72 @@
+{
+  "page": {
+    "title": "My Orders",
+    "flow_info_label": "Order flow info",
+    "flow_info_tooltip": "Provider marks the service completed - you accept/dispute - you pay when requested.",
+    "home": "Home"
+  },
+  "table": {
+    "provider": "Provider",
+    "customer": "Customer",
+    "date_range": "Date range",
+    "status": "Status",
+    "payment": "Payment",
+    "actions": "Actions",
+    "date_time": "Date/time",
+    "service": "Service",
+    "expand": "Expand order",
+    "collapse": "Collapse order",
+    "open_menu": "Open menu"
+  },
+  "status": {
+    "scheduled": "Scheduled",
+    "accepted": "Accepted",
+    "completed": "Completed",
+    "disputed": "Disputed"
+  },
+  "payment_status": {
+    "paid": "paid",
+    "payment_due": "payment due",
+    "not_invoiced_yet": "not invoiced yet"
+  },
+  "actions": {
+    "request_payment": "Request payment",
+    "pay": "Pay",
+    "view_invoice": "View invoice",
+    "write_review": "Write a review"
+  },
+  "tooltips": {
+    "request_payment": "You can request payment after user acceptance.",
+    "invoice_already_issued": "Invoice already issued.",
+    "write_review": "You can write a review after payment."
+  },
+  "dialog": {
+    "dispute_title": "Dispute this slot?",
+    "dispute_body": "You can add an optional reason. This helps the provider understand what needs fixing.",
+    "dispute_reason": "Reason (optional)",
+    "dispute_placeholder": "Share what went wrong...",
+    "cancel": "Cancel",
+    "submitting": "Submitting...",
+    "submit_dispute": "Submit dispute"
+  },
+  "states": {
+    "load_error": "Failed to load orders.",
+    "tenant_empty": "As soon as you receive any orders from your customers, they will appear in this section."
+  },
+  "toasts": {
+    "slot_completed": "Slot marked as completed.",
+    "slot_update_failed": "Failed to update slot.",
+    "slot_accepted": "Slot accepted.",
+    "slot_accept_failed": "Failed to accept slot.",
+    "dispute_submitted": "Dispute submitted.",
+    "dispute_failed": "Failed to dispute slot.",
+    "invoice_issued": "Invoice issued.",
+    "invoice_issue_failed": "Failed to issue invoice.",
+    "checkout_url_missing": "Checkout URL missing.",
+    "checkout_start_failed": "Failed to start checkout.",
+    "invoice_missing": "No invoice found for this order yet.",
+    "invoice_open_failed": "Failed to open invoice.",
+    "review_slug_missing": "Missing tenant slug for review.",
+    "invoice_finalize_failed": "Failed to finalize invoice. Please try again."
+  }
+}

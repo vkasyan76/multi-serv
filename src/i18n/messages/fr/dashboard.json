@@ -1,0 +1,46 @@
+{
+  "page": {
+    "title": "Tableau de bord"
+  },
+  "nav": {
+    "calendar": "Calendar",
+    "orders": "Orders",
+    "messages": "Messages",
+    "finance": "Finance"
+  },
+  "navbar": {
+    "public_page": "View my page",
+    "open_public_page": "Open public page",
+    "profile": "My profile",
+    "vendor_profile": "Vendor profile",
+    "home": "Home",
+    "tenant_alt": "Tenant"
+  },
+  "sections": {
+    "calendar": "Calendar",
+    "orders": "Orders",
+    "messages": "Messages"
+  },
+  "tooltips": {
+    "calendar": "Click to add/remove available slots.",
+    "orders": "Mark slots as completed, then issue invoices after client acceptance."
+  },
+  "mismatch": {
+    "title": "Account mismatch",
+    "body": "This link is for {expectedSlug}, but you are signed in as {actualSlug}.",
+    "hint": "Sign out to continue with the correct account.",
+    "action": "Sign out and continue"
+  },
+  "inbox": {
+    "title": "Inbox",
+    "recent": "Recent",
+    "oldest": "Oldest",
+    "search_placeholder": "Search by name",
+    "loading": "Loading...",
+    "empty": "No conversations yet.",
+    "empty_search": "No matching conversations.",
+    "load_more": "Load more",
+    "customer_fallback": "Customer",
+    "mobile_title": "Conversation with {customerName}"
+  }
+}

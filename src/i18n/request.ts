@@ -83,6 +83,42 @@ const FINANCE_LOADERS: Partial<Record<AppLang, Loader>> = {
   uk: async () => (await import("./messages/uk/finance.json")).default,
 };
 
+const DASHBOARD_LOADERS: Partial<Record<AppLang, Loader>> = {
+  en: async () => (await import("./messages/en/dashboard.json")).default,
+  de: async () => (await import("./messages/de/dashboard.json")).default,
+  fr: async () => (await import("./messages/fr/dashboard.json")).default,
+  it: async () => (await import("./messages/it/dashboard.json")).default,
+  es: async () => (await import("./messages/es/dashboard.json")).default,
+  pt: async () => (await import("./messages/pt/dashboard.json")).default,
+  pl: async () => (await import("./messages/pl/dashboard.json")).default,
+  ro: async () => (await import("./messages/ro/dashboard.json")).default,
+  uk: async () => (await import("./messages/uk/dashboard.json")).default,
+};
+
+const ORDERS_LOADERS: Partial<Record<AppLang, Loader>> = {
+  en: async () => (await import("./messages/en/orders.json")).default,
+  de: async () => (await import("./messages/de/orders.json")).default,
+  fr: async () => (await import("./messages/fr/orders.json")).default,
+  it: async () => (await import("./messages/it/orders.json")).default,
+  es: async () => (await import("./messages/es/orders.json")).default,
+  pt: async () => (await import("./messages/pt/orders.json")).default,
+  pl: async () => (await import("./messages/pl/orders.json")).default,
+  ro: async () => (await import("./messages/ro/orders.json")).default,
+  uk: async () => (await import("./messages/uk/orders.json")).default,
+};
+
+const REVIEWS_LOADERS: Partial<Record<AppLang, Loader>> = {
+  en: async () => (await import("./messages/en/reviews.json")).default,
+  de: async () => (await import("./messages/de/reviews.json")).default,
+  fr: async () => (await import("./messages/fr/reviews.json")).default,
+  it: async () => (await import("./messages/it/reviews.json")).default,
+  es: async () => (await import("./messages/es/reviews.json")).default,
+  pt: async () => (await import("./messages/pt/reviews.json")).default,
+  pl: async () => (await import("./messages/pl/reviews.json")).default,
+  ro: async () => (await import("./messages/ro/reviews.json")).default,
+  uk: async () => (await import("./messages/uk/reviews.json")).default,
+};
+
 function isPlainObject(value: unknown): value is MessageTree {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -132,15 +168,41 @@ export default getRequestConfig(async ({ requestLocale }) => {
     headerLang || cookieLang || routeLocale || DEFAULT_APP_LANG,
   );
 
+  const [
+    common,
+    bookings,
+    checkout,
+    tenantPage,
+    profile,
+    finance,
+    dashboard,
+    orders,
+    reviews,
+  ] = await Promise.all([
+    loadNamespace(appLang, COMMON_LOADERS),
+    loadNamespace(appLang, BOOKINGS_LOADERS),
+    loadNamespace(appLang, CHECKOUT_LOADERS),
+    loadNamespace(appLang, TENANT_PAGE_LOADERS),
+    loadNamespace(appLang, PROFILE_LOADERS),
+    loadNamespace(appLang, FINANCE_LOADERS),
+    loadNamespace(appLang, DASHBOARD_LOADERS),
+    loadNamespace(appLang, ORDERS_LOADERS),
+    loadNamespace(appLang, REVIEWS_LOADERS),
+  ]);
+
   return {
     locale: appLang,
+    timeZone: "Europe/Berlin",
     messages: {
-      common: await loadNamespace(appLang, COMMON_LOADERS),
-      bookings: await loadNamespace(appLang, BOOKINGS_LOADERS),
-      checkout: await loadNamespace(appLang, CHECKOUT_LOADERS),
-      tenantPage: await loadNamespace(appLang, TENANT_PAGE_LOADERS),
-      profile: await loadNamespace(appLang, PROFILE_LOADERS),
-      finance: await loadNamespace(appLang, FINANCE_LOADERS),
+      common,
+      bookings,
+      checkout,
+      tenantPage,
+      profile,
+      finance,
+      dashboard,
+      orders,
+      reviews,
     },
   };
 });
