@@ -47,7 +47,7 @@ export function TenantConversationPanel({
               size="icon"
               className="md:hidden -ml-2"
               onClick={onBackAction}
-              aria-label="Back to inbox"
+              aria-label={tDashboard("inbox.back_to_inbox")}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>

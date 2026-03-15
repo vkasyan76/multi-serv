@@ -46,6 +46,7 @@
     "load_more": "Завантажити ще",
     "customer_fallback": "Клієнт",
     "mobile_title": "Розмова з {customerName}",
+    "back_to_inbox": "Назад до вхідних",
     "select_conversation": "Виберіть розмову ліворуч."
   }
 }

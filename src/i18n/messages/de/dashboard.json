@@ -46,6 +46,7 @@
     "load_more": "Mehr laden",
     "customer_fallback": "Kunde",
     "mobile_title": "Unterhaltung mit {customerName}",
+    "back_to_inbox": "Zurück zum Posteingang",
     "select_conversation": "Wähle links eine Unterhaltung aus."
   }
 }

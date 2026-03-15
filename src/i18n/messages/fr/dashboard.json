@@ -46,6 +46,7 @@
     "load_more": "Charger plus",
     "customer_fallback": "Client",
     "mobile_title": "Conversation avec {customerName}",
+    "back_to_inbox": "Retour à la boîte de réception",
     "select_conversation": "Sélectionnez une conversation à gauche."
   }
 }

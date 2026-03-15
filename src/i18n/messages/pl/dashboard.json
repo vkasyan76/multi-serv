@@ -46,6 +46,7 @@
     "load_more": "Załaduj więcej",
     "customer_fallback": "Klient",
     "mobile_title": "Rozmowa z {customerName}",
+    "back_to_inbox": "Powrót do skrzynki odbiorczej",
     "select_conversation": "Wybierz rozmowę po lewej stronie."
   }
 }

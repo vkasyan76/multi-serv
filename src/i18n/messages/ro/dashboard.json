@@ -46,6 +46,7 @@
     "load_more": "Încarcă mai mult",
     "customer_fallback": "Client",
     "mobile_title": "Conversație cu {customerName}",
+    "back_to_inbox": "Înapoi la căsuța de mesaje",
     "select_conversation": "Selectați o conversație din stânga."
   }
 }
