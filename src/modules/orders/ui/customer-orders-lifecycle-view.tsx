@@ -32,7 +32,7 @@ export function CustomerOrdersLifecycleView({
   }, [q.data, q.error]);
 
   if (q.isLoading) return <OrdersLifecycleSkeleton />;
-  if (q.isError) return <div>{tOrders("states.load_error")}</div>;
+  if (q.isError) return <div role="alert">{tOrders("states.load_error")}</div>;
 
   return (
     <OrdersLifecycleTable

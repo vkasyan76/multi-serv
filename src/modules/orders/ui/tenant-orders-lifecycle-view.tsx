@@ -51,7 +51,7 @@ export function TenantOrdersLifecycleView({ appLang }: { appLang: AppLang }) {
   }, [page, totalPages]);
 
   if (q.isLoading) return <OrdersLifecycleSkeleton />;
-  if (q.isError) return <div>{tOrders("states.load_error")}</div>;
+  if (q.isError) return <div role="alert">{tOrders("states.load_error")}</div>;
   if (items.length === 0) {
     return (
       <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
