@@ -1,33 +1,38 @@
 {
   "page": {
-    "write_title": "Write a review for {tenantName}",
-    "update_title": "Update your review for {tenantName}",
-    "open_provider_page": "Open provider page",
-    "go_to_provider_page": "Go to provider page",
-    "home": "Home"
+    "write_title": "Schreibe eine Bewertung für {tenantName}",
+    "update_title": "Aktualisiere deine Bewertung für {tenantName}",
+    "open_provider_page": "Anbieterseite öffnen",
+    "go_to_provider_page": "Zur Anbieterseite",
+    "home": "Startseite"
   },
   "form": {
-    "rating": "Your rating",
-    "title": "Title",
-    "body": "Write a review",
-    "title_placeholder": "What's most important to know?",
-    "body_placeholder": "What should other customers know?",
-    "submit": "Submit",
-    "update": "Update review",
-    "submitting": "Submitting...",
-    "updating": "Updating..."
+    "rating": "Deine Bewertung",
+    "title": "Titel",
+    "body": "Bewertung schreiben",
+    "title_placeholder": "Was sollte man auf jeden Fall wissen?",
+    "body_placeholder": "Was sollten andere Kunden wissen?",
+    "submit": "Absenden",
+    "update": "Bewertung aktualisieren",
+    "submitting": "Wird gesendet...",
+    "updating": "Wird aktualisiert..."
   },
   "validation": {
-    "rating": "Pick 1–5 stars.",
-    "title": "3–120 characters.",
-    "body": "At least 10 characters."
+    "rating": "Wähle 1-5 Sterne.",
+    "title": "3-120 Zeichen.",
+    "body": "Mindestens 10 Zeichen."
   },
   "toasts": {
-    "success": "Your review has been submitted.",
-    "purchase_required": "You can only review providers you have booked and paid.",
-    "generic_error": "Something went wrong while saving your review. Please try again."
+    "create_success": "Deine Bewertung wurde gesendet.",
+    "update_success": "Deine Bewertung wurde aktualisiert.",
+    "purchase_required": "Du kannst nur Anbieter bewerten, die du gebucht und bezahlt hast.",
+    "sign_in_required": "Melde dich an, um eine Bewertung zu schreiben.",
+    "account_missing": "Dein Benutzerkonto konnte nicht gefunden werden.",
+    "tenant_missing": "Der Anbieter konnte nicht gefunden werden.",
+    "generic_error": "Beim Speichern deiner Bewertung ist ein Fehler aufgetreten. Bitte versuche es erneut."
   },
   "a11y": {
-    "rating_group": "Rating"
+    "rating_group": "Bewertung",
+    "rating_option": "{count, plural, one {# Stern} other {# Sterne}}"
   }
 }

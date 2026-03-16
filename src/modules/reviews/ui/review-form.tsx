@@ -1,10 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { StarPicker } from "./star-picker";
@@ -15,12 +17,27 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Review } from "@payload-types";
 
-const schema = z.object({
-  rating: z.number().min(1).max(5),
-  title: z.string().trim().min(3).max(120),
-  body: z.string().trim().min(10).max(5000),
-});
-type FormValues = z.infer<typeof schema>;
+type ReviewsTranslator = ReturnType<typeof useTranslations>;
+
+const buildSchema = (tReviews: ReviewsTranslator) =>
+  z.object({
+    rating: z
+      .number()
+      .min(1, tReviews("validation.rating"))
+      .max(5, tReviews("validation.rating")),
+    title: z
+      .string()
+      .trim()
+      .min(3, tReviews("validation.title"))
+      .max(120, tReviews("validation.title")),
+    body: z
+      .string()
+      .trim()
+      .min(10, tReviews("validation.body"))
+      .max(5000, tReviews("validation.body")),
+  });
+
+type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 type ReviewFormProps = {
   slug: string;
@@ -31,13 +48,35 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
   const trpc = useTRPC();
   const qc = useQueryClient();
   const router = useRouter();
+  const tReviews = useTranslations("reviews");
+  const isUpdate = !!existingReview;
+  const schema = useMemo(() => buildSchema(tReviews), [tReviews]);
+
+  const mapReviewError = (rawMessage?: string) => {
+    switch (rawMessage) {
+      case "You can only review providers you have purchased from.":
+        return tReviews("toasts.purchase_required");
+      case "Sign in to write a review.":
+        return tReviews("toasts.sign_in_required");
+      case "User account not found.":
+        return tReviews("toasts.account_missing");
+      case "Tenant not found":
+        return tReviews("toasts.tenant_missing");
+      default:
+        return tReviews("toasts.generic_error");
+    }
+  };
 
   const create = useMutation(
     trpc.reviews.create.mutationOptions({
       onSuccess: async () => {
         await qc.invalidateQueries();
-        toast.success("Your review has been submitted.");
-        router.refresh(); //  show review data on this page
+        toast.success(
+          isUpdate
+            ? tReviews("toasts.update_success")
+            : tReviews("toasts.create_success")
+        );
+        router.refresh();
       },
       onError: (err) => {
         console.error("reviews.create failed:", err);
@@ -49,13 +88,7 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
               ? err.message
               : undefined;
 
-        const message =
-          rawMessage ===
-          "You can only review providers you have purchased from."
-            ? "You can only review providers you have booked and paid."
-            : "Something went wrong while saving your review. Please try again.";
-
-        toast.error(message);
+        toast.error(mapReviewError(rawMessage));
       },
     })
   );
@@ -70,9 +103,9 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
     },
   });
 
-  const isUpdate = !!existingReview; // flag to indicate if this is an update
-
   const bodyValue = form.watch("body");
+  const titleId = "review-title";
+  const bodyId = "review-body";
 
   const submit = (values: FormValues) => create.mutate({ slug, ...values });
 
@@ -80,9 +113,13 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
     <form className="max-w-xl space-y-4" onSubmit={form.handleSubmit(submit)}>
       <div>
         <div className="flex items-center justify-center gap-3">
-          <span className="font-medium">Your rating</span>
+          <span className="font-medium">{tReviews("form.rating")}</span>
           <StarPicker
             value={form.watch("rating")}
+            ariaLabel={tReviews("a11y.rating_group")}
+            getStarAriaLabel={(value) =>
+              tReviews("a11y.rating_option", { count: value })
+            }
             onChange={(v) =>
               form.setValue("rating", v, { shouldValidate: true })
             }
@@ -90,38 +127,49 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
         </div>
         {form.formState.errors.rating && (
           <p className="text-sm text-destructive mt-1 text-center">
-            Pick 1–5 stars.
+            {form.formState.errors.rating.message ??
+              tReviews("validation.rating")}
           </p>
         )}
       </div>
 
       <div>
-        <label className="block mb-2 font-medium">Title</label>
+        <label htmlFor={titleId} className="block mb-2 font-medium">
+          {tReviews("form.title")}
+        </label>
         <Input
+          id={titleId}
           maxLength={120}
           {...form.register("title")}
-          placeholder="What’s most important to know?"
+          placeholder={tReviews("form.title_placeholder")}
         />
         {form.formState.errors.title && (
-          <p className="text-sm text-destructive mt-1">3–120 characters.</p>
+          <p className="text-sm text-destructive mt-1">
+            {form.formState.errors.title.message ??
+              tReviews("validation.title")}
+          </p>
         )}
       </div>
 
       <div>
-        <label className="block mb-2 font-medium">Write a review</label>
+        <label htmlFor={bodyId} className="block mb-2 font-medium">
+          {tReviews("form.body")}
+        </label>
         <Textarea
           rows={10}
-          className="min-h-[12rem]" // ~192px; comfortable default on desktop
-          maxLength={5000} // matches schema
+          id={bodyId}
+          className="min-h-[12rem]"
+          maxLength={5000}
           {...form.register("body")}
-          placeholder="What should other customers know?"
+          placeholder={tReviews("form.body_placeholder")}
         />
         <div className="mt-1 text-right text-xs text-muted-foreground">
           {bodyValue?.length ?? 0}/5000
         </div>
         {form.formState.errors.body && (
           <p className="text-sm text-destructive mt-1">
-            At least 10 characters.
+            {form.formState.errors.body.message ??
+              tReviews("validation.body")}
           </p>
         )}
       </div>
@@ -141,12 +189,14 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
           {create.isPending || form.formState.isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isUpdate ? "Updating…" : "Submitting…"}
+              {isUpdate
+                ? tReviews("form.updating")
+                : tReviews("form.submitting")}
             </>
           ) : isUpdate ? (
-            "Update review"
+            tReviews("form.update")
           ) : (
-            "Submit"
+            tReviews("form.submit")
           )}
         </Button>
       </div>

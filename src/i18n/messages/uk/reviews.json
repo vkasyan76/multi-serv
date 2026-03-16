@@ -1,33 +1,38 @@
 {
   "page": {
-    "write_title": "Write a review for {tenantName}",
-    "update_title": "Update your review for {tenantName}",
-    "open_provider_page": "Open provider page",
-    "go_to_provider_page": "Go to provider page",
-    "home": "Home"
+    "write_title": "Написати відгук про {tenantName}",
+    "update_title": "Оновити свій відгук про {tenantName}",
+    "open_provider_page": "Відкрити сторінку виконавця",
+    "go_to_provider_page": "Перейти на сторінку виконавця",
+    "home": "Головна"
   },
   "form": {
-    "rating": "Your rating",
-    "title": "Title",
-    "body": "Write a review",
-    "title_placeholder": "What's most important to know?",
-    "body_placeholder": "What should other customers know?",
-    "submit": "Submit",
-    "update": "Update review",
-    "submitting": "Submitting...",
-    "updating": "Updating..."
+    "rating": "Ваша оцінка",
+    "title": "Заголовок",
+    "body": "Написати відгук",
+    "title_placeholder": "Що найважливіше варто знати?",
+    "body_placeholder": "Що мають знати інші клієнти?",
+    "submit": "Надіслати",
+    "update": "Оновити відгук",
+    "submitting": "Надсилання...",
+    "updating": "Оновлення..."
   },
   "validation": {
-    "rating": "Pick 1–5 stars.",
-    "title": "3–120 characters.",
-    "body": "At least 10 characters."
+    "rating": "Оберіть 1-5 зірок.",
+    "title": "3-120 символів.",
+    "body": "Щонайменше 10 символів."
   },
   "toasts": {
-    "success": "Your review has been submitted.",
-    "purchase_required": "You can only review providers you have booked and paid.",
-    "generic_error": "Something went wrong while saving your review. Please try again."
+    "create_success": "Ваш відгук надіслано.",
+    "update_success": "Ваш відгук оновлено.",
+    "purchase_required": "Ви можете залишати відгук лише про виконавців, яких бронювали й оплатили.",
+    "sign_in_required": "Увійдіть, щоб написати відгук.",
+    "account_missing": "Не вдалося знайти ваш обліковий запис.",
+    "tenant_missing": "Не вдалося знайти виконавця.",
+    "generic_error": "Під час збереження відгуку сталася помилка. Спробуйте ще раз."
   },
   "a11y": {
-    "rating_group": "Rating"
+    "rating_group": "Оцінка",
+    "rating_option": "{count, plural, one {# зірка} few {# зірки} many {# зірок} other {# зірки}}"
   }
 }

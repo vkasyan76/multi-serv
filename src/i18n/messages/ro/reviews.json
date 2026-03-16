@@ -1,33 +1,38 @@
 {
   "page": {
-    "write_title": "Write a review for {tenantName}",
-    "update_title": "Update your review for {tenantName}",
-    "open_provider_page": "Open provider page",
-    "go_to_provider_page": "Go to provider page",
-    "home": "Home"
+    "write_title": "Scrie o recenzie pentru {tenantName}",
+    "update_title": "Actualizează recenzia ta pentru {tenantName}",
+    "open_provider_page": "Deschide pagina prestatorului",
+    "go_to_provider_page": "Mergi la pagina prestatorului",
+    "home": "Acasă"
   },
   "form": {
-    "rating": "Your rating",
-    "title": "Title",
-    "body": "Write a review",
-    "title_placeholder": "What's most important to know?",
-    "body_placeholder": "What should other customers know?",
-    "submit": "Submit",
-    "update": "Update review",
-    "submitting": "Submitting...",
-    "updating": "Updating..."
+    "rating": "Evaluarea ta",
+    "title": "Titlu",
+    "body": "Scrie o recenzie",
+    "title_placeholder": "Care este cel mai important lucru de știut?",
+    "body_placeholder": "Ce ar trebui să știe ceilalți clienți?",
+    "submit": "Trimite",
+    "update": "Actualizează recenzia",
+    "submitting": "Se trimite...",
+    "updating": "Se actualizează..."
   },
   "validation": {
-    "rating": "Pick 1–5 stars.",
-    "title": "3–120 characters.",
-    "body": "At least 10 characters."
+    "rating": "Alege între 1 și 5 stele.",
+    "title": "3-120 caractere.",
+    "body": "Cel puțin 10 caractere."
   },
   "toasts": {
-    "success": "Your review has been submitted.",
-    "purchase_required": "You can only review providers you have booked and paid.",
-    "generic_error": "Something went wrong while saving your review. Please try again."
+    "create_success": "Recenzia ta a fost trimisă.",
+    "update_success": "Recenzia ta a fost actualizată.",
+    "purchase_required": "Poți recenza doar prestatori pe care i-ai rezervat și plătit.",
+    "sign_in_required": "Autentifică-te pentru a scrie o recenzie.",
+    "account_missing": "Contul tău de utilizator nu a putut fi găsit.",
+    "tenant_missing": "Prestatorul nu a putut fi găsit.",
+    "generic_error": "A apărut o eroare la salvarea recenziei. Încearcă din nou."
   },
   "a11y": {
-    "rating_group": "Rating"
+    "rating_group": "Evaluare",
+    "rating_option": "{count, plural, one {# stea} few {# stele} other {# stele}}"
   }
 }

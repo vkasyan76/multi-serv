@@ -18,16 +18,21 @@
     "updating": "Updating..."
   },
   "validation": {
-    "rating": "Pick 1–5 stars.",
-    "title": "3–120 characters.",
+    "rating": "Pick 1-5 stars.",
+    "title": "3-120 characters.",
     "body": "At least 10 characters."
   },
   "toasts": {
-    "success": "Your review has been submitted.",
+    "create_success": "Your review has been submitted.",
+    "update_success": "Your review has been updated.",
     "purchase_required": "You can only review providers you have booked and paid.",
+    "sign_in_required": "Sign in to write a review.",
+    "account_missing": "Your user account could not be found.",
+    "tenant_missing": "The provider could not be found.",
     "generic_error": "Something went wrong while saving your review. Please try again."
   },
   "a11y": {
-    "rating_group": "Rating"
+    "rating_group": "Rating",
+    "rating_option": "{count, plural, one {# star} other {# stars}}"
   }
 }

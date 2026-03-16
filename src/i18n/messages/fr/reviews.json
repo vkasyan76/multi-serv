@@ -1,33 +1,38 @@
 {
   "page": {
-    "write_title": "Write a review for {tenantName}",
-    "update_title": "Update your review for {tenantName}",
-    "open_provider_page": "Open provider page",
-    "go_to_provider_page": "Go to provider page",
-    "home": "Home"
+    "write_title": "Écrire un avis sur {tenantName}",
+    "update_title": "Mettre à jour votre avis sur {tenantName}",
+    "open_provider_page": "Ouvrir la page du prestataire",
+    "go_to_provider_page": "Aller à la page du prestataire",
+    "home": "Accueil"
   },
   "form": {
-    "rating": "Your rating",
-    "title": "Title",
-    "body": "Write a review",
-    "title_placeholder": "What's most important to know?",
-    "body_placeholder": "What should other customers know?",
-    "submit": "Submit",
-    "update": "Update review",
-    "submitting": "Submitting...",
-    "updating": "Updating..."
+    "rating": "Votre note",
+    "title": "Titre",
+    "body": "Rédiger un avis",
+    "title_placeholder": "Quelle est l'information la plus importante à savoir ?",
+    "body_placeholder": "Que devraient savoir les autres clients ?",
+    "submit": "Envoyer",
+    "update": "Mettre à jour l'avis",
+    "submitting": "Envoi en cours...",
+    "updating": "Mise à jour en cours..."
   },
   "validation": {
-    "rating": "Pick 1–5 stars.",
-    "title": "3–120 characters.",
-    "body": "At least 10 characters."
+    "rating": "Choisissez entre 1 et 5 étoiles.",
+    "title": "3-120 caractères.",
+    "body": "Au moins 10 caractères."
   },
   "toasts": {
-    "success": "Your review has been submitted.",
-    "purchase_required": "You can only review providers you have booked and paid.",
-    "generic_error": "Something went wrong while saving your review. Please try again."
+    "create_success": "Votre avis a été envoyé.",
+    "update_success": "Votre avis a été mis à jour.",
+    "purchase_required": "Vous ne pouvez évaluer que des prestataires que vous avez réservés et payés.",
+    "sign_in_required": "Connectez-vous pour écrire un avis.",
+    "account_missing": "Votre compte utilisateur est introuvable.",
+    "tenant_missing": "Le prestataire est introuvable.",
+    "generic_error": "Une erreur s'est produite lors de l'enregistrement de votre avis. Veuillez réessayer."
   },
   "a11y": {
-    "rating_group": "Rating"
+    "rating_group": "Note",
+    "rating_option": "{count, plural, one {# étoile} other {# étoiles}}"
   }
 }

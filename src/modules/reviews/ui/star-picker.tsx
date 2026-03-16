@@ -9,6 +9,8 @@ interface StarPickerProps {
   onChange?: (value: number) => void;
   disabled?: boolean;
   className?: string;
+  ariaLabel: string;
+  getStarAriaLabel: (value: number) => string;
 }
 
 export const StarPicker = ({
@@ -16,6 +18,8 @@ export const StarPicker = ({
   onChange,
   disabled,
   className,
+  ariaLabel,
+  getStarAriaLabel,
 }: StarPickerProps) => {
   const [hoverValue, setHoverValue] = useState(0);
   const active = (n: number) => (hoverValue || value) >= n;
@@ -34,9 +38,9 @@ export const StarPicker = ({
         disabled && "opacity-50 cursor-not-allowed",
         className
       )}
-      onMouseLeave={() => setHoverValue(0)} // reset when leaving the group
+      onMouseLeave={() => setHoverValue(0)}
       role="radiogroup"
-      aria-label="Rating"
+      aria-label={ariaLabel}
     >
       {[1, 2, 3, 4, 5].map((n) => (
         <button
@@ -44,6 +48,7 @@ export const StarPicker = ({
           type="button"
           role="radio"
           aria-checked={value >= n}
+          aria-label={getStarAriaLabel(n)}
           disabled={disabled}
           className={cn(
             "p-0.5 transition",
