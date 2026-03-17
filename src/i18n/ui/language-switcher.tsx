@@ -33,9 +33,10 @@ const LANGUAGE_TO_COUNTRY: Record<AppLang, string> = {
 
 type Props = {
   className?: string;
+  onNavigate?: () => void;
 };
 
-export function LanguageSwitcher({ className }: Props) {
+export function LanguageSwitcher({ className, onNavigate }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -59,6 +60,7 @@ export function LanguageSwitcher({ className }: Props) {
     const url = query ? `${nextPath}?${query}` : nextPath;
 
     router.push(url);
+    onNavigate?.();
   };
 
   return (

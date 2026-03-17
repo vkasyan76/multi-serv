@@ -13,6 +13,7 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { withLocalePrefix } from "@/i18n/routing";
+import { LanguageSwitcher } from "@/i18n/ui/language-switcher";
 import {
   SignInButton,
   SignedIn,
@@ -50,6 +51,15 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
   const isAdmin = user?.roles?.includes("super-admin");
   const hasTenant = !!user?.tenants?.length;
 
+  // Phase 6: keep mobile nav lean (longer locales) and close Sheet on language switch.
+  const hiddenMobileHrefs = new Set([
+    href("/about"),
+    href("/features"),
+    href("/pricing"),
+    href("/contact"),
+  ]);
+  const mobileItems = items.filter((item) => !hiddenMobileHrefs.has(item.href));
+
   // Get info for user's tenant:
   const { data: myTenant, isLoading: isMineLoading } = useQuery({
     ...trpc.tenants.getMine.queryOptions({}),
@@ -77,7 +87,14 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
           <SheetTitle>{t("nav.menu")}</SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex flex-col overflow-y-auto h-full pb-2">
-          {items.map((item) => (
+          <div className="p-4 border-b">
+            <LanguageSwitcher
+              className="w-full"
+              onNavigate={() => onOpenChange(false)}
+            />
+          </div>
+
+          {mobileItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
