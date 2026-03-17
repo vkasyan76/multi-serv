@@ -8,6 +8,7 @@ import { useParams, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { withLocalePrefix } from "@/i18n/routing";
+import { LanguageSwitcher } from "@/i18n/ui/language-switcher";
 
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
@@ -92,6 +93,12 @@ export const Navbar = () => {
     { href: href("/legal/impressum"), children: t("nav.impressum") },
   ];
 
+  const desktopNavbarItems = [
+    { href: href("/"), children: t("nav.home") },
+    { href: href("/legal/terms-of-use"), children: t("nav.terms_of_use") },
+    { href: href("/legal/impressum"), children: t("nav.impressum") },
+  ];
+
   // Get info for user's tenant:
   const { data: myTenant, isLoading: isMineLoading } = useQuery({
     ...trpc.tenants.getMine.queryOptions({}),
@@ -117,7 +124,7 @@ export const Navbar = () => {
   return (
     //  <na className="h-16 flex border-b justify-between font-medium bg-white">
     <nav className="sticky top-0 z-50 h-16 flex border-b justify-between font-medium bg-white">
-      <Link href={href("/")} className="pl-6 flex items-center">
+      <Link href={href("/")} className="pl-6 flex items-center shrink-0">
         <span className={cn("text-5xl font-semibold", poppins.className)}>
           Infinisimo
         </span>
@@ -129,8 +136,8 @@ export const Navbar = () => {
         items={navbarItems}
       />
 
-      <div className="items-center gap-4 hidden lg:flex">
-        {navbarItems.map((item) => (
+      <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center gap-2 overflow-hidden px-4">
+        {desktopNavbarItems.map((item) => (
           <NavbarItem
             key={item.href}
             href={item.href}
@@ -142,7 +149,9 @@ export const Navbar = () => {
       </div>
 
       {/* Right Section - Clerk Auth Buttons */}
-      <div className="hidden lg:flex gap-2 items-center pr-6">
+      <div className="hidden lg:flex gap-2 items-center pr-6 shrink-0">
+        {/* Phase 6: keep switcher near auth/profile actions (desktop only). */}
+        <LanguageSwitcher className="w-auto min-w-0 rounded-full px-3.5 text-lg" />
         <SignedOut>
           {/* Only show Clerk SignInButton for unauthenticated users */}
           <SignInButton>

@@ -18,10 +18,6 @@ import {
 } from "@/modules/profile/location-utils";
 import { normalizeToSupported, type AppLang } from "@/lib/i18n/app-lang";
 import { LOCALE_COOKIE_NAME } from "@/i18n/routing";
-import { CookieConsentRoot } from "@/modules/legal/cookies/ui/cookie-consent-root";
-import { VercelAnalyticsConsent } from "@/modules/legal/cookies/ui/consents/vercel-analytics-consent";
-import { getMessages } from "next-intl/server";
-import { IntlProvider } from "@/i18n/intl-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -75,27 +71,20 @@ export default async function RootLayout({
       : getAppLangFromHeaders(h);
   }
 
-  // Keep NextIntl context available for root-level client components (e.g. cookie consent UI).
-  const messages = await getMessages();
-
   return (
     <html lang={appLang}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ClerkProvider>
-          <IntlProvider locale={appLang} messages={messages}>
-            <NuqsAdapter>
-              <TRPCReactProvider>
-                <ClerkUserSync />
-                <GeoBootstrap />
-                {children}
-                <CookieConsentRoot />
-                <VercelAnalyticsConsent />
-                <Toaster />
-              </TRPCReactProvider>
-            </NuqsAdapter>
-          </IntlProvider>
+          <NuqsAdapter>
+            <TRPCReactProvider>
+              <ClerkUserSync />
+              <GeoBootstrap />
+              {children}
+              <Toaster />
+            </TRPCReactProvider>
+          </NuqsAdapter>
         </ClerkProvider>
       </body>
     </html>
