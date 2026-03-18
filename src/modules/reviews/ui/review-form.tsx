@@ -52,19 +52,48 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
   const isUpdate = !!existingReview;
   const schema = useMemo(() => buildSchema(tReviews), [tReviews]);
 
-  const mapReviewError = (rawMessage?: string) => {
-    switch (rawMessage) {
-      case "You can only review providers you have purchased from.":
-        return tReviews("toasts.purchase_required");
-      case "Sign in to write a review.":
+  const mapReviewError = (err: unknown) => {
+    // Prefer stable TRPC error codes first where possible.
+    if (err instanceof TRPCClientError) {
+      const code = err.data?.code;
+      const message = err.message;
+
+      if (code === "UNAUTHORIZED") {
         return tReviews("toasts.sign_in_required");
-      case "User account not found.":
-        return tReviews("toasts.account_missing");
-      case "Tenant not found":
-        return tReviews("toasts.tenant_missing");
-      default:
-        return tReviews("toasts.generic_error");
+      }
+
+      // We still need message matching for domain-specific cases because
+      // the backend currently does not expose stable custom error codes here.
+      switch (message) {
+        case "You can only review providers you have purchased from.":
+          return tReviews("toasts.purchase_required");
+        case "User account not found.":
+          return tReviews("toasts.account_missing");
+        case "Tenant not found":
+          return tReviews("toasts.tenant_missing");
+        case "Sign in to write a review.":
+          return tReviews("toasts.sign_in_required");
+        default:
+          return tReviews("toasts.generic_error");
+      }
     }
+
+    if (err instanceof Error) {
+      switch (err.message) {
+        case "You can only review providers you have purchased from.":
+          return tReviews("toasts.purchase_required");
+        case "Sign in to write a review.":
+          return tReviews("toasts.sign_in_required");
+        case "User account not found.":
+          return tReviews("toasts.account_missing");
+        case "Tenant not found":
+          return tReviews("toasts.tenant_missing");
+        default:
+          return tReviews("toasts.generic_error");
+      }
+    }
+
+    return tReviews("toasts.generic_error");
   };
 
   const create = useMutation(
@@ -74,23 +103,15 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
         toast.success(
           isUpdate
             ? tReviews("toasts.update_success")
-            : tReviews("toasts.create_success")
+            : tReviews("toasts.create_success"),
         );
         router.refresh();
       },
       onError: (err) => {
         console.error("reviews.create failed:", err);
-
-        const rawMessage =
-          err instanceof TRPCClientError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : undefined;
-
-        toast.error(mapReviewError(rawMessage));
+        toast.error(mapReviewError(err));
       },
-    })
+    }),
   );
 
   const form = useForm<FormValues>({
@@ -168,8 +189,7 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
         </div>
         {form.formState.errors.body && (
           <p className="text-sm text-destructive mt-1">
-            {form.formState.errors.body.message ??
-              tReviews("validation.body")}
+            {form.formState.errors.body.message ?? tReviews("validation.body")}
           </p>
         )}
       </div>

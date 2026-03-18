@@ -28,7 +28,7 @@ export const StarPicker = ({
     (n: number) => {
       if (!disabled) onChange?.(n);
     },
-    [disabled, onChange]
+    [disabled, onChange],
   );
 
   return (
@@ -36,7 +36,7 @@ export const StarPicker = ({
       className={cn(
         "flex items-center",
         disabled && "opacity-50 cursor-not-allowed",
-        className
+        className,
       )}
       onMouseLeave={() => setHoverValue(0)}
       role="radiogroup"
@@ -47,12 +47,12 @@ export const StarPicker = ({
           key={n}
           type="button"
           role="radio"
-          aria-checked={value >= n}
+          aria-checked={value === n} // ARIA radio semantics: only the selected value is checked
           aria-label={getStarAriaLabel(n)}
           disabled={disabled}
           className={cn(
             "p-0.5 transition",
-            !disabled && "cursor-pointer hover:scale-110"
+            !disabled && "cursor-pointer hover:scale-110",
           )}
           onMouseEnter={() => setHoverValue(n)}
           onClick={() => select(n)}
@@ -62,7 +62,7 @@ export const StarPicker = ({
               "size-5",
               active(n)
                 ? "text-yellow-400 fill-yellow-400 stroke-yellow-400"
-                : "text-gray-300 stroke-gray-400"
+                : "text-gray-300 stroke-gray-400",
             )}
           />
         </button>
