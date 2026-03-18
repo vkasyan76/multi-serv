@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import ReactCountryFlag from "react-country-flag";
 
 import {
@@ -40,6 +41,7 @@ export function LanguageSwitcher({ className, onNavigate }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useTranslations("common");
 
   const { restPathname, lang: routeLang } = useMemo(
     () => stripLeadingLocale(pathname || "/"),
@@ -65,7 +67,10 @@ export function LanguageSwitcher({ className, onNavigate }: Props) {
 
   return (
     <Select value={currentLang} onValueChange={onChange}>
-      <SelectTrigger className={className} aria-label="Select language">
+      <SelectTrigger
+        className={className}
+        aria-label={t("a11y.language_selector")}
+      >
         <SelectValue>
           <span className="flex items-center gap-2">
             <ReactCountryFlag
@@ -94,4 +99,3 @@ export function LanguageSwitcher({ className, onNavigate }: Props) {
     </Select>
   );
 }
-

@@ -19,6 +19,9 @@
     "sr_dashboard_available": "Navigation updated: Dashboard button available",
     "sr_start_business_available": "Navigation updated: Start Business button available"
   },
+  "a11y": {
+    "language_selector": "Select language"
+  },
   "footer": {
     "terms": "Terms",
     "impressum": "Impressum",

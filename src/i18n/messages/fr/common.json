@@ -19,6 +19,9 @@
     "sr_dashboard_available": "Navigation mise à jour : bouton Tableau de bord disponible",
     "sr_start_business_available": "Navigation mise à jour : bouton Devenir prestataire disponible"
   },
+  "a11y": {
+    "language_selector": "Choisir la langue"
+  },
   "footer": {
     "terms": "Conditions",
     "impressum": "Mentions légales",

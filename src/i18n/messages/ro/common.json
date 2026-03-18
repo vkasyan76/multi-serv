@@ -19,6 +19,9 @@
     "sr_dashboard_available": "Navigare actualizată: butonul Panou este disponibil",
     "sr_start_business_available": "Navigare actualizată: butonul Devino prestator este disponibil"
   },
+  "a11y": {
+    "language_selector": "Selectează limba"
+  },
   "footer": {
     "terms": "Termeni",
     "impressum": "Informații legale",

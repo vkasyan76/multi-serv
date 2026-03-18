@@ -19,6 +19,9 @@
     "sr_dashboard_available": "Navigation aktualisiert: Dashboard-Schaltfläche verfügbar",
     "sr_start_business_available": "Navigation aktualisiert: Schaltfläche \"Anbieter werden\" verfügbar"
   },
+  "a11y": {
+    "language_selector": "Sprache auswählen"
+  },
   "footer": {
     "terms": "AGB",
     "impressum": "Impressum",

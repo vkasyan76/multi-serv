@@ -1,3 +1,4 @@
+"use client";
 import {
   Sheet,
   SheetContent,
@@ -161,7 +162,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                 href={dashHref}
                 className={cn(
                   "w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium",
-                  isDashLoading && "opacity-60"
+                  isDashLoading && "opacity-60",
                 )}
                 aria-disabled={isDashLoading}
                 aria-busy={isDashLoading}

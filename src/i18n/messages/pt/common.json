@@ -19,6 +19,9 @@
     "sr_dashboard_available": "Navegação atualizada: botão Painel disponível",
     "sr_start_business_available": "Navegação atualizada: botão Tornar-se prestador disponível"
   },
+  "a11y": {
+    "language_selector": "Selecionar idioma"
+  },
   "footer": {
     "terms": "Termos",
     "impressum": "Impressum",

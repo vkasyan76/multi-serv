@@ -19,6 +19,9 @@
     "sr_dashboard_available": "Navigazione aggiornata: pulsante Dashboard disponibile",
     "sr_start_business_available": "Navigazione aggiornata: pulsante Diventa fornitore disponibile"
   },
+  "a11y": {
+    "language_selector": "Seleziona la lingua"
+  },
   "footer": {
     "terms": "Termini",
     "impressum": "Note legali",

@@ -19,6 +19,9 @@
     "sr_dashboard_available": "Nawigacja zaktualizowana: przycisk Panel jest dostępny",
     "sr_start_business_available": "Nawigacja zaktualizowana: przycisk Zostań usługodawcą jest dostępny"
   },
+  "a11y": {
+    "language_selector": "Wybierz język"
+  },
   "footer": {
     "terms": "Warunki",
     "impressum": "Nota prawna",
