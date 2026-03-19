@@ -63,5 +63,15 @@
     "cancel": "Cancelar",
     "loading": "Cargando...",
     "view_all": "Ver todo"
+  },
+  "home": {
+    "hero": {
+      "line1": "Conectamos a los clientes con profesionales.",
+      "line2": "Su solución está a solo un clic."
+    },
+    "cta": {
+      "provider_intro": "¿Tiene una idea de negocio? Registre su servicio para aparecer en este radar!",
+      "provider_button": "Registrarse como proveedor"
+    }
   }
 }

@@ -63,5 +63,15 @@
     "cancel": "Anuluj",
     "loading": "Ładowanie...",
     "view_all": "Zobacz wszystko"
+  },
+  "home": {
+    "hero": {
+      "line1": "Łączymy klientów z profesjonalistami.",
+      "line2": "Twoje rozwiązanie jest tylko o jedno kliknięcie stąd."
+    },
+    "cta": {
+      "provider_intro": "Masz pomysł na biznes? Zarejestruj swoją usługę, aby pojawić się na tym radarze!",
+      "provider_button": "Zarejestruj się jako usługodawca"
+    }
   }
 }

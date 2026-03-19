@@ -63,5 +63,15 @@
     "save_settings": "Save settings",
     "cancel": "Cancel",
     "loading": "Loading..."
+  },
+  "home": {
+    "hero": {
+      "line1": "We connect clients with professionals.",
+      "line2": "Your solution is only a click away."
+    },
+    "cta": {
+      "provider_intro": "Have a business idea? Register your service to appear on this radar!",
+      "provider_button": "Register as a provider"
+    }
   }
 }

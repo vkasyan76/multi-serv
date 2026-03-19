@@ -63,5 +63,15 @@
     "cancel": "Anulează",
     "loading": "Se încarcă...",
     "view_all": "Vezi tot"
+  },
+  "home": {
+    "hero": {
+      "line1": "Punem în legătură clienții cu profesioniști.",
+      "line2": "Soluția ta este la doar un clic distanță."
+    },
+    "cta": {
+      "provider_intro": "Ai o idee de afacere? Înregistrează-ți serviciul ca să apari pe acest radar!",
+      "provider_button": "Înregistrează-te ca prestator"
+    }
   }
 }

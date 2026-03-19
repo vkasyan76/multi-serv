@@ -63,5 +63,15 @@
     "cancel": "Annuler",
     "loading": "Chargement...",
     "view_all": "Voir tout"
+  },
+  "home": {
+    "hero": {
+      "line1": "Nous mettons en relation les clients avec des professionnels.",
+      "line2": "Votre solution n'est qu'à un clic."
+    },
+    "cta": {
+      "provider_intro": "Vous avez une idée d'entreprise ? Inscrivez votre service pour apparaître sur ce radar !",
+      "provider_button": "S'inscrire comme prestataire"
+    }
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import type { FallbackProps } from "react-error-boundary";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
@@ -46,6 +47,7 @@ function RadarError({ resetErrorBoundary }: FallbackProps) {
 
 export default function HomeView() {
   const trpc = useTRPC();
+  const tCommon = useTranslations("common");
 
   // Auth + profile (do NOT block Suspense)
   const { data: session, isLoading: sessionLoading } = useQuery(
@@ -103,6 +105,8 @@ export default function HomeView() {
   return (
     <div className="container mx-auto px-4 pt-6 pb-4 overflow-x-hidden">
       <Headline
+        line1={tCommon("home.hero.line1")}
+        line2={tCommon("home.hero.line2")}
         className="md:max-w-6xl lg:max-w-7xl"
         line1FontClass={poppins.className}
         line2FontClass={poppins.className}

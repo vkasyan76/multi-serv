@@ -63,5 +63,15 @@
     "cancel": "Cancelar",
     "loading": "A carregar...",
     "view_all": "Ver tudo"
+  },
+  "home": {
+    "hero": {
+      "line1": "Ligamos clientes a profissionais.",
+      "line2": "A sua solução está apenas a um clique de distância."
+    },
+    "cta": {
+      "provider_intro": "Tem uma ideia de negócio? Registe o seu serviço para aparecer neste radar!",
+      "provider_button": "Registar-se como prestador"
+    }
   }
 }

@@ -63,5 +63,15 @@
     "cancel": "Abbrechen",
     "loading": "Lädt...",
     "view_all": "Alle anzeigen"
+  },
+  "home": {
+    "hero": {
+      "line1": "Wir verbinden Kunden mit Fachkräften.",
+      "line2": "Ihre Lösung ist nur einen Klick entfernt."
+    },
+    "cta": {
+      "provider_intro": "Haben Sie eine Geschäftsidee? Registrieren Sie Ihren Service, um auf diesem Radar zu erscheinen!",
+      "provider_button": "Als Dienstleister registrieren"
+    }
   }
 }
