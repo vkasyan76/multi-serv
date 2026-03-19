@@ -11,7 +11,11 @@ import {
   normalizeToSupported,
   type AppLang,
 } from "@/lib/i18n/app-lang";
-import { stripLeadingLocale, withLocalePrefix } from "@/i18n/routing";
+import {
+  mirrorLocaleCookie,
+  stripLeadingLocale,
+  withLocalePrefix,
+} from "@/i18n/routing";
 import { useTRPC } from "@/trpc/client";
 
 import {
@@ -97,6 +101,8 @@ export function LanguageSwitcher({
     const query = searchParams?.toString() ?? "";
     const url = query ? `${nextPath}?${query}` : nextPath;
 
+    // Keep the bootstrap cookie aligned with explicit user language changes.
+    mirrorLocaleCookie(newLang);
     router.push(url);
     if (isAuthenticated) {
       persistLanguage.mutate({ language: newLang });

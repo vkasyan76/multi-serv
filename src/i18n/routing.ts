@@ -58,3 +58,10 @@ export function resolveLocaleFromRequest(
 
   return DEFAULT_LOCALE;
 }
+
+export function mirrorLocaleCookie(lang: AppLang) {
+  if (typeof document === "undefined") return;
+
+  const secure = process.env.NODE_ENV === "production" ? "; secure" : "";
+  document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(lang)}; path=/; max-age=31536000; samesite=lax${secure}`;
+}

@@ -46,7 +46,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
 import { Loader2 } from "lucide-react";
 import SettingsHeader from "./SettingsHeader"; // responsive reusable profile tabs header
-import { stripLeadingLocale, withLocalePrefix } from "@/i18n/routing";
+import {
+  mirrorLocaleCookie,
+  stripLeadingLocale,
+  withLocalePrefix,
+} from "@/i18n/routing";
 
 interface GeneralProfileFormProps {
   onSuccess?: () => void;
@@ -98,6 +102,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
           if (typeof window !== "undefined") {
             sessionStorage.setItem(PROFILE_LANG_FLASH_KEY, "1");
           }
+          mirrorLocaleCookie(savedLang);
           const nextPath = withLocalePrefix(restPathname, savedLang);
           const query = searchParams.toString();
           router.push(query ? `${nextPath}?${query}` : nextPath);

@@ -1,10 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Home } from "lucide-react";
 import clsx from "clsx";
 import { useTranslations } from "next-intl";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { stripLeadingLocale, withLocalePrefix } from "@/i18n/routing";
 
 type SettingsHeaderProps = {
   title: string;
@@ -17,13 +21,20 @@ type SettingsHeaderProps = {
 
 export default function SettingsHeader({
   title,
-  homeHref = "/",
+  homeHref,
   homeLabel,
   className,
   children,
 }: SettingsHeaderProps) {
   const tProfile = useTranslations("profile");
+  const pathname = usePathname();
   const effectiveHomeLabel = homeLabel ?? tProfile("header.home");
+  const effectiveHomeHref = useMemo(() => {
+    if (homeHref) return homeHref;
+
+    const { lang } = stripLeadingLocale(pathname || "/");
+    return withLocalePrefix("/", normalizeToSupported(lang));
+  }, [homeHref, pathname]);
 
   return (
     <div
@@ -50,7 +61,7 @@ export default function SettingsHeader({
       <div className="flex items-center gap-3">
         {children}
         <Link
-          href={homeHref}
+          href={effectiveHomeHref}
           className="inline-flex items-center gap-2 self-start sm:self-auto px-4 py-2
                      bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
         >
