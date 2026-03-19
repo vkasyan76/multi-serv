@@ -51,46 +51,32 @@ export default function ReviewForm({ slug, existingReview }: ReviewFormProps) {
   const tReviews = useTranslations("reviews");
   const isUpdate = !!existingReview;
   const schema = useMemo(() => buildSchema(tReviews), [tReviews]);
+  const messageToToastMap: Record<string, string> = {
+    "You can only review providers you have purchased from.":
+      tReviews("toasts.purchase_required"),
+    "Sign in to write a review.": tReviews("toasts.sign_in_required"),
+    "User account not found.": tReviews("toasts.account_missing"),
+    "Tenant not found": tReviews("toasts.tenant_missing"),
+  };
+
+  const mapReviewMessage = (message?: string) =>
+    (message ? messageToToastMap[message] : undefined) ??
+    tReviews("toasts.generic_error");
 
   const mapReviewError = (err: unknown) => {
     // Prefer stable TRPC error codes first where possible.
     if (err instanceof TRPCClientError) {
       const code = err.data?.code;
-      const message = err.message;
 
       if (code === "UNAUTHORIZED") {
         return tReviews("toasts.sign_in_required");
       }
 
-      // We still need message matching for domain-specific cases because
-      // the backend currently does not expose stable custom error codes here.
-      switch (message) {
-        case "You can only review providers you have purchased from.":
-          return tReviews("toasts.purchase_required");
-        case "User account not found.":
-          return tReviews("toasts.account_missing");
-        case "Tenant not found":
-          return tReviews("toasts.tenant_missing");
-        case "Sign in to write a review.":
-          return tReviews("toasts.sign_in_required");
-        default:
-          return tReviews("toasts.generic_error");
-      }
+      return mapReviewMessage(err.data?.message ?? err.message);
     }
 
     if (err instanceof Error) {
-      switch (err.message) {
-        case "You can only review providers you have purchased from.":
-          return tReviews("toasts.purchase_required");
-        case "Sign in to write a review.":
-          return tReviews("toasts.sign_in_required");
-        case "User account not found.":
-          return tReviews("toasts.account_missing");
-        case "Tenant not found":
-          return tReviews("toasts.tenant_missing");
-        default:
-          return tReviews("toasts.generic_error");
-      }
+      return mapReviewMessage(err.message);
     }
 
     return tReviews("toasts.generic_error");
