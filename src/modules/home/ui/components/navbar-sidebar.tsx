@@ -92,6 +92,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
             <LanguageSwitcher
               className="w-full"
               onNavigate={() => onOpenChange(false)}
+              isAuthenticated={!!session.data?.user?.id}
             />
           </div>
 

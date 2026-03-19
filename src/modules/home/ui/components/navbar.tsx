@@ -151,7 +151,10 @@ export const Navbar = () => {
       {/* Right Section - Clerk Auth Buttons */}
       <div className="hidden lg:flex gap-2 items-center pr-6 shrink-0">
         {/* Phase 6: keep switcher near auth/profile actions (desktop only). */}
-        <LanguageSwitcher className="w-auto min-w-0 rounded-full px-3.5 text-lg" />
+        <LanguageSwitcher
+          className="w-auto min-w-0 rounded-full px-3.5 text-lg"
+          isAuthenticated={!!session.data?.user?.id}
+        />
         <SignedOut>
           {/* Only show Clerk SignInButton for unauthenticated users */}
           <SignInButton>

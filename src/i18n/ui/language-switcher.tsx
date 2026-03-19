@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ReactCountryFlag from "react-country-flag";
 
 import {
@@ -11,6 +12,7 @@ import {
   type AppLang,
 } from "@/lib/i18n/app-lang";
 import { stripLeadingLocale, withLocalePrefix } from "@/i18n/routing";
+import { useTRPC } from "@/trpc/client";
 
 import {
   Select,
@@ -35,9 +37,16 @@ const LANGUAGE_TO_COUNTRY: Record<AppLang, string> = {
 type Props = {
   className?: string;
   onNavigate?: () => void;
+  isAuthenticated?: boolean;
 };
 
-export function LanguageSwitcher({ className, onNavigate }: Props) {
+export function LanguageSwitcher({
+  className,
+  onNavigate,
+  isAuthenticated = false,
+}: Props) {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -53,6 +62,33 @@ export function LanguageSwitcher({ className, onNavigate }: Props) {
     SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.label ??
     currentLang;
 
+  const persistLanguage = useMutation(
+    trpc.auth.updateLanguagePreference.mutationOptions({
+      onSuccess: async ({ language }) => {
+        // Keep profile language in sync until the fresh server response lands.
+        queryClient.setQueryData(
+          trpc.auth.getUserProfile.queryOptions().queryKey,
+          (prev) =>
+            prev
+              ? {
+                  ...prev,
+                  language,
+                }
+              : prev,
+        );
+
+        await queryClient.invalidateQueries({
+          queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
+        });
+      },
+      onError: (error) => {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("Failed to persist language preference", error);
+        }
+      },
+    }),
+  );
+
   const onChange = (next: string) => {
     const newLang = normalizeToSupported(next);
     if (newLang === currentLang) return;
@@ -62,6 +98,9 @@ export function LanguageSwitcher({ className, onNavigate }: Props) {
     const url = query ? `${nextPath}?${query}` : nextPath;
 
     router.push(url);
+    if (isAuthenticated) {
+      persistLanguage.mutate({ language: newLang });
+    }
     onNavigate?.();
   };
 

@@ -19,6 +19,7 @@ import { vendorSchema, profileSchema } from "@/modules/profile/schemas";
 import { z } from "zod";
 import type { UserCoordinates } from "@/modules/tenants/types";
 import type { User } from "@/payload-types";
+import { SUPPORTED_APP_LANGS } from "@/lib/i18n/app-lang";
 import {
   hasValidCoordinates,
   replaceCoordinates,
@@ -1295,6 +1296,49 @@ export const authRouter = createTRPCRouter({
       }
 
       return currentUser;
+    }),
+
+  updateLanguagePreference: clerkProcedure
+    .input(
+      z.object({
+        language: z.enum(SUPPORTED_APP_LANGS),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+
+      const user = await ctx.db.find({
+        collection: "users",
+        where: { clerkUserId: { equals: userId } },
+        limit: 1,
+      });
+
+      if (user.totalDocs === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      const currentUser = user.docs[0];
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      if (currentUser.language === input.language) {
+        return { ok: true, language: input.language };
+      }
+
+      await ctx.db.update({
+        collection: "users",
+        id: String(currentUser.id),
+        data: { language: input.language },
+      });
+
+      return { ok: true, language: input.language };
     }),
 
   updateUserCoordinates: clerkProcedure

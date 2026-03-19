@@ -4,6 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useForm, useFormState, useWatch } from "react-hook-form";
 import { useTranslations } from "next-intl";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { profileSchema } from "@/modules/profile/schemas";
 import * as z from "zod";
@@ -45,31 +46,65 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
 import { Loader2 } from "lucide-react";
 import SettingsHeader from "./SettingsHeader"; // responsive reusable profile tabs header
+import { stripLeadingLocale, withLocalePrefix } from "@/i18n/routing";
 
 interface GeneralProfileFormProps {
   onSuccess?: () => void;
 }
 
+const PROFILE_LANG_FLASH_KEY = "profile_language_saved_flash";
+
 export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const tProfile = useTranslations("profile");
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Fetch user profile data from database
   const { data: userProfile, isLoading } = useQuery(
     trpc.auth.getUserProfile.queryOptions()
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const flash = sessionStorage.getItem(PROFILE_LANG_FLASH_KEY);
+    if (flash !== "1") return;
+
+    sessionStorage.removeItem(PROFILE_LANG_FLASH_KEY);
+    toast.success(tProfile("general.messages.profile_updated"));
+  }, [tProfile]);
+
   const updateUserProfile = useMutation(
     trpc.auth.updateUserProfile.mutationOptions({
-      onSuccess: async () => {
-        toast.success(tProfile("general.messages.profile_updated"));
+      onSuccess: async (_data, variables) => {
         await queryClient.invalidateQueries({
           queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
         });
         // Allow exactly one profile refetch to rehydrate after the fresh profile is back.
         setAllowProfileResync(true);
         onSuccess?.(); // Call the onSuccess callback if provided
+
+        const savedLang = normalizeToSupported(variables.language);
+        const { lang: routeLang, restPathname } = stripLeadingLocale(
+          pathname || "/",
+        );
+        const currentRouteLang = normalizeToSupported(routeLang);
+
+        if (savedLang !== currentRouteLang) {
+          // Defer the success toast so it renders in the destination locale.
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(PROFILE_LANG_FLASH_KEY, "1");
+          }
+          const nextPath = withLocalePrefix(restPathname, savedLang);
+          const query = searchParams.toString();
+          router.push(query ? `${nextPath}?${query}` : nextPath);
+          return;
+        }
+
+        toast.success(tProfile("general.messages.profile_updated"));
       },
       onError: (error) => {
         setAllowProfileResync(false);
