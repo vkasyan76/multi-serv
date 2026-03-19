@@ -31,6 +31,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { platformHomeHref } from "@/lib/utils";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 
 import { useTenantAuth } from "./hooks/use-tenant-auth";
 
@@ -48,11 +49,18 @@ const TenantCalendar = dynamic(
 const PM_CART_KEY = "pm_cart_restore_v1";
 const PM_CART_TTL_MS = 5 * 60 * 1000;
 
-export default function TenantContent({ slug }: { slug: string }) {
+export default function TenantContent({
+  slug,
+  routeLang,
+}: {
+  slug: string;
+  routeLang: string;
+}) {
   const homeHref = platformHomeHref();
   const tBookings = useTranslations("bookings");
   const tCheckout = useTranslations("checkout");
   const tTenantPage = useTranslations("tenantPage");
+  const appLang = normalizeToSupported(routeLang);
 
   // ensures "/plumbing" becomes "https://root-domain/plumbing" in prod,
   // and stays "/plumbing" in dev
@@ -128,7 +136,6 @@ export default function TenantContent({ slug }: { slug: string }) {
   const {
     signedState,
     viewerKey,
-    appLang,
     onBridgeResync,
     profileQ, // to pass to pass into CartDrawer for checking terms acceptance
   } = useTenantAuth(slug);
