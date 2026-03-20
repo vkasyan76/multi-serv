@@ -99,11 +99,17 @@ Required env groups are defined in `README.md`:
 
 - Single source of truth for supported app languages is `src/lib/i18n/app-lang.ts`.
   - Canonical exports: `SUPPORTED_APP_LANGS`, `AppLang`, `DEFAULT_APP_LANG`, `SUPPORTED_LANGUAGES`, `normalizeToSupported`.
+- Phase 6 invariant:
+  - route locale (`/[lang]/...`) is the active truth
+  - `app_lang` cookie is mirror/bootstrap only
+  - persisted profile language is preference only and must never silently override an explicit route
 - `src/modules/profile/location-utils.ts` re-exports language helpers for backward compatibility.
   - Prefer importing from `src/lib/i18n/app-lang.ts` for new code.
 - Locale detection priority for client UX text should be:
   - `document.documentElement.lang` -> `navigator.languages`/`navigator.language` -> `"en"`.
 - `normalizeToSupported` must handle region/case variants robustly (`de-DE`, `EN_us`, etc.).
+- Bare `/` locale bootstrap still resolves from `app_lang` -> `Accept-Language` -> default.
+  - Locale-prefixed routes always win over cookie/bootstrap state.
 - Do not add new hardcoded app-language lists/unions in feature files.
   - Reuse `SUPPORTED_APP_LANGS` or `SUPPORTED_LANGUAGES` instead.
 - Payload-generated types in `src/payload-types.ts` are derived artifacts, not source of truth.
@@ -181,6 +187,22 @@ Required env groups are defined in `README.md`:
 - Phase 5 Wave 4 wrapper locale-source follow-up is partially implemented:
   - tenant/admin finance wrappers now derive finance `appLang` from the active route locale instead of profile/browser fallback
   - tenant finance payouts links preserve locale when linking back into profile
+- Phase 6 (language switcher + route-authoritative sync) is implemented:
+  - `src/i18n/ui/language-switcher.tsx` is the canonical language switcher and rebuilds the current URL with `stripLeadingLocale` + `withLocalePrefix`
+  - desktop and mobile nav both host the same switcher:
+    `src/modules/home/ui/components/navbar.tsx`,
+    `src/modules/home/ui/components/navbar-sidebar.tsx`
+  - switcher UI uses explicit `react-country-flag` mapping; flags are presentation-only and must not affect locale logic
+  - authenticated navbar/mobile switches persist language asynchronously through `auth.updateLanguagePreference`
+  - explicit language changes mirror `app_lang` immediately via `mirrorLocaleCookie` in `src/i18n/routing.ts`
+  - profile language edits do not live-switch the UI while dirty; after successful save they may navigate to the same route under the saved locale using `stripLeadingLocale` + `withLocalePrefix`
+  - profile-save success toasts are deferred to the destination locale when a language-changing save triggers navigation
+  - `SettingsHeader` now derives its default Home link from the active locale route instead of bare `/`
+  - mobile sidebar dashboard/start-business CTA mirrors desktop routing:
+    uses `hasTenant` as the stable label/source-of-truth signal,
+    keeps `isDashLoading = hasTenant && !myTenant && isMineLoading`,
+    and escapes tenant hosts via `platformHomeHref()` for dashboard links
+  - home-page hero and CTA chrome now use `common.home.*` message keys for all launched locales
 
 ### i18n Rollout Status (Still Open)
 
@@ -190,7 +212,7 @@ Required env groups are defined in `README.md`:
 - Phase 5 Wave 4 remains in progress:
   - translate the tenant/admin finance wrapper chrome still left in English
   - localize the invoice viewer and PDF download path
-- Phase 6, Phase 6A, and Phase 7 remain open.
+- Phase 6A and Phase 7 remain open.
 
 ## Promotions Reservation (Phase 3)
 
