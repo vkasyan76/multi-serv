@@ -22,7 +22,8 @@
     "scheduled": "Zaplanowane",
     "accepted": "Zaakceptowane",
     "completed": "Zakończone",
-    "disputed": "Sporne"
+    "disputed": "Sporne",
+    "canceled": "Anulowano"
   },
   "payment_status": {
     "paid": "opłacone",
@@ -33,7 +34,8 @@
     "request_payment": "Poproś o płatność",
     "pay": "Zapłać",
     "view_invoice": "Zobacz fakturę",
-    "write_review": "Napisz opinię"
+    "write_review": "Napisz opinię",
+    "cancel_order": "Anuluj zamówienie"
   },
   "tooltips": {
     "request_payment": "Możesz poprosić o płatność po akceptacji klienta.",
@@ -47,7 +49,16 @@
     "dispute_placeholder": "Opisz, co poszło nie tak...",
     "cancel": "Anuluj",
     "submitting": "Wysyłanie...",
-    "submit_dispute": "Wyślij zastrzeżenie"
+    "submit_dispute": "Wyślij zastrzeżenie",
+    "cancel_order_title_customer": "Anulować to zamówienie?",
+    "cancel_order_title_tenant": "Anulować to zamówienie?",
+    "cancel_order_body_customer": "Spowoduje to zwolnienie zarezerwowanych terminów, jeśli okno anulowania jest nadal otwarte.",
+    "cancel_order_body_tenant": "Spowoduje to zwolnienie zarezerwowanych terminów, jeśli okno anulowania jest nadal otwarte.",
+    "cancel_reason": "Powód (opcjonalnie)",
+    "cancel_placeholder_customer": "Dodaj krótką notatkę, jeśli to pomocne...",
+    "cancel_placeholder_tenant": "Dodaj krótki powód anulowania...",
+    "confirm_cancel": "Potwierdź anulowanie",
+    "submitting_cancel": "Anulowanie..."
   },
   "states": {
     "load_error": "Nie udało się załadować zamówień.",
@@ -67,6 +78,13 @@
     "invoice_missing": "Nie znaleziono jeszcze faktury dla tego zamówienia.",
     "invoice_open_failed": "Nie udało się otworzyć faktury.",
     "review_slug_missing": "Brakuje slugu usługodawcy do opinii.",
-    "invoice_finalize_failed": "Nie udało się sfinalizować faktury. Spróbuj ponownie."
+    "invoice_finalize_failed": "Nie udało się sfinalizować faktury. Spróbuj ponownie.",
+    "order_canceled": "Zamówienie anulowano.",
+    "cancel_failed": "Nie udało się anulować zamówienia.",
+    "cancel_cutoff_passed": "Okno anulowania już minęło.",
+    "cancel_payment_locked": "Tego zamówienia nie można już anulować, ponieważ płatność lub fakturowanie już się rozpoczęły.",
+    "cancel_already_canceled": "To zamówienie zostało już anulowane.",
+    "cancel_invalid_slots": "Tego zamówienia nie można anulować, ponieważ jego terminy nie są już prawidłowe.",
+    "cancel_release_failed": "Zamówienie zostało anulowane, ale nie udało się w pełni zweryfikować zwolnienia terminów."
   }
 }

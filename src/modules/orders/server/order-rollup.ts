@@ -27,6 +27,7 @@ type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
 type TenantLifecycleListItem = {
   id: string;
   createdAt: string;
+  status: Order["status"];
   serviceStatus: Order["serviceStatus"];
   invoiceStatus: Order["invoiceStatus"];
   lifecycleMode: Order["lifecycleMode"];
@@ -214,6 +215,7 @@ function mapTenantLifecycleItem(o: DocWithId<Order>): TenantLifecycleListItem {
   return {
     id: o.id,
     createdAt: o.createdAt!,
+    status: o.status as Order["status"],
     serviceStatus: o.serviceStatus as Order["serviceStatus"],
     invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
     lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
@@ -377,6 +379,7 @@ export async function listMineSlotLifecycle(ctx: CtxLike) {
     return {
       id: o.id,
       createdAt: o.createdAt!,
+      status: o.status as Order["status"],
       serviceStatus: o.serviceStatus as Order["serviceStatus"],
       invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
       lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],

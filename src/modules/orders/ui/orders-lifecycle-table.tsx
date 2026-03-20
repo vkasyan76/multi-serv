@@ -59,6 +59,8 @@ import { getLocaleAndCurrency } from "@/lib/i18n/locale";
 import { withLocalePrefix } from "@/i18n/routing";
 import { toast } from "sonner";
 import {
+  CanceledBadge,
+  canShowSelfCancelAction,
   type OrdersLifecycleBaseSortKey,
   type OrdersLifecycleSortDir,
   type OrdersLifecycleCustomerRow,
@@ -122,6 +124,11 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
   const [pendingDisputeId, setPendingDisputeId] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [pendingCancelOrderId, setPendingCancelOrderId] = useState<
+    string | null
+  >(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   const getStatusLabel = (
     value:
@@ -247,6 +254,61 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     },
   });
 
+  const getCancelErrorToast = (error: unknown) => {
+    const key =
+      typeof error === "object" && error && "message" in error
+        ? String((error as { message?: unknown }).message ?? "")
+        : "";
+
+    switch (key) {
+      case "orders.errors.cancel_cutoff_passed":
+        return tOrders("toasts.cancel_cutoff_passed");
+      case "orders.errors.cancel_payment_locked":
+        return tOrders("toasts.cancel_payment_locked");
+      case "orders.errors.cancel_already_canceled":
+        return tOrders("toasts.cancel_already_canceled");
+      case "orders.errors.cancel_invalid_slots":
+        return tOrders("toasts.cancel_invalid_slots");
+      case "orders.errors.cancel_release_failed":
+        return tOrders("toasts.cancel_release_failed");
+      case "orders.errors.cancel_not_allowed":
+      default:
+        return tOrders("toasts.cancel_failed");
+    }
+  };
+
+  const customerCancelOrder = useMutation({
+    ...trpc.orders.customerCancelSlotOrder.mutationOptions(),
+    onSuccess: async () => {
+      toast.success(tOrders("toasts.order_canceled"));
+      setCancelDialogOpen(false);
+      setPendingCancelOrderId(null);
+      setCancelReason("");
+      await qc.invalidateQueries({
+        queryKey: trpc.orders.listMineSlotLifecycle.queryKey(),
+      });
+    },
+    onError: (error) => {
+      toast.error(getCancelErrorToast(error));
+    },
+  });
+
+  const tenantCancelOrder = useMutation({
+    ...trpc.orders.tenantCancelSlotOrder.mutationOptions(),
+    onSuccess: async () => {
+      toast.success(tOrders("toasts.order_canceled"));
+      setCancelDialogOpen(false);
+      setPendingCancelOrderId(null);
+      setCancelReason("");
+      await qc.invalidateQueries({
+        queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
+      });
+    },
+    onError: (error) => {
+      toast.error(getCancelErrorToast(error));
+    },
+  });
+
   // Tenant issues invoice for an accepted order (pay-after-acceptance flow).
   const issueInvoice = useMutation({
     ...trpc.invoices.issueForOrder.mutationOptions(),
@@ -356,6 +418,12 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     setDisputeDialogOpen(true);
   };
 
+  const openCancelDialog = (orderId: string) => {
+    setPendingCancelOrderId(orderId);
+    setCancelReason("");
+    setCancelDialogOpen(true);
+  };
+
   const submitDispute = () => {
     if (!pendingDisputeId || disputeSlot.isPending) return;
     const reason = disputeReason.trim();
@@ -363,6 +431,22 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
       bookingId: pendingDisputeId,
       reason: reason ? reason : undefined,
     });
+  };
+
+  const submitCancel = () => {
+    if (!pendingCancelOrderId) return;
+
+    const payload = {
+      orderId: pendingCancelOrderId,
+      reason: cancelReason.trim() ? cancelReason.trim() : undefined,
+    };
+
+    if (mode === "customer") {
+      customerCancelOrder.mutate(payload);
+      return;
+    }
+
+    tenantCancelOrder.mutate(payload);
   };
 
   return (
@@ -447,6 +531,8 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
           {(sortedOrders ?? []).map((o) => {
             const isOpen = !!open[o.id];
             const range = getDateRange(o.slots ?? [], locale);
+            const isCanceled = o.status === "canceled";
+            const canCancel = canShowSelfCancelAction(o, nowMs);
 
             const label =
               mode === "customer"
@@ -455,16 +541,20 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
             const payableInvoice =
               mode === "customer" ? invoiceByOrderId[o.id] : null;
             const canRequestPayment =
+              !isCanceled &&
               mode === "tenant" &&
               o.serviceStatus === "accepted" &&
               o.invoiceStatus === "none";
             const canPay =
+              !isCanceled &&
               mode === "customer" &&
               ["issued", "overdue"].includes(String(o.invoiceStatus ?? "")) &&
               !!payableInvoice?.id;
             const canViewInvoice =
-              o.invoiceStatus != null && o.invoiceStatus !== "none";
-            const canWriteReview = o.invoiceStatus === "paid";
+              !isCanceled &&
+              o.invoiceStatus != null &&
+              o.invoiceStatus !== "none";
+            const canWriteReview = !isCanceled && o.invoiceStatus === "paid";
             const requestPaymentTooltip = tOrders("tooltips.request_payment");
             const reviewTooltip = tOrders("tooltips.write_review");
             const tenantSlug =
@@ -501,10 +591,14 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                   <TableCell className="pr-6">{range}</TableCell>
 
                   <TableCell>
-                    <StatusBadge
-                      value={o.serviceStatus}
-                      label={getStatusLabel(o.serviceStatus)}
-                    />
+                    {isCanceled ? (
+                      <CanceledBadge label={tOrders("status.canceled")} />
+                    ) : (
+                      <StatusBadge
+                        value={o.serviceStatus}
+                        label={getStatusLabel(o.serviceStatus)}
+                      />
+                    )}
                   </TableCell>
                   <TableCell>
                     <PaymentStatusBadge
@@ -573,6 +667,20 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          {canCancel ? (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => openCancelDialog(o.id)}
+                                disabled={
+                                  customerCancelOrder.isPending ||
+                                  tenantCancelOrder.isPending
+                                }
+                              >
+                                {tOrders("actions.cancel_order")}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          ) : null}
                           <DropdownMenuItem
                             onClick={() => goViewInvoice(o.id)}
                             disabled={!canViewInvoice}
@@ -655,10 +763,13 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                               const isScheduled =
                                 normalizedStatus === "scheduled";
                               const showTenantSelect =
-                                mode === "tenant" && isScheduled;
+                                !isCanceled &&
+                                mode === "tenant" &&
+                                isScheduled;
                               const disableTenantSelect =
                                 !canCompleteNow || markSlotCompleted.isPending;
                               const showCustomerSelect =
+                                !isCanceled &&
                                 mode === "customer" &&
                                 (normalizedStatus === "completed" ||
                                   normalizedStatus === "disputed");
@@ -741,10 +852,18 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                           </SelectContent>
                                         </Select>
                                       ) : (
-                                        <StatusBadge
-                                          value={s.serviceStatus}
-                                          label={getStatusLabel(s.serviceStatus)}
-                                        />
+                                        isCanceled ? (
+                                          <CanceledBadge
+                                            label={tOrders("status.canceled")}
+                                          />
+                                        ) : (
+                                          <StatusBadge
+                                            value={s.serviceStatus}
+                                            label={getStatusLabel(
+                                              s.serviceStatus,
+                                            )}
+                                          />
+                                        )
                                       )}
                                     </div>
                                     {normalizedStatus === "disputed" &&
@@ -812,6 +931,70 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               {disputeSlot.isPending
                 ? tOrders("dialog.submitting")
                 : tOrders("dialog.submit_dispute")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={cancelDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setCancelDialogOpen(false);
+            setPendingCancelOrderId(null);
+            setCancelReason("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {mode === "customer"
+                ? tOrders("dialog.cancel_order_title_customer")
+                : tOrders("dialog.cancel_order_title_tenant")}
+            </DialogTitle>
+            <DialogDescription>
+              {mode === "customer"
+                ? tOrders("dialog.cancel_order_body_customer")
+                : tOrders("dialog.cancel_order_body_tenant")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="cancel-reason">
+              {tOrders("dialog.cancel_reason")}
+            </Label>
+            <Textarea
+              id="cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder={
+                mode === "customer"
+                  ? tOrders("dialog.cancel_placeholder_customer")
+                  : tOrders("dialog.cancel_placeholder_tenant")
+              }
+              rows={4}
+              maxLength={500}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCancelDialogOpen(false)}
+              disabled={
+                customerCancelOrder.isPending || tenantCancelOrder.isPending
+              }
+            >
+              {tOrders("dialog.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={submitCancel}
+              disabled={
+                customerCancelOrder.isPending || tenantCancelOrder.isPending
+              }
+            >
+              {customerCancelOrder.isPending || tenantCancelOrder.isPending
+                ? tOrders("dialog.submitting_cancel")
+                : tOrders("dialog.confirm_cancel")}
             </Button>
           </DialogFooter>
         </DialogContent>

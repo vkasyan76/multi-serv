@@ -22,7 +22,8 @@
     "scheduled": "Planifiée",
     "accepted": "Acceptée",
     "completed": "Terminée",
-    "disputed": "Contestée"
+    "disputed": "Contestée",
+    "canceled": "Annulée"
   },
   "payment_status": {
     "paid": "payée",
@@ -33,7 +34,8 @@
     "request_payment": "Demander le paiement",
     "pay": "Payer",
     "view_invoice": "Voir la facture",
-    "write_review": "Écrire un avis"
+    "write_review": "Écrire un avis",
+    "cancel_order": "Annuler la commande"
   },
   "tooltips": {
     "request_payment": "Vous pouvez demander le paiement après l'acceptation du client.",
@@ -47,7 +49,16 @@
     "dispute_placeholder": "Expliquez ce qui s'est mal passé...",
     "cancel": "Annuler",
     "submitting": "Envoi en cours...",
-    "submit_dispute": "Envoyer la contestation"
+    "submit_dispute": "Envoyer la contestation",
+    "cancel_order_title_customer": "Annuler cette commande ?",
+    "cancel_order_title_tenant": "Annuler cette commande ?",
+    "cancel_order_body_customer": "Cela remettra les créneaux réservés à disposition si la fenêtre d'annulation est toujours ouverte.",
+    "cancel_order_body_tenant": "Cela remettra les créneaux réservés à disposition si la fenêtre d'annulation est toujours ouverte.",
+    "cancel_reason": "Motif (optionnel)",
+    "cancel_placeholder_customer": "Ajoutez une courte note si utile...",
+    "cancel_placeholder_tenant": "Ajoutez un court motif d'annulation...",
+    "confirm_cancel": "Confirmer l'annulation",
+    "submitting_cancel": "Annulation..."
   },
   "states": {
     "load_error": "Impossible de charger les commandes.",
@@ -67,6 +78,13 @@
     "invoice_missing": "Aucune facture n'est encore disponible pour cette commande.",
     "invoice_open_failed": "Impossible d'ouvrir la facture.",
     "review_slug_missing": "Le slug du prestataire est introuvable pour l'avis.",
-    "invoice_finalize_failed": "Impossible de finaliser la facture. Veuillez réessayer."
+    "invoice_finalize_failed": "Impossible de finaliser la facture. Veuillez réessayer.",
+    "order_canceled": "Commande annulée.",
+    "cancel_failed": "Impossible d'annuler la commande.",
+    "cancel_cutoff_passed": "La fenêtre d'annulation est déjà dépassée.",
+    "cancel_payment_locked": "Cette commande ne peut plus être annulée car le paiement ou la facturation a déjà commencé.",
+    "cancel_already_canceled": "Cette commande a déjà été annulée.",
+    "cancel_invalid_slots": "Cette commande ne peut pas être annulée car ses créneaux ne sont plus valides.",
+    "cancel_release_failed": "La commande a été annulée, mais la remise à disposition des créneaux n'a pas pu être entièrement vérifiée."
   }
 }

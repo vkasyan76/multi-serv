@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { CANCELLATION_WINDOW_HOURS } from "@/constants";
 import { Badge } from "@/components/ui/badge";
 import type { Booking, Order } from "@/payload-types";
 import type { NormalizedServiceStatus } from "@/modules/bookings/ui/service-status";
@@ -12,6 +13,7 @@ import {
 export const EM_DASH = "\u2014";
 const RANGE_ARROW = "\u2192";
 
+export type OrderStatus = Order["status"];
 export type OrderServiceStatus = Order["serviceStatus"];
 export type InvoiceStatus = Order["invoiceStatus"];
 export type SlotServiceStatus = NormalizedServiceStatus;
@@ -26,7 +28,12 @@ export type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
 
 export type OrdersLifecycleCustomerRow = Pick<
   Order,
-  "id" | "createdAt" | "serviceStatus" | "lifecycleMode" | "invoiceStatus"
+  | "id"
+  | "createdAt"
+  | "status"
+  | "serviceStatus"
+  | "lifecycleMode"
+  | "invoiceStatus"
 > & {
   slots: SlotLifecycleSlot[];
 };
@@ -82,6 +89,17 @@ export function StatusBadge({
     >
       {/* Keep default English fallback for admin and older callers. */}
       {label ?? SERVICE_STATUS_LABELS[st]}
+    </Badge>
+  );
+}
+
+export function CanceledBadge({ label }: { label: string }) {
+  return (
+    <Badge
+      variant="secondary"
+      className="border-0 bg-rose-200 text-rose-900"
+    >
+      {label}
     </Badge>
   );
 }
@@ -221,6 +239,37 @@ function getMaxEndMs(slots: SlotLifecycleSlot[]) {
   if (!ends.length) return Number.POSITIVE_INFINITY;
 
   return Math.max(...ends);
+}
+
+function getEarliestSlotStartMs(slots: SlotLifecycleSlot[]) {
+  const starts = slots
+    .map((s) => new Date(s.start).getTime())
+    .filter((t) => Number.isFinite(t));
+
+  if (!starts.length) return Number.POSITIVE_INFINITY;
+
+  return Math.min(...starts);
+}
+
+// UI-only visibility hint. Server mutation remains authoritative.
+export function canShowSelfCancelAction(
+  row: Pick<
+    OrdersLifecycleCustomerRow,
+    "status" | "serviceStatus" | "invoiceStatus" | "slots" | "lifecycleMode"
+  >,
+  nowMs = Date.now(),
+) {
+  if (row.lifecycleMode !== "slot") return false;
+  if (row.status === "canceled") return false;
+  if (row.serviceStatus !== "scheduled") return false;
+  if (row.invoiceStatus !== "none") return false;
+
+  const cutoffMs = CANCELLATION_WINDOW_HOURS * 60 * 60 * 1000;
+  const firstSlotStartMs = getEarliestSlotStartMs(row.slots ?? []);
+
+  return (
+    Number.isFinite(firstSlotStartMs) && firstSlotStartMs > nowMs + cutoffMs
+  );
 }
 
 function statusWeight(s: ServiceStatus) {

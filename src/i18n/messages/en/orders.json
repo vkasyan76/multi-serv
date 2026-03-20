@@ -22,7 +22,8 @@
     "scheduled": "Scheduled",
     "accepted": "Accepted",
     "completed": "Completed",
-    "disputed": "Disputed"
+    "disputed": "Disputed",
+    "canceled": "Canceled"
   },
   "payment_status": {
     "paid": "paid",
@@ -33,7 +34,8 @@
     "request_payment": "Request payment",
     "pay": "Pay",
     "view_invoice": "View invoice",
-    "write_review": "Write a review"
+    "write_review": "Write a review",
+    "cancel_order": "Cancel order"
   },
   "tooltips": {
     "request_payment": "You can request payment after user acceptance.",
@@ -47,7 +49,16 @@
     "dispute_placeholder": "Share what went wrong...",
     "cancel": "Cancel",
     "submitting": "Submitting...",
-    "submit_dispute": "Submit dispute"
+    "submit_dispute": "Submit dispute",
+    "cancel_order_title_customer": "Cancel this order?",
+    "cancel_order_title_tenant": "Cancel this order?",
+    "cancel_order_body_customer": "This will release the reserved slots back to availability if the cancellation window is still open.",
+    "cancel_order_body_tenant": "This will release the reserved slots back to availability if the cancellation window is still open.",
+    "cancel_reason": "Reason (optional)",
+    "cancel_placeholder_customer": "Add a short note if helpful...",
+    "cancel_placeholder_tenant": "Add a short reason for the cancellation...",
+    "confirm_cancel": "Confirm cancellation",
+    "submitting_cancel": "Canceling..."
   },
   "states": {
     "load_error": "Failed to load orders.",
@@ -67,6 +78,13 @@
     "invoice_missing": "No invoice found for this order yet.",
     "invoice_open_failed": "Failed to open invoice.",
     "review_slug_missing": "Missing tenant slug for review.",
-    "invoice_finalize_failed": "Failed to finalize invoice. Please try again."
+    "invoice_finalize_failed": "Failed to finalize invoice. Please try again.",
+    "order_canceled": "Order canceled.",
+    "cancel_failed": "Failed to cancel order.",
+    "cancel_cutoff_passed": "The cancellation window has already passed.",
+    "cancel_payment_locked": "This order can no longer be canceled because payment or invoicing has already started.",
+    "cancel_already_canceled": "This order was already canceled.",
+    "cancel_invalid_slots": "This order cannot be canceled because its booking slots are no longer valid.",
+    "cancel_release_failed": "The order was canceled, but slot release could not be fully verified."
   }
 }

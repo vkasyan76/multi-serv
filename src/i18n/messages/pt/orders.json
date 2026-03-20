@@ -22,7 +22,8 @@
     "scheduled": "Agendado",
     "accepted": "Aceite",
     "completed": "Concluído",
-    "disputed": "Contestado"
+    "disputed": "Contestado",
+    "canceled": "Cancelado"
   },
   "payment_status": {
     "paid": "pago",
@@ -33,7 +34,8 @@
     "request_payment": "Solicitar pagamento",
     "pay": "Pagar",
     "view_invoice": "Ver fatura",
-    "write_review": "Escrever avaliação"
+    "write_review": "Escrever avaliação",
+    "cancel_order": "Cancelar pedido"
   },
   "tooltips": {
     "request_payment": "Pode solicitar o pagamento após a aceitação do cliente.",
@@ -47,7 +49,16 @@
     "dispute_placeholder": "Partilhe o que correu mal...",
     "cancel": "Cancelar",
     "submitting": "A enviar...",
-    "submit_dispute": "Enviar contestação"
+    "submit_dispute": "Enviar contestação",
+    "cancel_order_title_customer": "Cancelar esta encomenda?",
+    "cancel_order_title_tenant": "Cancelar esta encomenda?",
+    "cancel_order_body_customer": "Isto libertará os horários reservados para voltarem a estar disponíveis se a janela de cancelamento ainda estiver aberta.",
+    "cancel_order_body_tenant": "Isto libertará os horários reservados para voltarem a estar disponíveis se a janela de cancelamento ainda estiver aberta.",
+    "cancel_reason": "Motivo (opcional)",
+    "cancel_placeholder_customer": "Adicione uma nota curta se ajudar...",
+    "cancel_placeholder_tenant": "Adicione um motivo curto para o cancelamento...",
+    "confirm_cancel": "Confirmar cancelamento",
+    "submitting_cancel": "A cancelar..."
   },
   "states": {
     "load_error": "Não foi possível carregar as encomendas.",
@@ -67,6 +78,13 @@
     "invoice_missing": "Ainda não existe uma fatura disponível para esta encomenda.",
     "invoice_open_failed": "Não foi possível abrir a fatura.",
     "review_slug_missing": "Falta o slug do prestador para a avaliação.",
-    "invoice_finalize_failed": "Não foi possível finalizar a fatura. Tente novamente."
+    "invoice_finalize_failed": "Não foi possível finalizar a fatura. Tente novamente.",
+    "order_canceled": "Encomenda cancelada.",
+    "cancel_failed": "Não foi possível cancelar a encomenda.",
+    "cancel_cutoff_passed": "A janela de cancelamento já passou.",
+    "cancel_payment_locked": "Esta encomenda já não pode ser cancelada porque o pagamento ou a faturação já começaram.",
+    "cancel_already_canceled": "Esta encomenda já foi cancelada.",
+    "cancel_invalid_slots": "Esta encomenda não pode ser cancelada porque os horários já não são válidos.",
+    "cancel_release_failed": "A encomenda foi cancelada, mas a libertação dos horários não pôde ser totalmente verificada."
   }
 }

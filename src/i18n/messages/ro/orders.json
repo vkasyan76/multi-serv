@@ -22,7 +22,8 @@
     "scheduled": "Programat",
     "accepted": "Acceptat",
     "completed": "Finalizat",
-    "disputed": "Contestat"
+    "disputed": "Contestat",
+    "canceled": "Anulată"
   },
   "payment_status": {
     "paid": "plătit",
@@ -33,7 +34,8 @@
     "request_payment": "Solicită plata",
     "pay": "Plătește",
     "view_invoice": "Vezi factura",
-    "write_review": "Scrie o recenzie"
+    "write_review": "Scrie o recenzie",
+    "cancel_order": "Anulează comanda"
   },
   "tooltips": {
     "request_payment": "Poți solicita plata după acceptarea clientului.",
@@ -47,7 +49,16 @@
     "dispute_placeholder": "Spune ce nu a mers bine...",
     "cancel": "Anulează",
     "submitting": "Se trimite...",
-    "submit_dispute": "Trimite contestația"
+    "submit_dispute": "Trimite contestația",
+    "cancel_order_title_customer": "Anulezi această comandă?",
+    "cancel_order_title_tenant": "Anulezi această comandă?",
+    "cancel_order_body_customer": "Aceasta va elibera intervalele rezervate dacă fereastra de anulare este încă deschisă.",
+    "cancel_order_body_tenant": "Aceasta va elibera intervalele rezervate dacă fereastra de anulare este încă deschisă.",
+    "cancel_reason": "Motiv (opțional)",
+    "cancel_placeholder_customer": "Adaugă o scurtă notă dacă ajută...",
+    "cancel_placeholder_tenant": "Adaugă un motiv scurt pentru anulare...",
+    "confirm_cancel": "Confirmă anularea",
+    "submitting_cancel": "Se anulează..."
   },
   "states": {
     "load_error": "Nu s-au putut încărca comenzile.",
@@ -67,6 +78,13 @@
     "invoice_missing": "Nu este încă disponibilă nicio factură pentru această comandă.",
     "invoice_open_failed": "Nu s-a putut deschide factura.",
     "review_slug_missing": "Lipsește slug-ul prestatorului pentru recenzie.",
-    "invoice_finalize_failed": "Nu s-a putut finaliza factura. Încearcă din nou."
+    "invoice_finalize_failed": "Nu s-a putut finaliza factura. Încearcă din nou.",
+    "order_canceled": "Comandă anulată.",
+    "cancel_failed": "Comanda nu a putut fi anulată.",
+    "cancel_cutoff_passed": "Fereastra de anulare a trecut deja.",
+    "cancel_payment_locked": "Această comandă nu mai poate fi anulată deoarece plata sau facturarea au început deja.",
+    "cancel_already_canceled": "Această comandă a fost deja anulată.",
+    "cancel_invalid_slots": "Această comandă nu poate fi anulată deoarece intervalele ei nu mai sunt valabile.",
+    "cancel_release_failed": "Comanda a fost anulată, dar eliberarea intervalelor nu a putut fi verificată complet."
   }
 }
