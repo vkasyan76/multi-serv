@@ -7,6 +7,10 @@ import type { Order, Booking, Tenant } from "@/payload-types";
 import { z } from "zod";
 import { resolvePayloadUserId } from "./identity";
 import {
+  getSlotOrderCancelability,
+  type SlotOrderCancellationBlockReason,
+} from "./order-cancelability";
+import {
   listMineSlotLifecycle as listMineSlotLifecycleImpl,
   listForMyTenantSlotLifecycle as listForMyTenantSlotLifecycleImpl,
   listForAdminSlotLifecycle as listForAdminSlotLifecycleImpl,
@@ -20,6 +24,199 @@ type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
 type OrderWithTenantRef = Order & {
   tenant?: string | Tenant | null;
 };
+
+type CancelableSlotOrder = DocWithId<
+  Pick<
+    Order,
+    | "id"
+    | "user"
+    | "tenant"
+    | "slots"
+    | "status"
+    | "serviceStatus"
+    | "invoiceStatus"
+    | "lifecycleMode"
+  >
+>;
+
+function relId(
+  value: string | { id?: string | null } | null | undefined,
+): string | null {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && typeof value.id === "string") {
+    return value.id;
+  }
+  return null;
+}
+
+function cancelConflictMessage(
+  reason: SlotOrderCancellationBlockReason | undefined,
+): string {
+  switch (reason) {
+    case "already_canceled":
+      return "orders.errors.cancel_already_canceled";
+    case "order_paid":
+    case "invoice_exists":
+    case "slot_paid":
+      return "orders.errors.cancel_payment_locked";
+    case "cutoff_passed":
+      return "orders.errors.cancel_cutoff_passed";
+    case "missing_slots":
+    case "invalid_slot_dates":
+      return "orders.errors.cancel_invalid_slots";
+    case "not_slot_order":
+    case "wrong_service_status":
+    default:
+      return "orders.errors.cancel_not_allowed";
+  }
+}
+
+async function loadOrderForCancellation(
+  ctx: TRPCContext,
+  orderId: string,
+): Promise<CancelableSlotOrder> {
+  const order = (await ctx.db.findByID({
+    collection: "orders",
+    id: orderId,
+    depth: 0,
+    overrideAccess: true,
+  })) as CancelableSlotOrder | null;
+
+  if (!order) throw new TRPCError({ code: "NOT_FOUND" });
+  return order;
+}
+
+async function assertTenantOwnsOrder(
+  ctx: TRPCContext,
+  payloadUserId: string,
+  order: CancelableSlotOrder,
+): Promise<void> {
+  const tenantId = relId(order.tenant);
+  if (!tenantId) throw new TRPCError({ code: "BAD_REQUEST" });
+
+  const tenant = (await ctx.db.findByID({
+    collection: "tenants",
+    id: tenantId,
+    depth: 0,
+    overrideAccess: true,
+  })) as DocWithId<Tenant> | null;
+
+  if (!tenant) throw new TRPCError({ code: "NOT_FOUND" });
+
+  const ownerId = relId(tenant.user);
+  if (!ownerId || ownerId !== payloadUserId) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+}
+
+async function releaseCanceledOrderSlots(
+  ctx: TRPCContext,
+  slotIds: string[],
+  orderUserId: string,
+): Promise<void> {
+  if (!slotIds.length) return;
+
+  // Mirrors existing release paths:
+  // - legacy checkout rollback releases "booked" slots
+  // - slot checkout promotes slots to "confirmed"
+  const updateRes = await ctx.db.update({
+    collection: "bookings",
+    where: {
+      and: [
+        { id: { in: slotIds } },
+        { customer: { equals: orderUserId } },
+        {
+          or: [
+            { status: { equals: "booked" } },
+            { status: { equals: "confirmed" } },
+          ],
+        },
+      ],
+    },
+    data: {
+      status: "available",
+      customer: null,
+    },
+    overrideAccess: true,
+  });
+
+  let releasedCount = Array.isArray(updateRes?.docs)
+    ? updateRes.docs.length
+    : null;
+
+  if (releasedCount === null) {
+    const verify = await ctx.db.find({
+      collection: "bookings",
+      where: {
+        and: [
+          { id: { in: slotIds } },
+          { status: { equals: "available" } },
+        ],
+      },
+      limit: slotIds.length,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    releasedCount = (verify.docs ?? []).filter(
+      // Cleared booking ownership is stored as null in the existing release paths.
+      (booking) => relId((booking as Pick<Booking, "customer">).customer) == null,
+    ).length;
+  }
+
+  if (releasedCount !== slotIds.length) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "orders.errors.cancel_release_failed",
+    });
+  }
+}
+
+async function cancelSlotOrder(
+  ctx: TRPCContext,
+  order: CancelableSlotOrder,
+  canceledByRole: "customer" | "tenant",
+  reason?: string,
+) {
+  const cancelability = await getSlotOrderCancelability(ctx.db, order);
+  if (!cancelability.cancelable) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: cancelConflictMessage(cancelability.reason),
+    });
+  }
+
+  const orderUserId = relId(order.user);
+  if (!orderUserId) throw new TRPCError({ code: "BAD_REQUEST" });
+
+  const canceledAt = new Date().toISOString();
+  const cancelReason = reason?.trim() ? reason.trim() : undefined;
+
+  // Keep sequence aligned with existing rollback behavior.
+  // This remains non-atomic until a transaction-backed flow is introduced.
+  await ctx.db.update({
+    collection: "orders",
+    id: order.id,
+    data: {
+      status: "canceled",
+      canceledAt,
+      canceledByRole,
+      cancelReason,
+    },
+    overrideAccess: true,
+    depth: 0,
+  });
+
+  await releaseCanceledOrderSlots(ctx, cancelability.slotIds, orderUserId);
+
+  return {
+    ok: true,
+    orderId: order.id,
+    status: "canceled" as const,
+    canceledAt,
+    slotIds: cancelability.slotIds,
+  };
+}
 
 async function requireSuperAdmin(ctx: TRPCContext): Promise<void> {
   if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -38,6 +235,45 @@ async function requireSuperAdmin(ctx: TRPCContext): Promise<void> {
 }
 
 export const ordersRouter = createTRPCRouter({
+  customerCancelSlotOrder: baseProcedure
+    .input(
+      z.object({
+        orderId: z.string().min(1),
+        reason: z.string().trim().min(3).max(500).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+      const order = await loadOrderForCancellation(ctx, input.orderId);
+
+      const orderUserId = relId(order.user);
+      if (!orderUserId || orderUserId !== payloadUserId) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      return cancelSlotOrder(ctx, order, "customer", input.reason);
+    }),
+
+  tenantCancelSlotOrder: baseProcedure
+    .input(
+      z.object({
+        orderId: z.string().min(1),
+        reason: z.string().trim().min(3).max(500).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+      const order = await loadOrderForCancellation(ctx, input.orderId);
+
+      await assertTenantOwnsOrder(ctx, payloadUserId, order);
+
+      return cancelSlotOrder(ctx, order, "tenant", input.reason);
+    }),
+
   // Optional list for an Orders page
   listMine: baseProcedure.query(async ({ ctx }) => {
     if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
