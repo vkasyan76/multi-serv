@@ -70,6 +70,10 @@
       "line2": "Soluția ta este la doar un clic distanță."
     },
     "cta": {
+      "guest_text": "Înregistrează-te pentru a-ți localiza căutarea:",
+      "register_button": "Înregistrează-te",
+      "incomplete_profile_text": "Completează-ți profilul pentru a găsi mai bine profesioniștii din jurul tău:",
+      "complete_profile_button": "Completează profilul",
       "provider_intro": "Ai o idee de afacere? Înregistrează-ți serviciul ca să apari pe acest radar!",
       "provider_button": "Înregistrează-te ca prestator"
     }

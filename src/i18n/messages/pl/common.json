@@ -70,6 +70,10 @@
       "line2": "Twoje rozwiązanie jest tylko o jedno kliknięcie stąd."
     },
     "cta": {
+      "guest_text": "Zarejestruj się, aby zlokalizować swoje wyszukiwanie:",
+      "register_button": "Zarejestruj się",
+      "incomplete_profile_text": "Uzupełnij swój profil, aby lepiej znaleźć profesjonalistów w swojej okolicy:",
+      "complete_profile_button": "Uzupełnij profil",
       "provider_intro": "Masz pomysł na biznes? Zarejestruj swoją usługę, aby pojawić się na tym radarze!",
       "provider_button": "Zarejestruj się jako usługodawca"
     }

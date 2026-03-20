@@ -70,6 +70,10 @@
       "line2": "Su solución está a solo un clic."
     },
     "cta": {
+      "guest_text": "Regístrese para localizar su búsqueda:",
+      "register_button": "Registrarse",
+      "incomplete_profile_text": "Complete su perfil para localizar mejor a los profesionales cerca de usted:",
+      "complete_profile_button": "Completar perfil",
       "provider_intro": "¿Tiene una idea de negocio? Registre su servicio para aparecer en este radar!",
       "provider_button": "Registrarse como proveedor"
     }

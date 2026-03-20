@@ -47,6 +47,7 @@ export default function CallToAction({
   const currentLang = normalizeToSupported(
     stripLeadingLocale(pathname || "/").lang,
   );
+  const profileHref = withLocalePrefix("/profile", currentLang);
   const vendorHref = `${withLocalePrefix("/profile", currentLang)}?tab=vendor`;
 
   useEffect(() => {
@@ -101,27 +102,29 @@ export default function CallToAction({
 
   if (!isAuthed) {
     // Case 1: guest
-    text = "Register to localize your search:";
+    text = tCommon("home.cta.guest_text");
     cta = (
       <SignInButton>
         <Button
           variant="elevated"
           className="mt-6 w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
         >
-          Register
+          {tCommon("home.cta.register_button")}
         </Button>
       </SignInButton>
     );
   } else if (!isOnboarded) {
     // Case 2: authed, profile not completed (no coords)
-    text = "Complete your profile to better locate professionals around you:";
+    text = tCommon("home.cta.incomplete_profile_text");
     cta = (
       <Button
         variant="elevated"
         asChild
         className="mt-6 w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
       >
-        <Link href="/profile">Complete Profile</Link>
+        <Link href={profileHref}>
+          {tCommon("home.cta.complete_profile_button")}
+        </Link>
       </Button>
     );
   } else if (!hasTenant) {

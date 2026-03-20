@@ -70,6 +70,10 @@
       "line2": "Your solution is only a click away."
     },
     "cta": {
+      "guest_text": "Register to localize your search:",
+      "register_button": "Register",
+      "incomplete_profile_text": "Complete your profile to better locate professionals around you:",
+      "complete_profile_button": "Complete Profile",
       "provider_intro": "Have a business idea? Register your service to appear on this radar!",
       "provider_button": "Register as a provider"
     }

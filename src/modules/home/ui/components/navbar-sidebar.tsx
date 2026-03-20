@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
+import { cn, platformHomeHref } from "@/lib/utils";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
@@ -49,6 +49,21 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
     return query ? `${localizedPath}?${query}` : localizedPath;
   };
 
+  const platformHref = (pathnameWithQuery: string) => {
+    const localized = href(pathnameWithQuery);
+    const base = platformHomeHref();
+    if (!base.startsWith("http")) return localized;
+
+    try {
+      const url = new URL(base);
+      if (!url.hostname || url.hostname === "undefined") return localized;
+    } catch {
+      return localized;
+    }
+
+    return `${base.replace(/\/+$/, "")}${localized}`;
+  };
+
   const isAdmin = user?.roles?.includes("super-admin");
   const hasTenant = !!user?.tenants?.length;
 
@@ -69,8 +84,9 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
     refetchOnWindowFocus: false,
   });
 
-  // stop using domain redirect for the dashboard - it is internal page
-  const dashHref = myTenant ? href("/dashboard") : href("/profile?tab=vendor");
+  const dashHref = hasTenant
+    ? platformHref("/dashboard")
+    : href("/profile?tab=vendor");
 
   // const dashHref = myTenant
   //   ? `${generateTenantUrl(myTenant.slug)}/dashboard`
@@ -173,7 +189,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                     : () => onOpenChange(false) // current behavior when ready
                 }
               >
-                {myTenant ? t("nav.dashboard") : t("nav.start_business")}
+                {hasTenant ? t("nav.dashboard") : t("nav.start_business")}
               </Link>
 
               {/* Clerk SignOutButton does not accept custom onClick handlers -> const { signOut } = useClerk(); */}

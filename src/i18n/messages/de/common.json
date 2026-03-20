@@ -70,6 +70,10 @@
       "line2": "Ihre Lösung ist nur einen Klick entfernt."
     },
     "cta": {
+      "guest_text": "Registrieren Sie sich, um Ihre Suche zu lokalisieren:",
+      "register_button": "Registrieren",
+      "incomplete_profile_text": "Vervollständigen Sie Ihr Profil, um Fachkräfte in Ihrer Nähe besser zu finden:",
+      "complete_profile_button": "Profil vervollständigen",
       "provider_intro": "Haben Sie eine Geschäftsidee? Registrieren Sie Ihren Service, um auf diesem Radar zu erscheinen!",
       "provider_button": "Als Dienstleister registrieren"
     }

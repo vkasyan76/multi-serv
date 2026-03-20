@@ -70,6 +70,10 @@
       "line2": "Votre solution n'est qu'à un clic."
     },
     "cta": {
+      "guest_text": "Inscrivez-vous pour localiser votre recherche :",
+      "register_button": "S'inscrire",
+      "incomplete_profile_text": "Complétez votre profil pour mieux localiser les professionnels autour de vous :",
+      "complete_profile_button": "Compléter le profil",
       "provider_intro": "Vous avez une idée d'entreprise ? Inscrivez votre service pour apparaître sur ce radar !",
       "provider_button": "S'inscrire comme prestataire"
     }
