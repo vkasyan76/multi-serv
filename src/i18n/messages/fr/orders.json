@@ -31,7 +31,7 @@
     "not_invoiced_yet": "pas encore facturé"
   },
   "actions": {
-    "request_payment": "Demander le paiement",
+    "request_payment": "Facturer",
     "pay": "Payer",
     "view_invoice": "Voir la facture",
     "write_review": "Écrire un avis",

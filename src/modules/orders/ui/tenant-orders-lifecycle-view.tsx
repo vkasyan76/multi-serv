@@ -24,11 +24,18 @@ export function TenantOrdersLifecycleView({ appLang }: { appLang: AppLang }) {
   const trpc = useTRPC();
   const tOrders = useTranslations("orders");
   const [page, setPage] = useState(1);
+  const baseOptions = trpc.orders.listForMyTenantSlotLifecycle.queryOptions({
+    page,
+    limit: DEFAULT_LIMIT,
+  });
+  // Scope cached lifecycle rows by route locale so service labels refresh on language switch.
+  const queryKey = [
+    baseOptions.queryKey[0],
+    { ...(baseOptions.queryKey[1] ?? {}), locale: appLang },
+  ] as unknown as typeof baseOptions.queryKey;
   const q = useQuery({
-    ...trpc.orders.listForMyTenantSlotLifecycle.queryOptions({
-      page,
-      limit: DEFAULT_LIMIT,
-    }),
+    ...baseOptions,
+    queryKey,
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,

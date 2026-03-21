@@ -2,6 +2,7 @@
 // ^-- to make sure we can mount the Provider from a server component
 
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { stripLeadingLocale } from "@/i18n/routing";
 import superjson from "superjson";
 
 import type { QueryClient } from "@tanstack/react-query";
@@ -52,11 +53,16 @@ export function TRPCReactProvider(
           transformer: superjson,
           url: getUrl(),
           headers() {
-            if (typeof document === "undefined") {
+            if (typeof window === "undefined") {
               return {};
             }
 
+            // Keep locale-sensitive tRPC reads aligned with the active /[lang]/ route.
+            const routeLang = stripLeadingLocale(
+              window.location.pathname || "/"
+            ).lang;
             const lang =
+              routeLang ||
               document.documentElement.lang ||
               navigator.languages?.[0] ||
               navigator.language ||

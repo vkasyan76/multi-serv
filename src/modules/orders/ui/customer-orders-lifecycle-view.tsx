@@ -17,8 +17,15 @@ export function CustomerOrdersLifecycleView({
 }) {
   const trpc = useTRPC();
   const tOrders = useTranslations("orders");
+  const baseOptions = trpc.orders.listMineSlotLifecycle.queryOptions();
+  // Scope cached lifecycle rows by route locale so service labels refresh on language switch.
+  const queryKey = [
+    baseOptions.queryKey[0],
+    { ...(baseOptions.queryKey[1] ?? {}), locale: appLang },
+  ] as unknown as typeof baseOptions.queryKey;
   const q = useQuery({
-    ...trpc.orders.listMineSlotLifecycle.queryOptions(),
+    ...baseOptions,
+    queryKey,
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
