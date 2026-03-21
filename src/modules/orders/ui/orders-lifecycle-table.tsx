@@ -341,6 +341,11 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   const sortedOrders = useMemo(() => {
     return sortOrdersLifecycleRows(orders ?? [], sort, mode);
   }, [orders, sort, mode]);
+  const trimmedCancelReason = cancelReason.trim();
+  const hasShortCancelReason =
+    trimmedCancelReason.length > 0 && trimmedCancelReason.length < 3;
+  const isCancelPending =
+    customerCancelOrder.isPending || tenantCancelOrder.isPending;
 
   // Customer-only: fetch payable invoice ids per order so the Pay button can work.
   const invoiceQueries = useQueries({
@@ -435,10 +440,11 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
 
   const submitCancel = () => {
     if (!pendingCancelOrderId) return;
+    if (hasShortCancelReason) return;
 
     const payload = {
       orderId: pendingCancelOrderId,
-      reason: cancelReason.trim() ? cancelReason.trim() : undefined,
+      reason: trimmedCancelReason ? trimmedCancelReason : undefined,
     };
 
     if (mode === "customer") {
@@ -966,6 +972,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               id="cancel-reason"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
+              aria-invalid={hasShortCancelReason}
               placeholder={
                 mode === "customer"
                   ? tOrders("dialog.cancel_placeholder_customer")
@@ -979,9 +986,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
             <Button
               variant="outline"
               onClick={() => setCancelDialogOpen(false)}
-              disabled={
-                customerCancelOrder.isPending || tenantCancelOrder.isPending
-              }
+              disabled={isCancelPending}
             >
               {tOrders("dialog.cancel")}
             </Button>
@@ -989,10 +994,11 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               variant="destructive"
               onClick={submitCancel}
               disabled={
-                customerCancelOrder.isPending || tenantCancelOrder.isPending
+                isCancelPending ||
+                (!!pendingCancelOrderId && hasShortCancelReason)
               }
             >
-              {customerCancelOrder.isPending || tenantCancelOrder.isPending
+              {isCancelPending
                 ? tOrders("dialog.submitting_cancel")
                 : tOrders("dialog.confirm_cancel")}
             </Button>

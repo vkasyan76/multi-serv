@@ -242,9 +242,13 @@ function getMaxEndMs(slots: SlotLifecycleSlot[]) {
 }
 
 function getEarliestSlotStartMs(slots: SlotLifecycleSlot[]) {
-  const starts = slots
-    .map((s) => new Date(s.start).getTime())
-    .filter((t) => Number.isFinite(t));
+  const starts: number[] = [];
+
+  for (const slot of slots) {
+    const parsed = new Date(slot.start).getTime();
+    if (!Number.isFinite(parsed)) return Number.POSITIVE_INFINITY;
+    starts.push(parsed);
+  }
 
   if (!starts.length) return Number.POSITIVE_INFINITY;
 

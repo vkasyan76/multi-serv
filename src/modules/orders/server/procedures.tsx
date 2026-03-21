@@ -4,6 +4,7 @@ import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import type { Order, Booking, Tenant } from "@/payload-types";
+import type { Where } from "payload";
 import { z } from "zod";
 import { resolvePayloadUserId } from "./identity";
 import {
@@ -29,6 +30,9 @@ type CancelableSlotOrder = DocWithId<
   Pick<
     Order,
     | "id"
+    | "canceledAt"
+    | "canceledByRole"
+    | "cancelReason"
     | "user"
     | "tenant"
     | "slots"
@@ -47,6 +51,24 @@ function relId(
     return value.id;
   }
   return null;
+}
+
+function buildCancelableSlotReleaseWhere(
+  slotIds: string[],
+  orderUserId: string,
+): Where {
+  return {
+    and: [
+      { id: { in: slotIds } },
+      { customer: { equals: orderUserId } },
+      {
+        or: [
+          { status: { equals: "booked" } },
+          { status: { equals: "confirmed" } },
+        ],
+      },
+    ],
+  };
 }
 
 function cancelConflictMessage(
@@ -109,6 +131,26 @@ async function assertTenantOwnsOrder(
   }
 }
 
+async function loadReleasableOrderSlots(
+  ctx: TRPCContext,
+  slotIds: string[],
+  orderUserId: string,
+) {
+  if (!slotIds.length) return [];
+
+  const res = await ctx.db.find({
+    collection: "bookings",
+    where: buildCancelableSlotReleaseWhere(slotIds, orderUserId),
+    limit: slotIds.length,
+    depth: 0,
+    overrideAccess: true,
+  });
+
+  return (res.docs ?? []) as Array<
+    DocWithId<Pick<Booking, "id" | "status" | "customer">>
+  >;
+}
+
 async function releaseCanceledOrderSlots(
   ctx: TRPCContext,
   slotIds: string[],
@@ -121,18 +163,7 @@ async function releaseCanceledOrderSlots(
   // - slot checkout promotes slots to "confirmed"
   const updateRes = await ctx.db.update({
     collection: "bookings",
-    where: {
-      and: [
-        { id: { in: slotIds } },
-        { customer: { equals: orderUserId } },
-        {
-          or: [
-            { status: { equals: "booked" } },
-            { status: { equals: "confirmed" } },
-          ],
-        },
-      ],
-    },
+    where: buildCancelableSlotReleaseWhere(slotIds, orderUserId),
     data: {
       status: "available",
       customer: null,
@@ -172,6 +203,40 @@ async function releaseCanceledOrderSlots(
   }
 }
 
+async function rollbackCanceledOrderState(
+  ctx: TRPCContext,
+  order: CancelableSlotOrder,
+  releaseSnapshot: Array<DocWithId<Pick<Booking, "id" | "status" | "customer">>>,
+) {
+  await ctx.db.update({
+    collection: "orders",
+    id: order.id,
+    data: {
+      status: order.status,
+      canceledAt: order.canceledAt ?? null,
+      canceledByRole: order.canceledByRole ?? null,
+      cancelReason: order.cancelReason ?? null,
+    },
+    overrideAccess: true,
+    depth: 0,
+  });
+
+  await Promise.all(
+    releaseSnapshot.map((booking) =>
+      ctx.db.update({
+        collection: "bookings",
+        id: booking.id,
+        data: {
+          status: booking.status,
+          customer: relId(booking.customer),
+        },
+        overrideAccess: true,
+        depth: 0,
+      }),
+    ),
+  );
+}
+
 async function cancelSlotOrder(
   ctx: TRPCContext,
   order: CancelableSlotOrder,
@@ -189,11 +254,22 @@ async function cancelSlotOrder(
   const orderUserId = relId(order.user);
   if (!orderUserId) throw new TRPCError({ code: "BAD_REQUEST" });
 
+  const releaseSnapshot = await loadReleasableOrderSlots(
+    ctx,
+    cancelability.slotIds,
+    orderUserId,
+  );
+
+  if (releaseSnapshot.length !== cancelability.slotIds.length) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "orders.errors.cancel_release_failed",
+    });
+  }
+
   const canceledAt = new Date().toISOString();
   const cancelReason = reason?.trim() ? reason.trim() : undefined;
 
-  // Keep sequence aligned with existing rollback behavior.
-  // This remains non-atomic until a transaction-backed flow is introduced.
   await ctx.db.update({
     collection: "orders",
     id: order.id,
@@ -207,7 +283,15 @@ async function cancelSlotOrder(
     depth: 0,
   });
 
-  await releaseCanceledOrderSlots(ctx, cancelability.slotIds, orderUserId);
+  try {
+    await releaseCanceledOrderSlots(ctx, cancelability.slotIds, orderUserId);
+  } catch (error) {
+    // Best-effort compensation keeps retries possible when slot release fails.
+    try {
+      await rollbackCanceledOrderState(ctx, order, releaseSnapshot);
+    } catch {}
+    throw error;
+  }
 
   return {
     ok: true,

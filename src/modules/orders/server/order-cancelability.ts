@@ -40,9 +40,13 @@ function toSlotIds(order: Pick<Order, "slots">): string[] {
 }
 
 function getEarliestSlotStart(slots: Array<Pick<Booking, "start">>) {
-  const starts = slots
-    .map((slot) => Date.parse(slot.start ?? ""))
-    .filter((value) => Number.isFinite(value));
+  const starts: number[] = [];
+
+  for (const slot of slots) {
+    const parsed = Date.parse(slot.start ?? "");
+    if (!Number.isFinite(parsed)) return null;
+    starts.push(parsed);
+  }
 
   if (!starts.length) return null;
 
