@@ -73,9 +73,9 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
       intro: (customerName, dateRange) =>
         `A new order from ${(customerName ?? "a customer").trim() || "a customer"} is scheduled in your calendar${dateRange ? ` (${dateRange})` : ""}.`,
       cancellationNoteOpen:
-        "This order can be canceled up to 24 hours before the first scheduled slot from the Orders actions menu in Dashboard.",
+        "This order can be canceled by either you or the customer up to 24 hours before the first scheduled slot from the Orders actions menu in Dashboard.",
       cancellationNoteClosed:
-        "This order is already inside the 24-hour cutoff and can no longer be canceled from the Orders actions menu in Dashboard.",
+        "This order is already inside the 24-hour cutoff and can no longer be canceled by you or the customer from the Orders actions menu in Dashboard.",
       ctaLabel: "View Dashboard",
       orderLabel: "Order",
     },
@@ -105,9 +105,9 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
       intro: (customerName, dateRange) =>
         `Eine neue Bestellung von ${(customerName ?? "einem Kunden").trim() || "einem Kunden"} wurde in Ihrem Kalender eingeplant${dateRange ? ` (${dateRange})` : ""}.`,
       cancellationNoteOpen:
-        "Diese Bestellung kann bis 24 Stunden vor dem ersten geplanten Termin über das Aktionsmenü bei den Aufträgen im Dashboard storniert werden.",
+        "Diese Bestellung kann bis 24 Stunden vor dem ersten geplanten Termin entweder von Ihnen oder vom Kunden über das Aktionsmenü bei den Aufträgen im Dashboard storniert werden.",
       cancellationNoteClosed:
-        "Diese Bestellung liegt bereits innerhalb der 24-Stunden-Frist und kann nicht mehr über das Aktionsmenü bei den Aufträgen im Dashboard storniert werden.",
+        "Diese Bestellung liegt bereits innerhalb der 24-Stunden-Frist und kann weder von Ihnen noch vom Kunden über das Aktionsmenü bei den Aufträgen im Dashboard storniert werden.",
       ctaLabel: "Dashboard ansehen",
       orderLabel: "Bestellung",
     },
@@ -137,9 +137,9 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
       intro: (customerName, dateRange) =>
         `Un nuevo pedido de ${(customerName ?? "un cliente").trim() || "un cliente"} está programado en tu calendario${dateRange ? ` (${dateRange})` : ""}.`,
       cancellationNoteOpen:
-        "Este pedido puede cancelarse hasta 24 horas antes del primer turno programado desde el menú de acciones de Pedidos en el Panel.",
+        "Este pedido puede cancelarse hasta 24 horas antes del primer turno programado por ti o por el cliente desde el menú de acciones de Pedidos en el Panel.",
       cancellationNoteClosed:
-        "Este pedido ya está dentro del límite de 24 horas y ya no puede cancelarse desde el menú de acciones de Pedidos en el Panel.",
+        "Este pedido ya está dentro del límite de 24 horas y ya no puede cancelarse ni por ti ni por el cliente desde el menú de acciones de Pedidos en el Panel.",
       ctaLabel: "Ver panel",
       orderLabel: "Pedido",
     },
@@ -169,9 +169,9 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
       intro: (customerName, dateRange) =>
         `Une nouvelle commande de ${(customerName ?? "un client").trim() || "un client"} est planifiée dans votre calendrier${dateRange ? ` (${dateRange})` : ""}.`,
       cancellationNoteOpen:
-        "Cette commande peut être annulée jusqu’à 24 heures avant le premier créneau prévu depuis le menu d’actions Réservations du Dashboard.",
+        "Cette commande peut être annulée jusqu’à 24 heures avant le premier créneau prévu par vous ou par le client depuis le menu d’actions Réservations du Dashboard.",
       cancellationNoteClosed:
-        "Cette commande est déjà dans la période de moins de 24 heures et ne peut plus être annulée depuis le menu d’actions Réservations du Dashboard.",
+        "Cette commande est déjà dans la période de moins de 24 heures et ne peut plus être annulée ni par vous ni par le client depuis le menu d’actions Réservations du Dashboard.",
       ctaLabel: "Ouvrir Dashboard",
       orderLabel: "Commande",
     },
@@ -201,9 +201,9 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
       intro: (customerName, dateRange) =>
         `Un nuovo ordine da ${(customerName ?? "un cliente").trim() || "un cliente"} è programmato nel tuo calendario${dateRange ? ` (${dateRange})` : ""}.`,
       cancellationNoteOpen:
-        "Questo ordine può essere annullato fino a 24 ore prima del primo slot programmato dal menu azioni Ordini nella Dashboard.",
+        "Questo ordine può essere annullato fino a 24 ore prima del primo slot programmato da te o dal cliente dal menu azioni Ordini nella Dashboard.",
       cancellationNoteClosed:
-        "Questo ordine è già entro il limite delle 24 ore e non può più essere annullato dal menu azioni Ordini nella Dashboard.",
+        "Questo ordine è già entro il limite delle 24 ore e non può più essere annullato né da te né dal cliente dal menu azioni Ordini nella Dashboard.",
       ctaLabel: "Vedi Dashboard",
       orderLabel: "Ordine",
     },
@@ -235,9 +235,9 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
       intro: (customerName, dateRange) =>
         `Nowe zamówienie od ${(customerName ?? "klienta").trim() || "klienta"} zostało zaplanowane w Twoim kalendarzu${dateRange ? ` (${dateRange})` : ""}.`,
       cancellationNoteOpen:
-        "To zamówienie można anulować do 24 godzin przed pierwszym zaplanowanym terminem z menu akcji Zamówienia w Panelu.",
+        "To zamówienie można anulować do 24 godzin przed pierwszym zaplanowanym terminem przez Ciebie lub przez klienta z menu akcji Zamówienia w Panelu.",
       cancellationNoteClosed:
-        "To zamówienie jest już w okresie krótszym niż 24 godziny i nie można go już anulować z menu akcji Zamówienia w Panelu.",
+        "To zamówienie jest już w okresie krótszym niż 24 godziny i nie można go już anulować ani przez Ciebie, ani przez klienta z menu akcji Zamówienia w Panelu.",
       ctaLabel: "Zobacz panel",
       orderLabel: "Zamówienie",
     },
@@ -267,9 +267,9 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
       intro: (customerName, dateRange) =>
         `Uma nova encomenda de ${(customerName ?? "um cliente").trim() || "um cliente"} está agendada no seu calendário${dateRange ? ` (${dateRange})` : ""}.`,
       cancellationNoteOpen:
-        "Esta encomenda pode ser cancelada até 24 horas antes do primeiro horário agendado no menu de ações Encomendas no Painel.",
+        "Esta encomenda pode ser cancelada até 24 horas antes do primeiro horário agendado por si ou pelo cliente no menu de ações Encomendas no Painel.",
       cancellationNoteClosed:
-        "Esta encomenda já está dentro do limite de 24 horas e já não pode ser cancelada no menu de ações Encomendas no Painel.",
+        "Esta encomenda já está dentro do limite de 24 horas e já não pode ser cancelada nem por si nem pelo cliente no menu de ações Encomendas no Painel.",
       ctaLabel: "Ver painel",
       orderLabel: "Encomenda",
     },
@@ -299,9 +299,9 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
       intro: (customerName, dateRange) =>
         `O comandă nouă de la ${(customerName ?? "un client").trim() || "un client"} este programată în calendarul tău${dateRange ? ` (${dateRange})` : ""}.`,
       cancellationNoteOpen:
-        "Această comandă poate fi anulată cu până la 24 de ore înainte de primul interval programat din meniul de acțiuni Comenzi din Panou.",
+        "Această comandă poate fi anulată cu până la 24 de ore înainte de primul interval programat de tine sau de client din meniul de acțiuni Comenzi din Panou.",
       cancellationNoteClosed:
-        "Această comandă este deja în interiorul limitei de 24 de ore și nu mai poate fi anulată din meniul de acțiuni Comenzi din Panou.",
+        "Această comandă este deja în interiorul limitei de 24 de ore și nu mai poate fi anulată nici de tine, nici de client din meniul de acțiuni Comenzi din Panou.",
       ctaLabel: "Vezi panoul",
       orderLabel: "Comandă",
     },
@@ -337,9 +337,9 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
       intro: (customerName, dateRange) =>
         `Нове замовлення від ${(customerName ?? "клієнта").trim() || "клієнта"} заплановано у вашому календарі${dateRange ? ` (${dateRange})` : ""}.`,
       cancellationNoteOpen:
-        "Це замовлення можна скасувати не пізніше ніж за 24 години до першого запланованого слота через меню дій Замовлення в Панелі.",
+        "Це замовлення можна скасувати не пізніше ніж за 24 години до першого запланованого слота Вами або клієнтом через меню дій у розділі замовлення в панелі.",
       cancellationNoteClosed:
-        "Це замовлення вже в межах 24-годинного обмеження, тому його більше не можна скасувати через меню дій Замовлення в Панелі.",
+        "Це замовлення вже в межах 24-годинного обмеження, тому його більше не можна скасувати ні Вами, ні клієнтом через меню дій у розділі замовлення в панелі.",
       ctaLabel: "Переглянути панель",
       orderLabel: "Замовлення",
     },
