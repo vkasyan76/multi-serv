@@ -29,6 +29,44 @@ type OrderCreatedTenantCopy = {
   orderLabel: string;
 };
 
+export type OrderCanceledByRole = "customer" | "tenant";
+
+type OrderCanceledCustomerCopy = {
+  heading: string;
+  subject: (tenantLabel: string) => string;
+  preview: (tenantLabel: string) => string;
+  greeting: (customerName?: string) => string;
+  introCustomerCanceled: (
+    tenantLabel: string,
+    dateRange?: string | null,
+  ) => string;
+  introTenantCanceled: (
+    tenantLabel: string,
+    dateRange?: string | null,
+  ) => string;
+  slotsReleasedNote: string;
+  ctaLabel: string;
+  orderLabel: string;
+};
+
+type OrderCanceledTenantCopy = {
+  heading: string;
+  subject: string;
+  preview: string;
+  greeting: (tenantName?: string) => string;
+  introCustomerCanceled: (
+    customerName?: string,
+    dateRange?: string | null,
+  ) => string;
+  introTenantCanceled: (
+    customerName?: string,
+    dateRange?: string | null,
+  ) => string;
+  slotsReleasedNote: string;
+  ctaLabel: string;
+  orderLabel: string;
+};
+
 type OrderEmailCopy = {
   createdCustomer: OrderCreatedCustomerCopy;
   createdTenant: OrderCreatedTenantCopy;
@@ -64,6 +102,39 @@ export function toLocaleTag(language?: string) {
     default:
       return "en-US";
   }
+}
+
+// Reuse the same order-email formatting rules across created and canceled templates.
+export function formatOrderEmailDateRangeUtc(
+  startIso?: string,
+  endIso?: string,
+  language?: string,
+) {
+  if (!startIso && !endIso) return null;
+  const startMs = Date.parse(startIso ?? "");
+  const endMs = Date.parse(endIso ?? startIso ?? "");
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return null;
+
+  const fmt = new Intl.DateTimeFormat(toLocaleTag(language), {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+
+  const startStr = fmt.format(new Date(startMs));
+  const endStr = fmt.format(new Date(endMs));
+  return startStr === endStr ? startStr : `${startStr} - ${endStr}`;
+}
+
+export function formatOrderEmailTenantLabel(
+  tenantSlug?: string,
+  tenantName?: string,
+) {
+  const slug = (tenantSlug ?? "").trim();
+  const name = (tenantName ?? "").trim();
+  if (slug && name) return `${slug} (${name})`;
+  return slug || name || "the tenant";
 }
 
 export function isWithinOrderCancellationCutoff(
@@ -450,10 +521,307 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
   },
 };
 
+const ORDER_CANCELED_EMAIL_COPY: Record<
+  AppLang,
+  { customer: OrderCanceledCustomerCopy; tenant: OrderCanceledTenantCopy }
+> = {
+  en: {
+    customer: {
+      heading: "Order canceled",
+      subject: (tenantLabel) => `Order canceled for ${tenantLabel}`,
+      preview: (tenantLabel) => `Order canceled for ${tenantLabel}.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Dear ${customerName.trim()},` : "Dear,",
+      introCustomerCanceled: (tenantLabel, dateRange) =>
+        `You canceled the order below with ${tenantLabel}${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (tenantLabel, dateRange) =>
+        `${tenantLabel} canceled the order below${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote: "The reserved slots have been released.",
+      ctaLabel: "View Orders",
+      orderLabel: "Order",
+    },
+    tenant: {
+      heading: "Order canceled",
+      subject: "Order canceled in your calendar",
+      preview: "Order canceled in your calendar.",
+      greeting: (tenantName) =>
+        tenantName?.trim() ? `Dear ${tenantName.trim()},` : "Dear,",
+      introCustomerCanceled: (customerName, dateRange) =>
+        `${(customerName ?? "Your customer").trim() || "Your customer"} canceled the order below${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (_customerName, dateRange) =>
+        `You canceled the order below${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote: "The slots are available again in your calendar.",
+      ctaLabel: "View Dashboard",
+      orderLabel: "Order",
+    },
+  },
+  de: {
+    customer: {
+      heading: "Bestellung storniert",
+      subject: (tenantLabel) => `Bestellung storniert - ${tenantLabel}`,
+      preview: (tenantLabel) => `Bestellung storniert - ${tenantLabel}.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Hallo ${customerName.trim()},` : "Hallo,",
+      introCustomerCanceled: (tenantLabel, dateRange) =>
+        `Sie haben die folgende Bestellung bei ${tenantLabel}${dateRange ? ` (${dateRange})` : ""} storniert.`,
+      introTenantCanceled: (tenantLabel, dateRange) =>
+        `${tenantLabel} hat die folgende Bestellung${dateRange ? ` (${dateRange})` : ""} storniert.`,
+      slotsReleasedNote:
+        "Die reservierten Zeitfenster wurden wieder freigegeben.",
+      ctaLabel: "Bestellungen ansehen",
+      orderLabel: "Bestellung",
+    },
+    tenant: {
+      heading: "Bestellung storniert",
+      subject: "Bestellung in Ihrem Kalender storniert",
+      preview: "Bestellung in Ihrem Kalender storniert.",
+      greeting: (tenantName) =>
+        tenantName?.trim() ? `Hallo ${tenantName.trim()},` : "Hallo,",
+      introCustomerCanceled: (customerName, dateRange) =>
+        `${(customerName ?? "Ihr Kunde").trim() || "Ihr Kunde"} hat die folgende Bestellung${dateRange ? ` (${dateRange})` : ""} storniert.`,
+      introTenantCanceled: (_customerName, dateRange) =>
+        `Sie haben die folgende Bestellung${dateRange ? ` (${dateRange})` : ""} storniert.`,
+      slotsReleasedNote:
+        "Die Zeitfenster sind in Ihrem Kalender wieder verfügbar.",
+      ctaLabel: "Dashboard ansehen",
+      orderLabel: "Bestellung",
+    },
+  },
+  es: {
+    customer: {
+      heading: "Pedido cancelado",
+      subject: (tenantLabel) => `Pedido cancelado - ${tenantLabel}`,
+      preview: (tenantLabel) => `Pedido cancelado - ${tenantLabel}.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Hola ${customerName.trim()},` : "Hola,",
+      introCustomerCanceled: (tenantLabel, dateRange) =>
+        `Has cancelado el pedido siguiente con ${tenantLabel}${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (tenantLabel, dateRange) =>
+        `${tenantLabel} canceló el pedido siguiente${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote: "Los turnos reservados han sido liberados.",
+      ctaLabel: "Ver pedidos",
+      orderLabel: "Pedido",
+    },
+    tenant: {
+      heading: "Pedido cancelado",
+      subject: "Pedido cancelado en tu calendario",
+      preview: "Pedido cancelado en tu calendario.",
+      greeting: (tenantName) =>
+        tenantName?.trim() ? `Hola ${tenantName.trim()},` : "Hola,",
+      introCustomerCanceled: (customerName, dateRange) =>
+        `${(customerName ?? "Tu cliente").trim() || "Tu cliente"} canceló el pedido siguiente${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (_customerName, dateRange) =>
+        `Has cancelado el pedido siguiente${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote:
+        "Los turnos vuelven a estar disponibles en tu calendario.",
+      ctaLabel: "Ver panel",
+      orderLabel: "Pedido",
+    },
+  },
+  fr: {
+    customer: {
+      heading: "Commande annulée",
+      subject: (tenantLabel) => `Commande annulée - ${tenantLabel}`,
+      preview: (tenantLabel) => `Commande annulée - ${tenantLabel}.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Bonjour ${customerName.trim()},` : "Bonjour,",
+      introCustomerCanceled: (tenantLabel, dateRange) =>
+        `Vous avez annulé la commande ci-dessous auprès de ${tenantLabel}${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (tenantLabel, dateRange) =>
+        `${tenantLabel} a annulé la commande ci-dessous${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote: "Les créneaux réservés ont été libérés.",
+      ctaLabel: "Voir les commandes",
+      orderLabel: "Commande",
+    },
+    tenant: {
+      heading: "Commande annulée",
+      subject: "Commande annulée dans votre calendrier",
+      preview: "Commande annulée dans votre calendrier.",
+      greeting: (tenantName) =>
+        tenantName?.trim() ? `Bonjour ${tenantName.trim()},` : "Bonjour,",
+      introCustomerCanceled: (customerName, dateRange) =>
+        `${(customerName ?? "Votre client").trim() || "Votre client"} a annulé la commande ci-dessous${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (_customerName, dateRange) =>
+        `Vous avez annulé la commande ci-dessous${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote:
+        "Les créneaux sont de nouveau disponibles dans votre calendrier.",
+      ctaLabel: "Ouvrir Dashboard",
+      orderLabel: "Commande",
+    },
+  },
+  it: {
+    customer: {
+      heading: "Ordine annullato",
+      subject: (tenantLabel) => `Ordine annullato - ${tenantLabel}`,
+      preview: (tenantLabel) => `Ordine annullato - ${tenantLabel}.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Ciao ${customerName.trim()},` : "Ciao,",
+      introCustomerCanceled: (tenantLabel, dateRange) =>
+        `Hai annullato l'ordine seguente con ${tenantLabel}${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (tenantLabel, dateRange) =>
+        `${tenantLabel} ha annullato l'ordine seguente${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote: "Gli slot riservati sono stati rilasciati.",
+      ctaLabel: "Vedi ordini",
+      orderLabel: "Ordine",
+    },
+    tenant: {
+      heading: "Ordine annullato",
+      subject: "Ordine annullato nel tuo calendario",
+      preview: "Ordine annullato nel tuo calendario.",
+      greeting: (tenantName) =>
+        tenantName?.trim() ? `Ciao ${tenantName.trim()},` : "Ciao,",
+      introCustomerCanceled: (customerName, dateRange) =>
+        `${(customerName ?? "Il tuo cliente").trim() || "Il tuo cliente"} ha annullato l'ordine seguente${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (_customerName, dateRange) =>
+        `Hai annullato l'ordine seguente${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote:
+        "Gli slot sono di nuovo disponibili nel tuo calendario.",
+      ctaLabel: "Vedi Dashboard",
+      orderLabel: "Ordine",
+    },
+  },
+  pl: {
+    customer: {
+      heading: "Zamówienie anulowane",
+      subject: (tenantLabel) => `Zamówienie anulowane - ${tenantLabel}`,
+      preview: (tenantLabel) => `Zamówienie anulowane - ${tenantLabel}.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Cześć ${customerName.trim()},` : "Cześć,",
+      introCustomerCanceled: (tenantLabel, dateRange) =>
+        `Anulowałeś poniższe zamówienie u ${tenantLabel}${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (tenantLabel, dateRange) =>
+        `Poniższe zamówienie zostało anulowane przez ${tenantLabel}${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote: "Zarezerwowane terminy zostały zwolnione.",
+      ctaLabel: "Zobacz zamówienia",
+      orderLabel: "Zamówienie",
+    },
+    tenant: {
+      heading: "Zamówienie anulowane",
+      subject: "Zamówienie anulowane w Twoim kalendarzu",
+      preview: "Zamówienie anulowane w Twoim kalendarzu.",
+      greeting: (tenantName) =>
+        tenantName?.trim() ? `Cześć ${tenantName.trim()},` : "Cześć,",
+      introCustomerCanceled: (customerName, dateRange) =>
+        `Poniższe zamówienie zostało anulowane przez ${(customerName ?? "Twojego klienta").trim() || "Twojego klienta"}${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (_customerName, dateRange) =>
+        `Anulowałeś poniższe zamówienie${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote:
+        "Terminy są ponownie dostępne w Twoim kalendarzu.",
+      ctaLabel: "Zobacz panel",
+      orderLabel: "Zamówienie",
+    },
+  },
+  pt: {
+    customer: {
+      heading: "Encomenda cancelada",
+      subject: (tenantLabel) => `Encomenda cancelada - ${tenantLabel}`,
+      preview: (tenantLabel) => `Encomenda cancelada - ${tenantLabel}.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Olá ${customerName.trim()},` : "Olá,",
+      introCustomerCanceled: (tenantLabel, dateRange) =>
+        `Cancelou a encomenda abaixo com ${tenantLabel}${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (tenantLabel, dateRange) =>
+        `${tenantLabel} cancelou a encomenda abaixo${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote: "Os horários reservados foram libertados.",
+      ctaLabel: "Ver encomendas",
+      orderLabel: "Encomenda",
+    },
+    tenant: {
+      heading: "Encomenda cancelada",
+      subject: "Encomenda cancelada no seu calendário",
+      preview: "Encomenda cancelada no seu calendário.",
+      greeting: (tenantName) =>
+        tenantName?.trim() ? `Olá ${tenantName.trim()},` : "Olá,",
+      introCustomerCanceled: (customerName, dateRange) =>
+        `${(customerName ?? "O seu cliente").trim() || "O seu cliente"} cancelou a encomenda abaixo${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (_customerName, dateRange) =>
+        `Cancelou a encomenda abaixo${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote:
+        "Os horários estão novamente disponíveis no seu calendário.",
+      ctaLabel: "Ver painel",
+      orderLabel: "Encomenda",
+    },
+  },
+  ro: {
+    customer: {
+      heading: "Comandă anulată",
+      subject: (tenantLabel) => `Comandă anulată - ${tenantLabel}`,
+      preview: (tenantLabel) => `Comandă anulată - ${tenantLabel}.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Bună ${customerName.trim()},` : "Bună,",
+      introCustomerCanceled: (tenantLabel, dateRange) =>
+        `Ați anulat comanda de mai jos cu ${tenantLabel}${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (tenantLabel, dateRange) =>
+        `${tenantLabel} a anulat comanda de mai jos${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote: "Intervalele rezervate au fost eliberate.",
+      ctaLabel: "Vezi comenzile",
+      orderLabel: "Comandă",
+    },
+    tenant: {
+      heading: "Comandă anulată",
+      subject: "Comandă anulată în calendarul dvs.",
+      preview: "Comandă anulată în calendarul dvs.",
+      greeting: (tenantName) =>
+        tenantName?.trim() ? `Bună ${tenantName.trim()},` : "Bună,",
+      introCustomerCanceled: (customerName, dateRange) =>
+        `${(customerName ?? "Clientul dvs.").trim() || "Clientul dvs."} a anulat comanda de mai jos${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (_customerName, dateRange) =>
+        `Ați anulat comanda de mai jos${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote:
+        "Intervalele sunt din nou disponibile în calendarul dvs.",
+      ctaLabel: "Vezi panoul",
+      orderLabel: "Comandă",
+    },
+  },
+  uk: {
+    customer: {
+      heading: "Замовлення скасовано",
+      subject: (tenantLabel) => `Замовлення скасовано - ${tenantLabel}`,
+      preview: (tenantLabel) => `Замовлення скасовано - ${tenantLabel}.`,
+      greeting: (customerName) =>
+        customerName?.trim()
+          ? `Вітаємо, ${customerName.trim()}!`
+          : "Вітаємо!",
+      introCustomerCanceled: (tenantLabel, dateRange) =>
+        `Ви скасували наведене нижче замовлення у ${tenantLabel}${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (tenantLabel, dateRange) =>
+        `${tenantLabel} скасував наведене нижче замовлення${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote: "Зарезервовані слоти було звільнено.",
+      ctaLabel: "Переглянути замовлення",
+      orderLabel: "Замовлення",
+    },
+    tenant: {
+      heading: "Замовлення скасовано",
+      subject: "Замовлення скасовано у Вашому календарі",
+      preview: "Замовлення скасовано у Вашому календарі.",
+      greeting: (tenantName) =>
+        tenantName?.trim()
+          ? `Вітаємо, ${tenantName.trim()}!`
+          : "Вітаємо!",
+      introCustomerCanceled: (customerName, dateRange) =>
+        `${(customerName ?? "Ваш клієнт").trim() || "Ваш клієнт"} скасував наведене нижче замовлення${dateRange ? ` (${dateRange})` : ""}.`,
+      introTenantCanceled: (_customerName, dateRange) =>
+        `Ви скасували наведене нижче замовлення${dateRange ? ` (${dateRange})` : ""}.`,
+      slotsReleasedNote:
+        "Слоти знову доступні у Вашому календарі.",
+      ctaLabel: "Переглянути панель",
+      orderLabel: "Замовлення",
+    },
+  },
+};
+
 export function getOrderCreatedCustomerCopy(locale?: string) {
   return ORDER_EMAIL_COPY[resolveOrderEmailLang(locale)].createdCustomer;
 }
 
 export function getOrderCreatedTenantCopy(locale?: string) {
   return ORDER_EMAIL_COPY[resolveOrderEmailLang(locale)].createdTenant;
+}
+
+export function getOrderCanceledCustomerCopy(locale?: string) {
+  return ORDER_CANCELED_EMAIL_COPY[resolveOrderEmailLang(locale)].customer;
+}
+
+export function getOrderCanceledTenantCopy(locale?: string) {
+  return ORDER_CANCELED_EMAIL_COPY[resolveOrderEmailLang(locale)].tenant;
 }
