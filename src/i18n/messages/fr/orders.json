@@ -58,7 +58,8 @@
     "cancel_placeholder_customer": "Ajoutez une courte note si utile...",
     "cancel_placeholder_tenant": "Ajoutez un court motif d'annulation...",
     "confirm_cancel": "Confirmer l'annulation",
-    "submitting_cancel": "Annulation..."
+    "submitting_cancel": "Annulation...",
+    "cancel_error_short_reason": "Le motif est facultatif, mais s'il est fourni, il doit comporter au moins 3 caractères."
   },
   "states": {
     "load_error": "Impossible de charger les commandes.",

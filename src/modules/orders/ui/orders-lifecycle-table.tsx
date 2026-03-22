@@ -344,6 +344,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   const trimmedCancelReason = cancelReason.trim();
   const hasShortCancelReason =
     trimmedCancelReason.length > 0 && trimmedCancelReason.length < 3;
+  const cancelReasonHintId = hasShortCancelReason
+    ? "cancel-reason-helper"
+    : undefined;
   const isCancelPending =
     customerCancelOrder.isPending || tenantCancelOrder.isPending;
 
@@ -377,17 +380,28 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   }, [invoiceQueries, sortedOrders, mode]);
 
   const goViewInvoice = async (orderId: string) => {
+    // Open synchronously so browsers keep the original click activation.
+    const popup = window.open("", "_blank");
+    if (popup) popup.opener = null;
+
     try {
       const invoice = await qc.fetchQuery(
         trpc.invoices.getLatestForOrderAnyStatus.queryOptions({ orderId }),
       );
       if (!invoice?.id) {
+        if (popup && !popup.closed) popup.close();
         toast.error(tOrders("toasts.invoice_missing"));
         return;
       }
       const href = withLocalePrefix(`/invoices/${invoice.id}`, appLang);
-      window.open(href, "_blank", "noopener,noreferrer");
+      if (popup && !popup.closed) {
+        popup.location.href = href;
+        return;
+      }
+      // Fallback when the browser blocks the popup or closes it before navigation.
+      window.location.assign(href);
     } catch {
+      if (popup && !popup.closed) popup.close();
       toast.error(tOrders("toasts.invoice_open_failed"));
     }
   };
@@ -973,6 +987,7 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               aria-invalid={hasShortCancelReason}
+              aria-describedby={cancelReasonHintId}
               placeholder={
                 mode === "customer"
                   ? tOrders("dialog.cancel_placeholder_customer")
@@ -981,6 +996,14 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               rows={4}
               maxLength={500}
             />
+            {hasShortCancelReason ? (
+              <p
+                id={cancelReasonHintId}
+                className="text-sm text-destructive"
+              >
+                {tOrders("dialog.cancel_error_short_reason")}
+              </p>
+            ) : null}
           </div>
           <DialogFooter>
             <Button

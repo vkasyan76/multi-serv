@@ -58,7 +58,8 @@
     "cancel_placeholder_customer": "Adaugă o scurtă notă dacă ajută...",
     "cancel_placeholder_tenant": "Adaugă un motiv scurt pentru anulare...",
     "confirm_cancel": "Confirmă anularea",
-    "submitting_cancel": "Se anulează..."
+    "submitting_cancel": "Se anulează...",
+    "cancel_error_short_reason": "Motivul este opțional, dar dacă este furnizat trebuie să aibă cel puțin 3 caractere."
   },
   "states": {
     "load_error": "Nu s-au putut încărca comenzile.",

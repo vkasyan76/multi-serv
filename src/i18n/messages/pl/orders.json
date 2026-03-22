@@ -58,7 +58,8 @@
     "cancel_placeholder_customer": "Dodaj krótką notatkę, jeśli to pomocne...",
     "cancel_placeholder_tenant": "Dodaj krótki powód anulowania...",
     "confirm_cancel": "Potwierdź anulowanie",
-    "submitting_cancel": "Anulowanie..."
+    "submitting_cancel": "Anulowanie...",
+    "cancel_error_short_reason": "Powód jest opcjonalny, ale jeśli go podasz, musi mieć co najmniej 3 znaki."
   },
   "states": {
     "load_error": "Nie udało się załadować zamówień.",

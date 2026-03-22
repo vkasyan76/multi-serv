@@ -58,7 +58,8 @@
     "cancel_placeholder_customer": "Adicione uma nota curta se ajudar...",
     "cancel_placeholder_tenant": "Adicione um motivo curto para o cancelamento...",
     "confirm_cancel": "Confirmar cancelamento",
-    "submitting_cancel": "A cancelar..."
+    "submitting_cancel": "A cancelar...",
+    "cancel_error_short_reason": "O motivo é opcional, mas se for fornecido deve ter pelo menos 3 caracteres."
   },
   "states": {
     "load_error": "Não foi possível carregar as encomendas.",

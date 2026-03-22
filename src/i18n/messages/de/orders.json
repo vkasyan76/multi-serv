@@ -58,7 +58,8 @@
     "cancel_placeholder_customer": "Optional eine kurze Notiz hinzufügen...",
     "cancel_placeholder_tenant": "Optional einen kurzen Stornierungsgrund angeben...",
     "confirm_cancel": "Stornierung bestätigen",
-    "submitting_cancel": "Wird storniert..."
+    "submitting_cancel": "Wird storniert...",
+    "cancel_error_short_reason": "Eine Begründung ist optional, muss aber mindestens 3 Zeichen lang sein, wenn sie angegeben wird."
   },
   "states": {
     "load_error": "Bestellungen konnten nicht geladen werden.",

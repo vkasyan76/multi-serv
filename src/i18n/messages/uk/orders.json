@@ -58,7 +58,8 @@
     "cancel_placeholder_customer": "Додайте коротку нотатку, якщо це допоможе...",
     "cancel_placeholder_tenant": "Додайте коротку причину скасування...",
     "confirm_cancel": "Підтвердити скасування",
-    "submitting_cancel": "Скасування..."
+    "submitting_cancel": "Скасування...",
+    "cancel_error_short_reason": "Причина необов’язкова, але якщо її вказано, вона має містити щонайменше 3 символи."
   },
   "states": {
     "load_error": "Не вдалося завантажити замовлення.",

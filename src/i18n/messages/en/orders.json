@@ -58,7 +58,8 @@
     "cancel_placeholder_customer": "Add a short note if helpful...",
     "cancel_placeholder_tenant": "Add a short reason for the cancellation...",
     "confirm_cancel": "Confirm cancellation",
-    "submitting_cancel": "Canceling..."
+    "submitting_cancel": "Canceling...",
+    "cancel_error_short_reason": "Reason is optional, but if provided it must be at least 3 characters."
   },
   "states": {
     "load_error": "Failed to load orders.",
