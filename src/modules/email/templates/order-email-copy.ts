@@ -34,6 +34,34 @@ function resolveOrderEmailLang(locale?: string): AppLang {
   return normalizeToSupported(locale);
 }
 
+export function toLocaleTag(language?: string) {
+  const normalized = (language ?? "").trim();
+  if (normalized && /[-_]/.test(normalized)) {
+    return normalized.replace("_", "-");
+  }
+
+  switch (normalized.toLowerCase()) {
+    case "de":
+      return "de-DE";
+    case "fr":
+      return "fr-FR";
+    case "es":
+      return "es-ES";
+    case "it":
+      return "it-IT";
+    case "pt":
+      return "pt-PT";
+    case "pl":
+      return "pl-PL";
+    case "ro":
+      return "ro-RO";
+    case "uk":
+      return "uk-UA";
+    default:
+      return "en-US";
+  }
+}
+
 export function isWithinOrderCancellationCutoff(
   firstSlotStartIso?: string,
   now = new Date(),

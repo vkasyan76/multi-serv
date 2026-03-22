@@ -14,6 +14,7 @@ import { render } from "@react-email/render";
 import {
   getOrderCreatedTenantCopy,
   isWithinOrderCancellationCutoff,
+  toLocaleTag,
 } from "./order-email-copy";
 
 type OrderCreatedTenantTemplateProps = {
@@ -26,27 +27,6 @@ type OrderCreatedTenantTemplateProps = {
   dateRangeEnd?: string;
   locale?: string;
 };
-
-function toLocaleTag(language?: string) {
-  const normalized = (language ?? "").trim();
-  if (normalized && /[-_]/.test(normalized)) {
-    return normalized.replace("_", "-");
-  }
-  switch (normalized.toLowerCase()) {
-    case "de":
-      return "de-DE";
-    case "fr":
-      return "fr-FR";
-    case "es":
-      return "es-ES";
-    case "it":
-      return "it-IT";
-    case "pt":
-      return "pt-PT";
-    default:
-      return "en-US";
-  }
-}
 
 function formatDateRangeUtc(
   startIso?: string,
