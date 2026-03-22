@@ -32,7 +32,7 @@
     "on_line": "En ligne",
     "orders": "{count, plural, one {# commande} other {# commandes}}",
     "since": "Depuis :",
-    "dashboard": "Tableau de bord",
+    "dashboard": "Dashboard",
     "profile": "Profil",
     "book_service": "Réserver",
     "contact": "Contacter",

@@ -8,7 +8,7 @@
     "terms_of_use": "Conditions d'utilisation",
     "impressum": "Mentions légales",
     "profile": "Profil",
-    "dashboard": "Tableau de bord",
+    "dashboard": "Dashboard",
     "dashboard_cta": "Dashboard",
     "start_business": "Devenir prestataire",
     "start_business_cta": "Devenir pro",
@@ -16,7 +16,7 @@
     "login": "Se connecter",
     "logout": "Se déconnecter",
     "menu": "Menu",
-    "sr_dashboard_available": "Navigation mise à jour : bouton Tableau de bord disponible",
+    "sr_dashboard_available": "Navigation mise à jour : bouton Dashboard disponible",
     "sr_start_business_available": "Navigation mise à jour : bouton Devenir prestataire disponible"
   },
   "a11y": {

@@ -172,13 +172,13 @@
     "actions": {
       "onboarding": "Configuration Stripe",
       "update_details": "Mettre à jour les informations Stripe",
-      "open_dashboard": "Ouvrir le tableau de bord Stripe",
+      "open_dashboard": "Ouvrir le Dashboard Stripe",
       "create_provider": "Créer le profil de prestataire",
       "retry": "Réessayer"
     },
     "errors": {
       "open_onboarding_failed": "Impossible d'ouvrir la configuration Stripe. Veuillez réessayer.",
-      "open_dashboard_failed": "Impossible d'ouvrir le tableau de bord Stripe. Veuillez réessayer.",
+      "open_dashboard_failed": "Impossible d'ouvrir le Dashboard Stripe. Veuillez réessayer.",
       "status_load_failed": "Impossible de charger le statut des versements.",
       "balance_load_failed": "Impossible de charger les soldes."
     },
@@ -208,7 +208,7 @@
     },
     "aria": {
       "open_onboarding": "Ouvrir la configuration Stripe dans un nouvel onglet",
-      "open_dashboard": "Ouvrir le tableau de bord Stripe dans un nouvel onglet"
+      "open_dashboard": "Ouvrir le Dashboard Stripe dans un nouvel onglet"
     }
   }
 }

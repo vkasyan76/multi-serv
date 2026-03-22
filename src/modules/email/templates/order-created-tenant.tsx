@@ -11,6 +11,10 @@ import {
   Text,
 } from "@react-email/components";
 import { render } from "@react-email/render";
+import {
+  getOrderCreatedTenantCopy,
+  isWithinOrderCancellationCutoff,
+} from "./order-email-copy";
 
 type OrderCreatedTenantTemplateProps = {
   tenantName?: string;
@@ -67,10 +71,14 @@ function formatDateRangeUtc(
 }
 
 function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
-  const greeting = props.tenantName?.trim()
-    ? `Dear ${props.tenantName.trim()},`
-    : "Dear,";
-  const customerName = (props.customerName ?? "a customer").trim();
+  const copy = getOrderCreatedTenantCopy(props.locale);
+  const cancellationNote = isWithinOrderCancellationCutoff(
+    props.dateRangeStart,
+  )
+    ? copy.cancellationNoteClosed
+    : copy.cancellationNoteOpen;
+  const greeting = copy.greeting(props.tenantName);
+  const customerName = (props.customerName ?? "").trim() || undefined;
   const dateRange = formatDateRangeUtc(
     props.dateRangeStart,
     props.dateRangeEnd,
@@ -83,7 +91,7 @@ function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
   return (
     <Html>
       <Head />
-      <Preview>New order scheduled in your calendar.</Preview>
+      <Preview>{copy.preview}</Preview>
       <Body style={{ backgroundColor: "#f6f7f8", padding: "24px 0" }}>
         <Container
           style={{
@@ -95,13 +103,10 @@ function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
           }}
         >
           <Heading style={{ margin: "0 0 16px", fontSize: "24px" }}>
-            New order scheduled
+            {copy.heading}
           </Heading>
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
-          <Text style={{ margin: "0 0 8px" }}>
-            A new order from {customerName} is scheduled in your calendar
-            {dateRange ? ` (${dateRange})` : ""}.
-          </Text>
+          <Text style={{ margin: "0 0 8px" }}>{copy.intro(customerName, dateRange)}</Text>
           {services.length ? (
             <Section style={{ margin: "8px 0 16px" }}>
               <ul style={{ margin: "0", paddingLeft: "20px" }}>
@@ -111,8 +116,9 @@ function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
               </ul>
             </Section>
           ) : null}
+          <Text style={{ margin: "0 0 12px" }}>{cancellationNote}</Text>
           <Text style={{ margin: "0 0 20px" }}>
-            <strong>Order:</strong> {props.orderId}
+            <strong>{copy.orderLabel}:</strong> {props.orderId}
           </Text>
           <Section style={{ margin: "20px 0 8px" }}>
             <Button
@@ -125,7 +131,7 @@ function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
                 textDecoration: "none",
               }}
             >
-              View Dashboard
+              {copy.ctaLabel}
             </Button>
           </Section>
         </Container>
@@ -152,8 +158,12 @@ export async function renderOrderCreatedTenantTemplate(
   const dateRangeEnd =
     data.dateRangeEnd == null ? undefined : String(data.dateRangeEnd);
   const locale = data.locale == null ? undefined : String(data.locale);
+  const copy = getOrderCreatedTenantCopy(locale);
+  const cancellationNote = isWithinOrderCancellationCutoff(dateRangeStart)
+    ? copy.cancellationNoteClosed
+    : copy.cancellationNoteOpen;
 
-  const subject = "New order scheduled in your calendar";
+  const subject = copy.subject;
   const html = await render(
     <OrderCreatedTenantEmail
       tenantName={tenantName}
@@ -168,16 +178,18 @@ export async function renderOrderCreatedTenantTemplate(
   );
   const dateRange = formatDateRangeUtc(dateRangeStart, dateRangeEnd, locale);
   const text = [
-    tenantName ? `Dear ${tenantName},` : "Dear,",
+    copy.greeting(tenantName),
     "",
-    `A new order from ${customerName ?? "a customer"} is scheduled in your calendar${dateRange ? ` (${dateRange})` : ""}.`,
+    copy.intro(customerName, dateRange),
     "",
     ...services.map((service) => `- ${service}`),
-    `Order: ${orderId}`,
+    cancellationNote,
     "",
-    `View Dashboard: ${dashboardUrl}`,
+    `${copy.orderLabel}: ${orderId}`,
+    "",
+    `${copy.ctaLabel}: ${dashboardUrl}`,
   ]
-    .filter(Boolean)
+    .filter((value) => value !== undefined && value !== null)
     .join("\n");
 
   return { subject, html, text };
