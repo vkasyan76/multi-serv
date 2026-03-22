@@ -105,6 +105,8 @@ function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
             </Section>
           ) : null}
           <Text style={{ margin: "0 0 12px" }}>{cancellationNote}</Text>
+          <Text style={{ margin: "0 0 12px" }}>{copy.responsibilityNote}</Text>
+          <Text style={{ margin: "0 0 12px" }}>{copy.nextStepsNote}</Text>
           <Text style={{ margin: "0 0 20px" }}>
             <strong>{copy.orderLabel}:</strong> {props.orderId}
           </Text>
@@ -176,6 +178,10 @@ export async function renderOrderCreatedCustomerTemplate(
     "",
     ...services.map((service) => `- ${service}`),
     cancellationNote,
+    "",
+    copy.responsibilityNote,
+    "",
+    copy.nextStepsNote,
     "",
     `${copy.orderLabel}: ${orderId}`,
     "",
