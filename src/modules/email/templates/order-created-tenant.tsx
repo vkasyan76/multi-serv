@@ -12,9 +12,9 @@ import {
 } from "@react-email/components";
 import { render } from "@react-email/render";
 import {
+  formatOrderEmailDateRangeUtc,
   getOrderCreatedTenantCopy,
   isWithinOrderCancellationCutoff,
-  toLocaleTag,
 } from "./order-email-copy";
 
 type OrderCreatedTenantTemplateProps = {
@@ -28,28 +28,6 @@ type OrderCreatedTenantTemplateProps = {
   locale?: string;
 };
 
-function formatDateRangeUtc(
-  startIso?: string,
-  endIso?: string,
-  language?: string,
-) {
-  if (!startIso && !endIso) return null;
-  const startMs = Date.parse(startIso ?? "");
-  const endMs = Date.parse(endIso ?? startIso ?? "");
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return null;
-
-  const fmt = new Intl.DateTimeFormat(toLocaleTag(language), {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-
-  const startStr = fmt.format(new Date(startMs));
-  const endStr = fmt.format(new Date(endMs));
-  return startStr === endStr ? startStr : `${startStr} - ${endStr}`;
-}
-
 function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
   const copy = getOrderCreatedTenantCopy(props.locale);
   const cancellationNote = isWithinOrderCancellationCutoff(
@@ -59,7 +37,7 @@ function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
     : copy.cancellationNoteOpen;
   const greeting = copy.greeting(props.tenantName);
   const customerName = (props.customerName ?? "").trim() || undefined;
-  const dateRange = formatDateRangeUtc(
+  const dateRange = formatOrderEmailDateRangeUtc(
     props.dateRangeStart,
     props.dateRangeEnd,
     props.locale,
@@ -158,7 +136,11 @@ export async function renderOrderCreatedTenantTemplate(
       locale={locale}
     />,
   );
-  const dateRange = formatDateRangeUtc(dateRangeStart, dateRangeEnd, locale);
+  const dateRange = formatOrderEmailDateRangeUtc(
+    dateRangeStart,
+    dateRangeEnd,
+    locale,
+  );
   const text = [
     copy.greeting(tenantName),
     "",

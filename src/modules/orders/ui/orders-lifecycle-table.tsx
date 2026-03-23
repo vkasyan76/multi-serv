@@ -356,9 +356,10 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
       mode === "customer"
         ? (sortedOrders ?? []).map((o) => ({
             ...trpc.invoices.getForOrder.queryOptions({ orderId: o.id }),
-            enabled: ["issued", "overdue"].includes(
-              String(o.invoiceStatus ?? ""),
-            ),
+            // Canceled rows never surface Pay, so skip their invoice lookup too.
+            enabled:
+              o.status !== "canceled" &&
+              ["issued", "overdue"].includes(String(o.invoiceStatus ?? "")),
           }))
         : [],
   });

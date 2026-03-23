@@ -12,9 +12,10 @@ import {
 } from "@react-email/components";
 import { render } from "@react-email/render";
 import {
+  formatOrderEmailDateRangeUtc,
+  formatOrderEmailTenantLabel,
   getOrderCreatedCustomerCopy,
   isWithinOrderCancellationCutoff,
-  toLocaleTag,
 } from "./order-email-copy";
 
 type OrderCreatedCustomerTemplateProps = {
@@ -29,37 +30,11 @@ type OrderCreatedCustomerTemplateProps = {
   locale?: string;
 };
 
-function formatDateRangeUtc(
-  startIso?: string,
-  endIso?: string,
-  language?: string,
-) {
-  if (!startIso && !endIso) return null;
-  const startMs = Date.parse(startIso ?? "");
-  const endMs = Date.parse(endIso ?? startIso ?? "");
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return null;
-
-  const fmt = new Intl.DateTimeFormat(toLocaleTag(language), {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-
-  const startStr = fmt.format(new Date(startMs));
-  const endStr = fmt.format(new Date(endMs));
-  return startStr === endStr ? startStr : `${startStr} - ${endStr}`;
-}
-
-function formatTenantLabel(tenantSlug?: string, tenantName?: string) {
-  const slug = (tenantSlug ?? "").trim();
-  const name = (tenantName ?? "").trim();
-  if (slug && name) return `${slug} (${name})`;
-  return slug || name || "the tenant";
-}
-
 function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
-  const tenantLabel = formatTenantLabel(props.tenantSlug, props.tenantName);
+  const tenantLabel = formatOrderEmailTenantLabel(
+    props.tenantSlug,
+    props.tenantName,
+  );
   const copy = getOrderCreatedCustomerCopy(props.locale);
   const cancellationNote = isWithinOrderCancellationCutoff(
     props.dateRangeStart,
@@ -67,7 +42,7 @@ function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
     ? copy.cancellationNoteClosed
     : copy.cancellationNoteOpen;
   const greeting = copy.greeting(props.customerName);
-  const dateRange = formatDateRangeUtc(
+  const dateRange = formatOrderEmailDateRangeUtc(
     props.dateRangeStart,
     props.dateRangeEnd,
     props.locale,
@@ -150,7 +125,7 @@ export async function renderOrderCreatedCustomerTemplate(
   const dateRangeEnd =
     data.dateRangeEnd == null ? undefined : String(data.dateRangeEnd);
   const locale = data.locale == null ? undefined : String(data.locale);
-  const tenantLabel = formatTenantLabel(tenantSlug, tenantName);
+  const tenantLabel = formatOrderEmailTenantLabel(tenantSlug, tenantName);
   const copy = getOrderCreatedCustomerCopy(locale);
   const cancellationNote = isWithinOrderCancellationCutoff(dateRangeStart)
     ? copy.cancellationNoteClosed
@@ -170,7 +145,11 @@ export async function renderOrderCreatedCustomerTemplate(
       locale={locale}
     />,
   );
-  const dateRange = formatDateRangeUtc(dateRangeStart, dateRangeEnd, locale);
+  const dateRange = formatOrderEmailDateRangeUtc(
+    dateRangeStart,
+    dateRangeEnd,
+    locale,
+  );
   const text = [
     copy.greeting(customerName),
     "",

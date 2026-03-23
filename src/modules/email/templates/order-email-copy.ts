@@ -1,5 +1,9 @@
 import { CANCELLATION_WINDOW_HOURS } from "@/constants";
-import { normalizeToSupported, type AppLang } from "@/lib/i18n/app-lang";
+import {
+  DEFAULT_APP_LANG,
+  normalizeToSupported,
+  type AppLang,
+} from "@/lib/i18n/app-lang";
 
 type OrderCreatedCustomerCopy = {
   heading: string;
@@ -77,12 +81,9 @@ function resolveOrderEmailLang(locale?: string): AppLang {
 }
 
 export function toLocaleTag(language?: string) {
-  const normalized = (language ?? "").trim();
-  if (normalized && /[-_]/.test(normalized)) {
-    return normalized.replace("_", "-");
-  }
-
-  switch (normalized.toLowerCase()) {
+  // Keep email locale tags aligned with the canonical app-lang normalization.
+  const normalized = normalizeToSupported(language ?? DEFAULT_APP_LANG);
+  switch (normalized) {
     case "de":
       return "de-DE";
     case "fr":
