@@ -18,6 +18,7 @@ import {
   exportAdminSlotLifecycleRows as exportAdminSlotLifecycleRowsImpl,
   listAdminOrderCustomerOptions as listAdminOrderCustomerOptionsImpl,
 } from "./order-rollup";
+import { sendCanceledOrderEmailsBestEffort } from "./order-cancellation-emails";
 
 type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
 
@@ -337,7 +338,13 @@ export const ordersRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      return cancelSlotOrder(ctx, order, "customer", input.reason);
+      const result = await cancelSlotOrder(ctx, order, "customer", input.reason);
+      await sendCanceledOrderEmailsBestEffort({
+        ctx,
+        orderId: result.orderId,
+        canceledByRole: "customer",
+      });
+      return result;
     }),
 
   tenantCancelSlotOrder: baseProcedure
@@ -355,7 +362,13 @@ export const ordersRouter = createTRPCRouter({
 
       await assertTenantOwnsOrder(ctx, payloadUserId, order);
 
-      return cancelSlotOrder(ctx, order, "tenant", input.reason);
+      const result = await cancelSlotOrder(ctx, order, "tenant", input.reason);
+      await sendCanceledOrderEmailsBestEffort({
+        ctx,
+        orderId: result.orderId,
+        canceledByRole: "tenant",
+      });
+      return result;
     }),
 
   // Optional list for an Orders page
