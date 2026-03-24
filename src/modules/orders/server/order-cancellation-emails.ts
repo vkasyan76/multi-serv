@@ -71,37 +71,25 @@ async function extractLocalizedServiceNames(params: {
   locale?: string | null;
 }) {
   const { payload, slots, locale } = params;
-  const fallback = extractServiceNames(slots);
+  const labelBySlotId = await resolveOrderServiceLabels({
+    payload,
+    slots: slots.map((slot) => ({
+      id: slot.id,
+      serviceSnapshot: slot.serviceSnapshot ?? null,
+    })),
+    appLang: normalizeToSupported(locale ?? undefined),
+  });
 
-  try {
-    const labelBySlotId = await resolveOrderServiceLabels({
-      payload,
-      slots: slots.map((slot) => ({
-        id: slot.id,
-        serviceSnapshot: slot.serviceSnapshot ?? null,
-      })),
-      appLang: normalizeToSupported(locale ?? undefined),
-    });
+  const names = slots
+    .map(
+      (slot) =>
+        labelBySlotId.get(slot.id)?.trim() ||
+        slot.serviceSnapshot?.serviceName?.trim() ||
+        null,
+    )
+    .filter((name): name is string => !!name);
 
-    const names = slots
-      .map(
-        (slot) =>
-          labelBySlotId.get(slot.id)?.trim() ||
-          slot.serviceSnapshot?.serviceName?.trim() ||
-          null,
-      )
-      .filter((name): name is string => !!name);
-
-    return Array.from(new Set(names));
-  } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error(
-        "[email] localized canceled-order service labels failed",
-        error,
-      );
-    }
-    return fallback;
-  }
+  return Array.from(new Set(names));
 }
 
 function extractDateRange(slots: Array<DocWithId<Booking>>) {

@@ -290,7 +290,18 @@ async function cancelSlotOrder(
     // Best-effort compensation keeps retries possible when slot release fails.
     try {
       await rollbackCanceledOrderState(ctx, order, releaseSnapshot);
-    } catch {}
+    } catch (rollbackErr) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error(
+          "[orders] rollback after slot release failed",
+          {
+            orderId: order.id,
+            releaseSnapshotIds: releaseSnapshot.map((booking) => booking.id),
+          },
+          rollbackErr,
+        );
+      }
+    }
     throw error;
   }
 
