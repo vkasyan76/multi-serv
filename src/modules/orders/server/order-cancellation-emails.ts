@@ -56,15 +56,6 @@ function displayNameFromSnapshot(
   return `${snapshot.firstName ?? ""} ${snapshot.lastName ?? ""}`.trim();
 }
 
-function extractServiceNames(slots: Array<DocWithId<Booking>>): string[] {
-  const names = slots
-    .map((slot) => slot.serviceSnapshot?.serviceName ?? null)
-    .filter((name): name is string => typeof name === "string")
-    .map((name) => name.trim())
-    .filter(Boolean);
-  return Array.from(new Set(names));
-}
-
 async function extractLocalizedServiceNames(params: {
   payload: Payload;
   slots: Array<DocWithId<Booking>>;
