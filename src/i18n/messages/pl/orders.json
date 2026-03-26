@@ -1,6 +1,7 @@
 {
   "page": {
     "title": "Moje zamówienia",
+    "cta_short": "Zamówienia",
     "flow_info_label": "Informacje o przebiegu zamówienia",
     "flow_info_tooltip": "Usługodawca oznacza usługę jako wykonaną, akceptujesz ją lub zgłaszasz zastrzeżenia, a następnie płacisz, gdy zostanie o to poproszony.",
     "home": "Strona główna"

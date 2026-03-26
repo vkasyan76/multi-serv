@@ -1,6 +1,7 @@
 {
   "page": {
     "title": "I miei ordini",
+    "cta_short": "Ordini",
     "flow_info_label": "Informazioni sul flusso dell'ordine",
     "flow_info_tooltip": "Il fornitore contrassegna il servizio come completato, tu lo accetti o lo contesti e paghi quando viene richiesto il pagamento.",
     "home": "Home"

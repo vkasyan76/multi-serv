@@ -1,6 +1,7 @@
 {
   "page": {
     "title": "Meine Bestellungen",
+    "cta_short": "Bestellungen",
     "flow_info_label": "Informationen zum Bestellablauf",
     "flow_info_tooltip": "Der Anbieter markiert die Leistung als abgeschlossen, Sie akzeptieren oder beanstanden sie, und zahlen, sobald die Zahlung angefordert wird.",
     "home": "Startseite"

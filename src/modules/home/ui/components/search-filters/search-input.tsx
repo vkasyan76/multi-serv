@@ -9,9 +9,12 @@ import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 // import { CustomCategory } from "../types";
 import { CategoriesSidebar } from "./categories-sidebar";
 import { SignedIn, useAuth } from "@clerk/nextjs";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 import { useTenantFilters } from "@/modules/tenants/hooks/use-tenant-filters";
 import { debounce } from "nuqs";
 
@@ -29,7 +32,8 @@ export const SearchInput = ({
   onChange,
 }: Props) => {
   const [filters, setFilters] = useTenantFilters(); // search filters
-
+  const tOrders = useTranslations("orders");
+  const currentLang = normalizeToSupported(useLocale());
   const { isSignedIn } = useAuth();
 
   const trpc = useTRPC();
@@ -128,10 +132,17 @@ export const SearchInput = ({
       {/* library button */}
       <SignedIn>
         {showOrders && (
-          <Button asChild variant="elevated" className="h-12">
-            <Link href="/orders">
+          <Button asChild variant="elevated" className="h-12 shrink-0 px-3 sm:px-4">
+            <Link
+              href={withLocalePrefix("/orders", currentLang)}
+              aria-label={tOrders("page.title")}
+              title={tOrders("page.title")}
+            >
               <BookmarkCheckIcon />
-              My Orders
+              {/* Keep the search-bar CTA shorter than the page title so it stays stable across locales. */}
+              <span className="hidden sm:inline">
+                {tOrders("page.cta_short")}
+              </span>
             </Link>
           </Button>
         )}

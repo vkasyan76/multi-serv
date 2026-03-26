@@ -1,6 +1,7 @@
 {
   "page": {
     "title": "Comenzile mele",
+    "cta_short": "Comenzi",
     "flow_info_label": "Informații despre fluxul comenzii",
     "flow_info_tooltip": "Prestatorul marchează serviciul ca finalizat, îl accepți sau îl contești, apoi plătești când este solicitată plata.",
     "home": "Acasă"

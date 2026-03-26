@@ -1,6 +1,7 @@
 {
   "page": {
     "title": "Mes commandes",
+    "cta_short": "Commandes",
     "flow_info_label": "Informations sur le déroulement",
     "flow_info_tooltip": "Le prestataire marque le service comme terminé, vous l'acceptez ou le contestez, puis vous payez lorsque le paiement est demandé.",
     "home": "Accueil"

@@ -1,6 +1,7 @@
 {
   "page": {
     "title": "Mis pedidos",
+    "cta_short": "Pedidos",
     "flow_info_label": "Información sobre el flujo del pedido",
     "flow_info_tooltip": "El proveedor marca el servicio como completado, usted lo acepta o lo impugna, y paga cuando se solicita el pago.",
     "home": "Inicio"

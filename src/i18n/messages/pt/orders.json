@@ -1,6 +1,7 @@
 {
   "page": {
     "title": "As minhas encomendas",
+    "cta_short": "Encomendas",
     "flow_info_label": "Informações sobre o fluxo da encomenda",
     "flow_info_tooltip": "O prestador marca o serviço como concluído, aceita-o ou contesta-o, e paga quando o pagamento é solicitado.",
     "home": "Início"

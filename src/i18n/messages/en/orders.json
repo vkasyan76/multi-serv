@@ -1,6 +1,7 @@
 {
   "page": {
     "title": "My Orders",
+    "cta_short": "Orders",
     "flow_info_label": "Order flow info",
     "flow_info_tooltip": "Provider marks the service completed - you accept/dispute - you pay when requested.",
     "home": "Home"
