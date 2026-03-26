@@ -36,6 +36,11 @@
     "accepted": "Aceptado",
     "disputed": "En disputa"
   },
+  "payment_status": {
+    "unpaid": "No pagado",
+    "pending": "Pendiente",
+    "paid": "Pagado"
+  },
   "tooltip": {
     "available": "Disponible - {date}",
     "status": "{label} - {date}"

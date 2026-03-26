@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "title": "Infinisimo Nutzungsbedingungen",
+    "version_label": "Version",
+    "effective_date_label": "Gültig ab"
+  },
+  "section1": {
+    "title": "1. Rolle der Plattform",
+    "p1": "Infinisimo betreibt einen vermittelnden Marktplatz. Wir stellen die technische Plattform bereit, die es Kunden ermöglicht, Dienstleister zu finden, Buchungen anzufragen und Dienstleister, soweit anwendbar, zu bezahlen. Die Leistungen werden von unabhängigen Anbietern erbracht, nicht von Infinisimo.",
+    "p2": "Die Anbieter sind allein verantwortlich für die Qualität, Rechtmäßigkeit, Sicherheit und Erbringung der von ihnen angebotenen und ausgeführten Leistungen. Infinisimo garantiert keine Leistungsergebnisse und ist nicht Vertragspartei des Dienstleistungsvertrags, außer soweit zwingendes Verbraucherrecht dies verlangt."
+  },
+  "section2": {
+    "title": "2. Buchungsablauf",
+    "p1": "Buchungen reservieren ein Zeitfenster bei einem Anbieter. Die Plattform verwendet die folgenden Lebenszykluskonzepte:",
+    "service_status_label": "Servicestatus (Systemwerte):",
+    "payment_status_label": "Zahlungsstatus (Systemwerte):"
+  },
+  "section3": {
+    "title": "3. Stornierungen",
+    "p1": "Stornierungen können nur innerhalb des jeweils geltenden Stornierungsfensters zulässig sein. Standardmäßig gilt auf der Plattform:",
+    "cancellation_window": "Stornierungsfenster: {hours} Stunden vor dem Beginn der Buchung (Standard).",
+    "p2": "Spezifische Stornierungsbedingungen können außerdem vom Anbieter, von der Leistungskategorie und von zwingendem Verbraucherrecht abhängen."
+  },
+  "section4": {
+    "title": "4. Bestätigungen, Streitfälle und Fristen",
+    "p1": "Die Plattform kann standardisierte Aktionsfenster verwenden, um Erinnerungen, operative Nachverfolgung und die Bearbeitung von Streitfällen zu unterstützen. Sofern für einen bestimmten Ablauf nicht ausdrücklich etwas anderes angegeben ist, führen diese Fenster für sich genommen weder zu einer automatischen Annahme noch zu einem automatischen Nachweis der Leistungserbringung oder zu einem automatischen Rechtsverzicht:",
+    "service_action_window": "Aktionsfenster für die Leistung: Kunden sollten den Abschluss innerhalb von {serviceActionDays} Tagen bestätigen, nachdem der Anbieter die Leistung als abgeschlossen markiert hat. Wenn der Kunde der Ansicht ist, dass die Leistung nicht wie vereinbart erbracht wurde, sollte er unverzüglich den Anbieter kontaktieren und kann sich für plattformbezogene Unterstützung auch an den Infinisimo-Support wenden.",
+    "payment_window": "Zahlungsfenster: Wenn eine Rechnung ausgestellt wird und nach dem anwendbaren Buchungsablauf fällig wird, sollte der Kunde innerhalb von {paymentDays} Tagen zahlen oder sich bei einem Problem an den Support wenden.",
+    "p2": "Die Mitteilung eines Anbieters über den Abschluss stellt für sich genommen keinen Nachweis der Leistungserbringung dar. Die Untätigkeit des Kunden gilt nicht automatisch als Annahme, sofern dies nicht für einen bestimmten Ablauf ausdrücklich festgelegt ist.",
+    "p3": "Wenn ein Kunde oder Anbieter einen Streitfall oder ein Problem mit der Leistung meldet, kann die Plattform Informationen von beiden Parteien anfordern und plattformbezogene Support-Abläufe anwenden. Anbieter und Kunden bleiben verpflichtet, nach Treu und Glauben mitzuwirken."
+  },
+  "section5": {
+    "title": "5. Zahlungen und Plattformgebühr",
+    "p1": "Soweit die Plattform Zahlungen unterstützt, werden Zahlungen an den Anbieter verarbeitet. Die Plattform kann für die Bereitstellung der Marktplatz- und Zahlungsinfrastruktur eine Provision und/oder Gebühren erheben.",
+    "customer_fee_policy": "Gebührenregelung für Kunden: Kunden zahlen den bei der Zahlung angezeigten Gesamtbetrag der Buchung, einschließlich etwaiger anwendbarer Steuern. Infinisimo erhebt derzeit keine separate kundenbezogene Plattformgebühr, sofern diese nicht vor der Zahlung ausdrücklich ausgewiesen wird.",
+    "commission_rate": "Standard-Provisionssatz der Plattform: {commissionPercent}% (abgeleitet aus {commissionBps} Basispunkten). Werbe-, kampagnenspezifische oder individuell vereinbarte Provisionssätze können für berechtigte Anbieter oder Transaktionen gelten, wenn dies gesondert mitgeteilt und bei der Zahlung oder bei der Rechnungserstellung entsprechend berücksichtigt wird.",
+    "provider_fee_policy": "Gebührenregelung für Anbieter: Anbieter ermächtigen Infinisimo und Stripe, die anwendbare Plattformprovision und die Stripe-Verarbeitungsgebühren aus plattformverarbeiteten Zahlungen einzuziehen. In Stripe können diese als Application Fee (Plattformgebühr) und als Stripe-Verarbeitungsgebühren erscheinen.",
+    "referral_policy": "Empfehlungsbasierte Kampagnen können Empfehlungszuordnungsdaten erfordern, um die Berechtigung festzustellen.",
+    "eur_only": "Plattformzahlungen werden derzeit nur in EUR unterstützt. Zahlungsverfügbarkeit, unterstützte Zahlungsmethoden und Währungsunterstützung können von der Einrichtung des verbundenen Zahlungskontos des Anbieters abhängen. Wenn EUR für das Konto eines Anbieters nicht unterstützt wird, können Plattformzahlungen für diesen Anbieter nicht verfügbar sein.",
+    "stripe_enabled": "Plattformzahlungen werden, sofern aktiviert, über Stripe abgewickelt.",
+    "payment_handling": "Zahlungsabwicklung und Weiterleitungen: Der Zahlungsschritt wird, sofern aktiviert, über Stripe Checkout gehostet. Die Gebührenpläne und Klassifizierungen von Stripe werden von Stripe festgelegt, können je nach Zahlungsmethode, Kartenregion und Kontoeinrichtung variieren und sich im Laufe der Zeit ändern.",
+    "vat_registration": "Die USt-Registrierung auf der Plattform ist nur für Anbieter in der EU verfügbar, und EU-USt-IdNr. können validiert werden. Anbieter bleiben für die steuerliche Compliance sowie für die Ausstellung erforderlicher Rechnungen oder Belege verantwortlich.",
+    "p2": "Steuern, einschließlich Mehrwertsteuer, werden nach den anwendbaren Vorschriften und dem Steuerstatus des Anbieters behandelt. Anbieter sind für die Ausstellung etwaig erforderlicher Rechnungen oder Belege und für die Einhaltung ihrer steuerlichen Pflichten verantwortlich.",
+    "p3": "Erstattungen und Streitfälle. Über die Plattform abgewickelte Zahlungen können vom Anbieter oder von Infinisimo im Namen des Anbieters im Rahmen von plattformbezogenen Support-Abläufen oder der Streitfallbearbeitung erstattet werden. Erstattungen werden zulasten des Guthabens des verbundenen Zahlungskontos des Anbieters vorgenommen. Von der Plattform erhobene Application Fees werden nur erstattet, wenn sie ausdrücklich rückgängig gemacht werden. Stripe-Verarbeitungsgebühren können nach den Richtlinien von Stripe nicht erstattungsfähig sein. Anbieter bleiben für Erstattungen, Streitfälle und damit verbundene Zahlungsverpflichtungen im Zusammenhang mit ihren Leistungen verantwortlich."
+  },
+  "section6": {
+    "title": "6. Unzulässige Nutzung",
+    "item1": "Betrug, Missbrauch von Chargebacks oder Falschdarstellung.",
+    "item2": "Belästigung, Drohungen oder rechtswidriges Verhalten.",
+    "item3": "Versuche, Plattformzahlungen zu umgehen, soweit diese anwendbar sind."
+  },
+  "section7": {
+    "title": "7. Support",
+    "p1": "Bei plattformbezogenen Problemen wenden Sie sich an den Infinisimo-Support. Bei Problemen mit der Leistungserbringung ist grundsätzlich der Anbieter der primäre Ansprechpartner, außer soweit plattformbezogene Streitfallbearbeitung Anwendung findet."
+  }
+}

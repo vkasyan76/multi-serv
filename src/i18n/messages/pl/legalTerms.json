@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "title": "Warunki korzystania z Infinisimo",
+    "version_label": "Wersja",
+    "effective_date_label": "Data wejścia w życie"
+  },
+  "section1": {
+    "title": "1. Rola platformy",
+    "p1": "Infinisimo działa jako pośredniczący marketplace. Udostępniamy platformę techniczną, która umożliwia klientom wyszukiwanie dostawców usług, składanie rezerwacji oraz, w stosownych przypadkach, dokonywanie płatności na rzecz dostawców. Usługi są wykonywane przez niezależnych dostawców, a nie przez Infinisimo.",
+    "p2": "Dostawcy ponoszą wyłączną odpowiedzialność za jakość, legalność, bezpieczeństwo i wykonanie oferowanych i świadczonych przez siebie usług. Infinisimo nie gwarantuje rezultatów usługi i nie jest stroną umowy o świadczenie usług, chyba że wymagają tego bezwzględnie obowiązujące przepisy prawa konsumenckiego."
+  },
+  "section2": {
+    "title": "2. Cykl rezerwacji",
+    "p1": "Rezerwacje służą do zarezerwowania terminu u dostawcy. Platforma używa następujących pojęć cyklu życia:",
+    "service_status_label": "Status usługi (wartości systemowe):",
+    "payment_status_label": "Status płatności (wartości systemowe):"
+  },
+  "section3": {
+    "title": "3. Anulowanie",
+    "p1": "Anulowanie może być dozwolone wyłącznie w obowiązującym oknie anulowania. Domyślnie platforma stosuje:",
+    "cancellation_window": "Okno anulowania: {hours} godzin przed rozpoczęciem rezerwacji (domyślnie).",
+    "p2": "Szczegółowe warunki anulowania mogą również zależeć od dostawcy, kategorii usługi oraz bezwzględnie obowiązujących przepisów prawa konsumenckiego."
+  },
+  "section4": {
+    "title": "4. Potwierdzenia, spory i terminy",
+    "p1": "Platforma może stosować standardowe okna działania w celu obsługi przypomnień, działań operacyjnych następczych i rozpatrywania sporów. O ile wyraźnie nie wskazano inaczej dla konkretnego procesu, okna te same w sobie nie powodują automatycznej akceptacji, automatycznego dowodu wykonania usługi ani automatycznego zrzeczenia się praw:",
+    "service_action_window": "Okno działania dotyczące usługi: klienci powinni potwierdzić wykonanie usługi w ciągu {serviceActionDays} dni od momentu oznaczenia usługi przez dostawcę jako zakończonej. Jeżeli klient uważa, że usługa nie została wykonana zgodnie z ustaleniami, powinien niezwłocznie skontaktować się z dostawcą i może również skontaktować się z pomocą techniczną Infinisimo w sprawach związanych z platformą.",
+    "payment_window": "Okno płatności: gdy faktura zostanie wystawiona i stanie się wymagalna zgodnie z właściwym przepływem rezerwacji, klient powinien zapłacić w ciągu {paymentDays} dni lub skontaktować się z pomocą techniczną, jeśli wystąpi problem.",
+    "p2": "Samo powiadomienie dostawcy o zakończeniu nie stanowi dowodu wykonania usługi. Brak działania po stronie klienta nie oznacza automatycznie akceptacji, chyba że wyraźnie wskazano to dla konkretnego procesu.",
+    "p3": "Jeżeli klient lub dostawca zgłosi spór albo problem dotyczący usługi, platforma może zażądać informacji od obu stron i zastosować platformowe procesy wsparcia. Dostawcy i klienci pozostają zobowiązani do współpracy w dobrej wierze."
+  },
+  "section5": {
+    "title": "5. Płatności i prowizja platformy",
+    "p1": "Jeżeli platforma obsługuje płatności, płatności są przetwarzane na rzecz dostawcy. Platforma może pobierać prowizję oraz inne opłaty za udostępnienie infrastruktury marketplace i płatniczej.",
+    "customer_fee_policy": "Zasady opłat dla klientów: klienci płacą łączną kwotę rezerwacji widoczną podczas płatności, w tym wszelkie należne podatki. Infinisimo obecnie nie dolicza odrębnej opłaty platformowej dla klienta, chyba że zostanie ona wyraźnie pokazana przed płatnością.",
+    "commission_rate": "Domyślna stawka prowizji platformy: {commissionPercent}% (wynikająca z {commissionBps} punktów bazowych). Promocyjne, kampanijne lub indywidualnie uzgodnione stawki prowizji mogą mieć zastosowanie do kwalifikujących się dostawców lub transakcji, zgodnie z odrębną komunikacją i odzwierciedleniem podczas płatności lub przy tworzeniu faktury.",
+    "provider_fee_policy": "Zasady opłat dla dostawców: dostawcy upoważniają Infinisimo i Stripe do pobrania odpowiedniej prowizji platformy oraz opłat za przetwarzanie Stripe z płatności przetwarzanych przez platformę. W Stripe mogą one być widoczne jako application fee (opłata platformowa) oraz opłaty za przetwarzanie Stripe.",
+    "referral_policy": "Kampanie oparte na poleceniach mogą wymagać danych atrybucji polecenia w celu ustalenia uprawnienia.",
+    "eur_only": "Płatności platformowe są obecnie obsługiwane wyłącznie w EUR. Dostępność płatności, obsługiwane metody płatności i obsługa walut mogą zależeć od konfiguracji połączonego konta płatniczego dostawcy. Jeżeli konto dostawcy nie obsługuje EUR, płatności platformowe mogą nie być dla tego dostawcy dostępne.",
+    "stripe_enabled": "Płatności platformowe są przetwarzane przez Stripe, gdy ta opcja jest włączona.",
+    "payment_handling": "Obsługa płatności i przekierowania: etap płatności jest hostowany przez Stripe Checkout, gdy ta opcja jest włączona. Tabele opłat i klasyfikacje Stripe są ustalane przez Stripe i mogą się różnić w zależności od metody płatności, regionu karty i konfiguracji konta, a także mogą się zmieniać w czasie.",
+    "vat_registration": "Rejestracja VAT na platformie jest dostępna wyłącznie dla dostawców z UE, a numery VAT UE mogą podlegać weryfikacji. Dostawcy pozostają odpowiedzialni za zgodność podatkową oraz wystawianie wymaganych faktur lub paragonów.",
+    "p2": "Podatki, w tym VAT, są rozliczane zgodnie z właściwymi przepisami i statusem podatkowym dostawcy. Dostawcy są odpowiedzialni za wystawianie wszelkich wymaganych faktur lub paragonów oraz za przestrzeganie swoich obowiązków podatkowych.",
+    "p3": "Zwroty i spory. Płatności przetwarzane przez platformę mogą zostać zwrócone przez dostawcę lub przez Infinisimo w imieniu dostawcy w ramach platformowych procesów wsparcia lub obsługi sporów. Zwroty są realizowane z salda połączonego konta płatniczego dostawcy. Opłaty application fee pobierane przez platformę są zwracane wyłącznie wtedy, gdy zostaną wyraźnie cofnięte. Opłaty za przetwarzanie Stripe mogą być bezzwrotne zgodnie z politykami Stripe. Dostawcy pozostają odpowiedzialni za zwroty, spory i związane z nimi zobowiązania płatnicze dotyczące ich usług."
+  },
+  "section6": {
+    "title": "6. Zakazane użycie",
+    "item1": "Oszustwo, nadużywanie chargebacków lub wprowadzanie w błąd.",
+    "item2": "Nękanie, groźby lub bezprawne działania.",
+    "item3": "Próby omijania płatności platformowych, gdy mają one zastosowanie."
+  },
+  "section7": {
+    "title": "7. Wsparcie",
+    "p1": "W sprawach dotyczących platformy należy kontaktować się ze wsparciem Infinisimo. W sprawach dotyczących wykonania usługi podstawową stroną kontaktu jest dostawca, chyba że zastosowanie ma obsługa sporów prowadzona przez platformę."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "title": "Infinisimo Terms of Use",
+    "version_label": "Version",
+    "effective_date_label": "Effective date"
+  },
+  "section1": {
+    "title": "1. Role of the Platform",
+    "p1": "Infinisimo operates as an intermediary marketplace. We provide the technical platform that enables customers to discover service providers, request bookings, and, where applicable, pay providers. Services are performed by independent providers, not by Infinisimo.",
+    "p2": "Providers are solely responsible for the quality, legality, safety, and performance of the services they offer and deliver. Infinisimo does not guarantee service outcomes and is not a party to the service contract except where mandatory consumer law requires."
+  },
+  "section2": {
+    "title": "2. Booking Lifecycle",
+    "p1": "Bookings reserve a time slot with a provider. The platform uses the following lifecycle concepts:",
+    "service_status_label": "Service status (system values):",
+    "payment_status_label": "Payment status (system values):"
+  },
+  "section3": {
+    "title": "3. Cancellations",
+    "p1": "Cancellations may be allowed only within the applicable cancellation window. By default, the platform uses:",
+    "cancellation_window": "Cancellation window: {hours} hours before the booking start time (default).",
+    "p2": "Specific cancellation terms may also depend on the provider, the service category, and any mandatory consumer law."
+  },
+  "section4": {
+    "title": "4. Confirmations, Disputes, and Deadlines",
+    "p1": "The platform may use standard action windows to support reminders, operational follow-up, and dispute handling. Unless explicitly stated for a specific process, these windows do not by themselves create automatic acceptance, automatic proof of service delivery, or automatic waiver of rights:",
+    "service_action_window": "Service action window: customers should confirm completion within {serviceActionDays} days after the provider marks the service as completed. If the customer believes the service was not completed as agreed, the customer should promptly contact the provider and may also contact Infinisimo support for platform-related assistance.",
+    "payment_window": "Payment window: where an invoice is issued and becomes payable under the applicable booking flow, the customer should pay within {paymentDays} days or contact support if there is an issue.",
+    "p2": "A provider's completion notice does not by itself constitute proof of service delivery. Customer inactivity does not automatically constitute acceptance unless explicitly stated for a specific process.",
+    "p3": "If a customer or provider reports a dispute or service issue, the platform may request information from both parties and apply platform support processes. Providers and customers remain responsible for cooperating in good faith."
+  },
+  "section5": {
+    "title": "5. Payments and Platform Fee",
+    "p1": "Where the platform supports payments, payments are processed to the provider. The platform may charge a commission and/or fees for providing marketplace and payment infrastructure.",
+    "customer_fee_policy": "Customer fee policy: customers pay the booking total shown at payment, including any applicable taxes. Infinisimo does not add a separate customer-facing platform fee at this time unless explicitly shown before payment.",
+    "commission_rate": "Default platform commission rate: {commissionPercent}% (derived from {commissionBps} bps). Promotional, campaign-specific, or negotiated commission rates may apply to eligible providers or transactions as separately communicated and reflected during payment or invoice creation.",
+    "provider_fee_policy": "Provider fee policy: providers authorize Infinisimo and Stripe to collect applicable platform commission and Stripe processing fees from platform-processed payments. In Stripe, these can appear as an application fee (platform fee) and Stripe processing fees.",
+    "referral_policy": "Referral-based campaigns may require referral attribution data to determine eligibility.",
+    "eur_only": "Platform payments are currently supported in EUR only. Payment availability, supported payment methods, and currency support may depend on the provider's connected payment account setup. If EUR is not supported for a provider's account, platform payments may be unavailable for that provider.",
+    "stripe_enabled": "Platform payments are processed via Stripe where enabled.",
+    "payment_handling": "Payment handling and redirects: the payment step is hosted by Stripe Checkout where enabled. Stripe fee schedules and classifications are set by Stripe and may vary by payment method, card region, and account setup, and may change over time.",
+    "vat_registration": "VAT registration on the platform is available for EU providers only, and EU VAT IDs may be validated. Providers remain responsible for tax compliance and issuing required invoices or receipts.",
+    "p2": "Taxes, including VAT, are handled according to applicable rules and the provider's tax status. Providers are responsible for issuing any required invoices or receipts and complying with tax obligations.",
+    "p3": "Refunds and disputes. Payments processed through the platform may be refunded by the provider or by Infinisimo on the provider's behalf as part of platform support processes or dispute handling. Refunds are issued against the provider's connected payment account balance. Application fees charged by the platform are refunded only if explicitly reversed. Stripe processing fees may be non-refundable according to Stripe's policies. Providers remain responsible for refunds, disputes, and related payment obligations associated with their services."
+  },
+  "section6": {
+    "title": "6. Prohibited Use",
+    "item1": "Fraud, chargeback abuse, or misrepresentation.",
+    "item2": "Harassment, threats, or unlawful conduct.",
+    "item3": "Attempts to bypass platform payments where applicable."
+  },
+  "section7": {
+    "title": "7. Support",
+    "p1": "For platform-related issues, contact Infinisimo support. For service execution issues, the primary counterpart is the provider, except where platform dispute handling applies."
+  }
+}

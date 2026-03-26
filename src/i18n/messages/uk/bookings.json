@@ -36,6 +36,11 @@
     "accepted": "Підтверджено",
     "disputed": "Спірно"
   },
+  "payment_status": {
+    "unpaid": "Не оплачено",
+    "pending": "Очікується",
+    "paid": "Оплачено"
+  },
   "tooltip": {
     "available": "Доступно - {date}",
     "status": "{label} - {date}"

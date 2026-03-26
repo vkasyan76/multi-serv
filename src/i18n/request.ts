@@ -120,6 +120,18 @@ const REVIEWS_LOADERS: Partial<Record<AppLang, Loader>> = {
   uk: async () => (await import("./messages/uk/reviews.json")).default,
 };
 
+const LEGAL_TERMS_LOADERS: Partial<Record<AppLang, Loader>> = {
+  en: async () => (await import("./messages/en/legalTerms.json")).default,
+  de: async () => (await import("./messages/de/legalTerms.json")).default,
+  fr: async () => (await import("./messages/fr/legalTerms.json")).default,
+  it: async () => (await import("./messages/it/legalTerms.json")).default,
+  es: async () => (await import("./messages/es/legalTerms.json")).default,
+  pt: async () => (await import("./messages/pt/legalTerms.json")).default,
+  pl: async () => (await import("./messages/pl/legalTerms.json")).default,
+  ro: async () => (await import("./messages/ro/legalTerms.json")).default,
+  uk: async () => (await import("./messages/uk/legalTerms.json")).default,
+};
+
 function isPlainObject(value: unknown): value is MessageTree {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -183,6 +195,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     dashboard,
     orders,
     reviews,
+    legalTerms,
   ] = await Promise.all([
     loadNamespace(appLang, COMMON_LOADERS),
     loadNamespace(appLang, BOOKINGS_LOADERS),
@@ -193,6 +206,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     loadNamespace(appLang, DASHBOARD_LOADERS),
     loadNamespace(appLang, ORDERS_LOADERS),
     loadNamespace(appLang, REVIEWS_LOADERS),
+    loadNamespace(appLang, LEGAL_TERMS_LOADERS),
   ]);
 
   return {
@@ -208,6 +222,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       dashboard,
       orders,
       reviews,
+      legalTerms,
     },
   };
 });

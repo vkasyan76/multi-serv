@@ -25,6 +25,7 @@ export const REQUIRED_NAMESPACES = [
   "dashboard",
   "orders",
   "reviews",
+  "legalTerms",
 ] as const;
 
 export type RequiredNamespace = (typeof REQUIRED_NAMESPACES)[number];

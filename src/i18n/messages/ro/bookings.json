@@ -36,6 +36,11 @@
     "accepted": "Acceptat",
     "disputed": "Contestat"
   },
+  "payment_status": {
+    "unpaid": "Neplătit",
+    "pending": "În așteptare",
+    "paid": "Plătit"
+  },
   "tooltip": {
     "available": "Disponibil - {date}",
     "status": "{label} - {date}"

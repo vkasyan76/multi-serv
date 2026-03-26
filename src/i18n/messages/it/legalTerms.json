@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "title": "Termini di utilizzo di Infinisimo",
+    "version_label": "Versione",
+    "effective_date_label": "Data di entrata in vigore"
+  },
+  "section1": {
+    "title": "1. Ruolo della piattaforma",
+    "p1": "Infinisimo opera come marketplace intermediario. Forniamo la piattaforma tecnica che consente ai clienti di trovare fornitori di servizi, richiedere prenotazioni e, ove applicabile, pagare i fornitori. I servizi sono svolti da fornitori indipendenti, non da Infinisimo.",
+    "p2": "I fornitori sono gli unici responsabili della qualità, della liceità, della sicurezza e dell'esecuzione dei servizi che offrono e prestano. Infinisimo non garantisce i risultati del servizio e non è parte del contratto di servizio, salvo ove richiesto dalla normativa imperativa a tutela dei consumatori."
+  },
+  "section2": {
+    "title": "2. Ciclo della prenotazione",
+    "p1": "Le prenotazioni riservano una fascia oraria presso un fornitore. La piattaforma utilizza i seguenti concetti di ciclo di vita:",
+    "service_status_label": "Stato del servizio (valori di sistema):",
+    "payment_status_label": "Stato del pagamento (valori di sistema):"
+  },
+  "section3": {
+    "title": "3. Cancellazioni",
+    "p1": "Le cancellazioni possono essere consentite solo entro la finestra di cancellazione applicabile. Per impostazione predefinita, la piattaforma utilizza:",
+    "cancellation_window": "Finestra di cancellazione: {hours} ore prima dell'orario di inizio della prenotazione (predefinita).",
+    "p2": "Le condizioni specifiche di cancellazione possono inoltre dipendere dal fornitore, dalla categoria del servizio e da eventuali norme imperative a tutela dei consumatori."
+  },
+  "section4": {
+    "title": "4. Conferme, contestazioni e termini",
+    "p1": "La piattaforma può utilizzare finestre operative standard per supportare promemoria, follow-up operativo e gestione delle contestazioni. Salvo ove espressamente indicato per uno specifico processo, tali finestre non determinano di per sé accettazione automatica, prova automatica dell'erogazione del servizio o rinuncia automatica a diritti:",
+    "service_action_window": "Finestra operativa del servizio: i clienti devono confermare il completamento entro {serviceActionDays} giorni da quando il fornitore contrassegna il servizio come completato. Se il cliente ritiene che il servizio non sia stato eseguito come concordato, deve contattare tempestivamente il fornitore e può anche contattare il supporto Infinisimo per assistenza relativa alla piattaforma.",
+    "payment_window": "Finestra di pagamento: quando viene emessa una fattura e questa diventa esigibile secondo il flusso di prenotazione applicabile, il cliente deve pagare entro {paymentDays} giorni oppure contattare il supporto in caso di problema.",
+    "p2": "La comunicazione di completamento da parte del fornitore non costituisce di per sé prova dell'erogazione del servizio. L'inattività del cliente non costituisce automaticamente accettazione, salvo ove espressamente previsto per uno specifico processo.",
+    "p3": "Se un cliente o un fornitore segnala una contestazione o un problema relativo al servizio, la piattaforma può richiedere informazioni a entrambe le parti e applicare processi di supporto della piattaforma. Fornitori e clienti restano responsabili di cooperare in buona fede."
+  },
+  "section5": {
+    "title": "5. Pagamenti e commissione della piattaforma",
+    "p1": "Quando la piattaforma supporta i pagamenti, i pagamenti vengono elaborati a favore del fornitore. La piattaforma può addebitare una commissione e altre eventuali tariffe per la fornitura dell'infrastruttura di marketplace e di pagamento.",
+    "customer_fee_policy": "Politica dei costi per i clienti: i clienti pagano il totale della prenotazione mostrato durante il pagamento, incluse eventuali imposte applicabili. Infinisimo attualmente non aggiunge una commissione di piattaforma separata a carico del cliente, salvo che ciò sia esplicitamente indicato prima del pagamento.",
+    "commission_rate": "Aliquota standard di commissione della piattaforma: {commissionPercent}% (derivata da {commissionBps} punti base). Aliquote promozionali, specifiche per campagna o negoziate possono applicarsi a fornitori o transazioni idonei, come separatamente comunicato e riflesso durante il pagamento o alla creazione della fattura.",
+    "provider_fee_policy": "Politica dei costi per i fornitori: i fornitori autorizzano Infinisimo e Stripe a riscuotere la commissione applicabile della piattaforma e le commissioni di elaborazione Stripe dai pagamenti elaborati tramite la piattaforma. In Stripe, queste possono apparire come una application fee (commissione della piattaforma) e come commissioni di elaborazione Stripe.",
+    "referral_policy": "Le campagne basate su referral possono richiedere dati di attribuzione del referral per determinare l'idoneità.",
+    "eur_only": "I pagamenti della piattaforma sono attualmente supportati solo in EUR. La disponibilità dei pagamenti, i metodi di pagamento supportati e il supporto valutario possono dipendere dalla configurazione del conto di pagamento collegato del fornitore. Se EUR non è supportato per il conto di un fornitore, i pagamenti della piattaforma potrebbero non essere disponibili per tale fornitore.",
+    "stripe_enabled": "I pagamenti della piattaforma sono elaborati tramite Stripe, ove abilitato.",
+    "payment_handling": "Gestione dei pagamenti e reindirizzamenti: la fase di pagamento è ospitata da Stripe Checkout, ove abilitato. I piani tariffari e le classificazioni di Stripe sono stabiliti da Stripe e possono variare in base al metodo di pagamento, alla regione della carta e alla configurazione del conto, oltre a poter cambiare nel tempo.",
+    "vat_registration": "La registrazione IVA sulla piattaforma è disponibile solo per i fornitori dell'UE e i numeri IVA UE possono essere verificati. I fornitori restano responsabili della conformità fiscale e dell'emissione delle fatture o ricevute richieste.",
+    "p2": "Le imposte, inclusa l'IVA, sono gestite secondo le norme applicabili e lo status fiscale del fornitore. I fornitori sono responsabili dell'emissione di eventuali fatture o ricevute richieste e del rispetto dei propri obblighi fiscali.",
+    "p3": "Rimborsi e contestazioni. I pagamenti elaborati tramite la piattaforma possono essere rimborsati dal fornitore o da Infinisimo per conto del fornitore nell'ambito di processi di supporto della piattaforma o di gestione delle contestazioni. I rimborsi vengono emessi a valere sul saldo del conto di pagamento collegato del fornitore. Le application fee addebitate dalla piattaforma sono rimborsate solo se espressamente stornate. Le commissioni di elaborazione Stripe potrebbero non essere rimborsabili secondo le politiche di Stripe. I fornitori restano responsabili di rimborsi, contestazioni e relativi obblighi di pagamento associati ai loro servizi."
+  },
+  "section6": {
+    "title": "6. Uso vietato",
+    "item1": "Frode, abuso di chargeback o falsa rappresentazione.",
+    "item2": "Molestie, minacce o condotta illecita.",
+    "item3": "Tentativi di aggirare i pagamenti della piattaforma, ove applicabili."
+  },
+  "section7": {
+    "title": "7. Supporto",
+    "p1": "Per questioni relative alla piattaforma, contattare il supporto Infinisimo. Per questioni relative all'esecuzione del servizio, il referente principale è il fornitore, salvo ove si applichi la gestione delle contestazioni della piattaforma."
+  }
+}
