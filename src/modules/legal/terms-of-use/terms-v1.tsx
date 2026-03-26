@@ -1,10 +1,8 @@
 import {
-  AUTO_CONFIRM_DAYS_DEFAULT,
   SERVICE_ACTION_DEADLINE_DAYS,
   PAYMENT_DEADLINE_DAYS,
   CANCELLATION_WINDOW_HOURS,
   COMMISSION_RATE_BPS_DEFAULT,
-  DISPUTE_WINDOW_DAYS_DEFAULT,
   SERVICE_STATUSES,
   BOOKING_PAYMENT_STATUSES,
 } from "@/constants";
@@ -93,31 +91,39 @@ export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
             4. Confirmations, Disputes, and Deadlines
           </h2>
           <p className="whitespace-pre-wrap">
-            The platform uses deadline defaults to keep bookings, confirmations,
-            payments, and disputes predictable:
+            The platform may use standard action windows to support reminders,
+            operational follow-up, and dispute handling. Unless explicitly
+            stated for a specific workflow, these windows do not by themselves
+            create automatic acceptance, automatic proof of service delivery,
+            or automatic waiver of rights:
           </p>
           <ul className="list-disc pl-6">
             <li>
-              Service action deadline (confirm or dispute):{" "}
-              {SERVICE_ACTION_DEADLINE_DAYS} days (default).
+              Service action window: customers should confirm completion within{" "}
+              {SERVICE_ACTION_DEADLINE_DAYS} days after the provider marks the
+              service as completed. If the customer believes the service was
+              not completed as agreed, the customer should promptly contact the
+              provider and may also contact Infinisimo support for
+              platform-related assistance.
             </li>
             <li>
-              Payment deadline (pay or dispute after confirmation):{" "}
-              {PAYMENT_DEADLINE_DAYS} days (default).
-            </li>
-            <li>
-              Auto-confirm after completion: {AUTO_CONFIRM_DAYS_DEFAULT} days
-              (default).
-            </li>
-            <li>
-              Dispute window after service completion:{" "}
-              {DISPUTE_WINDOW_DAYS_DEFAULT} days (default).
+              Payment window: where an invoice is issued and becomes payable
+              under the applicable booking flow, the customer should pay within{" "}
+              {PAYMENT_DEADLINE_DAYS} days or contact support if there is an
+              issue.
             </li>
           </ul>
           <p className="whitespace-pre-wrap">
-            If a dispute is raised, the platform may request information from
-            both parties and apply platform workflows. Providers and customers
-            remain responsible for cooperating in good faith.
+            A provider&apos;s completion notice does not by itself constitute proof
+            of service delivery. Customer inactivity does not automatically
+            constitute acceptance unless explicitly stated for a specific
+            workflow.
+          </p>
+          <p className="whitespace-pre-wrap">
+            If a customer or provider reports a dispute or service issue, the
+            platform may request information from both parties and apply
+            platform support workflows. Providers and customers remain
+            responsible for cooperating in good faith.
           </p>
         </section>
 
