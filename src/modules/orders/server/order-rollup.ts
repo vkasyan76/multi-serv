@@ -6,7 +6,6 @@ import { resolvePayloadUserId } from "./identity";
 import type { Booking, Order, Tenant, User } from "@/payload-types";
 import type { TRPCContext } from "@/trpc/init";
 import { DEFAULT_LIMIT } from "@/constants";
-import { sendDomainEmail } from "@/modules/email/events";
 import type { EmailDeliverability } from "@/modules/email/types";
 import { resolveOrderServiceLabels } from "./order-service-labels";
 
@@ -223,6 +222,13 @@ function mapTenantLifecycleItem(o: DocWithId<Order>): TenantLifecycleListItem {
     customerSnapshot: o.customerSnapshot,
     slots,
   };
+}
+
+async function sendOrderDomainEmail(
+  args: Parameters<typeof import("@/modules/email/events")["sendDomainEmail"]>[0],
+) {
+  const { sendDomainEmail } = await import("@/modules/email/events");
+  return sendDomainEmail(args);
 }
 
 async function applyLocalizedServiceLabels<T extends { slots: SlotLifecycleSlot[] }>(
@@ -750,7 +756,7 @@ export async function recomputeOrdersForBookingId(
       if (!customerUser?.email) continue;
       // Customer notification: service completed (confirm/dispute).
       try {
-        await sendDomainEmail({
+        await sendOrderDomainEmail({
           db: ctx.db,
           eventType: "order.completed.customer",
           entityType: "order",
@@ -793,7 +799,7 @@ export async function recomputeOrdersForBookingId(
       const tenantName = displayNameFromUser(tenantUser) ?? tenantNameRaw;
 
       try {
-        await sendDomainEmail({
+      await sendOrderDomainEmail({
           db: ctx.db,
           eventType: "order.accepted.tenant",
           entityType: "order",
@@ -835,7 +841,7 @@ export async function recomputeOrdersForBookingId(
       const tenantName = displayNameFromUser(tenantUser) ?? tenantNameRaw;
 
       try {
-        await sendDomainEmail({
+        await sendOrderDomainEmail({
           db: ctx.db,
           eventType: "order.disputed.tenant",
           entityType: "order",

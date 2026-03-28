@@ -3,14 +3,15 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import config from "@payload-config";
 import { getPayload } from "payload";
-import { auth } from "@clerk/nextjs/server";
+import type { auth as clerkAuthFn } from "@clerk/nextjs/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 
 import { headers as nextHeaders } from "next/headers";
 import { resolveAppLangFromHeaders } from "@/lib/i18n/request-app-lang";
 
 // ★ NEW: import the small helper (optional but keeps init.ts tidy)
-import { readBridgeUidFromRequest } from "./auth-utils";
+
+type ClerkAuthResult = Awaited<ReturnType<typeof clerkAuthFn>>;
 
 export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   // const BRIDGE_COOKIE = "inf_br";
@@ -31,9 +32,10 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   const appLang = resolveAppLangFromHeaders(headers);
 
   // keep whatever you already return in ctx (payload, headers, etc.)
-  let clerkAuth: Awaited<ReturnType<typeof auth>> | null = null;
+  let clerkAuth: ClerkAuthResult | null = null;
 
   try {
+    const { auth } = await import("@clerk/nextjs/server");
     clerkAuth = await auth(); // will throw if Clerk middleware wasn't hit
   } catch {
     if (process.env.NODE_ENV !== "production") {
@@ -45,6 +47,7 @@ export const createTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   }
 
   // ★ NEW (non-intrusive): use the helper instead of duplicating the logic:
+  const { readBridgeUidFromRequest } = await import("./auth-utils");
   const bridgedUid = await readBridgeUidFromRequest(req);
 
   const userId = clerkAuth?.userId ?? bridgedUid ?? null;

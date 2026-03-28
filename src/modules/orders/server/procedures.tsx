@@ -18,7 +18,6 @@ import {
   exportAdminSlotLifecycleRows as exportAdminSlotLifecycleRowsImpl,
   listAdminOrderCustomerOptions as listAdminOrderCustomerOptionsImpl,
 } from "./order-rollup";
-import { sendCanceledOrderEmailsBestEffort } from "./order-cancellation-emails";
 
 type DocWithId<T> = T & { id: string }; // Payload returns docs with an id
 
@@ -48,6 +47,14 @@ type CancelAttemptSnapshot = {
   canceledAt: string;
   canceledByRole: "customer" | "tenant";
   cancelReason: string | null;
+};
+
+type OrderModelLike = {
+  findOneAndUpdate: (
+    filter: Record<string, unknown>,
+    update: Record<string, unknown>,
+    options: Record<string, unknown>,
+  ) => Promise<unknown>;
 };
 
 function relId(
@@ -98,6 +105,33 @@ function cancelConflictMessage(
     default:
       return "orders.errors.cancel_not_allowed";
   }
+}
+
+function getOrdersModel(ctx: TRPCContext): OrderModelLike | null {
+  const dbRoot = ctx.db as unknown as {
+    db?: { collections?: Record<string, unknown> };
+    collections?: Record<string, unknown>;
+  };
+  const collections = dbRoot.db?.collections ?? dbRoot.collections ?? null;
+  if (!collections) return null;
+
+  const model = collections["orders"];
+  if (!model) return null;
+
+  if (
+    typeof (model as { findOneAndUpdate?: unknown }).findOneAndUpdate !==
+    "function"
+  ) {
+    return null;
+  }
+
+  return model as OrderModelLike;
+}
+
+function logCancelDebug(meta: Record<string, unknown>) {
+  if (process.env.DEBUG_ORDER_CANCEL !== "1") return;
+  if (process.env.NODE_ENV === "production") return;
+  console.log("[orders:cancel]", meta);
 }
 
 async function loadOrderForCancellation(
@@ -158,6 +192,43 @@ async function loadReleasableOrderSlots(
   >;
 }
 
+async function claimSlotOrderCancellation(
+  ctx: TRPCContext,
+  order: CancelableSlotOrder,
+  canceledAt: string,
+  canceledByRole: "customer" | "tenant",
+  cancelReason: string | undefined,
+): Promise<boolean> {
+  const ordersModel = getOrdersModel(ctx);
+  if (!ordersModel) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "orders.errors.cancel_not_allowed",
+    });
+  }
+
+  const updated = await ordersModel.findOneAndUpdate(
+    {
+      _id: order.id,
+      status: order.status,
+      canceledAt: order.canceledAt ?? null,
+      canceledByRole: order.canceledByRole ?? null,
+      cancelReason: order.cancelReason ?? null,
+    },
+    {
+      $set: {
+        status: "canceled",
+        canceledAt,
+        canceledByRole,
+        cancelReason: cancelReason ?? null,
+      },
+    },
+    { new: true },
+  );
+
+  return !!updated;
+}
+
 async function releaseCanceledOrderSlots(
   ctx: TRPCContext,
   slotIds: string[],
@@ -216,8 +287,7 @@ async function rollbackCanceledOrderState(
   releaseSnapshot: Array<DocWithId<Pick<Booking, "id" | "status" | "customer">>>,
   attempt: CancelAttemptSnapshot,
 ) {
-  // Best-effort compare-and-set rollback: only compensate if the order still
-  // reflects the canceled state written by this specific cancel attempt.
+  // Backup compensation for the winning cancel attempt only.
   const currentOrder = (await ctx.db.findByID({
     collection: "orders",
     id: order.id,
@@ -232,7 +302,15 @@ async function rollbackCanceledOrderState(
     currentOrder.canceledByRole === attempt.canceledByRole &&
     (currentOrder.cancelReason ?? null) === attempt.cancelReason;
 
-  if (!orderStillOwnedByAttempt) return;
+  if (!orderStillOwnedByAttempt) {
+    logCancelDebug({
+      orderId: order.id,
+      step: "rollback-skip-order-not-owned",
+      canceledAt: attempt.canceledAt,
+      canceledByRole: attempt.canceledByRole,
+    });
+    return;
+  }
 
   const currentBookings = await Promise.all(
     releaseSnapshot.map(async (booking) => {
@@ -256,7 +334,14 @@ async function rollbackCanceledOrderState(
       relId(current.customer) == null,
   );
 
-  if (!allBookingsStillReleased) return;
+  if (!allBookingsStillReleased) {
+    logCancelDebug({
+      orderId: order.id,
+      step: "rollback-skip-bookings-not-released",
+      bookingIds: currentBookings.map(({ snapshot }) => snapshot.id),
+    });
+    return;
+  }
 
   await Promise.all(
     currentBookings.map(({ snapshot }) =>
@@ -273,6 +358,12 @@ async function rollbackCanceledOrderState(
     ),
   );
 
+  logCancelDebug({
+    orderId: order.id,
+    step: "rollback-restored-bookings",
+    bookingIds: currentBookings.map(({ snapshot }) => snapshot.id),
+  });
+
   await ctx.db.update({
     collection: "orders",
     id: order.id,
@@ -284,6 +375,11 @@ async function rollbackCanceledOrderState(
     },
     overrideAccess: true,
     depth: 0,
+  });
+
+  logCancelDebug({
+    orderId: order.id,
+    step: "rollback-restored-order",
   });
 }
 
@@ -324,23 +420,73 @@ async function cancelSlotOrder(
     canceledByRole,
     cancelReason: cancelReason ?? null,
   };
+  const attemptId = `${canceledByRole}:${canceledAt}`;
 
-  await ctx.db.update({
-    collection: "orders",
-    id: order.id,
-    data: {
-      status: "canceled",
-      canceledAt,
-      canceledByRole,
-      cancelReason,
-    },
-    overrideAccess: true,
-    depth: 0,
+  logCancelDebug({
+    attemptId,
+    orderId: order.id,
+    step: "before-claim",
+    canceledByRole,
   });
 
+  const claimed = await claimSlotOrderCancellation(
+    ctx,
+    order,
+    canceledAt,
+    canceledByRole,
+    cancelReason,
+  );
+
+  logCancelDebug({
+    attemptId,
+    orderId: order.id,
+    step: "after-claim",
+    claimed,
+  });
+
+  if (!claimed) {
+    const latestOrder = await loadOrderForCancellation(ctx, order.id);
+    const latestCancelability = await getSlotOrderCancelability(
+      ctx.db,
+      latestOrder,
+    );
+
+    logCancelDebug({
+      attemptId,
+      orderId: order.id,
+      step: "throw-conflict",
+      latestStatus: latestOrder.status,
+      latestCanceledByRole: latestOrder.canceledByRole ?? null,
+      latestReason: latestCancelability.reason ?? null,
+    });
+
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: cancelConflictMessage(latestCancelability.reason),
+    });
+  }
+
   try {
+    logCancelDebug({
+      attemptId,
+      orderId: order.id,
+      step: "before-release",
+      slotIds: cancelability.slotIds,
+    });
     await releaseCanceledOrderSlots(ctx, cancelability.slotIds, orderUserId);
+    logCancelDebug({
+      attemptId,
+      orderId: order.id,
+      step: "after-release",
+    });
   } catch (error) {
+    logCancelDebug({
+      attemptId,
+      orderId: order.id,
+      step: "release-failed",
+      error:
+        error instanceof Error ? error.message : "unknown_release_error",
+    });
     // Best-effort compensation keeps retries possible when slot release fails.
     try {
       await rollbackCanceledOrderState(ctx, order, releaseSnapshot, attempt);
@@ -385,6 +531,18 @@ async function requireSuperAdmin(ctx: TRPCContext): Promise<void> {
   }
 }
 
+async function sendCanceledOrderEmails(params: {
+  ctx: TRPCContext;
+  orderId: string;
+  canceledByRole: "customer" | "tenant";
+}) {
+  if (process.env.SKIP_ORDER_EMAILS === "1") return;
+  const { sendCanceledOrderEmailsBestEffort } = await import(
+    "./order-cancellation-emails"
+  );
+  await sendCanceledOrderEmailsBestEffort(params);
+}
+
 export const ordersRouter = createTRPCRouter({
   customerCancelSlotOrder: baseProcedure
     .input(
@@ -405,7 +563,7 @@ export const ordersRouter = createTRPCRouter({
       }
 
       const result = await cancelSlotOrder(ctx, order, "customer", input.reason);
-      await sendCanceledOrderEmailsBestEffort({
+      await sendCanceledOrderEmails({
         ctx,
         orderId: result.orderId,
         canceledByRole: "customer",
@@ -429,7 +587,7 @@ export const ordersRouter = createTRPCRouter({
       await assertTenantOwnsOrder(ctx, payloadUserId, order);
 
       const result = await cancelSlotOrder(ctx, order, "tenant", input.reason);
-      await sendCanceledOrderEmailsBestEffort({
+      await sendCanceledOrderEmails({
         ctx,
         orderId: result.orderId,
         canceledByRole: "tenant",
