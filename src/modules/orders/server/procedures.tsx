@@ -44,6 +44,12 @@ type CancelableSlotOrder = DocWithId<
   >
 >;
 
+type CancelAttemptSnapshot = {
+  canceledAt: string;
+  canceledByRole: "customer" | "tenant";
+  cancelReason: string | null;
+};
+
 function relId(
   value: string | { id?: string | null } | null | undefined,
 ): string | null {
@@ -208,7 +214,65 @@ async function rollbackCanceledOrderState(
   ctx: TRPCContext,
   order: CancelableSlotOrder,
   releaseSnapshot: Array<DocWithId<Pick<Booking, "id" | "status" | "customer">>>,
+  attempt: CancelAttemptSnapshot,
 ) {
+  // Best-effort compare-and-set rollback: only compensate if the order still
+  // reflects the canceled state written by this specific cancel attempt.
+  const currentOrder = (await ctx.db.findByID({
+    collection: "orders",
+    id: order.id,
+    depth: 0,
+    overrideAccess: true,
+  })) as CancelableSlotOrder | null;
+
+  const orderStillOwnedByAttempt =
+    !!currentOrder &&
+    currentOrder.status === "canceled" &&
+    currentOrder.canceledAt === attempt.canceledAt &&
+    currentOrder.canceledByRole === attempt.canceledByRole &&
+    (currentOrder.cancelReason ?? null) === attempt.cancelReason;
+
+  if (!orderStillOwnedByAttempt) return;
+
+  const currentBookings = await Promise.all(
+    releaseSnapshot.map(async (booking) => {
+      const current = (await ctx.db.findByID({
+        collection: "bookings",
+        id: booking.id,
+        depth: 0,
+        overrideAccess: true,
+      })) as DocWithId<Pick<Booking, "id" | "status" | "customer">> | null;
+
+      return { snapshot: booking, current };
+    }),
+  );
+
+  // Abort rollback if any slot no longer matches the released shape. This keeps
+  // compensation all-or-nothing at the app level and avoids mixed state.
+  const allBookingsStillReleased = currentBookings.every(
+    ({ current }) =>
+      !!current &&
+      current.status === "available" &&
+      relId(current.customer) == null,
+  );
+
+  if (!allBookingsStillReleased) return;
+
+  await Promise.all(
+    currentBookings.map(({ snapshot }) =>
+      ctx.db.update({
+        collection: "bookings",
+        id: snapshot.id,
+        data: {
+          status: snapshot.status,
+          customer: relId(snapshot.customer),
+        },
+        overrideAccess: true,
+        depth: 0,
+      }),
+    ),
+  );
+
   await ctx.db.update({
     collection: "orders",
     id: order.id,
@@ -221,21 +285,6 @@ async function rollbackCanceledOrderState(
     overrideAccess: true,
     depth: 0,
   });
-
-  await Promise.all(
-    releaseSnapshot.map((booking) =>
-      ctx.db.update({
-        collection: "bookings",
-        id: booking.id,
-        data: {
-          status: booking.status,
-          customer: relId(booking.customer),
-        },
-        overrideAccess: true,
-        depth: 0,
-      }),
-    ),
-  );
 }
 
 async function cancelSlotOrder(
@@ -270,6 +319,11 @@ async function cancelSlotOrder(
 
   const canceledAt = new Date().toISOString();
   const cancelReason = reason?.trim() ? reason.trim() : undefined;
+  const attempt: CancelAttemptSnapshot = {
+    canceledAt,
+    canceledByRole,
+    cancelReason: cancelReason ?? null,
+  };
 
   await ctx.db.update({
     collection: "orders",
@@ -289,7 +343,7 @@ async function cancelSlotOrder(
   } catch (error) {
     // Best-effort compensation keeps retries possible when slot release fails.
     try {
-      await rollbackCanceledOrderState(ctx, order, releaseSnapshot);
+      await rollbackCanceledOrderState(ctx, order, releaseSnapshot, attempt);
     } catch (rollbackErr) {
       if (process.env.NODE_ENV !== "production") {
         console.error(
@@ -297,6 +351,7 @@ async function cancelSlotOrder(
           {
             orderId: order.id,
             releaseSnapshotIds: releaseSnapshot.map((booking) => booking.id),
+            canceledAt,
           },
           rollbackErr,
         );

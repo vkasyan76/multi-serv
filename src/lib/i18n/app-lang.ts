@@ -13,6 +13,9 @@ export const SUPPORTED_APP_LANGS = [
 
 export type AppLang = (typeof SUPPORTED_APP_LANGS)[number];
 
+// Current rollout: all supported app languages are launched.
+export const LAUNCHED_APP_LANGS = SUPPORTED_APP_LANGS;
+
 export const DEFAULT_APP_LANG: AppLang = "en";
 
 export const SUPPORTED_LANGUAGES: Array<{ code: AppLang; label: string }> = [
