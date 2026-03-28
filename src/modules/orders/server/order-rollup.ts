@@ -798,8 +798,9 @@ export async function recomputeOrdersForBookingId(
 
       const tenantName = displayNameFromUser(tenantUser) ?? tenantNameRaw;
 
+      // Keep the email send inside this try so delivery failures stay best-effort.
       try {
-      await sendOrderDomainEmail({
+        await sendOrderDomainEmail({
           db: ctx.db,
           eventType: "order.accepted.tenant",
           entityType: "order",

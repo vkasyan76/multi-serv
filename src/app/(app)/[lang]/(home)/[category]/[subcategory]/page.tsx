@@ -38,12 +38,13 @@ const Page = async ({ params }: Props) => {
       },
     }
   );
-  // Match the client-side locale-scoped key so localized tenant docs hydrate correctly.
+  // Await server prefetch so dehydrate(...) includes the localized tenant query
+  // data instead of racing ahead with an empty hydration snapshot.
   const queryKey = [
     base.queryKey[0],
     { ...(base.queryKey[1] ?? {}), locale: appLang },
   ] as unknown as typeof base.queryKey;
-  void queryClient.prefetchInfiniteQuery({
+  await queryClient.prefetchInfiniteQuery({
     ...base,
     queryKey,
   });

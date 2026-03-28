@@ -59,6 +59,12 @@ Required env groups are defined in `README.md`:
 - Payload collections are admin-restricted by default; app logic often uses server-side `overrideAccess: true` with explicit guards.
 - Tenant isolation is enforced in server procedures through tenant membership checks.
 
+## Checkout UI Note
+
+- The active slot-order customer drawer is `src/modules/checkout/ui/slots-cart-drawer.tsx`.
+- Treat `src/modules/checkout/ui/cart-drawer.tsx` as legacy unless a task explicitly says otherwise.
+- For current slot-lifecycle booking/order UX, prefer tracing changes through `slots-cart-drawer.tsx` and the slot checkout flow instead of the legacy drawer.
+
 ## Admin Dashboard Status (Brief)
 
 - Phase 1 is implemented:

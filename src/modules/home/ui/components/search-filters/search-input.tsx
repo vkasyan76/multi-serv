@@ -42,9 +42,10 @@ export const SearchInput = ({ disabled }: Props) => {
   const hasOrdersQ = useQuery({
     ...trpc.orders.hasAnyMineSlotLifecycle.queryOptions(),
     enabled: isSignedIn && !!session.data?.user?.id,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
+    // This flag changes infrequently, so short-lived caching avoids redundant
+    // refetches while still refreshing within the same session.
+    staleTime: 30_000,
+    gcTime: 60_000,
     refetchOnWindowFocus: false,
   });
 

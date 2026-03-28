@@ -102,6 +102,7 @@ export function SlotsCartDrawer({
 
   const trpc = useTRPC();
   const qc = useQueryClient();
+  const hasOrdersQueryKey = trpc.orders.hasAnyMineSlotLifecycle.queryKey();
 
   const authReady = authState !== null;
   const hasUser = authState === true;
@@ -185,6 +186,13 @@ export function SlotsCartDrawer({
       },
     });
 
+  const markHasOrders = async () => {
+    // A successful slot-lifecycle order means the home Orders CTA can appear
+    // immediately while the server result is revalidated in the background.
+    qc.setQueryData(hasOrdersQueryKey, { hasAny: true });
+    await qc.invalidateQueries({ queryKey: hasOrdersQueryKey });
+  };
+
   const bookSlots = useMutation({
     ...trpc.bookings.bookSlots.mutationOptions(),
     onSuccess: async () => {
@@ -243,6 +251,7 @@ export function SlotsCartDrawer({
         throw new Error(tCheckout("errors.generic"));
       }
 
+      await markHasOrders();
       await invalidateBookings();
 
       if ("BroadcastChannel" in window && tenantSlug) {

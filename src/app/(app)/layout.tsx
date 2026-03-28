@@ -5,6 +5,7 @@ import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "sonner";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ClerkProvider } from "@clerk/nextjs";
+import { AuthCacheSync } from "@/modules/auth/ui/views/auth-cache-sync";
 import { ClerkUserSync } from "@/modules/auth/ui/views/clerk-user-sync";
 import GeoBootstrap from "@/components/geo-bootstrap";
 
@@ -79,6 +80,7 @@ export default async function RootLayout({
         <ClerkProvider>
           <NuqsAdapter>
             <TRPCReactProvider>
+              <AuthCacheSync />
               <ClerkUserSync />
               <GeoBootstrap />
               {children}
