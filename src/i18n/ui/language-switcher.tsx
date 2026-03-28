@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -62,9 +62,17 @@ export function LanguageSwitcher({
   );
 
   const currentLang = normalizeToSupported(routeLang);
+  const [pendingLang, setPendingLang] = useState<AppLang | null>(null);
+  const effectiveLang = pendingLang ?? currentLang;
   const currentLabel =
-    SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.label ??
-    currentLang;
+    SUPPORTED_LANGUAGES.find((l) => l.code === effectiveLang)?.label ??
+    effectiveLang;
+
+  useEffect(() => {
+    // Route locale stays authoritative; clear the optimistic selection once
+    // navigation catches up to the new locale.
+    setPendingLang(null);
+  }, [currentLang]);
 
   const persistLanguage = useMutation(
     trpc.auth.updateLanguagePreference.mutationOptions({
@@ -95,7 +103,11 @@ export function LanguageSwitcher({
 
   const onChange = (next: string) => {
     const newLang = normalizeToSupported(next);
-    if (newLang === currentLang) return;
+    if (newLang === effectiveLang) return;
+
+    // Update the trigger immediately so the old route locale does not linger
+    // in the switcher while the next localized route is loading.
+    setPendingLang(newLang);
 
     const nextPath = withLocalePrefix(restPathname, newLang);
     const query = searchParams?.toString() ?? "";
@@ -111,7 +123,7 @@ export function LanguageSwitcher({
   };
 
   return (
-    <Select value={currentLang} onValueChange={onChange}>
+    <Select value={effectiveLang} onValueChange={onChange}>
       <SelectTrigger
         className={className}
         aria-label={t("a11y.language_selector")}
@@ -119,7 +131,7 @@ export function LanguageSwitcher({
         <SelectValue>
           <span className="flex items-center gap-2">
             <ReactCountryFlag
-              countryCode={LANGUAGE_TO_COUNTRY[currentLang]}
+              countryCode={LANGUAGE_TO_COUNTRY[effectiveLang]}
               svg
               style={{ width: "1.2em", height: "1.2em" }}
             />
