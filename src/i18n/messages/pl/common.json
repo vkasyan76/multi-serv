@@ -10,14 +10,14 @@
     "profile": "Profil",
     "dashboard": "Panel",
     "dashboard_cta": "Panel",
-    "start_business": "Zostań usługodawcą",
+    "start_business": "Zostań wykonawcą",
     "start_business_cta": "Zostań pro",
     "admin_panel": "Panel administratora",
     "login": "Zaloguj się",
     "logout": "Wyloguj się",
     "menu": "Menu",
     "sr_dashboard_available": "Nawigacja zaktualizowana: przycisk Panel jest dostępny",
-    "sr_start_business_available": "Nawigacja zaktualizowana: przycisk Zostań usługodawcą jest dostępny"
+    "sr_start_business_available": "Nawigacja zaktualizowana: przycisk Zostań pro jest dostępny"
   },
   "a11y": {
     "language_selector": "Wybierz język"
@@ -69,13 +69,16 @@
       "line1": "Łączymy klientów z profesjonalistami.",
       "line2": "Twoje rozwiązanie jest tylko o jedno kliknięcie stąd."
     },
+    "search": {
+      "placeholder": "Szukaj po nazwie wykonawcy..."
+    },
     "cta": {
       "guest_text": "Zarejestruj się, aby zlokalizować swoje wyszukiwanie:",
       "register_button": "Zarejestruj się",
       "incomplete_profile_text": "Uzupełnij swój profil, aby lepiej znaleźć profesjonalistów w swojej okolicy:",
       "complete_profile_button": "Uzupełnij profil",
       "provider_intro": "Masz pomysł na biznes? Zarejestruj swoją usługę, aby pojawić się na tym radarze!",
-      "provider_button": "Zarejestruj się jako usługodawca"
+      "provider_button": "Zarejestruj się jako wykonawca"
     }
   }
 }

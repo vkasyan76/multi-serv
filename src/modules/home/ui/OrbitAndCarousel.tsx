@@ -44,6 +44,12 @@ export function OrbitAndCarousel({
   const trpc = useTRPC();
 
   const base = trpc.tenants.getMany.queryOptions(queryInput);
+  // `tenants.getMany` returns locale-sensitive fields from Payload, so the cache
+  // must be split by active route locale to avoid reusing stale docs after a language switch.
+  const queryKey = [
+    base.queryKey[0],
+    { ...(base.queryKey[1] ?? {}), locale: appLang },
+  ] as unknown as typeof base.queryKey;
 
   // ✅ Narrow away the `skipToken` branch so TS knows queryFn is a real function
   if (base.queryFn === skipToken) {
@@ -55,7 +61,7 @@ export function OrbitAndCarousel({
 
   // Suspense fetch; keep previous data on filter changes (no flicker)
   const { data } = useSuspenseQuery({
-    queryKey: base.queryKey, // from tRPC
+    queryKey,
     queryFn: base.queryFn!, // assert non-skip (we know we’re not skipping)
     staleTime: 30_000,
     refetchOnWindowFocus: false,

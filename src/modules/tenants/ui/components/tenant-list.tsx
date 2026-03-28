@@ -11,13 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
-import { useMemo } from "react";
 import { useParams } from "next/navigation";
 
 import {
   type AppLang,
   normalizeToSupported,
-  getInitialLanguage,
 } from "@/modules/profile/location-utils";
 
 interface Props {
@@ -50,14 +48,7 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
     enabled: isSignedIn, // Only fetch if user is signed in
   });
 
-  // use language of the profile or initial language (browser)
-  const appLang: AppLang = useMemo(() => {
-    const profileLang = userProfile?.language;
-    if (profileLang) {
-      return normalizeToSupported(profileLang);
-    }
-    return getInitialLanguage();
-  }, [userProfile?.language]);
+  const appLang: AppLang = normalizeToSupported(params?.lang);
 
   // Use infinite query for tenants with Load More functionality
   const base = trpc.tenants.getMany.infiniteQueryOptions(
@@ -80,11 +71,17 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
       },
     }
   );
+  // Keep list pages on a locale-scoped cache entry for localized tenant fields.
+  const queryKey = [
+    base.queryKey[0],
+    { ...(base.queryKey[1] ?? {}), locale: appLang },
+  ] as unknown as typeof base.queryKey;
 
   // Add cache controls (mirror tenant detail page)
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useSuspenseInfiniteQuery({
       ...base,
+      queryKey,
       staleTime: 0,
       gcTime: 0,
       refetchOnMount: "always",

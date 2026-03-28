@@ -2,8 +2,8 @@
   "page": {
     "write_title": "Scrivi una recensione per {tenantName}",
     "update_title": "Aggiorna la tua recensione per {tenantName}",
-    "open_provider_page": "Apri la pagina del fornitore",
-    "go_to_provider_page": "Vai alla pagina del fornitore",
+    "open_provider_page": "Apri la pagina del professionista",
+    "go_to_provider_page": "Vai alla pagina del professionista",
     "home": "Home"
   },
   "form": {
@@ -25,10 +25,10 @@
   "toasts": {
     "create_success": "La tua recensione è stata inviata.",
     "update_success": "La tua recensione è stata aggiornata.",
-    "purchase_required": "Puoi recensire solo fornitori che hai prenotato e pagato.",
+    "purchase_required": "Puoi recensire solo professionisti che hai prenotato e pagato.",
     "sign_in_required": "Accedi per scrivere una recensione.",
     "account_missing": "Non è stato possibile trovare il tuo account utente.",
-    "tenant_missing": "Non è stato possibile trovare il fornitore.",
+    "tenant_missing": "Non è stato possibile trovare il professionista.",
     "generic_error": "Si è verificato un errore durante il salvataggio della recensione. Riprova."
   },
   "a11y": {

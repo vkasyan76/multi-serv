@@ -69,6 +69,9 @@
       "line1": "Ligamos clientes a profissionais.",
       "line2": "A sua solução está apenas a um clique de distância."
     },
+    "search": {
+      "placeholder": "Pesquisar por nome do prestador..."
+    },
     "cta": {
       "guest_text": "Registe-se para localizar a sua pesquisa:",
       "register_button": "Registar-se",

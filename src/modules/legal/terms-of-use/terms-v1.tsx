@@ -6,7 +6,7 @@ import {
   SERVICE_STATUSES,
   BOOKING_PAYMENT_STATUSES,
 } from "@/constants";
-import { getTranslations } from "next-intl/server";
+import { useLocale, useTranslations } from "next-intl";
 import { TermsConsent } from "./terms-consent";
 
 export const TERMS_V1 = {
@@ -14,15 +14,17 @@ export const TERMS_V1 = {
   effectiveDate: "2025-12-25", // set this manually when you publish
 };
 
-export async function TermsV1({
-  hideConsent = false,
-}: {
-  hideConsent?: boolean;
-}) {
-  const t = await getTranslations("legalTerms");
-  const tOrders = await getTranslations("orders");
-  const tBookings = await getTranslations("bookings");
-  const commissionPercent = (COMMISSION_RATE_BPS_DEFAULT / 100).toFixed(2);
+export function TermsV1({ hideConsent = false }: { hideConsent?: boolean }) {
+  // Keep this component shared so the server page and client dialog render the
+  // same Terms body without crossing a client/server import boundary.
+  const t = useTranslations("legalTerms");
+  const tOrders = useTranslations("orders");
+  const tBookings = useTranslations("bookings");
+  const locale = useLocale();
+  const commissionPercent = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(COMMISSION_RATE_BPS_DEFAULT / 100);
 
   return (
     <article className="space-y-6">

@@ -69,6 +69,9 @@
       "line1": "Punem în legătură clienții cu profesioniști.",
       "line2": "Soluția ta este la doar un clic distanță."
     },
+    "search": {
+      "placeholder": "Caută după numele prestatorului..."
+    },
     "cta": {
       "guest_text": "Înregistrează-te pentru a-ți localiza căutarea:",
       "register_button": "Înregistrează-te",

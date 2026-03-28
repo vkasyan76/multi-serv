@@ -3,11 +3,11 @@
     "title": "I miei ordini",
     "cta_short": "Ordini",
     "flow_info_label": "Informazioni sul flusso dell'ordine",
-    "flow_info_tooltip": "Il fornitore contrassegna il servizio come completato, tu lo accetti o lo contesti e paghi quando viene richiesto il pagamento.",
+    "flow_info_tooltip": "Il professionista contrassegna il servizio come completato, tu lo accetti o lo contesti e paghi quando viene richiesto il pagamento.",
     "home": "Home"
   },
   "table": {
-    "provider": "Fornitore",
+    "provider": "Professionista",
     "customer": "Cliente",
     "date_range": "Intervallo di date",
     "status": "Stato",
@@ -45,7 +45,7 @@
   },
   "dialog": {
     "dispute_title": "Contestare questa fascia oraria?",
-    "dispute_body": "Puoi aggiungere un motivo facoltativo. Questo aiuta il fornitore a capire cosa deve essere corretto.",
+    "dispute_body": "Puoi aggiungere un motivo facoltativo. Questo aiuta il professionista a capire cosa deve essere corretto.",
     "dispute_reason": "Motivo (facoltativo)",
     "dispute_placeholder": "Spiega cosa è andato storto...",
     "cancel": "Annulla",
@@ -79,7 +79,7 @@
     "checkout_start_failed": "Impossibile avviare il pagamento.",
     "invoice_missing": "Nessuna fattura disponibile per questo ordine.",
     "invoice_open_failed": "Impossibile aprire la fattura.",
-    "review_slug_missing": "Slug del fornitore mancante per la recensione.",
+    "review_slug_missing": "Slug del professionista mancante per la recensione.",
     "invoice_finalize_failed": "Impossibile finalizzare la fattura. Riprova.",
     "order_canceled": "Ordine annullato.",
     "cancel_failed": "Impossibile annullare l'ordine.",

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { FallbackProps } from "react-error-boundary";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
@@ -18,7 +18,6 @@ import { OrbitAndCarousel } from "./OrbitAndCarousel";
 
 import {
   type AppLang,
-  getInitialLanguage,
   normalizeToSupported,
 } from "@/modules/profile/location-utils";
 
@@ -48,6 +47,7 @@ function RadarError({ resetErrorBoundary }: FallbackProps) {
 export default function HomeView() {
   const trpc = useTRPC();
   const tCommon = useTranslations("common");
+  const appLang: AppLang = normalizeToSupported(useLocale());
 
   // Auth + profile (do NOT block Suspense)
   const { data: session, isLoading: sessionLoading } = useQuery(
@@ -69,16 +69,10 @@ export default function HomeView() {
       : undefined;
 
   const [filters] = useTenantFilters();
+  // Route locale stays authoritative for the tenant data below; don't derive it
+  // from profile/browser state or the localized query cache can drift on switch.
 
   // Single source of truth for app language: profile.language → supported code → fallback
-  const appLang: AppLang = useMemo(() => {
-    const profileLang = profileQ.data?.language;
-    if (profileLang) {
-      return normalizeToSupported(profileLang);
-    }
-    return getInitialLanguage();
-  }, [profileQ.data?.language]);
-
   // Distance mode needs viewer coords; otherwise first mount would re-suspend when viewer arrives.
 
   const queryInput = useMemo(

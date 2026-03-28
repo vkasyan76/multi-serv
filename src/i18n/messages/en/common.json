@@ -69,6 +69,9 @@
       "line1": "We connect clients with professionals.",
       "line2": "Your solution is only a click away."
     },
+    "search": {
+      "placeholder": "Search by provider name..."
+    },
     "cta": {
       "guest_text": "Register to localize your search:",
       "register_button": "Register",

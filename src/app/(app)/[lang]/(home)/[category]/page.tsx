@@ -6,15 +6,17 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { getQueryClient, trpc } from "@/trpc/server";
 import { loadTenantFilters } from "@/modules/tenants/hooks/search-params";
 import { notFound } from "next/navigation";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 
 interface Props {
   // Next.js asynchronously provides params
-  params: Promise<{ category: string }>;
+  params: Promise<{ lang: string; category: string }>;
   searchParams: Promise<SearchParams>;
 }
 
 const Page = async ({ params, searchParams }: Props) => {
-  const { category } = await params;
+  const { lang, category } = await params;
+  const appLang = normalizeToSupported(lang);
 
   // validate category against your backend list (allow "all")
   const queryClient = getQueryClient();
@@ -40,23 +42,30 @@ const Page = async ({ params, searchParams }: Props) => {
   // No need to prefetch here for anonymous users
 
   // Prefetch tenants with infinite query options
-  void queryClient.prefetchInfiniteQuery(
-    trpc.tenants.getMany.infiniteQueryOptions(
-      {
-        ...filters, // no category/subcategory inside anymore
-        category: normalizedCategory, // prefer route param; null for "all"
-        subcategory: null,
-        userLat: null, // Will be filled by client
-        userLng: null, // Will be filled by client
-        limit: 8, // DEFAULT_LIMIT
+  const base = trpc.tenants.getMany.infiniteQueryOptions(
+    {
+      ...filters, // no category/subcategory inside anymore
+      category: normalizedCategory, // prefer route param; null for "all"
+      subcategory: null,
+      userLat: null, // Will be filled by client
+      userLng: null, // Will be filled by client
+      limit: 8, // DEFAULT_LIMIT
+    },
+    {
+      getNextPageParam: (lastPage) => {
+        return lastPage.hasNextPage ? lastPage.nextPage : undefined;
       },
-      {
-        getNextPageParam: (lastPage) => {
-          return lastPage.hasNextPage ? lastPage.nextPage : undefined;
-        },
-      }
-    )
+    }
   );
+  // Match the client-side locale-scoped key so localized tenant docs hydrate correctly.
+  const queryKey = [
+    base.queryKey[0],
+    { ...(base.queryKey[1] ?? {}), locale: appLang },
+  ] as unknown as typeof base.queryKey;
+  void queryClient.prefetchInfiniteQuery({
+    ...base,
+    queryKey,
+  });
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

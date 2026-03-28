@@ -69,6 +69,9 @@
       "line1": "Nous mettons en relation les clients avec des professionnels.",
       "line2": "Votre solution n'est qu'à un clic."
     },
+    "search": {
+      "placeholder": "Rechercher par nom du prestataire..."
+    },
     "cta": {
       "guest_text": "Inscrivez-vous pour localiser votre recherche :",
       "register_button": "S'inscrire",

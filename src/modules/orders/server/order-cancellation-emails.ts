@@ -3,6 +3,7 @@ import "server-only";
 import type { Payload } from "payload";
 import type { Booking, Order, Tenant, User } from "@/payload-types";
 import type { TRPCContext } from "@/trpc/init";
+import { withLocalePrefix } from "@/i18n/routing";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { sendDomainEmail } from "@/modules/email/events";
 import type { EmailDeliverability } from "@/modules/email/types";
@@ -36,6 +37,11 @@ function toAbsolute(path: string) {
     process.env.NEXT_PUBLIC_APP_URL ??
     "http://localhost:3000";
   return new URL(path, base).toString();
+}
+
+function toLocalizedAbsolute(path: string, locale: string) {
+  // Keep email CTA links on the same locale as the rendered email copy.
+  return toAbsolute(withLocalePrefix(path, normalizeToSupported(locale)));
 }
 
 function displayNameFromUser(
@@ -179,24 +185,21 @@ export async function sendCanceledOrderEmailsBestEffort(params: {
     const customerName =
       displayNameFromUser(customerUser) ??
       displayNameFromSnapshot(order.customerSnapshot);
-    const ordersUrl = toAbsolute("/orders");
-    const dashboardUrl = toAbsolute(
-      tenantSlug
-        ? `/dashboard?tenant=${encodeURIComponent(tenantSlug)}`
-        : "/dashboard",
-    );
 
     if (customerUser?.email) {
       const customerLocale = normalizeToSupported(
         customerUser.language ?? undefined,
       );
-      const customerServices = await extractLocalizedServiceNames({
-        payload: ctx.db,
-        slots,
-        locale: customerLocale,
-      });
+      const ordersUrl = toLocalizedAbsolute("/orders", customerLocale);
 
       try {
+        // Resolve localized labels inside the recipient try so one lookup
+        // failure does not block the other cancellation email.
+        const customerServices = await extractLocalizedServiceNames({
+          payload: ctx.db,
+          slots,
+          locale: customerLocale,
+        });
         await sendDomainEmail({
           db: ctx.db,
           eventType: "order.canceled.customer",
@@ -241,14 +244,20 @@ export async function sendCanceledOrderEmailsBestEffort(params: {
       tenantUser.language ?? undefined,
     );
     const tenantName = displayNameFromUser(tenantUser) ?? tenantNameRaw;
-    // Keep canceled-email service labels aligned with the created-email path.
-    const tenantServices = await extractLocalizedServiceNames({
-      payload: ctx.db,
-      slots,
-      locale: tenantLocale,
-    });
+    const dashboardUrl = toLocalizedAbsolute(
+      tenantSlug
+        ? `/dashboard?tenant=${encodeURIComponent(tenantSlug)}`
+        : "/dashboard",
+      tenantLocale,
+    );
 
     try {
+      // Keep canceled-email service labels aligned with the created-email path.
+      const tenantServices = await extractLocalizedServiceNames({
+        payload: ctx.db,
+        slots,
+        locale: tenantLocale,
+      });
       await sendDomainEmail({
         db: ctx.db,
         eventType: "order.canceled.tenant",

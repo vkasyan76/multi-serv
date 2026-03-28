@@ -5,22 +5,33 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import type { TenantWithRelations } from "@/modules/tenants/types";
 import Headline from "@/modules/home/ui/billboard/headline";
+import { useLocale } from "next-intl";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
 
 export default function Page() {
   const trpc = useTRPC();
+  const appLang = normalizeToSupported(useLocale());
+  const base = trpc.tenants.getMany.queryOptions({
+    sort: "distance",
+    limit: 36,
+    distanceFilterEnabled: false,
+    userLat: null,
+    userLng: null,
+  });
+  // This demo orbit reads the same localized tenant docs as the home page, so
+  // it needs the same locale-scoped cache separation.
+  const queryKey = [
+    base.queryKey[0],
+    { ...(base.queryKey[1] ?? {}), locale: appLang },
+  ] as unknown as typeof base.queryKey;
 
   // fetch tenants
   const { data } = useQuery({
-    ...trpc.tenants.getMany.queryOptions({
-      sort: "distance",
-      limit: 36,
-      distanceFilterEnabled: false,
-      userLat: null,
-      userLng: null,
-    }),
+    ...base,
+    queryKey,
     refetchOnWindowFocus: false,
   });
   const tenants = (data?.docs ?? []) as TenantWithRelations[];

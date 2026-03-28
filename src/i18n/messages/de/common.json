@@ -69,6 +69,9 @@
       "line1": "Wir verbinden Kunden mit Fachkräften.",
       "line2": "Ihre Lösung ist nur einen Klick entfernt."
     },
+    "search": {
+      "placeholder": "Nach Anbieternamen suchen..."
+    },
     "cta": {
       "guest_text": "Registrieren Sie sich, um Ihre Suche zu lokalisieren:",
       "register_button": "Registrieren",

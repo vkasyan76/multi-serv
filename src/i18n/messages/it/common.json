@@ -10,14 +10,14 @@
     "profile": "Profilo",
     "dashboard": "Dashboard",
     "dashboard_cta": "Dashboard",
-    "start_business": "Diventa fornitore",
+    "start_business": "Diventa professionista",
     "start_business_cta": "Diventa pro",
     "admin_panel": "Pannello admin",
     "login": "Accedi",
     "logout": "Esci",
     "menu": "Menu",
     "sr_dashboard_available": "Navigazione aggiornata: pulsante Dashboard disponibile",
-    "sr_start_business_available": "Navigazione aggiornata: pulsante Diventa fornitore disponibile"
+    "sr_start_business_available": "Navigazione aggiornata: pulsante Diventa pro disponibile"
   },
   "a11y": {
     "language_selector": "Seleziona la lingua"
@@ -69,13 +69,16 @@
       "line1": "Mettiamo in contatto i clienti con i professionisti.",
       "line2": "La tua soluzione è a portata di clic."
     },
+    "search": {
+      "placeholder": "Cerca per nome del professionista..."
+    },
     "cta": {
       "guest_text": "Registrati per localizzare la tua ricerca:",
       "register_button": "Registrati",
       "incomplete_profile_text": "Completa il tuo profilo per individuare meglio i professionisti intorno a te:",
       "complete_profile_button": "Completa il profilo",
       "provider_intro": "Hai un'idea imprenditoriale? Registra il tuo servizio per comparire su questo radar!",
-      "provider_button": "Registrati come prestatore"
+      "provider_button": "Registrati come professionista"
     }
   }
 }

@@ -21,7 +21,7 @@
     "powered_by": "Offerto da",
     "home_tooltip": "Home",
     "home_aria": "Home Infinisimo",
-    "tenant_alt": "Fornitore"
+    "tenant_alt": "Professionista"
   },
   "card": {
     "rating_sr": "Valutazione",
@@ -37,7 +37,7 @@
     "book_service": "Prenota servizio",
     "contact": "Contatta",
     "aria_book_service": "Prenota servizio",
-    "aria_contact_provider": "Contatta il fornitore"
+    "aria_contact_provider": "Contatta il professionista"
   },
   "reviews": {
     "load_error": "Non è stato possibile caricare le recensioni in questo momento. Riprova più tardi.",
@@ -53,7 +53,7 @@
     "load_more": "Carica altro"
   },
   "conversation": {
-    "sign_in_to_contact": "Accedi per contattare questo fornitore.",
+    "sign_in_to_contact": "Accedi per contattare questo professionista.",
     "start_failed": "Impossibile avviare la conversazione. Riprova.",
     "checking_sign_in": "Verifica dell'accesso...",
     "starting": "Avvio della conversazione...",

@@ -17,9 +17,9 @@
     "book_slots": "Rezerwuj terminy",
     "book_slots_count": "Rezerwuj terminy ({count})",
     "checking_sign_in": "Sprawdzanie logowania...",
-    "sign_in_to_book_provider": "Zaloguj się, aby zarezerwować tego usługodawcę.",
+    "sign_in_to_book_provider": "Zaloguj się, aby zarezerwować tego wykonawcę.",
     "select_slots_then_sign_in": "Wybierz terminy, a następnie zaloguj się, aby zarezerwować.",
-    "sign_in_to_contact": "Zaloguj się, aby skontaktować się z tym usługodawcą."
+    "sign_in_to_contact": "Zaloguj się, aby skontaktować się z tym wykonawcą."
   },
   "calendar": {
     "today": "Dzisiaj",
@@ -51,7 +51,7 @@
     "slot_not_reserved": "Niektóre wybrane terminy nie są już zarezerwowane.",
     "slot_already_taken": "Ten termin nie jest już dostępny.",
     "slots_changed": "Niektóre wybrane terminy uległy zmianie. Spróbuj ponownie.",
-    "provider_not_ready": "Ten usługodawca nie jest jeszcze gotowy do przyjmowania rezerwacji.",
+    "provider_not_ready": "Ten wykonawca nie jest jeszcze gotowy do przyjmowania rezerwacji.",
     "profile_incomplete": "Uzupełnij swój profil przed dokonaniem rezerwacji."
   }
 }

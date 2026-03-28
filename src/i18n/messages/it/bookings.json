@@ -7,7 +7,7 @@
     "select_slot": "Fai clic su uno slot disponibile per prenotare.",
     "no_slots_day": "Nessuno slot disponibile in questa data. Usa le frecce per controllare altri giorni.",
     "no_slots_week": "Nessuno slot libero disponibile questa settimana. Usa le frecce per controllare un'altra settimana.",
-    "no_slots_any": "Al momento non ci sono slot liberi disponibili. Puoi contattare il fornitore per la disponibilità o riprovare più tardi."
+    "no_slots_any": "Al momento non ci sono slot liberi disponibili. Puoi contattare il professionista per la disponibilità o riprovare più tardi."
   },
   "selection": {
     "clear": "Cancella selezione",
@@ -17,9 +17,9 @@
     "book_slots": "Prenota slot",
     "book_slots_count": "Prenota slot ({count})",
     "checking_sign_in": "Verifica accesso...",
-    "sign_in_to_book_provider": "Accedi per prenotare questo fornitore.",
+    "sign_in_to_book_provider": "Accedi per prenotare questo professionista.",
     "select_slots_then_sign_in": "Seleziona gli slot, poi accedi per prenotare.",
-    "sign_in_to_contact": "Accedi per contattare questo fornitore."
+    "sign_in_to_contact": "Accedi per contattare questo professionista."
   },
   "calendar": {
     "today": "Oggi",
@@ -51,7 +51,7 @@
     "slot_not_reserved": "Alcune fasce orarie selezionate non sono più riservate.",
     "slot_already_taken": "Questa fascia oraria non è più disponibile.",
     "slots_changed": "Alcune fasce orarie selezionate sono cambiate. Riprova.",
-    "provider_not_ready": "Questo fornitore non è ancora pronto ad accettare prenotazioni.",
+    "provider_not_ready": "Questo professionista non è ancora pronto ad accettare prenotazioni.",
     "profile_incomplete": "Completa il tuo profilo prima di prenotare."
   }
 }
