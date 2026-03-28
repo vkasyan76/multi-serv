@@ -17,9 +17,7 @@ import { withLocalePrefix } from "@/i18n/routing";
 import { LanguageSwitcher } from "@/i18n/ui/language-switcher";
 import {
   SignInButton,
-  SignedIn,
-  SignedOut,
-  // SignOutButton,
+  useAuth,
 } from "@clerk/nextjs";
 import { useClerk } from "@clerk/nextjs";
 
@@ -37,8 +35,12 @@ interface Props {
 export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
   const t = useTranslations("common");
   const trpc = useTRPC();
-  const session = useQuery(trpc.auth.session.queryOptions());
-  const user = session.data?.user;
+  const { isLoaded, isSignedIn } = useAuth();
+  const session = useQuery({
+    ...trpc.auth.session.queryOptions(),
+    enabled: isLoaded && isSignedIn,
+  });
+  const user = isLoaded && isSignedIn ? session.data?.user : undefined;
   const params = useParams<{ lang?: string }>();
   const lang = normalizeToSupported(params?.lang);
 
@@ -66,6 +68,9 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
 
   const isAdmin = user?.roles?.includes("super-admin");
   const hasTenant = !!user?.tenants?.length;
+  const isSessionEnrichmentLoading =
+    isLoaded && isSignedIn && session.isLoading && !user;
+  const canRenderAppCta = !!user;
 
   // Phase 6: keep mobile nav lean (longer locales) and close Sheet on language switch.
   const hiddenMobileHrefs = new Set([
@@ -79,7 +84,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
   // Get info for user's tenant:
   const { data: myTenant, isLoading: isMineLoading } = useQuery({
     ...trpc.tenants.getMine.queryOptions({}),
-    enabled: !!session.data?.user?.id,
+    enabled: isLoaded && isSignedIn && !!user?.id,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
@@ -108,7 +113,7 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
             <LanguageSwitcher
               className="w-full"
               onNavigate={() => onOpenChange(false)}
-              isAuthenticated={!!session.data?.user?.id}
+              isAuthenticated={isLoaded && isSignedIn}
             />
           </div>
 
@@ -124,7 +129,18 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
           ))}
           {/* Clerk Auth Buttons and User Profile / Dashboard Links */}
           <div className="border-t">
-            <SignedOut>
+            {!isLoaded ? (
+              <>
+                <div
+                  aria-hidden="true"
+                  className="m-4 h-10 rounded-md bg-neutral-100"
+                />
+                <div
+                  aria-hidden="true"
+                  className="mx-4 mb-4 h-10 rounded-md bg-neutral-100"
+                />
+              </>
+            ) : !isSignedIn ? (
               <SignInButton mode="modal" forceRedirectUrl={href("/")}>
                 <button
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
@@ -134,78 +150,65 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                   {t("nav.login")}
                 </button>
               </SignInButton>
-            </SignedOut>
-
-            <SignedIn>
-              {isAdmin && (
+            ) : (
+              <>
+                {/* Signed-in chrome comes from Clerk immediately; only the app CTA waits for enrichment. */}
                 <Link
-                  href={href("/dashboard/admin")}
+                  href={href("/profile")}
                   className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                   onClick={() => onOpenChange(false)}
                 >
-                  {/* Admin CTA intentionally stays English because Payload admin is internal-only UI. */}
-                  Admin Panel
+                  {t("nav.profile")}
                 </Link>
-              )}
 
-              {/* Profile - always visible for authenticated users */}
-              <Link
-                href={href("/profile")}
-                className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                onClick={() => onOpenChange(false)}
-              >
-                {t("nav.profile")}
-              </Link>
-
-              {/* Dashboard OR Start Business - conditional based on tenant status */}
-              {/* {hasTenant ? (
-                <Link
-                  href="/dashboard"
-                  className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Dashboard
-                </Link>
-              ) : (
-                <Link
-                  href="/profile?tab=vendor"
-                  className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Start Business
-                </Link>
-              )} */}
-              <Link
-                href={dashHref}
-                className={cn(
-                  "w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium",
-                  isDashLoading && "opacity-60",
+                {isSessionEnrichmentLoading ? (
+                  <div
+                    aria-hidden="true"
+                    className="mx-4 mb-4 h-10 rounded-md bg-neutral-100"
+                  />
+                ) : !canRenderAppCta ? null : isAdmin ? (
+                  <Link
+                    href={href("/dashboard/admin")}
+                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    {/* Admin CTA intentionally stays English because Payload admin is internal-only UI. */}
+                    Admin Panel
+                  </Link>
+                ) : (
+                  <Link
+                    href={dashHref}
+                    className={cn(
+                      "w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium",
+                      isDashLoading && "opacity-60",
+                    )}
+                    aria-disabled={isDashLoading}
+                    aria-busy={isDashLoading}
+                    onClick={
+                      isDashLoading
+                        ? (e) => e.preventDefault() // block keyboard + mouse activation
+                        : () => onOpenChange(false) // current behavior when ready
+                    }
+                  >
+                    {hasTenant ? t("nav.dashboard") : t("nav.start_business")}
+                  </Link>
                 )}
-                aria-disabled={isDashLoading}
-                aria-busy={isDashLoading}
-                onClick={
-                  isDashLoading
-                    ? (e) => e.preventDefault() // block keyboard + mouse activation
-                    : () => onOpenChange(false) // current behavior when ready
-                }
-              >
-                {hasTenant ? t("nav.dashboard") : t("nav.start_business")}
-              </Link>
 
-              {/* Clerk SignOutButton does not accept custom onClick handlers -> const { signOut } = useClerk(); */}
-              <div className="border-t">
-                <button
-                  className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-                  type="button"
-                  onClick={async () => {
-                    await signOut();
-                    onOpenChange(false);
-                  }}
-                >
-                  {t("nav.logout")}
-                </button>
-              </div>
-            </SignedIn>
+                {/* useClerk().signOut keeps sidebar close behavior under app control. */}
+                <div className="border-t">
+                  <button
+                    className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+                    type="button"
+                    onClick={async () => {
+                      await signOut();
+                      onOpenChange(false);
+                    }}
+                  >
+                    {t("nav.logout")}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </ScrollArea>
       </SheetContent>

@@ -19,10 +19,8 @@ import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 
 import {
-  SignedIn,
-  SignedOut,
   SignInButton,
-  // SignUpButton,
+  useAuth,
   UserButton,
 } from "@clerk/nextjs";
 // import ClerkUserButton from "@/components/clerk/clerk-user-button";
@@ -56,7 +54,11 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
 export const Navbar = () => {
   const t = useTranslations("common");
   const trpc = useTRPC();
-  const session = useQuery(trpc.auth.session.queryOptions());
+  const { isLoaded, isSignedIn } = useAuth();
+  const session = useQuery({
+    ...trpc.auth.session.queryOptions(),
+    enabled: isLoaded && isSignedIn,
+  });
   const params = useParams<{ lang?: string }>();
   const lang = normalizeToSupported(params?.lang);
 
@@ -99,15 +101,23 @@ export const Navbar = () => {
     { href: href("/legal/impressum"), children: t("nav.impressum") },
   ];
 
+  // Clerk decides whether auth chrome renders at all; session data only picks
+  // the role/tenant-specific CTA once the signed-in user is known to the app.
+  const user = isLoaded && isSignedIn ? session.data?.user : undefined;
+  const isSessionEnrichmentLoading =
+    isLoaded && isSignedIn && session.isLoading && !user;
+  const canRenderAppCta = !!user;
+
   // Get info for user's tenant:
   const { data: myTenant, isLoading: isMineLoading } = useQuery({
     ...trpc.tenants.getMine.queryOptions({}),
-    enabled: !!session.data?.user?.id,
+    enabled: isLoaded && isSignedIn && !!user?.id,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 
-  const hasTenant = !!session.data?.user?.tenants?.length;
+  const hasTenant = !!user?.tenants?.length;
+  const isAdmin = user?.roles?.includes("super-admin");
   const dashHref = hasTenant
     ? platformHref("/dashboard")
     : href("/profile?tab=vendor");
@@ -153,10 +163,20 @@ export const Navbar = () => {
         {/* Phase 6: keep switcher near auth/profile actions (desktop only). */}
         <LanguageSwitcher
           className="w-auto min-w-0 rounded-full px-3.5 text-lg"
-          isAuthenticated={!!session.data?.user?.id}
+          isAuthenticated={isLoaded && isSignedIn}
         />
-        <SignedOut>
-          {/* Only show Clerk SignInButton for unauthenticated users */}
+        {!isLoaded ? (
+          <>
+            <div
+              aria-hidden="true"
+              className="h-12 w-32 rounded-none border-l bg-neutral-100"
+            />
+            <div
+              aria-hidden="true"
+              className="ml-4 h-10 w-10 rounded-full bg-neutral-100"
+            />
+          </>
+        ) : !isSignedIn ? (
           <SignInButton>
             <Button
               asChild
@@ -166,62 +186,66 @@ export const Navbar = () => {
               <span>{t("nav.login")}</span>
             </Button>
           </SignInButton>
-        </SignedOut>
-        <SignedIn>
-          {/* Screen reader announcement for button text changes */}
-          <div aria-live="polite" className="sr-only">
-            {hasTenant
-              ? t("nav.sr_dashboard_available")
-              : t("nav.sr_start_business_available")}
-          </div>
-
-          {/* Show role/tenant-based buttons for authenticated users */}
-          {session.data?.user?.roles?.includes("super-admin") ? (
+        ) : (
+          <>
             <Button
               asChild
-              className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
+              variant="secondary"
+              className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
             >
-              {/* Admin CTA intentionally stays English because Payload admin is internal-only UI. */}
-              <Link href={href("/dashboard/admin")}>Admin Panel</Link>
+              <Link href={href("/profile")}>{t("nav.profile")}</Link>
             </Button>
-          ) : (
-            <>
+
+            {isSessionEnrichmentLoading ? (
+              <div
+                aria-hidden="true"
+                className="h-12 w-32 rounded-none border-l bg-neutral-100"
+              />
+            ) : !canRenderAppCta ? null : isAdmin ? (
               <Button
                 asChild
-                variant="secondary"
-                className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
-              >
-                <Link href={href("/profile")}>{t("nav.profile")}</Link>
-              </Button>
-              <LoadingButton
-                asChild
-                isLoading={session.isLoading || isDashLoading}
-                loadingText=""
                 className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
               >
-                <Link
-                  href={dashHref}
-                  onClick={
-                    isDashLoading ? (e) => e.preventDefault() : undefined
-                  }
-                  className={cn(isDashLoading && "opacity-60")}
-                  aria-disabled={isDashLoading}
-                  aria-busy={isDashLoading}
+                {/* Admin CTA intentionally stays English because Payload admin is internal-only UI. */}
+                <Link href={href("/dashboard/admin")}>Admin Panel</Link>
+              </Button>
+            ) : (
+              <>
+                {/* Announce the app CTA only once session enrichment resolved. */}
+                <div aria-live="polite" className="sr-only">
+                  {hasTenant
+                    ? t("nav.sr_dashboard_available")
+                    : t("nav.sr_start_business_available")}
+                </div>
+                <LoadingButton
+                  asChild
+                  isLoading={session.isLoading || isDashLoading}
+                  loadingText=""
+                  className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
                 >
-                  {dashboardLabel}
-                </Link>
-              </LoadingButton>
-            </>
-          )}
+                  <Link
+                    href={dashHref}
+                    onClick={
+                      isDashLoading ? (e) => e.preventDefault() : undefined
+                    }
+                    className={cn(isDashLoading && "opacity-60")}
+                    aria-disabled={isDashLoading}
+                    aria-busy={isDashLoading}
+                  >
+                    {dashboardLabel}
+                  </Link>
+                </LoadingButton>
+              </>
+            )}
 
-          {/* Clerk user avatar/profile button (always shown when logged in) */}
-          <div className="ml-4">
-            <UserButton
-              userProfileMode="navigation"
-              userProfileUrl={href("/profile")}
-            />
-          </div>
-        </SignedIn>
+            <div className="ml-4">
+              <UserButton
+                userProfileMode="navigation"
+                userProfileUrl={href("/profile")}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* oposite of large screens */}
