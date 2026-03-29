@@ -1,6 +1,10 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import {
+  normalizeToSupported,
+  type AppLang,
+} from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -56,6 +60,31 @@ export const platformHomeHref = () => {
 
   return `https://${rootDomain}`;
 };
+
+export function localizedPlatformHref(
+  pathnameWithQuery: string,
+  appLang: AppLang,
+) {
+  const [pathPart, ...queryParts] = pathnameWithQuery.split("?");
+  const query = queryParts.join("?");
+  const localizedPath = withLocalePrefix(pathPart || "/", appLang);
+  const localizedHref = query ? `${localizedPath}?${query}` : localizedPath;
+  const base = platformHomeHref();
+
+  // In local/dev keep app navigation relative; on tenant subdomains escape back
+  // to the platform origin while preserving the active locale segment.
+  if (!base.startsWith("http")) return localizedHref;
+
+  try {
+    const url = new URL(base);
+    if (!url.hostname || url.hostname === "undefined") {
+      return localizedHref;
+    }
+    return new URL(localizedHref, `${url.origin}/`).toString();
+  } catch {
+    return localizedHref;
+  }
+}
 
 function stripTrailingSlash(v: string) {
   return v.replace(/\/+$/, "");

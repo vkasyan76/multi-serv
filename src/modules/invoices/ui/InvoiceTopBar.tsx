@@ -6,8 +6,7 @@ import { useParams } from "next/navigation";
 import { Home } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
-import { platformHomeHref, tenantPublicHref } from "@/lib/utils";
-import { withLocalePrefix } from "@/i18n/routing";
+import { localizedPlatformHref, tenantPublicHref } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -29,20 +28,8 @@ export function InvoiceTopBar({
   const tFinance = useTranslations("finance");
   const params = useParams<{ lang?: string }>();
   const appLang = normalizeToSupported(params?.lang);
-  const localizedHomePath = withLocalePrefix("/", appLang);
-  const platformHref = platformHomeHref();
-  const homeHref = (() => {
-    if (!platformHref.startsWith("http")) return localizedHomePath;
-    try {
-      const url = new URL(platformHref);
-      if (!url.hostname || url.hostname === "undefined") {
-        return localizedHomePath;
-      }
-    } catch {
-      return localizedHomePath;
-    }
-    return `${platformHref.replace(/\/+$/, "")}${localizedHomePath}`;
-  })();
+  // Invoice top bar needs a localized platform-home escape hatch from tenant flows.
+  const homeHref = localizedPlatformHref("/", appLang);
   const publicHref = tenantSlug ? tenantPublicHref(tenantSlug, appLang) : null;
   const displayName =
     tenantName?.trim() ||

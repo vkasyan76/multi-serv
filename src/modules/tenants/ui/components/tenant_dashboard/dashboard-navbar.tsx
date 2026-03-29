@@ -7,9 +7,8 @@ import { useTranslations } from "next-intl";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { Home, UserCog } from "lucide-react";
-import { cn, tenantPublicHref, platformHomeHref } from "@/lib/utils";
-import { type AppLang, normalizeToSupported } from "@/lib/i18n/app-lang";
-import { withLocalePrefix } from "@/i18n/routing";
+import { cn, tenantPublicHref, localizedPlatformHref } from "@/lib/utils";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { Poppins } from "next/font/google";
 import DashboardSubnav from "./dashboard-subnav";
 import {
@@ -25,25 +24,6 @@ interface Props {
   slug: string;
 }
 
-function getLocalizedPlatformHref(pathname: string, appLang: AppLang) {
-  const localizedPath = withLocalePrefix(pathname, appLang);
-  const platformHref = platformHomeHref();
-
-  // Keep locale when production root-domain rewrites route the app via the platform origin.
-  if (!platformHref.startsWith("http")) return localizedPath;
-
-  try {
-    const url = new URL(platformHref);
-    if (!url.hostname || url.hostname === "undefined") {
-      return localizedPath;
-    }
-  } catch {
-    return localizedPath;
-  }
-
-  return `${platformHref.replace(/\/+$/, "")}${localizedPath}`;
-}
-
 export default function DashboardNavbar({ slug }: Props) {
   const trpc = useTRPC();
   const tDashboard = useTranslations("dashboard");
@@ -55,8 +35,9 @@ export default function DashboardNavbar({ slug }: Props) {
 
   const avatarUrl = tenant?.image?.url ?? null;
   const publicHref = tenantPublicHref(slug, appLang);
-  const homeHref = getLocalizedPlatformHref("/", appLang);
-  const profileUrl = getLocalizedPlatformHref("/profile?tab=vendor", appLang);
+  // Dashboard exits point back to platform routes rather than the tenant host.
+  const homeHref = localizedPlatformHref("/", appLang);
+  const profileUrl = localizedPlatformHref("/profile?tab=vendor", appLang);
 
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b">
