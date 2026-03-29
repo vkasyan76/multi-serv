@@ -31,6 +31,8 @@ export const SearchInput = ({ disabled }: Props) => {
   // Always refetch auth-backed state so the Orders CTA reflects the session.
   const session = useQuery({
     ...trpc.auth.session.queryOptions(),
+    // Tenant search stays public; only skip auth-session polling for signed-out users.
+    enabled: isSignedIn,
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: "always",

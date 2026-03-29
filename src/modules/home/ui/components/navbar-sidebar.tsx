@@ -200,8 +200,12 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
                     className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
                     type="button"
                     onClick={async () => {
-                      await signOut();
-                      onOpenChange(false);
+                      try {
+                        await signOut();
+                      } finally {
+                        // Always close the local sheet even if remote sign-out fails.
+                        onOpenChange(false);
+                      }
                     }}
                   >
                     {t("nav.logout")}

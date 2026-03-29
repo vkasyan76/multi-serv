@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/modules/checkout/store/use-cart-store";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 import { useTRPC } from "@/trpc/client";
 import { TRPCClientError } from "@trpc/client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -32,7 +33,6 @@ import {
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 import { toast } from "sonner";
 import { BOOKING_CH, TERMS_VERSION } from "@/constants";
-import { platformHomeHref } from "@/lib/utils";
 import { TermsAcceptanceDialog } from "@/modules/profile/ui/terms-acceptance-dialog";
 import { CartDrawerCustomerInfo } from "@/modules/checkout/ui/cart-drawer-customer-info";
 import { PaymentMethodSetup } from "@/modules/payments/ui/payment-method-setup";
@@ -121,14 +121,10 @@ export function SlotsCartDrawer({
     if (!v) setPendingCheckout(false);
   };
 
-  const homeHref = platformHomeHref();
-  const termsHref =
-    homeHref === "/"
-      ? "/legal/terms-of-use"
-      : `${homeHref.replace(/\/$/, "")}/legal/terms-of-use`;
-
-  const profileHref =
-    homeHref === "/" ? "/profile" : `${homeHref.replace(/\/$/, "")}/profile`;
+  // Keep checkout recovery links on the active route locale instead of
+  // falling back to default locale resolution on the way back into app pages.
+  const termsHref = withLocalePrefix("/legal/terms-of-use", appLang);
+  const profileHref = withLocalePrefix("/profile", appLang);
 
   const { data: tenant } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug: tenantSlug ?? "" }),

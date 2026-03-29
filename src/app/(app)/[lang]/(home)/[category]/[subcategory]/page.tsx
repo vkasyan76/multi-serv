@@ -1,8 +1,11 @@
+import "server-only";
+
 import { TenantListView } from "@/modules/tenants/ui/views/tenant-list-view";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 import { getQueryClient, trpc } from "@/trpc/server";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { DEFAULT_LIMIT } from "@/constants";
 
 interface Props {
   // Next.js asynchronously provides params
@@ -14,23 +17,26 @@ const Page = async ({ params }: Props) => {
   const appLang = normalizeToSupported(lang);
 
   const queryClient = getQueryClient();
-  
+
   // Note: getUserProfile is fetched conditionally in TenantList component
   // No need to prefetch here for anonymous users
-  
+
   // Prefetch tenants with infinite query options
   const base = trpc.tenants.getMany.infiniteQueryOptions(
-    { 
-      category: category,      // Parent category
-      subcategory: subcategory, // Specific subcategory
-      sort: "distance",        // Default sort
+    {
+      // Mirror the anonymous TenantList defaults exactly so SSR hydration can
+      // reuse the same localized cache entry on the first client render.
+      categories: [category],
+      subcategory: subcategory ?? null,
+      sort: "distance",
+      search: "",
       maxPrice: "",
       services: [],
-      maxDistance: 0,
+      maxDistance: null,
       distanceFilterEnabled: false,
-      userLat: null, // Will be filled by client
-      userLng: null, // Will be filled by client
-      limit: 8, // DEFAULT_LIMIT
+      userLat: null,
+      userLng: null,
+      limit: DEFAULT_LIMIT,
     },
     {
       getNextPageParam: (lastPage) => {

@@ -179,11 +179,11 @@ export const Navbar = () => {
         ) : !isSignedIn ? (
           <SignInButton>
             <Button
-              asChild
               variant="secondary"
               className="w-32 border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white hover:bg-pink-400 transition-colors text-lg"
             >
-              <span>{t("nav.login")}</span>
+              {/* Keep Clerk's sign-in trigger on a real button element. */}
+              {t("nav.login")}
             </Button>
           </SignInButton>
         ) : (
