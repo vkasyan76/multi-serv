@@ -198,6 +198,14 @@ Required env groups are defined in `README.md`:
   - desktop and mobile nav both host the same switcher:
     `src/modules/home/ui/components/navbar.tsx`,
     `src/modules/home/ui/components/navbar-sidebar.tsx`
+  - the primary nav is intentionally slimmed:
+    desktop keeps only home + legal links,
+    mobile intentionally hides `/about`, `/features`, `/pricing`, and `/contact`
+    to keep the shell stable across locales; do not treat that omission as an accidental regression unless product requirements change
+  - the signed-in admin CTA label remains intentionally English (`Admin Panel`)
+    in `src/modules/home/ui/components/navbar.tsx` and
+    `src/modules/home/ui/components/navbar-sidebar.tsx`;
+    treat it as an internal/admin-facing exception unless product requirements change
   - switcher UI uses explicit `react-country-flag` mapping; flags are presentation-only and must not affect locale logic
   - authenticated navbar/mobile switches persist language asynchronously through `auth.updateLanguagePreference`
   - explicit language changes mirror `app_lang` immediately via `mirrorLocaleCookie` in `src/i18n/routing.ts`

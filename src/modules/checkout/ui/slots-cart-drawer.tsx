@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import {
   getLocaleAndCurrency,
   formatDateForLocale,
-} from "@/modules/profile/location-utils";
+} from "@/lib/i18n/locale";
 import { X } from "lucide-react";
 import {
   Sheet,
