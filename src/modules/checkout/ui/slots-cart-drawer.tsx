@@ -53,6 +53,16 @@ type SlotsCartDrawerProps = {
   customer: CustomerSnapshot | null;
 };
 
+const CHECKOUT_GENERIC_ERROR = "CHECKOUT_GENERIC";
+
+function createCheckoutGenericError(message: string) {
+  const error = new Error(message);
+  // Tag checkout-only fallback errors so the shared catch block can keep
+  // booking-specific messages separate from generic order-creation failures.
+  error.name = CHECKOUT_GENERIC_ERROR;
+  return error;
+}
+
 function mapBookingErrorMessage(
   message: string | undefined,
   tBookings: (key: string) => string,
@@ -244,7 +254,7 @@ export function SlotsCartDrawer({
 
       const res = await createOrder.mutateAsync({ slotIds });
       if (!res?.ok || !res.orderId) {
-        throw new Error(tCheckout("errors.generic"));
+        throw createCheckoutGenericError(tCheckout("errors.generic"));
       }
 
       await markHasOrders();
@@ -295,10 +305,20 @@ export function SlotsCartDrawer({
         if (err.data?.code === "UNAUTHORIZED") {
           msg = tCheckout("status.please_sign_in");
         } else {
+          const mappedBookingMessage = mapBookingErrorMessage(
+            err.message,
+            tBookings,
+          );
+          // Once booking succeeded, later TRPC failures belong to the checkout
+          // phase unless they still match an explicit booking error contract.
           msg =
-            mapBookingErrorMessage(err.message, tBookings) ??
-            tBookings("errors.generic");
+            mappedBookingMessage ??
+            (booked ? tCheckout("errors.generic") : tBookings("errors.generic"));
         }
+      } else if (err instanceof Error && err.name === CHECKOUT_GENERIC_ERROR) {
+        msg = tCheckout("errors.generic");
+      } else if (booked) {
+        msg = tCheckout("errors.generic");
       }
       toast.error(msg);
     }

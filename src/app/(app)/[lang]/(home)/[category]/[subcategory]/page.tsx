@@ -15,6 +15,7 @@ interface Props {
 const Page = async ({ params }: Props) => {
   const { lang, category, subcategory } = await params;
   const appLang = normalizeToSupported(lang);
+  const normalizedCategory = category && category !== "all" ? category : null;
 
   const queryClient = getQueryClient();
 
@@ -26,7 +27,8 @@ const Page = async ({ params }: Props) => {
     {
       // Mirror the anonymous TenantList defaults exactly so SSR hydration can
       // reuse the same localized cache entry on the first client render.
-      categories: [category],
+      // Treat "all" like the client does so SSR and hydration share one key.
+      categories: normalizedCategory ? [normalizedCategory] : null,
       subcategory: subcategory ?? null,
       sort: "distance",
       search: "",

@@ -102,8 +102,13 @@ export function LanguageSwitcher({
       },
     }),
   );
+  const isSwitching = isPending || persistLanguage.isPending;
 
   const onChange = (next: string) => {
+    // Keep language writes single-flight so profile preference updates cannot
+    // land out of order if the user taps the switcher again mid-save.
+    if (isSwitching) return;
+
     const newLang = normalizeToSupported(next);
     if (newLang === effectiveLang) return;
 
@@ -134,12 +139,12 @@ export function LanguageSwitcher({
       <Select
         value={effectiveLang}
         onValueChange={onChange}
-        disabled={isPending}
+        disabled={isSwitching}
       >
         <SelectTrigger
           className={className}
           aria-label={t("a11y.language_selector")}
-          aria-busy={isPending}
+          aria-busy={isSwitching}
         >
           <SelectValue>
             <span className="flex items-center gap-2">
