@@ -33,6 +33,7 @@ import {
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 import { toast } from "sonner";
 import { BOOKING_CH, TERMS_VERSION } from "@/constants";
+import { platformHomeHref } from "@/lib/utils";
 import { TermsAcceptanceDialog } from "@/modules/profile/ui/terms-acceptance-dialog";
 import { CartDrawerCustomerInfo } from "@/modules/checkout/ui/cart-drawer-customer-info";
 import { PaymentMethodSetup } from "@/modules/payments/ui/payment-method-setup";
@@ -121,10 +122,28 @@ export function SlotsCartDrawer({
     if (!v) setPendingCheckout(false);
   };
 
-  // Keep checkout recovery links on the active route locale instead of
-  // falling back to default locale resolution on the way back into app pages.
-  const termsHref = withLocalePrefix("/legal/terms-of-use", appLang);
-  const profileHref = withLocalePrefix("/profile", appLang);
+  const localizedTermsPath = withLocalePrefix("/legal/terms-of-use", appLang);
+  const localizedProfilePath = withLocalePrefix("/profile", appLang);
+  const platformBase = platformHomeHref();
+
+  const isAbsolutePlatformBase = (() => {
+    try {
+      const url = new URL(platformBase);
+      return !!url.hostname && url.hostname !== "undefined";
+    } catch {
+      return false;
+    }
+  })();
+
+  // Profile/legal are platform routes, so tenant-page recovery links must keep
+  // the locale while escaping the current tenant subdomain host.
+  const termsHref = isAbsolutePlatformBase
+    ? `${platformBase.replace(/\/+$/, "")}${localizedTermsPath}`
+    : localizedTermsPath;
+
+  const profileHref = isAbsolutePlatformBase
+    ? `${platformBase.replace(/\/+$/, "")}${localizedProfilePath}`
+    : localizedProfilePath;
 
   const { data: tenant } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug: tenantSlug ?? "" }),
