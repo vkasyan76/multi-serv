@@ -108,7 +108,11 @@ export function LanguageSwitcher({
 
     const nextPath = withLocalePrefix(restPathname, newLang);
     const query = searchParams?.toString() ?? "";
-    const url = query ? `${nextPath}?${query}` : nextPath;
+    // Preserve in-page anchors so language switches do not jump the user away
+    // from the currently targeted section.
+    const hash =
+      typeof window !== "undefined" ? window.location.hash ?? "" : "";
+    const url = `${query ? `${nextPath}?${query}` : nextPath}${hash}`;
 
     // Keep the bootstrap cookie aligned with explicit user language changes.
     mirrorLocaleCookie(newLang);
