@@ -1,21 +1,25 @@
 import "server-only";
 
+import type { SearchParams } from "nuqs/server";
 import { TenantListView } from "@/modules/tenants/ui/views/tenant-list-view";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 import { getQueryClient, trpc } from "@/trpc/server";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { DEFAULT_LIMIT } from "@/constants";
+import { loadTenantFilters } from "@/modules/tenants/hooks/search-params";
 
 interface Props {
   // Next.js asynchronously provides params
   params: Promise<{ lang: string; category: string; subcategory: string }>;
+  searchParams: Promise<SearchParams>;
 }
 
-const Page = async ({ params }: Props) => {
+const Page = async ({ params, searchParams }: Props) => {
   const { lang, category, subcategory } = await params;
   const appLang = normalizeToSupported(lang);
   const normalizedCategory = category && category !== "all" ? category : null;
+  const filters = await loadTenantFilters(searchParams);
 
   const queryClient = getQueryClient();
 
@@ -25,17 +29,14 @@ const Page = async ({ params }: Props) => {
   // Prefetch tenants with infinite query options
   const base = trpc.tenants.getMany.infiniteQueryOptions(
     {
-      // Mirror the anonymous TenantList defaults exactly so SSR hydration can
-      // reuse the same localized cache entry on the first client render.
-      // Treat "all" like the client does so SSR and hydration share one key.
+      // Reuse the shared nuqs loader so filtered deep links hydrate against the
+      // same URL-driven state the client reads on first render.
+      ...filters,
+      // Route-owned category/subcategory stay authoritative over query-state
+      // filters so the server prefetch matches TenantList's client-side merge.
       categories: normalizedCategory ? [normalizedCategory] : null,
       subcategory: subcategory ?? null,
-      sort: "distance",
-      search: "",
-      maxPrice: "",
-      services: [],
-      maxDistance: null,
-      distanceFilterEnabled: false,
+      // Viewer coordinates remain client-owned; SSR only mirrors URL state.
       userLat: null,
       userLng: null,
       limit: DEFAULT_LIMIT,

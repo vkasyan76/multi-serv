@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ReactCountryFlag from "react-country-flag";
 
 import {
+  DEFAULT_APP_LANG,
   SUPPORTED_LANGUAGES,
   normalizeToSupported,
   type AppLang,
@@ -26,18 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import LoadingPage from "@/components/shared/loading";
-
-const LANGUAGE_TO_COUNTRY: Record<AppLang, string> = {
-  en: "GB",
-  de: "DE",
-  fr: "FR",
-  it: "IT",
-  es: "ES",
-  pt: "PT",
-  pl: "PL",
-  ro: "RO",
-  uk: "UA",
-};
 
 type Props = {
   className?: string;
@@ -66,9 +55,10 @@ export function LanguageSwitcher({
   const [pendingLang, setPendingLang] = useState<AppLang | null>(null);
   const [isPending, startTransition] = useTransition();
   const effectiveLang = pendingLang ?? currentLang;
-  const currentLabel =
-    SUPPORTED_LANGUAGES.find((l) => l.code === effectiveLang)?.label ??
-    effectiveLang;
+  // Reuse the canonical locale registry for both label and flag display.
+  const currentLanguage =
+    SUPPORTED_LANGUAGES.find((language) => language.code === effectiveLang) ??
+    SUPPORTED_LANGUAGES.find((language) => language.code === DEFAULT_APP_LANG)!;
 
   useEffect(() => {
     // Route locale stays authoritative; clear the optimistic selection once
@@ -149,20 +139,20 @@ export function LanguageSwitcher({
           <SelectValue>
             <span className="flex items-center gap-2">
               <ReactCountryFlag
-                countryCode={LANGUAGE_TO_COUNTRY[effectiveLang]}
+                countryCode={currentLanguage.countryCode}
                 svg
                 style={{ width: "1.2em", height: "1.2em" }}
               />
-              <span className="truncate">{currentLabel}</span>
+              <span className="truncate">{currentLanguage.label}</span>
             </span>
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {SUPPORTED_LANGUAGES.map(({ code, label }) => (
+          {SUPPORTED_LANGUAGES.map(({ code, label, countryCode }) => (
             <SelectItem key={code} value={code}>
               <span className="flex items-center gap-2">
                 <ReactCountryFlag
-                  countryCode={LANGUAGE_TO_COUNTRY[code]}
+                  countryCode={countryCode}
                   svg
                   style={{ width: "1.2em", height: "1.2em" }}
                 />
