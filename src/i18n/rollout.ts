@@ -10,6 +10,7 @@ export { LAUNCHED_APP_LANGS };
 // Required namespaces that must exist for each launched locale.
 export const REQUIRED_NAMESPACES = [
   "common",
+  "marketplace",
   "bookings",
   "checkout",
   "tenantPage",

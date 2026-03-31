@@ -24,6 +24,20 @@ const COMMON_LOADERS: Partial<Record<AppLang, Loader>> = {
   uk: async () => (await import("./messages/uk/common.json")).default,
 };
 
+const MARKETPLACE_LOADERS: Partial<Record<AppLang, Loader>> = {
+  // Shared listing chrome renders on home + category/subcategory routes, so
+  // keep this namespace available anywhere the marketplace surface can appear.
+  en: async () => (await import("./messages/en/marketplace.json")).default,
+  de: async () => (await import("./messages/de/marketplace.json")).default,
+  fr: async () => (await import("./messages/fr/marketplace.json")).default,
+  it: async () => (await import("./messages/it/marketplace.json")).default,
+  es: async () => (await import("./messages/es/marketplace.json")).default,
+  pt: async () => (await import("./messages/pt/marketplace.json")).default,
+  pl: async () => (await import("./messages/pl/marketplace.json")).default,
+  ro: async () => (await import("./messages/ro/marketplace.json")).default,
+  uk: async () => (await import("./messages/uk/marketplace.json")).default,
+};
+
 const BOOKINGS_LOADERS: Partial<Record<AppLang, Loader>> = {
   en: async () => (await import("./messages/en/bookings.json")).default,
   de: async () => (await import("./messages/de/bookings.json")).default,
@@ -187,6 +201,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   const [
     common,
+    marketplace,
     bookings,
     checkout,
     tenantPage,
@@ -198,6 +213,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     legalTerms,
   ] = await Promise.all([
     loadNamespace(appLang, COMMON_LOADERS),
+    loadNamespace(appLang, MARKETPLACE_LOADERS),
     loadNamespace(appLang, BOOKINGS_LOADERS),
     loadNamespace(appLang, CHECKOUT_LOADERS),
     loadNamespace(appLang, TENANT_PAGE_LOADERS),
@@ -214,6 +230,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     timeZone: "Europe/Berlin",
     messages: {
       common,
+      marketplace,
       bookings,
       checkout,
       tenantPage,

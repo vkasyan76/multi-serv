@@ -1,0 +1,54 @@
+{
+  "filters": {
+    "title": "Filters",
+    "clear": "Clear",
+    "max_hourly_rate": "Max Hourly Rate",
+    "location_distance": "Location & Distance",
+    "service_delivery": "Service Delivery",
+    "category": "Category",
+    "all_categories": "All categories"
+  },
+  "distance": {
+    "search_nearby": "Search Nearby",
+    "max_distance": "Max distance",
+    "online_hint": "Online services work from anywhere. Consider disabling distance filter."
+  },
+  "services": {
+    "on_site": "On-site",
+    "on_line": "Online"
+  },
+  "sort": {
+    "distance": "Distance",
+    "price": "Price",
+    "market_tenure": "Market Tenure",
+    "distance_aria": "Sort by distance",
+    "distance_auth_required": "Sign in to sort by distance",
+    "sorted_by_price_low_to_high": "Sorted by Price (low to high)",
+    "sorted_by_price_high_to_low": "Sorted by Price (high to low)",
+    "sorted_by_tenure_newest": "Sorted by Market Tenure (newest first)",
+    "sorted_by_tenure_oldest": "Sorted by Market Tenure (oldest first)",
+    "sorted_by_distance": "Sorted by Distance (nearest first)"
+  },
+  "list": {
+    "empty_title": "No providers found.",
+    "empty_body": "Try adjusting your filters or check back later.",
+    "load_more": "Load More",
+    "loading_more": "Loading...",
+    "results_summary": "Showing {shown} providers out of {total}"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "body": "We couldn't load the providers. Please try refreshing the page.",
+    "refresh": "Refresh Page",
+    "refresh_aria": "Refresh page to reload providers",
+    "retry": "Retry",
+    "home_radar_body": "Couldn't load providers. Please adjust filters or retry."
+  },
+  "auth": {
+    "distance_tooltip": "Log in to determine your location for distance features."
+  },
+  "categories": {
+    "sidebar_title": "Categories",
+    "back": "Back"
+  }
+}
