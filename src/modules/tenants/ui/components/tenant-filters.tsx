@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
@@ -47,6 +48,7 @@ export const TenantFilters = ({
   isSignedIn,
   showCategory = false,
 }: TenantFiltersProps) => {
+  const tMarketplace = useTranslations("marketplace");
   const [filters, setFilters] = useTenantFilters();
   const onChange = (key: keyof typeof filters, value: unknown) => {
     setFilters({ ...filters, [key]: value });
@@ -119,21 +121,22 @@ export const TenantFilters = ({
   return (
     <div className="border rounded-md bg-white">
       <div className="p-4 border-b flex items-center justify-between">
-        <p className="font-medium">Filters</p>
+        <p className="font-medium">{tMarketplace("filters.title")}</p>
         {hasAnyFilters && (
           <button className="underline" onClick={handleClear} type="button">
-            Clear
+            {tMarketplace("filters.clear")}
           </button>
         )}
       </div>
-      <TenantFilter title="Max Hourly Rate">
+      {/* Step 2: translate shared filter chrome only; keep filter state/URL logic untouched. */}
+      <TenantFilter title={tMarketplace("filters.max_hourly_rate")}>
         <PriceFilter
           maxPrice={filters.maxPrice}
           onMaxPriceChange={(value) => onChange("maxPrice", value)}
         />
       </TenantFilter>
 
-      <TenantFilter title="Location & Distance">
+      <TenantFilter title={tMarketplace("filters.location_distance")}>
         <DistanceFilter
           maxDistance={filters.maxDistance}
           isEnabled={filters.distanceFilterEnabled}
@@ -144,14 +147,17 @@ export const TenantFilters = ({
         />
       </TenantFilter>
 
-      <TenantFilter title="Service Delivery">
+      <TenantFilter title={tMarketplace("filters.service_delivery")}>
         <ServicesFilter
           value={filters.services}
           onChange={(value) => onChange("services", value)}
         />
       </TenantFilter>
       {showCategory && (
-        <TenantFilter title="Category" className="border-b-0">
+        <TenantFilter
+          title={tMarketplace("filters.category")}
+          className="border-b-0"
+        >
           <CategoryFilter
             options={categoryOptions}
             disabled={categoriesQ.isLoading || categoriesQ.isError}
