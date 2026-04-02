@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
 import {
   DEFAULT_APP_LANG,
+  LAUNCHED_APP_LANGS,
   normalizeToSupported,
   type AppLang,
 } from "@/lib/i18n/app-lang";
@@ -11,7 +12,24 @@ import { LOCALE_COOKIE_NAME } from "@/i18n/routing";
 type MessageTree = Record<string, unknown>;
 type Loader = () => Promise<MessageTree>;
 
-const COMMON_LOADERS: Partial<Record<AppLang, Loader>> = {
+function withLaunchedLangCoverage(
+  namespace: string,
+  loaders: Partial<Record<AppLang, Loader>>,
+): Record<AppLang, Loader> {
+  // Keep imports explicit for predictable bundling, but validate coverage
+  // against the launched-language registry so loader maps cannot drift.
+  const missing = LAUNCHED_APP_LANGS.filter((lang) => !loaders[lang]);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `[i18n] Missing loaders for ${namespace}: ${missing.join(", ")}`,
+    );
+  }
+
+  return loaders as Record<AppLang, Loader>;
+}
+
+const COMMON_LOADERS = withLaunchedLangCoverage("common", {
   // Keep launched locales explicit so i18n-check and runtime loading stay in lockstep.
   en: async () => (await import("./messages/en/common.json")).default,
   de: async () => (await import("./messages/de/common.json")).default,
@@ -22,9 +40,9 @@ const COMMON_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/common.json")).default,
   ro: async () => (await import("./messages/ro/common.json")).default,
   uk: async () => (await import("./messages/uk/common.json")).default,
-};
+});
 
-const MARKETPLACE_LOADERS: Partial<Record<AppLang, Loader>> = {
+const MARKETPLACE_LOADERS = withLaunchedLangCoverage("marketplace", {
   // Shared listing chrome renders on home + category/subcategory routes, so
   // keep this namespace available anywhere the marketplace surface can appear.
   en: async () => (await import("./messages/en/marketplace.json")).default,
@@ -36,9 +54,9 @@ const MARKETPLACE_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/marketplace.json")).default,
   ro: async () => (await import("./messages/ro/marketplace.json")).default,
   uk: async () => (await import("./messages/uk/marketplace.json")).default,
-};
+});
 
-const BOOKINGS_LOADERS: Partial<Record<AppLang, Loader>> = {
+const BOOKINGS_LOADERS = withLaunchedLangCoverage("bookings", {
   en: async () => (await import("./messages/en/bookings.json")).default,
   de: async () => (await import("./messages/de/bookings.json")).default,
   fr: async () => (await import("./messages/fr/bookings.json")).default,
@@ -48,9 +66,9 @@ const BOOKINGS_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/bookings.json")).default,
   ro: async () => (await import("./messages/ro/bookings.json")).default,
   uk: async () => (await import("./messages/uk/bookings.json")).default,
-};
+});
 
-const CHECKOUT_LOADERS: Partial<Record<AppLang, Loader>> = {
+const CHECKOUT_LOADERS = withLaunchedLangCoverage("checkout", {
   en: async () => (await import("./messages/en/checkout.json")).default,
   de: async () => (await import("./messages/de/checkout.json")).default,
   fr: async () => (await import("./messages/fr/checkout.json")).default,
@@ -60,9 +78,9 @@ const CHECKOUT_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/checkout.json")).default,
   ro: async () => (await import("./messages/ro/checkout.json")).default,
   uk: async () => (await import("./messages/uk/checkout.json")).default,
-};
+});
 
-const TENANT_PAGE_LOADERS: Partial<Record<AppLang, Loader>> = {
+const TENANT_PAGE_LOADERS = withLaunchedLangCoverage("tenantPage", {
   en: async () => (await import("./messages/en/tenantPage.json")).default,
   de: async () => (await import("./messages/de/tenantPage.json")).default,
   fr: async () => (await import("./messages/fr/tenantPage.json")).default,
@@ -72,9 +90,9 @@ const TENANT_PAGE_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/tenantPage.json")).default,
   ro: async () => (await import("./messages/ro/tenantPage.json")).default,
   uk: async () => (await import("./messages/uk/tenantPage.json")).default,
-};
+});
 
-const PROFILE_LOADERS: Partial<Record<AppLang, Loader>> = {
+const PROFILE_LOADERS = withLaunchedLangCoverage("profile", {
   en: async () => (await import("./messages/en/profile.json")).default,
   de: async () => (await import("./messages/de/profile.json")).default,
   fr: async () => (await import("./messages/fr/profile.json")).default,
@@ -84,9 +102,9 @@ const PROFILE_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/profile.json")).default,
   ro: async () => (await import("./messages/ro/profile.json")).default,
   uk: async () => (await import("./messages/uk/profile.json")).default,
-};
+});
 
-const FINANCE_LOADERS: Partial<Record<AppLang, Loader>> = {
+const FINANCE_LOADERS = withLaunchedLangCoverage("finance", {
   en: async () => (await import("./messages/en/finance.json")).default,
   de: async () => (await import("./messages/de/finance.json")).default,
   fr: async () => (await import("./messages/fr/finance.json")).default,
@@ -96,9 +114,9 @@ const FINANCE_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/finance.json")).default,
   ro: async () => (await import("./messages/ro/finance.json")).default,
   uk: async () => (await import("./messages/uk/finance.json")).default,
-};
+});
 
-const DASHBOARD_LOADERS: Partial<Record<AppLang, Loader>> = {
+const DASHBOARD_LOADERS = withLaunchedLangCoverage("dashboard", {
   en: async () => (await import("./messages/en/dashboard.json")).default,
   de: async () => (await import("./messages/de/dashboard.json")).default,
   fr: async () => (await import("./messages/fr/dashboard.json")).default,
@@ -108,9 +126,9 @@ const DASHBOARD_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/dashboard.json")).default,
   ro: async () => (await import("./messages/ro/dashboard.json")).default,
   uk: async () => (await import("./messages/uk/dashboard.json")).default,
-};
+});
 
-const ORDERS_LOADERS: Partial<Record<AppLang, Loader>> = {
+const ORDERS_LOADERS = withLaunchedLangCoverage("orders", {
   en: async () => (await import("./messages/en/orders.json")).default,
   de: async () => (await import("./messages/de/orders.json")).default,
   fr: async () => (await import("./messages/fr/orders.json")).default,
@@ -120,9 +138,9 @@ const ORDERS_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/orders.json")).default,
   ro: async () => (await import("./messages/ro/orders.json")).default,
   uk: async () => (await import("./messages/uk/orders.json")).default,
-};
+});
 
-const REVIEWS_LOADERS: Partial<Record<AppLang, Loader>> = {
+const REVIEWS_LOADERS = withLaunchedLangCoverage("reviews", {
   en: async () => (await import("./messages/en/reviews.json")).default,
   de: async () => (await import("./messages/de/reviews.json")).default,
   fr: async () => (await import("./messages/fr/reviews.json")).default,
@@ -132,9 +150,9 @@ const REVIEWS_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/reviews.json")).default,
   ro: async () => (await import("./messages/ro/reviews.json")).default,
   uk: async () => (await import("./messages/uk/reviews.json")).default,
-};
+});
 
-const LEGAL_TERMS_LOADERS: Partial<Record<AppLang, Loader>> = {
+const LEGAL_TERMS_LOADERS = withLaunchedLangCoverage("legalTerms", {
   en: async () => (await import("./messages/en/legalTerms.json")).default,
   de: async () => (await import("./messages/de/legalTerms.json")).default,
   fr: async () => (await import("./messages/fr/legalTerms.json")).default,
@@ -144,7 +162,7 @@ const LEGAL_TERMS_LOADERS: Partial<Record<AppLang, Loader>> = {
   pl: async () => (await import("./messages/pl/legalTerms.json")).default,
   ro: async () => (await import("./messages/ro/legalTerms.json")).default,
   uk: async () => (await import("./messages/uk/legalTerms.json")).default,
-};
+});
 
 function isPlainObject(value: unknown): value is MessageTree {
   return typeof value === "object" && value !== null && !Array.isArray(value);
