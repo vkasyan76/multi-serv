@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import {
   type AppLang,
@@ -26,6 +27,7 @@ interface Props {
 
 export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   const trpc = useTRPC();
+  const tMarketplace = useTranslations("marketplace");
   const [filters] = useTenantFilters();
   const params = useParams<{ lang?: string }>();
 
@@ -128,10 +130,10 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 text-lg">
-          No tenants found for this category.
+          {tMarketplace("list.empty_title")}
         </div>
         <div className="text-gray-400 text-sm mt-2">
-          Try adjusting your filters or check back later.
+          {tMarketplace("list.empty_body")}
         </div>
       </div>
     );
@@ -175,13 +177,15 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
             size="lg"
             className="min-w-[140px]"
           >
+            {/* Step 8 keeps pagination behavior unchanged and only localizes the
+                visible list states around it. */}
             {isFetchingNextPage ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading...</span>
+                <span>{tMarketplace("list.loading_more")}</span>
               </div>
             ) : (
-              "Load More"
+              tMarketplace("list.load_more")
             )}
           </Button>
         </div>
@@ -192,7 +196,10 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
 
       {/* Results Summary */}
       <div className="text-center text-sm text-gray-500">
-        Showing {allTenants.length} providers out of {totalTenants}
+        {tMarketplace("list.results_summary", {
+          shown: allTenants.length,
+          total: totalTenants,
+        })}
       </div>
     </div>
   );
