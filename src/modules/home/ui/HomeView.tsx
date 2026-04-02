@@ -24,17 +24,21 @@ import {
 const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
 
 function RadarError({ resetErrorBoundary }: FallbackProps) {
+  const tMarketplace = useTranslations("marketplace");
+
   return (
     <>
       <div className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]">
         <div className="rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-          Couldn&apos;t load providers. Please adjust filters or retry.
+          {tMarketplace("error.home_radar_body")}
           <div className="mt-3">
             <button
               onClick={resetErrorBoundary}
               className="px-3 py-1 rounded-md border text-xs"
             >
-              Retry
+              {/* Step 12 keeps the same error-boundary retry behavior and only
+                  localizes the visible home listing-surface copy. */}
+              {tMarketplace("error.retry")}
             </button>
           </div>
         </div>
