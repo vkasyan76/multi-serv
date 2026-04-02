@@ -168,6 +168,7 @@ function mergeDeep(base: MessageTree, override: MessageTree): MessageTree {
 }
 
 async function loadNamespace(
+  namespace: string,
   appLang: AppLang,
   loaders: Partial<Record<AppLang, Loader>>,
 ): Promise<MessageTree> {
@@ -180,7 +181,14 @@ async function loadNamespace(
   try {
     const localizedNamespace = await loader();
     return mergeDeep(enNamespace, localizedNamespace);
-  } catch {
+  } catch (error) {
+    // Keep the EN fallback behavior, but log enough context to make broken or
+    // missing localized bundles observable in runtime logs.
+    console.error("[i18n] Falling back to en namespace", {
+      namespace,
+      appLang,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return enNamespace;
   }
 }
@@ -212,17 +220,17 @@ export default getRequestConfig(async ({ requestLocale }) => {
     reviews,
     legalTerms,
   ] = await Promise.all([
-    loadNamespace(appLang, COMMON_LOADERS),
-    loadNamespace(appLang, MARKETPLACE_LOADERS),
-    loadNamespace(appLang, BOOKINGS_LOADERS),
-    loadNamespace(appLang, CHECKOUT_LOADERS),
-    loadNamespace(appLang, TENANT_PAGE_LOADERS),
-    loadNamespace(appLang, PROFILE_LOADERS),
-    loadNamespace(appLang, FINANCE_LOADERS),
-    loadNamespace(appLang, DASHBOARD_LOADERS),
-    loadNamespace(appLang, ORDERS_LOADERS),
-    loadNamespace(appLang, REVIEWS_LOADERS),
-    loadNamespace(appLang, LEGAL_TERMS_LOADERS),
+    loadNamespace("common", appLang, COMMON_LOADERS),
+    loadNamespace("marketplace", appLang, MARKETPLACE_LOADERS),
+    loadNamespace("bookings", appLang, BOOKINGS_LOADERS),
+    loadNamespace("checkout", appLang, CHECKOUT_LOADERS),
+    loadNamespace("tenantPage", appLang, TENANT_PAGE_LOADERS),
+    loadNamespace("profile", appLang, PROFILE_LOADERS),
+    loadNamespace("finance", appLang, FINANCE_LOADERS),
+    loadNamespace("dashboard", appLang, DASHBOARD_LOADERS),
+    loadNamespace("orders", appLang, ORDERS_LOADERS),
+    loadNamespace("reviews", appLang, REVIEWS_LOADERS),
+    loadNamespace("legalTerms", appLang, LEGAL_TERMS_LOADERS),
   ]);
 
   return {

@@ -51,6 +51,9 @@ export function LanguageSwitcher({
     [pathname],
   );
 
+  // Route locale is authoritative in Phase 6, so the switcher intentionally
+  // follows the localized pathname instead of deriving active language from a
+  // separate client-side preference source.
   const currentLang = normalizeToSupported(routeLang);
   const [pendingLang, setPendingLang] = useState<AppLang | null>(null);
   const [isPending, startTransition] = useTransition();
