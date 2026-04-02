@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { MultiSelect } from "@/components/ui/multi-select-category";
 import { useTenantFilters } from "../../hooks/use-tenant-filters";
@@ -25,6 +26,7 @@ export function CategoryFilter({
   disabled,
   showLabel = false,
 }: Props) {
+  const tMarketplace = useTranslations("marketplace");
   const [filters, setFilters] = useTenantFilters();
 
   // seed multi 'categories' from route 'category' once (so [category] pages prefill the chip) || Seed from route only if it's not "all"
@@ -58,8 +60,9 @@ export function CategoryFilter({
 
   const placeholder =
     value.length > 0
-      ? (options.find((o) => o.slug === value[0])?.name ?? "Category")
-      : "All categories";
+      ? (options.find((o) => o.slug === value[0])?.name ??
+        tMarketplace("filters.category"))
+      : tMarketplace("filters.all_categories");
 
   const onChange = (vals: string[]) => {
     setFilters((prev) => ({
@@ -73,7 +76,11 @@ export function CategoryFilter({
   return (
     <div className={cn("space-y-2", className)}>
       {showLabel && (
-        <label className="text-sm text-muted-foreground">Category</label>
+        <label className="text-sm text-muted-foreground">
+          {/* Step 5 keeps CMS-provided category names/slugs intact and only
+              translates the shell/fallback text around the selector. */}
+          {tMarketplace("filters.category")}
+        </label>
       )}
       <MultiSelect
         disabled={disabled}

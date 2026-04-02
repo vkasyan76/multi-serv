@@ -5,12 +5,14 @@ import { useTenantFilters } from "../../hooks/use-tenant-filters";
 import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
+import { useTranslations } from "next-intl";
 
 interface TenantSortProps {
   isSignedIn: boolean;
 }
 
 export const TenantSort = ({ isSignedIn }: TenantSortProps) => {
+  const tMarketplace = useTranslations("marketplace");
   const [filters, setFilters] = useTenantFilters();
   const sort = filters.sort ?? "distance";
 
@@ -60,10 +62,14 @@ export const TenantSort = ({ isSignedIn }: TenantSortProps) => {
             }
             disabled={!isSignedIn}
             aria-label={
-              !isSignedIn ? "Sign in to sort by distance" : "Sort by distance"
+              !isSignedIn
+                ? tMarketplace("sort.distance_auth_required")
+                : tMarketplace("sort.distance_aria")
             }
           >
-            Distance
+            {/* Step 6 keeps canonical sort values untouched and only translates
+                the visible sort chrome plus accessibility copy. */}
+            {tMarketplace("sort.distance")}
           </Button>
         </div>
       </AuthTooltip>
@@ -77,7 +83,7 @@ export const TenantSort = ({ isSignedIn }: TenantSortProps) => {
         variant="secondary"
         onClick={togglePriceSort}
       >
-        Price{" "}
+        {tMarketplace("sort.price")}
         {sort === "price_low_to_high" ? (
           <ChevronUp className="ml-1 h-4 w-4" />
         ) : (
@@ -95,7 +101,7 @@ export const TenantSort = ({ isSignedIn }: TenantSortProps) => {
         variant="secondary"
         onClick={toggleTenureSort}
       >
-        Market Tenure{" "}
+        {tMarketplace("sort.market_tenure")}
         {sort === "tenure_newest" ? (
           <ChevronUp className="ml-1 h-4 w-4" />
         ) : (
