@@ -14,7 +14,7 @@
     "online_hint": "Os serviços online funcionam a partir de qualquer lugar. Considere desativar o filtro de distância."
   },
   "services": {
-    "on_site": "Presencial",
+    "on_site": "No local do cliente",
     "on_line": "Online"
   },
   "sort": {

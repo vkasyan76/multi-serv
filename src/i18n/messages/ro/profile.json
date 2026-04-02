@@ -71,7 +71,7 @@
       "description": "Descriere"
     },
     "service_options": {
-      "on_site": "La locație",
+      "on_site": "La client",
       "online": "Online"
     },
     "placeholders": {

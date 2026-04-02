@@ -28,7 +28,7 @@
     "new": "Nuovo",
     "unavailable": "Non disponibile",
     "log_in_for_distance": "Accedi per vedere la distanza",
-    "on_site": "In sede",
+    "on_site": "Presso il cliente",
     "on_line": "Online",
     "orders": "{count, plural, one {# ordine} other {# ordini}}",
     "since": "Dal:",

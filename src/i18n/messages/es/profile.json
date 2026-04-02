@@ -71,7 +71,7 @@
       "description": "Descripción"
     },
     "service_options": {
-      "on_site": "Presencial",
+      "on_site": "A domicilio",
       "online": "Online"
     },
     "placeholders": {

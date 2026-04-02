@@ -14,7 +14,7 @@
     "online_hint": "I servizi online funzionano ovunque. Valuta di disattivare il filtro distanza."
   },
   "services": {
-    "on_site": "In sede",
+    "on_site": "Presso il cliente",
     "on_line": "Online"
   },
   "sort": {

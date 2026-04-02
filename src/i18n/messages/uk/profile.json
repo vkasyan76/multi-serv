@@ -71,7 +71,7 @@
       "description": "Опис"
     },
     "service_options": {
-      "on_site": "На місці",
+      "on_site": "У клієнта",
       "online": "Онлайн"
     },
     "placeholders": {

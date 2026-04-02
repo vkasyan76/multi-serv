@@ -71,7 +71,7 @@
       "description": "Opis"
     },
     "service_options": {
-      "on_site": "Na miejscu",
+      "on_site": "U klienta",
       "online": "Online"
     },
     "placeholders": {

@@ -28,7 +28,7 @@
     "new": "Новий",
     "unavailable": "Недоступно",
     "log_in_for_distance": "Увійдіть, щоб побачити відстань",
-    "on_site": "На місці",
+    "on_site": "У клієнта",
     "on_line": "Онлайн",
     "orders": "{count, plural, one {# замовлення} few {# замовлення} many {# замовлень} other {# замовлення}}",
     "since": "З:",

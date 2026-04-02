@@ -28,7 +28,7 @@
     "new": "Nou",
     "unavailable": "Indisponibil",
     "log_in_for_distance": "Autentifică-te pentru a vedea distanța",
-    "on_site": "La locație",
+    "on_site": "La client",
     "on_line": "Online",
     "orders": "{count, plural, one {# comandă} few {# comenzi} other {# de comenzi}}",
     "since": "Din:",

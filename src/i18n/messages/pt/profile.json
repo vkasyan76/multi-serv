@@ -71,7 +71,7 @@
       "description": "Descrição"
     },
     "service_options": {
-      "on_site": "No local",
+      "on_site": "No local do cliente",
       "online": "Online"
     },
     "placeholders": {

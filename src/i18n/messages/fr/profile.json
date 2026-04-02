@@ -71,7 +71,7 @@
       "description": "Description"
     },
     "service_options": {
-      "on_site": "Sur site",
+      "on_site": "Chez le client",
       "online": "En ligne"
     },
     "placeholders": {
