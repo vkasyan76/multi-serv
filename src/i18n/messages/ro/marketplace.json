@@ -1,54 +1,54 @@
 {
   "filters": {
-    "title": "Filters",
-    "clear": "Clear",
-    "max_hourly_rate": "Max Hourly Rate",
-    "location_distance": "Location & Distance",
-    "service_delivery": "Service Delivery",
-    "category": "Category",
-    "all_categories": "All categories"
+    "title": "Filtre",
+    "clear": "Resetează",
+    "max_hourly_rate": "Tarif orar maxim",
+    "location_distance": "Locație și distanță",
+    "service_delivery": "Modalitatea serviciului",
+    "category": "Categorie",
+    "all_categories": "Toate categoriile"
   },
   "distance": {
-    "search_nearby": "Search Nearby",
-    "max_distance": "Max distance",
-    "online_hint": "Online services work from anywhere. Consider disabling distance filter."
+    "search_nearby": "Caută în apropiere",
+    "max_distance": "Distanța maximă",
+    "online_hint": "Serviciile online funcționează de oriunde. Ia în considerare dezactivarea filtrului de distanță."
   },
   "services": {
-    "on_site": "On-site",
+    "on_site": "La fața locului",
     "on_line": "Online"
   },
   "sort": {
-    "distance": "Distance",
-    "price": "Price",
-    "market_tenure": "Market Tenure",
-    "distance_aria": "Sort by distance",
-    "distance_auth_required": "Sign in to sort by distance",
-    "sorted_by_price_low_to_high": "Sorted by Price (low to high)",
-    "sorted_by_price_high_to_low": "Sorted by Price (high to low)",
-    "sorted_by_tenure_newest": "Sorted by Market Tenure (newest first)",
-    "sorted_by_tenure_oldest": "Sorted by Market Tenure (oldest first)",
-    "sorted_by_distance": "Sorted by Distance (nearest first)"
+    "distance": "Distanță",
+    "price": "Preț",
+    "market_tenure": "Vechime pe piață",
+    "distance_aria": "Sortează după distanță",
+    "distance_auth_required": "Autentifică-te pentru a sorta după distanță",
+    "sorted_by_price_low_to_high": "Sortat după preț (de la mic la mare)",
+    "sorted_by_price_high_to_low": "Sortat după preț (de la mare la mic)",
+    "sorted_by_tenure_newest": "Sortat după vechime pe piață (cei mai noi primii)",
+    "sorted_by_tenure_oldest": "Sortat după vechime pe piață (cei mai vechi primii)",
+    "sorted_by_distance": "Sortat după distanță (cei mai apropiați primii)"
   },
   "list": {
-    "empty_title": "No providers found.",
-    "empty_body": "Try adjusting your filters or check back later.",
-    "load_more": "Load More",
-    "loading_more": "Loading...",
-    "results_summary": "Showing {shown} providers out of {total}"
+    "empty_title": "Nu au fost găsiți prestatori.",
+    "empty_body": "Încearcă să ajustezi filtrele sau revino mai târziu.",
+    "load_more": "Încarcă mai mult",
+    "loading_more": "Se încarcă...",
+    "results_summary": "Se afișează {shown} din {total} prestatori"
   },
   "error": {
-    "title": "Something went wrong",
-    "body": "We couldn't load the providers. Please try refreshing the page.",
-    "refresh": "Refresh Page",
-    "refresh_aria": "Refresh page to reload providers",
-    "retry": "Retry",
-    "home_radar_body": "Couldn't load providers. Please adjust filters or retry."
+    "title": "Ceva nu a funcționat",
+    "body": "Nu am putut încărca prestatorii. Reîmprospătează pagina.",
+    "refresh": "Reîmprospătează pagina",
+    "refresh_aria": "Reîmprospătează pagina pentru a reîncărca prestatorii",
+    "retry": "Încearcă din nou",
+    "home_radar_body": "Nu s-au putut încărca prestatorii. Ajustează filtrele sau încearcă din nou."
   },
   "auth": {
-    "distance_tooltip": "Log in to determine your location for distance features."
+    "distance_tooltip": "Autentifică-te pentru a determina locația ta pentru funcțiile de distanță."
   },
   "categories": {
-    "sidebar_title": "Categories",
-    "back": "Back"
+    "sidebar_title": "Categorii",
+    "back": "Înapoi"
   }
 }

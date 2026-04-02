@@ -1,54 +1,54 @@
 {
   "filters": {
-    "title": "Filters",
-    "clear": "Clear",
-    "max_hourly_rate": "Max Hourly Rate",
-    "location_distance": "Location & Distance",
-    "service_delivery": "Service Delivery",
-    "category": "Category",
-    "all_categories": "All categories"
+    "title": "Filter",
+    "clear": "Zurücksetzen",
+    "max_hourly_rate": "Maximaler Stundensatz",
+    "location_distance": "Standort & Entfernung",
+    "service_delivery": "Art der Leistungserbringung",
+    "category": "Kategorie",
+    "all_categories": "Alle Kategorien"
   },
   "distance": {
-    "search_nearby": "Search Nearby",
-    "max_distance": "Max distance",
-    "online_hint": "Online services work from anywhere. Consider disabling distance filter."
+    "search_nearby": "In der Nähe suchen",
+    "max_distance": "Maximale Entfernung",
+    "online_hint": "Online-Dienstleistungen funktionieren von überall. Erwägen Sie, den Entfernungsfilter zu deaktivieren."
   },
   "services": {
-    "on_site": "On-site",
+    "on_site": "Vor Ort",
     "on_line": "Online"
   },
   "sort": {
-    "distance": "Distance",
-    "price": "Price",
-    "market_tenure": "Market Tenure",
-    "distance_aria": "Sort by distance",
-    "distance_auth_required": "Sign in to sort by distance",
-    "sorted_by_price_low_to_high": "Sorted by Price (low to high)",
-    "sorted_by_price_high_to_low": "Sorted by Price (high to low)",
-    "sorted_by_tenure_newest": "Sorted by Market Tenure (newest first)",
-    "sorted_by_tenure_oldest": "Sorted by Market Tenure (oldest first)",
-    "sorted_by_distance": "Sorted by Distance (nearest first)"
+    "distance": "Entfernung",
+    "price": "Preis",
+    "market_tenure": "Marktpräsenz",
+    "distance_aria": "Nach Entfernung sortieren",
+    "distance_auth_required": "Melden Sie sich an, um nach Entfernung zu sortieren",
+    "sorted_by_price_low_to_high": "Sortiert nach Preis (vom niedrigsten zum höchsten)",
+    "sorted_by_price_high_to_low": "Sortiert nach Preis (vom höchsten zum niedrigsten)",
+    "sorted_by_tenure_newest": "Sortiert nach Marktpräsenz (neueste zuerst)",
+    "sorted_by_tenure_oldest": "Sortiert nach Marktpräsenz (älteste zuerst)",
+    "sorted_by_distance": "Sortiert nach Entfernung (nächste zuerst)"
   },
   "list": {
-    "empty_title": "No providers found.",
-    "empty_body": "Try adjusting your filters or check back later.",
-    "load_more": "Load More",
-    "loading_more": "Loading...",
-    "results_summary": "Showing {shown} providers out of {total}"
+    "empty_title": "Keine Anbieter gefunden.",
+    "empty_body": "Passen Sie Ihre Filter an oder versuchen Sie es später erneut.",
+    "load_more": "Mehr laden",
+    "loading_more": "Wird geladen...",
+    "results_summary": "{shown} von {total} Anbietern werden angezeigt"
   },
   "error": {
-    "title": "Something went wrong",
-    "body": "We couldn't load the providers. Please try refreshing the page.",
-    "refresh": "Refresh Page",
-    "refresh_aria": "Refresh page to reload providers",
-    "retry": "Retry",
-    "home_radar_body": "Couldn't load providers. Please adjust filters or retry."
+    "title": "Etwas ist schiefgelaufen",
+    "body": "Die Anbieter konnten nicht geladen werden. Bitte aktualisieren Sie die Seite.",
+    "refresh": "Seite aktualisieren",
+    "refresh_aria": "Seite aktualisieren, um Anbieter neu zu laden",
+    "retry": "Erneut versuchen",
+    "home_radar_body": "Anbieter konnten nicht geladen werden. Passen Sie die Filter an oder versuchen Sie es erneut."
   },
   "auth": {
-    "distance_tooltip": "Log in to determine your location for distance features."
+    "distance_tooltip": "Melden Sie sich an, um Ihren Standort für Entfernungsfunktionen zu bestimmen."
   },
   "categories": {
-    "sidebar_title": "Categories",
-    "back": "Back"
+    "sidebar_title": "Kategorien",
+    "back": "Zurück"
   }
 }
