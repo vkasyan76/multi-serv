@@ -175,34 +175,47 @@ const cascadeWorkTypeToChildren: CollectionAfterChangeHook = async ({
     return doc;
   }
 
-  const children = await req.payload.find({
-    collection: "categories",
-    where: {
-      parent: { equals: String(current.id) },
-    },
-    limit: 200,
-    depth: 0,
-    pagination: false,
-    overrideAccess: true,
-  });
+  let page = 1;
 
-  for (const child of children.docs as CategoryDocLike[]) {
-    if (!child.id || child.workType === currentWorkType) continue;
-
-    await req.payload.update({
+  while (true) {
+    const children = await req.payload.find({
       collection: "categories",
-      id: child.id,
-      data: {
-        workType: currentWorkType,
+      where: {
+        parent: { equals: String(current.id) },
       },
+      page,
+      limit: 200,
       depth: 0,
+      pagination: true,
       overrideAccess: true,
-      context: {
-        ...(hookContext as Record<string, unknown>),
-        skipWorkTypeCascade: true,
-        inheritedWorkType: currentWorkType,
-      },
     });
+
+    for (const child of children.docs as CategoryDocLike[]) {
+      if (!child.id || child.workType === currentWorkType) continue;
+
+      await req.payload.update({
+        collection: "categories",
+        id: child.id,
+        data: {
+          workType: currentWorkType,
+        },
+        depth: 0,
+        overrideAccess: true,
+        context: {
+          ...(hookContext as Record<string, unknown>),
+          skipWorkTypeCascade: true,
+          inheritedWorkType: currentWorkType,
+        },
+      });
+    }
+
+    // Taxonomy groups are expected to stay small, but page through all direct
+    // children so inherited workType can never silently stop at an arbitrary cap.
+    if (!children.hasNextPage) {
+      break;
+    }
+
+    page += 1;
   }
 
   return doc;
@@ -252,6 +265,9 @@ export const Categories: CollectionConfig = {
         { label: "Digital", value: "digital" },
       ],
       admin: {
+        // Child values are inherited and overwritten by hooks, so keep the
+        // editor visible only on root categories where the value is authored.
+        condition: (_, siblingData) => !siblingData?.parent,
         description:
           "Root categories define the work type for the whole category group. Subcategories inherit it from the parent category. This classifies the nature of the work, not the delivery mode.",
       },
