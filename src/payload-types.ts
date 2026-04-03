@@ -420,6 +420,10 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  /**
+   * Root categories define the work type for the whole category group. Subcategories inherit it from the parent category. This classifies the nature of the work, not the delivery mode.
+   */
+  workType?: ('manual' | 'consulting' | 'digital') | null;
   color?: string | null;
   /**
    * Optional lucide-react icon name (e.g. 'Car', 'Wrench'). Leave empty for subcategories.
@@ -1114,6 +1118,7 @@ export interface MediaSelect<T extends boolean = true> {
 export interface CategoriesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  workType?: T;
   color?: T;
   icon?: T;
   parent?: T;
