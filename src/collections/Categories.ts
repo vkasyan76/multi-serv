@@ -29,6 +29,23 @@ export const Categories: CollectionConfig = {
       index: true, // Indexed for faster database lookup
     },
     {
+      // Stage 1 foundation: taxonomy-owned classification used for future
+      // category-group sorting/filtering. Root categories will define this and
+      // subcategories will inherit it in a later stage.
+      name: "workType",
+      type: "select",
+      label: "Work Type",
+      options: [
+        { label: "Manual", value: "manual" },
+        { label: "Consulting", value: "consulting" },
+        { label: "Digital", value: "digital" },
+      ],
+      admin: {
+        description:
+          "Root categories define the work type for the whole category group. Subcategories inherit it from the parent category. This classifies the nature of the work, not the delivery mode.",
+      },
+    },
+    {
       name: "color", // Optional field to associate a color with the category
       type: "text",
     },
