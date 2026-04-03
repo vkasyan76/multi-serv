@@ -12,6 +12,20 @@ import { LOCALE_COOKIE_NAME } from "@/i18n/routing";
 type MessageTree = Record<string, unknown>;
 type Loader = () => Promise<MessageTree>;
 
+function normalizeIfLaunched(code?: string | null): AppLang | undefined {
+  if (!code) return undefined;
+
+  const short = (code.split(",")[0]?.split(/[-_]/)[0] ?? code)
+    .trim()
+    .toLowerCase();
+
+  if (!(LAUNCHED_APP_LANGS as readonly string[]).includes(short)) {
+    return undefined;
+  }
+
+  return normalizeToSupported(code);
+}
+
 function withLaunchedLangCoverage(
   namespace: string,
   loaders: Partial<Record<AppLang, Loader>>,
@@ -221,9 +235,14 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   const routeLocale = await requestLocale;
 
-  const appLang = normalizeToSupported(
-    headerLang || cookieLang || routeLocale || DEFAULT_APP_LANG,
-  );
+  // Apply precedence across valid launched locales only so invalid
+  // header/cookie values cannot collapse early to the default and mask a valid
+  // lower-priority source such as the route locale.
+  const appLang =
+    normalizeIfLaunched(headerLang) ??
+    normalizeIfLaunched(cookieLang) ??
+    normalizeIfLaunched(routeLocale) ??
+    DEFAULT_APP_LANG;
 
   const [
     common,
