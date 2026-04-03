@@ -12,6 +12,8 @@ import { renderInvoicePaidCustomerTemplate } from "./templates/invoice-paid-cust
 import { renderInvoicePaidTenantTemplate } from "./templates/invoice-paid-tenant";
 import { renderOrderCreatedCustomerTemplate } from "./templates/order-created-customer";
 import { renderOrderCreatedTenantTemplate } from "./templates/order-created-tenant";
+import { renderOrderCanceledCustomerTemplate } from "./templates/order-canceled-customer";
+import { renderOrderCanceledTenantTemplate } from "./templates/order-canceled-tenant";
 import { renderOrderCompletedCustomerTemplate } from "./templates/order-completed-customer";
 import { renderOrderAcceptedTenantTemplate } from "./templates/order-accepted-tenant";
 import { renderOrderDisputedTenantTemplate } from "./templates/order-disputed-tenant";
@@ -173,6 +175,14 @@ registerEmailTemplate(
   renderOrderCreatedCustomerTemplate,
 );
 registerEmailTemplate("order.created.tenant", renderOrderCreatedTenantTemplate);
+registerEmailTemplate(
+  "order.canceled.customer",
+  renderOrderCanceledCustomerTemplate,
+);
+registerEmailTemplate(
+  "order.canceled.tenant",
+  renderOrderCanceledTenantTemplate,
+);
 registerEmailTemplate(
   "order.completed.customer",
   renderOrderCompletedCustomerTemplate,

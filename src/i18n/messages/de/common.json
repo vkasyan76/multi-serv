@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "home": "Start",
+    "about": "Über uns",
+    "features": "Funktionen",
+    "pricing": "Preise",
+    "contact": "Kontakt",
+    "terms_of_use": "Nutzungsbedingungen",
+    "impressum": "Impressum",
+    "profile": "Profil",
+    "dashboard": "Dashboard",
+    "dashboard_cta": "Dashboard",
+    "start_business": "Anbieter werden",
+    "start_business_cta": "Werde Pro",
+    "admin_panel": "Admin-Bereich",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "menu": "Menü",
+    "sr_dashboard_available": "Navigation aktualisiert: Dashboard-Schaltfläche verfügbar",
+    "sr_start_business_available": "Navigation aktualisiert: Schaltfläche \"Anbieter werden\" verfügbar"
+  },
+  "a11y": {
+    "language_selector": "Sprache auswählen"
+  },
+  "footer": {
+    "terms": "AGB",
+    "impressum": "Impressum",
+    "privacy_policy": "Datenschutz",
+    "cookies": "Cookies",
+    "cookie_preferences": "Cookie-Einstellungen",
+    "all_rights_reserved": "Alle Rechte vorbehalten."
+  },
+  "cookie": {
+    "banner": {
+      "full": "Wir verwenden Cookies, um dein Erlebnis zu verbessern. Lies unsere <policy>Cookie-Richtlinie</policy>. Du kannst <manage>deine Einstellungen ändern</manage>.",
+      "text": "Wir verwenden Cookies, um dein Erlebnis zu verbessern.",
+      "policy": "Cookie-Richtlinie",
+      "manage": "deine Einstellungen ändern"
+    },
+    "dialog": {
+      "title": "Einstellungen zur Datenerfassung auf der Website",
+      "description": "Wähle, welche Cookies erlaubt sind.",
+      "essential_title": "Essenziell",
+      "essential_text": "Diese Cookies sind für den Betrieb der Website erforderlich und können nicht deaktiviert werden.",
+      "analytics_title": "Marketing und Analyse",
+      "analytics_text": "Hilft uns, die Nutzung zu verstehen und das Produkterlebnis zu verbessern.",
+      "advertising_title": "Werbung",
+      "advertising_text": "Wird verwendet, um Werbung zu personalisieren und deren Wirksamkeit zu messen.",
+      "save": "Einstellungen speichern",
+      "cancel": "Abbrechen"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Dieser Empfehlungslink ist ungültig. Du kannst dich trotzdem normal registrieren.",
+      "expired": "Der Empfehlungscode {code} ist nicht mehr aktiv. Du kannst dich trotzdem normal registrieren."
+    }
+  },
+  "buttons": {
+    "accept": "Akzeptieren",
+    "decline": "Ablehnen",
+    "save_settings": "Einstellungen speichern",
+    "cancel": "Abbrechen",
+    "loading": "Lädt...",
+    "view_all": "Alle anzeigen"
+  },
+  "home": {
+    "hero": {
+      "line1": "Wir verbinden Kunden mit Fachkräften.",
+      "line2": "Ihre Lösung ist nur einen Klick entfernt."
+    },
+    "search": {
+      "placeholder": "Nach Anbieternamen suchen..."
+    },
+    "cta": {
+      "guest_text": "Registrieren Sie sich, um Ihre Suche zu lokalisieren:",
+      "register_button": "Registrieren",
+      "incomplete_profile_text": "Vervollständigen Sie Ihr Profil, um Fachkräfte in Ihrer Nähe besser zu finden:",
+      "complete_profile_button": "Profil vervollständigen",
+      "provider_intro": "Haben Sie eine Geschäftsidee? Registrieren Sie Ihren Service, um auf diesem Radar zu erscheinen!",
+      "provider_button": "Als Dienstleister registrieren"
+    }
+  }
+}

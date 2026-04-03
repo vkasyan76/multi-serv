@@ -1,0 +1,132 @@
+{
+  "wallet": {
+    "filters": {
+      "labels": {
+        "period": "Periodo",
+        "year": "Anno",
+        "month": "Mese",
+        "invoice_date_range": "Intervallo data fattura",
+        "status": "Stato",
+        "tenant": "Fornitore"
+      },
+      "placeholders": {
+        "select_period": "Seleziona periodo",
+        "pick_date_range": "Seleziona intervallo date",
+        "select_status": "Seleziona stato",
+        "loading_tenants": "Caricamento...",
+        "all_tenants": "Tutti i fornitori"
+      },
+      "options": {
+        "full_history": "Cronologia completa",
+        "year": "Anno",
+        "month": "Mese",
+        "custom_range": "Intervallo personalizzato"
+      }
+    },
+    "summary": {
+      "loading": "Caricamento riepilogo wallet...",
+      "load_error": "Impossibile caricare il riepilogo wallet.",
+      "full_history": "Cronologia completa",
+      "payments_received": "Pagamenti ricevuti",
+      "due_from_customers": "Da ricevere dai clienti",
+      "total_invoiced": "Totale fatturato",
+      "platform_fees": "Commissioni piattaforma"
+    },
+    "table": {
+      "title": "Transazioni",
+      "updating": "Aggiornamento...",
+      "loading": "Caricamento transazioni...",
+      "load_error": "Impossibile caricare le transazioni.",
+      "empty": "Nessuna transazione al momento.",
+      "headers": {
+        "invoice_date": "Data fattura",
+        "status": "Stato",
+        "tenant": "Fornitore",
+        "amount": "Importo",
+        "fee_percent": "Comm. %",
+        "promo": "Promo",
+        "order_date": "Data ordine",
+        "actions": "Azioni"
+      },
+      "unknown_tenant": "Fornitore sconosciuto",
+      "no_promo": "Nessuna"
+    },
+    "actions": {
+      "clear_filters": "Cancella filtri",
+      "download_csv": "Scarica CSV",
+      "view_invoice": "Vedi fattura",
+      "load_more": "Carica altro"
+    },
+    "status": {
+      "all": "Tutti gli stati",
+      "paid": "Pagato",
+      "payment_due": "Pagamento dovuto",
+      "fees": "Commissioni",
+      "fee": "Commissione",
+      "paid_on": "Pagato {date}",
+      "fee_on": "Commissione {date}"
+    }
+  },
+  "dashboard": {
+    "title": "Finanze"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Dopo aver completato la <link>configurazione dei pagamenti</link>, potrai aggiungere slot al tuo calendario.",
+      "open_panel": "Apri il pannello pagamenti e saldi nel tuo profilo."
+    },
+    "actions": {
+      "open": "Apri pagamenti"
+    }
+  },
+  "invoice": {
+    "title": "Fattura",
+    "topbar": {
+      "public_page": "Pagina pubblica",
+      "home": "Home"
+    },
+    "sections": {
+      "service_provider": "Fornitore di servizi",
+      "client": "Cliente",
+      "details": "Dettagli"
+    },
+    "fields": {
+      "issued": "Emessa",
+      "paid": "Pagata",
+      "currency": "Valuta",
+      "vat": "IVA",
+      "vat_id": "Partita IVA"
+    },
+    "table": {
+      "service": "Servizio",
+      "hours": "Ore",
+      "hourly_rate": "Tariffa oraria",
+      "amount": "Importo"
+    },
+    "totals": {
+      "subtotal": "Subtotale",
+      "total": "Totale"
+    },
+    "status": {
+      "paid": "Pagata",
+      "issued": "Emessa",
+      "overdue": "Scaduta",
+      "draft": "Bozza",
+      "void": "Annullata",
+      "unknown": "Sconosciuta"
+    },
+    "fallbacks": {
+      "service": "Servizio",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Scarica PDF",
+      "downloading": "Download in corso..."
+    },
+    "errors": {
+      "download_failed": "Impossibile scaricare il PDF. Riprova."
+    }
+  }
+}

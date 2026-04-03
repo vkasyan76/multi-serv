@@ -5,11 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 
 import { useBridge } from "@/modules/tenants/ui/components/tenant_page/BridgeAuth";
-import {
-  type AppLang,
-  normalizeToSupported,
-  getInitialLanguage,
-} from "@/modules/profile/location-utils";
 
 type BridgeResponse = {
   ok: boolean;
@@ -192,13 +187,6 @@ export function useTenantAuth(slug: string, opts: Options = {}) {
   // Step 5) Stable viewer key for resetting downstream UI when the auth user changes.
   const viewerKey = signedState === true ? (profileData?.id ?? null) : null;
 
-  // Step 6) App language derived from profile (fallback to browser/device).
-  const appLang: AppLang = useMemo(() => {
-    const profileLang = profileData?.language;
-    if (profileLang) return normalizeToSupported(profileLang);
-    return getInitialLanguage();
-  }, [profileData?.language]);
-
   // Step 7) Single “gate” boolean for tenant page rendering.
   const waitingForAuth =
     bridgeLoading ||
@@ -221,7 +209,6 @@ export function useTenantAuth(slug: string, opts: Options = {}) {
     bridge: bridge as BridgeResponse | undefined,
     signedState,
     viewerKey,
-    appLang,
     warmReady,
     waitingForAuth,
     onBridgeResync,

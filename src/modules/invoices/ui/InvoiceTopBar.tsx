@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import { Home } from "lucide-react";
-import { platformHomeHref, tenantPublicHref } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { localizedPlatformHref, tenantPublicHref } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -22,21 +25,28 @@ export function InvoiceTopBar({
   tenantName,
   tenantAvatarUrl,
 }: InvoiceTopBarProps) {
-  const homeHref = platformHomeHref();
-  const publicHref = tenantSlug ? tenantPublicHref(tenantSlug) : null;
-  const displayName = tenantSlug || tenantName || "Public page";
+  const tFinance = useTranslations("finance");
+  const params = useParams<{ lang?: string }>();
+  const appLang = normalizeToSupported(params?.lang);
+  // Invoice top bar needs a localized platform-home escape hatch from tenant flows.
+  const homeHref = localizedPlatformHref("/", appLang);
+  const publicHref = tenantSlug ? tenantPublicHref(tenantSlug, appLang) : null;
+  const displayName =
+    tenantName?.trim() ||
+    tenantSlug?.trim() ||
+    tFinance("invoice.topbar.public_page");
 
   return (
-    <nav className="bg-white w-full border-b">
-      <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 h-14 sm:h-16 flex items-center justify-between gap-3">
+    <nav className="w-full border-b bg-white">
+      <div className="mx-auto flex h-14 max-w-(--breakpoint-xl) items-center justify-between gap-3 px-4 sm:h-16 lg:px-12">
         <TooltipProvider>
           {publicHref ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
                   href={publicHref}
-                  className="flex items-center gap-2 min-w-0"
-                  aria-label="Public page"
+                  className="flex min-w-0 items-center gap-2"
+                  aria-label={tFinance("invoice.topbar.public_page")}
                 >
                   {tenantAvatarUrl ? (
                     <Image
@@ -44,28 +54,30 @@ export function InvoiceTopBar({
                       alt={displayName}
                       width={28}
                       height={28}
-                      className="size-7 rounded-full border shrink-0"
+                      className="size-7 shrink-0 rounded-full border"
                     />
                   ) : null}
-                  <span className="text-sm font-medium truncate">
+                  <span className="truncate text-sm font-medium">
                     {displayName}
                   </span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent>Public page</TooltipContent>
+              <TooltipContent>
+                {tFinance("invoice.topbar.public_page")}
+              </TooltipContent>
             </Tooltip>
           ) : (
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
               {tenantAvatarUrl ? (
                 <Image
                   src={tenantAvatarUrl}
                   alt={displayName}
                   width={28}
                   height={28}
-                  className="size-7 rounded-full border shrink-0"
+                  className="size-7 shrink-0 rounded-full border"
                 />
               ) : null}
-              <span className="text-sm font-medium truncate">
+              <span className="truncate text-sm font-medium">
                 {displayName}
               </span>
             </div>
@@ -75,13 +87,13 @@ export function InvoiceTopBar({
             <TooltipTrigger asChild>
               <Link
                 href={homeHref}
-                className="p-2 rounded-full hover:bg-muted"
-                aria-label="Home"
+                className="rounded-full p-2 hover:bg-muted"
+                aria-label={tFinance("invoice.topbar.home")}
               >
                 <Home className="h-7 w-7" />
               </Link>
             </TooltipTrigger>
-            <TooltipContent>Home</TooltipContent>
+            <TooltipContent>{tFinance("invoice.topbar.home")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

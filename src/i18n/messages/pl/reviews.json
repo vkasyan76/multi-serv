@@ -1,0 +1,38 @@
+{
+  "page": {
+    "write_title": "Napisz opinię o {tenantName}",
+    "update_title": "Zaktualizuj swoją opinię o {tenantName}",
+    "open_provider_page": "Otwórz stronę wykonawcy",
+    "go_to_provider_page": "Przejdź do strony wykonawcy",
+    "home": "Strona główna"
+  },
+  "form": {
+    "rating": "Twoja ocena",
+    "title": "Tytuł",
+    "body": "Napisz opinię",
+    "title_placeholder": "Co najważniejszego warto wiedzieć?",
+    "body_placeholder": "Co powinni wiedzieć inni klienci?",
+    "submit": "Wyślij",
+    "update": "Zaktualizuj opinię",
+    "submitting": "Wysyłanie...",
+    "updating": "Aktualizowanie..."
+  },
+  "validation": {
+    "rating": "Wybierz 1-5 gwiazdek.",
+    "title": "3-120 znaków.",
+    "body": "Co najmniej 10 znaków."
+  },
+  "toasts": {
+    "create_success": "Twoja opinia została wysłana.",
+    "update_success": "Twoja opinia została zaktualizowana.",
+    "purchase_required": "Możesz oceniać tylko wykonawców, których usługi zarezerwowałeś i opłaciłeś.",
+    "sign_in_required": "Zaloguj się, aby napisać opinię.",
+    "account_missing": "Nie udało się znaleźć Twojego konta użytkownika.",
+    "tenant_missing": "Nie udało się znaleźć wykonawcy.",
+    "generic_error": "Wystąpił błąd podczas zapisywania opinii. Spróbuj ponownie."
+  },
+  "a11y": {
+    "rating_group": "Ocena",
+    "rating_option": "{count, plural, one {# gwiazdka} few {# gwiazdki} many {# gwiazdek} other {# gwiazdki}}"
+  }
+}

@@ -78,6 +78,27 @@ export const Orders: CollectionConfig = {
     { name: "serviceCompletedAt", type: "date", index: true },
     { name: "acceptedAt", type: "date", index: true },
     { name: "disputedAt", type: "date", index: true },
+    { name: "canceledAt", type: "date", index: true },
+    {
+      name: "canceledByRole",
+      type: "select",
+      required: false,
+      index: true,
+      options: ["customer", "tenant"],
+      admin: {
+        description:
+          "Who triggered the self-service cancellation for this slot-lifecycle order.",
+      },
+    },
+    {
+      name: "cancelReason",
+      type: "textarea",
+      required: false,
+      admin: {
+        description:
+          "Optional reason captured when a slot-lifecycle order is canceled.",
+      },
+    },
 
     // Invoice identifiers + timing (new)
     { name: "invoiceNumber", type: "text", index: true },

@@ -1,0 +1,38 @@
+{
+  "page": {
+    "write_title": "Escrever uma avaliação para {tenantName}",
+    "update_title": "Atualizar a sua avaliação para {tenantName}",
+    "open_provider_page": "Abrir a página do prestador",
+    "go_to_provider_page": "Ir para a página do prestador",
+    "home": "Início"
+  },
+  "form": {
+    "rating": "A sua avaliação",
+    "title": "Título",
+    "body": "Escrever uma avaliação",
+    "title_placeholder": "O que é mais importante saber?",
+    "body_placeholder": "O que devem os outros clientes saber?",
+    "submit": "Enviar",
+    "update": "Atualizar avaliação",
+    "submitting": "A enviar...",
+    "updating": "A atualizar..."
+  },
+  "validation": {
+    "rating": "Escolha entre 1 e 5 estrelas.",
+    "title": "3-120 caracteres.",
+    "body": "Pelo menos 10 caracteres."
+  },
+  "toasts": {
+    "create_success": "A sua avaliação foi enviada.",
+    "update_success": "A sua avaliação foi atualizada.",
+    "purchase_required": "Só pode avaliar prestadores que reservou e pagou.",
+    "sign_in_required": "Inicie sessão para escrever uma avaliação.",
+    "account_missing": "Não foi possível encontrar a sua conta de utilizador.",
+    "tenant_missing": "Não foi possível encontrar o prestador.",
+    "generic_error": "Ocorreu um erro ao guardar a sua avaliação. Tente novamente."
+  },
+  "a11y": {
+    "rating_group": "Avaliação",
+    "rating_option": "{count, plural, one {# estrela} other {# estrelas}}"
+  }
+}

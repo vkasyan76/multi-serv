@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import {
   Share2,
   Link as LinkIcon,
@@ -74,11 +75,12 @@ export function TenantShareSheet({
   showTooltip,
 }: TenantShareSheetProps) {
   const [open, setOpen] = useState(false);
+  const params = useParams<{ lang?: string }>();
 
   const shareUrl = useMemo(() => {
-    const candidate = generateTenantUrl(slug);
+    const candidate = generateTenantUrl(slug, params?.lang);
     return buildAbsoluteUrl(candidate);
-  }, [slug]);
+  }, [slug, params?.lang]);
 
   const fbShareUrl = useMemo(
     () =>

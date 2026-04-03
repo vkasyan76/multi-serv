@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { WalletFiltersBar } from "@/modules/commissions/ui/wallet-filters-bar";
@@ -13,9 +14,8 @@ import {
 import type { WalletFilters } from "@/modules/commissions/ui/wallet-types";
 import {
   type AppLang,
-  getInitialLanguage,
   normalizeToSupported,
-} from "@/modules/profile/location-utils";
+} from "@/lib/i18n/app-lang";
 import { useTRPC } from "@/trpc/client";
 import { AdminWalletSummaryCard } from "./admin-wallet-summary-card";
 import { AdminWalletTransactionsTable } from "./admin-wallet-transactions-table";
@@ -23,16 +23,12 @@ import { AdminWalletTransactionsTable } from "./admin-wallet-transactions-table"
 export function AdminFinanceSection() {
   const trpc = useTRPC();
   const qc = useQueryClient();
-  const profileQ = useQuery(trpc.auth.getUserProfile.queryOptions());
+  const params = useParams<{ lang?: string }>();
   const tenantOptionsQ = useQuery(
     trpc.commissions.adminTenantOptions.queryOptions({}),
   );
 
-  const appLang: AppLang = useMemo(() => {
-    const profileLang = profileQ.data?.language;
-    if (profileLang) return normalizeToSupported(profileLang);
-    return getInitialLanguage();
-  }, [profileQ.data?.language]);
+  const appLang: AppLang = normalizeToSupported(params?.lang);
 
   const [walletFilters, setWalletFilters] = useState<WalletFilters>({
     period: { mode: "all" },

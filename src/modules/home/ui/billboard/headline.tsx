@@ -66,7 +66,7 @@ export default function Headline({
     >
       <h1
         className={cn(
-          "leading-[1.05] tracking-tight text-3xl md:text-5xl lg:text-6xl",
+          "leading-[1.08] tracking-tight text-3xl md:text-5xl lg:text-6xl",
           "font-semibold text-foreground/90",
           line1FontClass // NEW
         )}
@@ -79,7 +79,7 @@ export default function Headline({
       {line2 && (
         <p
           className={cn(
-            "mt-3 md:mt-4 leading-tight tracking-tight text-xl md:text-3xl lg:text-4xl",
+            "mt-3 md:mt-4 leading-[1.1] tracking-tight text-xl md:text-3xl lg:text-4xl",
             "text-foreground/80 text-center",
             line2FontClass // NEW
           )}
@@ -95,7 +95,10 @@ export default function Headline({
         .infin-reveal-wrap {
           display: block; /* allows natural wrapping */
           position: relative;
-          clip-path: inset(0 100% 0 0); /* fully hidden from the right */
+          /* Keep animated clipping from trimming taller glyphs in some locales. */
+          padding-block: 0.08em;
+          margin-block: -0.08em;
+          clip-path: inset(-0.08em 100% -0.08em 0); /* fully hidden from the right */
           opacity: 0;
         }
 
@@ -103,7 +106,7 @@ export default function Headline({
         @keyframes infin-clip-wipe {
           to {
             clip-path: inset(
-              0 -8% 0 0
+              -0.08em -8% -0.08em 0
             ); /* negative right inset = tiny overshoot */
             opacity: 1;
           }

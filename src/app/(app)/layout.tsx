@@ -5,6 +5,7 @@ import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "sonner";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ClerkProvider } from "@clerk/nextjs";
+import { AuthCacheSync } from "@/modules/auth/ui/views/auth-cache-sync";
 import { ClerkUserSync } from "@/modules/auth/ui/views/clerk-user-sync";
 import GeoBootstrap from "@/components/geo-bootstrap";
 
@@ -12,13 +13,12 @@ import GeoBootstrap from "@/components/geo-bootstrap";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import {
   getAppLangFromHeaders,
-  type AppLang,
 } from "@/modules/profile/location-utils";
-import { CookieConsentRoot } from "@/modules/legal/cookies/ui/cookie-consent-root";
-import { VercelAnalyticsConsent } from "@/modules/legal/cookies/ui/consents/vercel-analytics-consent";
+import { normalizeToSupported, type AppLang } from "@/lib/i18n/app-lang";
+import { LOCALE_COOKIE_NAME } from "@/i18n/routing";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,10 +57,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // derive AppLang from Accept-Language header on the SERVER
-  // Next 15: headers() is async
+  // Phase 2: prefer middleware-resolved locale, then cookie, then Accept-Language.
   const h = await headers();
-  const appLang: AppLang = getAppLangFromHeaders(h);
+  const requestLang = h.get("x-app-lang")?.trim();
+  let appLang: AppLang;
+
+  if (requestLang) {
+    appLang = normalizeToSupported(requestLang);
+  } else {
+    const cookieStore = await cookies();
+    const cookieLang = cookieStore.get(LOCALE_COOKIE_NAME)?.value;
+    appLang = cookieLang
+      ? normalizeToSupported(cookieLang)
+      : getAppLangFromHeaders(h);
+  }
 
   return (
     <html lang={appLang}>
@@ -70,11 +80,10 @@ export default async function RootLayout({
         <ClerkProvider>
           <NuqsAdapter>
             <TRPCReactProvider>
+              <AuthCacheSync />
               <ClerkUserSync />
               <GeoBootstrap />
               {children}
-              <CookieConsentRoot />
-              <VercelAnalyticsConsent />
               <Toaster />
             </TRPCReactProvider>
           </NuqsAdapter>

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 type ParsedNotice =
   | { kind: "invalid" }
@@ -12,12 +13,6 @@ type Props = {
 };
 
 const REFERRAL_CODE_RE = /^[A-Z0-9_-]{3,64}$/;
-
-const NOTICE_MESSAGES_EN = {
-  invalid: "This referral link is invalid. You can still register normally.",
-  expired: (code: string) =>
-    `This referral code ${code} is no longer active. You can still register normally.`,
-};
 
 function parseNotice(raw?: string | null): ParsedNotice | null {
   if (!raw) return null;
@@ -42,6 +37,8 @@ function parseNotice(raw?: string | null): ParsedNotice | null {
 }
 
 export function ReferralNotice({ notice }: Props) {
+  const t = useTranslations("common");
+
   useEffect(() => {
     const parsed = parseNotice(notice);
     if (!parsed) return;
@@ -57,8 +54,9 @@ export function ReferralNotice({ notice }: Props) {
 
     const message =
       parsed.kind === "expired"
-        ? NOTICE_MESSAGES_EN.expired(parsed.code)
-        : NOTICE_MESSAGES_EN.invalid;
+        // Keep referral code dynamic via message interpolation.
+        ? t("toast.referral.expired", { code: parsed.code })
+        : t("toast.referral.invalid");
 
     // Lightweight UX notice: auto-dismiss + manual close.
     // Defer one tick so toast always fires after Toaster is mounted.
@@ -71,7 +69,6 @@ export function ReferralNotice({ notice }: Props) {
         position: "top-center",
       });
       try {
-        // TODO(i18n): move referral notice copy into the global translation dictionary.
         // Mark only after toast invocation to avoid false suppression.
         sessionStorage.setItem(storageKey, "1");
       } catch {
@@ -79,7 +76,7 @@ export function ReferralNotice({ notice }: Props) {
       }
     }, 0);
     return () => clearTimeout(timerId);
-  }, [notice]);
+  }, [notice, t]);
 
   return null;
 }

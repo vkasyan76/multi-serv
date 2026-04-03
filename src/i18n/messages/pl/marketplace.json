@@ -1,0 +1,54 @@
+{
+  "filters": {
+    "title": "Filtry",
+    "clear": "Wyczyść",
+    "max_hourly_rate": "Maksymalna stawka godzinowa",
+    "location_distance": "Lokalizacja i odległość",
+    "service_delivery": "Sposób realizacji usługi",
+    "category": "Kategoria",
+    "all_categories": "Wszystkie kategorie"
+  },
+  "distance": {
+    "search_nearby": "Szukaj w pobliżu",
+    "max_distance": "Maksymalna odległość",
+    "online_hint": "Usługi online działają z dowolnego miejsca. Rozważ wyłączenie filtra odległości."
+  },
+  "services": {
+    "on_site": "U klienta",
+    "on_line": "Online"
+  },
+  "sort": {
+    "distance": "Odległość",
+    "price": "Cena",
+    "market_tenure": "Obecność na rynku",
+    "distance_aria": "Sortuj według odległości",
+    "distance_auth_required": "Zaloguj się, aby sortować według odległości",
+    "sorted_by_price_low_to_high": "Sortowanie według ceny (od najniższej do najwyższej)",
+    "sorted_by_price_high_to_low": "Sortowanie według ceny (od najwyższej do najniższej)",
+    "sorted_by_tenure_newest": "Sortowanie według obecności na rynku (najnowsi najpierw)",
+    "sorted_by_tenure_oldest": "Sortowanie według obecności na rynku (najstarsi najpierw)",
+    "sorted_by_distance": "Sortowanie według odległości (najbliżsi najpierw)"
+  },
+  "list": {
+    "empty_title": "Nie znaleziono wykonawców.",
+    "empty_body": "Spróbuj zmienić filtry lub wróć później.",
+    "load_more": "Załaduj więcej",
+    "loading_more": "Ładowanie...",
+    "results_summary": "Wyświetlanie {shown} z {total} wykonawców"
+  },
+  "error": {
+    "title": "Coś poszło nie tak",
+    "body": "Nie udało się załadować wykonawców. Odśwież stronę.",
+    "refresh": "Odśwież stronę",
+    "refresh_aria": "Odśwież stronę, aby ponownie załadować wykonawców",
+    "retry": "Spróbuj ponownie",
+    "home_radar_body": "Nie udało się załadować wykonawców. Dostosuj filtry lub spróbuj ponownie."
+  },
+  "auth": {
+    "distance_tooltip": "Zaloguj się, aby określić swoją lokalizację dla funkcji odległości."
+  },
+  "categories": {
+    "sidebar_title": "Kategorie",
+    "back": "Wstecz"
+  }
+}

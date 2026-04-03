@@ -1,0 +1,52 @@
+{
+  "page": {
+    "title": "Panou"
+  },
+  "nav": {
+    "calendar": "Program",
+    "orders": "Comenzi",
+    "messages": "Mesaje",
+    "finance": "Finanțe"
+  },
+  "navbar": {
+    "public_page": "Vezi pagina mea",
+    "open_public_page": "Deschide pagina publică",
+    "profile": "Profilul meu",
+    "vendor_profile": "Profil prestator",
+    "home": "Acasă",
+    "tenant_alt": "Prestator"
+  },
+  "sections": {
+    "calendar": "Program",
+    "orders": "Comenzi",
+    "messages": "Mesaje"
+  },
+  "tooltips": {
+    "calendar": "Dă clic pentru a adăuga sau elimina intervale disponibile.",
+    "orders": "Marchează intervalele ca finalizate, apoi emite facturi după acceptarea clientului."
+  },
+  "mismatch": {
+    "title": "Cont greșit",
+    "body": "Acest link este pentru {expectedSlug}, dar ești autentificat ca {actualSlug}.",
+    "hint": "Deconectează-te pentru a continua cu contul corect.",
+    "action": "Deconectează-te și continuă"
+  },
+  "states": {
+    "loading": "Se încarcă...",
+    "unavailable": "Panoul nu a putut fi încărcat."
+  },
+  "inbox": {
+    "title": "Mesaje primite",
+    "recent": "Recente",
+    "oldest": "Cele mai vechi",
+    "search_placeholder": "Caută după nume",
+    "loading": "Se încarcă...",
+    "empty": "Nu există încă nicio conversație.",
+    "empty_search": "Nu există conversații potrivite.",
+    "load_more": "Încarcă mai mult",
+    "customer_fallback": "Client",
+    "mobile_title": "Conversație cu {customerName}",
+    "back_to_inbox": "Înapoi la căsuța de mesaje",
+    "select_conversation": "Selectați o conversație din stânga."
+  }
+}

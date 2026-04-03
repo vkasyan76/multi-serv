@@ -1,0 +1,57 @@
+{
+  "section": {
+    "title": "Booking"
+  },
+  "availability": {
+    "loading": "Loading availability...",
+    "select_slot": "Click on an available slot to book.",
+    "no_slots_day": "No slots available on this date. Use the arrows to check other days.",
+    "no_slots_week": "No free slots available this week. Use the arrows to check another week.",
+    "no_slots_any": "No free slots are currently available. You can contact the provider regarding availability or check back later."
+  },
+  "selection": {
+    "clear": "Clear selection",
+    "limit_reached": "You can select up to {count} slots per booking."
+  },
+  "cta": {
+    "book_slots": "Book slots",
+    "book_slots_count": "Book slots ({count})",
+    "checking_sign_in": "Checking sign-in...",
+    "sign_in_to_book_provider": "Sign in to book this provider.",
+    "select_slots_then_sign_in": "Select slots, then sign in to book.",
+    "sign_in_to_contact": "Sign in to contact this provider."
+  },
+  "calendar": {
+    "today": "Today",
+    "previous_day": "Previous day",
+    "next_day": "Next day",
+    "previous_week": "Previous week",
+    "next_week": "Next week",
+    "crosses_midnight": "Last 1-hour slot starts at 22:00. 23:00 would cross midnight."
+  },
+  "legend": {
+    "available": "Available",
+    "scheduled": "Scheduled",
+    "completed": "Completed",
+    "accepted": "Accepted",
+    "disputed": "Disputed"
+  },
+  "payment_status": {
+    "unpaid": "Unpaid",
+    "pending": "Pending",
+    "paid": "Paid"
+  },
+  "tooltip": {
+    "available": "Available - {date}",
+    "status": "{label} - {date}"
+  },
+  "errors": {
+    "generic": "Booking failed. Please try again.",
+    "slot_not_found": "This slot is no longer available.",
+    "slot_not_reserved": "Some selected slots are no longer reserved.",
+    "slot_already_taken": "This slot is no longer available.",
+    "slots_changed": "Some selected slots changed. Please try again.",
+    "provider_not_ready": "This provider is not ready to take bookings yet.",
+    "profile_incomplete": "Please complete your profile before booking."
+  }
+}

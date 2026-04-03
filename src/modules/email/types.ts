@@ -6,6 +6,8 @@ export type EmailEventType =
   | "payouts.enabled.tenant"
   | "order.created.customer"
   | "order.created.tenant"
+  | "order.canceled.customer"
+  | "order.canceled.tenant"
   | "order.completed.customer"
   | "order.accepted.tenant"
   | "order.disputed.tenant"

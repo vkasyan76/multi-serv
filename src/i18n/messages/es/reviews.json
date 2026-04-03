@@ -1,0 +1,38 @@
+{
+  "page": {
+    "write_title": "Escribir una reseña para {tenantName}",
+    "update_title": "Actualizar su reseña para {tenantName}",
+    "open_provider_page": "Abrir la página del proveedor",
+    "go_to_provider_page": "Ir a la página del proveedor",
+    "home": "Inicio"
+  },
+  "form": {
+    "rating": "Su valoración",
+    "title": "Título",
+    "body": "Escribir una reseña",
+    "title_placeholder": "¿Qué es lo más importante que se debe saber?",
+    "body_placeholder": "¿Qué deberían saber otros clientes?",
+    "submit": "Enviar",
+    "update": "Actualizar reseña",
+    "submitting": "Enviando...",
+    "updating": "Actualizando..."
+  },
+  "validation": {
+    "rating": "Elija entre 1 y 5 estrellas.",
+    "title": "3-120 caracteres.",
+    "body": "Al menos 10 caracteres."
+  },
+  "toasts": {
+    "create_success": "Su reseña se ha enviado correctamente.",
+    "update_success": "Su reseña se ha actualizado correctamente.",
+    "purchase_required": "Solo puede reseñar proveedores que haya reservado y pagado.",
+    "sign_in_required": "Inicie sesión para escribir una reseña.",
+    "account_missing": "No se pudo encontrar su cuenta de usuario.",
+    "tenant_missing": "No se pudo encontrar el proveedor.",
+    "generic_error": "Se produjo un error al guardar su reseña. Inténtelo de nuevo."
+  },
+  "a11y": {
+    "rating_group": "Valoración",
+    "rating_option": "{count, plural, one {# estrella} other {# estrellas}}"
+  }
+}

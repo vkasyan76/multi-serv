@@ -6,6 +6,8 @@ import { useTRPC } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ExternalLink,
   Loader2,
@@ -25,11 +27,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getLocaleAndCurrency } from "@/modules/profile/location-utils";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { getLocaleAndCurrency } from "@/lib/i18n/locale";
 import SettingsHeader from "./SettingsHeader";
 
 export default function PayoutsPanel() {
   const trpc = useTRPC();
+  const tProfile = useTranslations("profile");
+  const params = useParams<{ lang?: string }>();
+  const appLang = normalizeToSupported(params?.lang);
+  const vendorProfileHref = `/${appLang}/profile?tab=vendor`;
 
   // Queries
   const statusQ = useQuery(trpc.auth.getStripeStatus.queryOptions());
@@ -69,10 +76,10 @@ export default function PayoutsPanel() {
   const s = statusQ.data;
 
   const banner = !s?.hasTenant
-    ? "Create your Service Provider profile first."
+    ? tProfile("payouts.messages.provider_required")
     : s.onboardingStatus === "completed"
-      ? "Payouts are active. Manage your Stripe account from the dashboard."
-      : "Finish Stripe onboarding to enable payouts.";
+      ? tProfile("payouts.messages.active")
+      : tProfile("payouts.messages.finish_onboarding");
 
   const openInNewTab = (url: string) =>
     window.open(url, "_blank", "noopener,noreferrer");
@@ -86,7 +93,7 @@ export default function PayoutsPanel() {
       openInNewTab(url);
     } catch (err) {
       if (process.env.NODE_ENV !== "production") console.error(err);
-      toast.error("Couldn’t open Stripe onboarding. Please try again.");
+      toast.error(tProfile("payouts.errors.open_onboarding_failed"));
     } finally {
       setOnboardingBusy(false);
     }
@@ -101,7 +108,7 @@ export default function PayoutsPanel() {
       openInNewTab(url);
     } catch (err) {
       if (process.env.NODE_ENV !== "production") console.error(err);
-      toast.error("Couldn’t open Stripe dashboard. Please try again.");
+      toast.error(tProfile("payouts.errors.open_dashboard_failed"));
     } finally {
       setDashboardBusy(false);
     }
@@ -113,9 +120,11 @@ export default function PayoutsPanel() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[320px] gap-4 px-4">
         <AlertCircle className="h-12 w-12 text-red-600" />
-        <p className="text-lg font-medium">Failed to load payout status.</p>
+        <p className="text-lg font-medium">
+          {tProfile("payouts.errors.status_load_failed")}
+        </p>
         <Button variant="elevated" onClick={() => statusQ.refetch()}>
-          Retry
+          {tProfile("payouts.actions.retry")}
         </Button>
       </div>
     );
@@ -132,12 +141,20 @@ export default function PayoutsPanel() {
     if (loading) {
       return (
         <div className="inline-flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" aria-label="Loading" />
+          <Loader2
+            className="h-4 w-4 animate-spin"
+            aria-label={tProfile("payouts.status.loading")}
+          />
         </div>
       );
     }
 
-    const label = live === true ? "LIVE" : live === false ? "TEST" : "—";
+    const label =
+      live === true
+        ? tProfile("payouts.status.live")
+        : live === false
+          ? tProfile("payouts.status.test")
+          : "—";
     const dotClass =
       live === true
         ? "bg-emerald-500"
@@ -158,11 +175,21 @@ export default function PayoutsPanel() {
   const BoolCell = ({ ok }: { ok: boolean }) => (
     <div className="flex items-center gap-2">
       {ok ? (
-        <CheckCircle2 className="h-5 w-5 text-green-600" aria-label="enabled" />
+        <CheckCircle2
+          className="h-5 w-5 text-green-600"
+          aria-label={tProfile("payouts.status.enabled")}
+        />
       ) : (
-        <XCircle className="h-5 w-5 text-red-600" aria-label="disabled" />
+        <XCircle
+          className="h-5 w-5 text-red-600"
+          aria-label={tProfile("payouts.status.disabled")}
+        />
       )}
-      <span className="text-sm">{ok ? "Enabled" : "Disabled"}</span>
+      <span className="text-sm">
+        {ok
+          ? tProfile("payouts.status.enabled")
+          : tProfile("payouts.status.disabled")}
+      </span>
     </div>
   );
 
@@ -172,7 +199,9 @@ export default function PayoutsPanel() {
       return (
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-green-600" />
-          <span className="capitalize">Completed</span>
+          <span className="capitalize">
+            {tProfile("payouts.status.completed")}
+          </span>
         </div>
       );
     }
@@ -180,7 +209,9 @@ export default function PayoutsPanel() {
       return (
         <div className="flex items-center gap-2">
           <Clock className="h-5 w-5 text-amber-500" />
-          <span className="capitalize">In progress</span>
+          <span className="capitalize">
+            {tProfile("payouts.status.in_progress")}
+          </span>
         </div>
       );
     }
@@ -188,35 +219,37 @@ export default function PayoutsPanel() {
       return (
         <div className="flex items-center gap-2">
           <AlertCircle className="h-5 w-5 text-red-600" />
-          <span className="capitalize">Restricted</span>
+          <span className="capitalize">
+            {tProfile("payouts.status.restricted")}
+          </span>
         </div>
       );
     }
     return (
       <div className="flex items-center gap-2">
         <AlertCircle className="h-5 w-5 text-muted-foreground" />
-        <span className="capitalize">Not started</span>
+        <span className="capitalize">
+          {tProfile("payouts.status.not_started")}
+        </span>
       </div>
     );
   };
 
   // currency + date formatters for the Balance table
-  const { locale } = getLocaleAndCurrency();
+  const { locale } = getLocaleAndCurrency(appLang);
 
   const fmt = (cents: number, currency: string) => {
     const amount = (cents ?? 0) / 100;
 
     try {
-      // Use the user's locale + the row's currency
+      // Use the route locale + the row's currency
       return new Intl.NumberFormat(locale, {
         style: "currency",
         currency,
-        // reasonable defaults; Stripe balances are in minor units
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(amount);
     } catch {
-      // Fallback in case of an unknown/unsupported currency code
       return `${amount.toFixed(2)} ${currency.toUpperCase()}`;
     }
   };
@@ -225,7 +258,7 @@ export default function PayoutsPanel() {
     iso
       ? new Intl.DateTimeFormat(locale, {
           day: "numeric",
-          month: "long", // Month in words, localized
+          month: "long",
           year: "numeric",
         }).format(new Date(iso))
       : "—";
@@ -234,7 +267,7 @@ export default function PayoutsPanel() {
   return (
     <div className="flex flex-col gap-2 px-3 sm:px-6 md:px-8 py-4 pb-24 overflow-auto">
       {/* Responsive header */}
-      <SettingsHeader title="Payments & Payouts" />
+      <SettingsHeader title={tProfile("payouts.title")} />
 
       <Card className="overflow-hidden">
         {/* Stripe accent */}
@@ -260,12 +293,12 @@ export default function PayoutsPanel() {
                 onClick={onStartOrResume}
                 disabled={onboardingBusy || !s?.hasTenant}
                 className="justify-between bg-black text-white hover:bg-pink-400 hover:text-primary"
-                aria-label="Open Stripe onboarding in a new tab"
+                aria-label={tProfile("payouts.aria.open_onboarding")}
               >
                 <span>
                   {s?.onboardingStatus === "completed"
-                    ? "Update Stripe Details"
-                    : "Onboarding"}
+                    ? tProfile("payouts.actions.update_details")
+                    : tProfile("payouts.actions.onboarding")}
                 </span>
                 {onboardingBusy ? (
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -279,9 +312,9 @@ export default function PayoutsPanel() {
                 onClick={onOpenDashboard}
                 disabled={dashboardBusy || !s?.hasTenant}
                 className="justify-between"
-                aria-label="Open Stripe dashboard in a new tab"
+                aria-label={tProfile("payouts.aria.open_dashboard")}
               >
-                <span>Open Stripe Dashboard</span>
+                <span>{tProfile("payouts.actions.open_dashboard")}</span>
                 {dashboardBusy ? (
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 ) : (
@@ -290,9 +323,9 @@ export default function PayoutsPanel() {
               </Button>
 
               {!s?.hasTenant && (
-                <Link href="/profile?tab=vendor" className="w-full">
+                <Link href={vendorProfileHref} className="w-full">
                   <Button variant="outline" className="w-full">
-                    Create Service Provider profile
+                    {tProfile("payouts.actions.create_provider")}
                   </Button>
                 </Link>
               )}
@@ -302,32 +335,34 @@ export default function PayoutsPanel() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40">
-                      <TableHead className="w-1/3">Field</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead className="w-1/3">
+                        {tProfile("payouts.table.field")}
+                      </TableHead>
+                      <TableHead>{tProfile("payouts.table.status")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell>Onboarding</TableCell>
+                      <TableCell>{tProfile("payouts.table.onboarding")}</TableCell>
                       <TableCell>
                         <OnboardingCell status={s?.onboardingStatus} />
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell>Charges</TableCell>
+                      <TableCell>{tProfile("payouts.table.charges")}</TableCell>
                       <TableCell>
                         <BoolCell ok={!!s?.chargesEnabled} />
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell>Payouts</TableCell>
+                      <TableCell>{tProfile("payouts.table.payouts")}</TableCell>
                       <TableCell>
                         <BoolCell ok={!!s?.payoutsEnabled} />
                       </TableCell>
                     </TableRow>
                     {s?.onboardingStatus === "completed" && (
                       <TableRow>
-                        <TableCell>Mode</TableCell>
+                        <TableCell>{tProfile("payouts.table.mode")}</TableCell>
                         <TableCell>
                           <ModeCell
                             live={balanceQ.data?.livemode}
@@ -346,17 +381,21 @@ export default function PayoutsPanel() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/40">
-                    <TableHead className="w-1/3">Currency</TableHead>
+                    <TableHead className="w-1/3">
+                      {tProfile("payouts.table.currency")}
+                    </TableHead>
 
                     {/* hidden on xs */}
                     <TableHead className="text-right hidden sm:table-cell">
-                      Available
+                      {tProfile("payouts.table.available")}
                     </TableHead>
                     <TableHead className="text-right hidden sm:table-cell">
-                      Pending
+                      {tProfile("payouts.table.pending")}
                     </TableHead>
 
-                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right">
+                      {tProfile("payouts.table.total")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -366,10 +405,10 @@ export default function PayoutsPanel() {
                         <div className="flex items-center justify-center gap-3 py-3">
                           <AlertCircle className="h-5 w-5 text-red-600" />
                           <span className="text-sm font-medium">
-                            Failed to load balances.
+                            {tProfile("payouts.errors.balance_load_failed")}
                           </span>
                           <Button size="sm" onClick={() => balanceQ.refetch()}>
-                            Retry
+                            {tProfile("payouts.actions.retry")}
                           </Button>
                         </div>
                       </TableCell>
@@ -384,11 +423,11 @@ export default function PayoutsPanel() {
                           <div className="flex items-center justify-center py-3">
                             <Loader2
                               className="h-4 w-4 animate-spin"
-                              aria-label="Loading"
+                              aria-label={tProfile("payouts.status.loading")}
                             />
                           </div>
                         ) : (
-                          "No balance yet"
+                          tProfile("payouts.messages.no_balance")
                         )}
                       </TableCell>
                     </TableRow>
@@ -412,7 +451,9 @@ export default function PayoutsPanel() {
                   )}
 
                   <TableRow className="bg-muted/20">
-                    <TableCell className="font-medium">Next Payout:</TableCell>
+                    <TableCell className="font-medium">
+                      {tProfile("payouts.table.next_payout")}
+                    </TableCell>
                     <TableCell colSpan={3} className="text-right">
                       {fmtDate(balanceQ.data?.estimatedNextPayoutAt)}
                     </TableCell>

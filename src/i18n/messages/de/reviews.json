@@ -1,0 +1,38 @@
+{
+  "page": {
+    "write_title": "Schreibe eine Bewertung für {tenantName}",
+    "update_title": "Aktualisiere deine Bewertung für {tenantName}",
+    "open_provider_page": "Anbieterseite öffnen",
+    "go_to_provider_page": "Zur Anbieterseite",
+    "home": "Startseite"
+  },
+  "form": {
+    "rating": "Deine Bewertung",
+    "title": "Titel",
+    "body": "Bewertung schreiben",
+    "title_placeholder": "Was sollte man auf jeden Fall wissen?",
+    "body_placeholder": "Was sollten andere Kunden wissen?",
+    "submit": "Absenden",
+    "update": "Bewertung aktualisieren",
+    "submitting": "Wird gesendet...",
+    "updating": "Wird aktualisiert..."
+  },
+  "validation": {
+    "rating": "Wähle 1-5 Sterne.",
+    "title": "3-120 Zeichen.",
+    "body": "Mindestens 10 Zeichen."
+  },
+  "toasts": {
+    "create_success": "Deine Bewertung wurde gesendet.",
+    "update_success": "Deine Bewertung wurde aktualisiert.",
+    "purchase_required": "Du kannst nur Anbieter bewerten, die du gebucht und bezahlt hast.",
+    "sign_in_required": "Melde dich an, um eine Bewertung zu schreiben.",
+    "account_missing": "Dein Benutzerkonto konnte nicht gefunden werden.",
+    "tenant_missing": "Der Anbieter konnte nicht gefunden werden.",
+    "generic_error": "Beim Speichern deiner Bewertung ist ein Fehler aufgetreten. Bitte versuche es erneut."
+  },
+  "a11y": {
+    "rating_group": "Bewertung",
+    "rating_option": "{count, plural, one {# Stern} other {# Sterne}}"
+  }
+}

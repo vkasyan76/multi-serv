@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "about": "À propos",
+    "features": "Fonctionnalités",
+    "pricing": "Tarifs",
+    "contact": "Contact",
+    "terms_of_use": "Conditions d'utilisation",
+    "impressum": "Mentions légales",
+    "profile": "Profil",
+    "dashboard": "Dashboard",
+    "dashboard_cta": "Dashboard",
+    "start_business": "Devenir prestataire",
+    "start_business_cta": "Devenir pro",
+    "admin_panel": "Panneau admin",
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "menu": "Menu",
+    "sr_dashboard_available": "Navigation mise à jour : bouton Dashboard disponible",
+    "sr_start_business_available": "Navigation mise à jour : bouton Devenir prestataire disponible"
+  },
+  "a11y": {
+    "language_selector": "Choisir la langue"
+  },
+  "footer": {
+    "terms": "Conditions",
+    "impressum": "Mentions légales",
+    "privacy_policy": "Politique de confidentialité",
+    "cookies": "Cookies",
+    "cookie_preferences": "Préférences de cookies",
+    "all_rights_reserved": "Tous droits réservés."
+  },
+  "cookie": {
+    "banner": {
+      "full": "Nous utilisons des cookies pour améliorer votre expérience. Consultez notre <policy>politique relative aux cookies</policy>. Vous pouvez <manage>modifier vos préférences</manage> à tout moment.",
+      "text": "Nous utilisons des cookies pour améliorer votre expérience.",
+      "policy": "politique relative aux cookies",
+      "manage": "modifier vos préférences"
+    },
+    "dialog": {
+      "title": "Préférences de collecte des données du site web",
+      "description": "Choisissez les cookies que vous souhaitez autoriser.",
+      "essential_title": "Essentiels",
+      "essential_text": "Ces cookies sont nécessaires au fonctionnement du site et ne peuvent pas être désactivés.",
+      "analytics_title": "Marketing et analyse",
+      "analytics_text": "Ces cookies nous aident à comprendre l'utilisation et à améliorer l'expérience produit.",
+      "advertising_title": "Publicité",
+      "advertising_text": "Utilisés pour personnaliser la publicité et en mesurer l'efficacité.",
+      "save": "Enregistrer les paramètres",
+      "cancel": "Annuler"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Ce lien de parrainage n'est pas valide. Vous pouvez tout de même vous inscrire normalement.",
+      "expired": "Ce code de parrainage {code} n'est plus actif. Vous pouvez tout de même vous inscrire normalement."
+    }
+  },
+  "buttons": {
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "save_settings": "Enregistrer les paramètres",
+    "cancel": "Annuler",
+    "loading": "Chargement...",
+    "view_all": "Voir tout"
+  },
+  "home": {
+    "hero": {
+      "line1": "Nous mettons en relation les clients avec des professionnels.",
+      "line2": "Votre solution n'est qu'à un clic."
+    },
+    "search": {
+      "placeholder": "Rechercher par nom du prestataire..."
+    },
+    "cta": {
+      "guest_text": "Inscrivez-vous pour localiser votre recherche :",
+      "register_button": "S'inscrire",
+      "incomplete_profile_text": "Complétez votre profil pour mieux localiser les professionnels autour de vous :",
+      "complete_profile_button": "Compléter le profil",
+      "provider_intro": "Vous avez une idée d'entreprise ? Inscrivez votre service pour apparaître sur ce radar !",
+      "provider_button": "S'inscrire comme prestataire"
+    }
+  }
+}

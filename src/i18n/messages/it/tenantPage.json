@@ -1,0 +1,80 @@
+{
+  "sections": {
+    "about": "Chi sono",
+    "services": "Servizi",
+    "reviews": "Recensioni"
+  },
+  "bio": {
+    "empty": "Nessuna biografia disponibile."
+  },
+  "services": {
+    "competencies": "Le mie competenze:",
+    "specialisation": "Specializzazione:"
+  },
+  "subnav": {
+    "about": "Chi sono",
+    "services": "Servizi",
+    "booking": "Prenotazione",
+    "reviews": "Recensioni"
+  },
+  "navbar": {
+    "powered_by": "Offerto da",
+    "home_tooltip": "Home",
+    "home_aria": "Home Infinisimo",
+    "tenant_alt": "Professionista"
+  },
+  "card": {
+    "rating_sr": "Valutazione",
+    "new": "Nuovo",
+    "unavailable": "Non disponibile",
+    "log_in_for_distance": "Accedi per vedere la distanza",
+    "on_site": "Presso il cliente",
+    "on_line": "Online",
+    "orders": "{count, plural, one {# ordine} other {# ordini}}",
+    "since": "Dal:",
+    "dashboard": "Dashboard",
+    "profile": "Profilo",
+    "book_service": "Prenota servizio",
+    "contact": "Contatta",
+    "aria_book_service": "Prenota servizio",
+    "aria_contact_provider": "Contatta il professionista"
+  },
+  "reviews": {
+    "load_error": "Non è stato possibile caricare le recensioni in questo momento. Riprova più tardi.",
+    "empty": "Non ci sono ancora recensioni. Quando i clienti inizieranno a lasciare un feedback, le loro valutazioni appariranno qui.",
+    "details_error": "Non è stato possibile caricare i dettagli delle recensioni in questo momento. Riprova più tardi.",
+    "out_of_five": "{rating} su 5",
+    "rating_one": "recensione",
+    "rating_other": "recensioni",
+    "star_label": "{star} stella",
+    "show_less": "Mostra meno",
+    "show_more": "Mostra di più",
+    "loading": "Caricamento...",
+    "load_more": "Carica altro"
+  },
+  "conversation": {
+    "sign_in_to_contact": "Accedi per contattare questo professionista.",
+    "start_failed": "Impossibile avviare la conversazione. Riprova.",
+    "checking_sign_in": "Verifica dell'accesso...",
+    "starting": "Avvio della conversazione...",
+    "ready": "Conversazione pronta",
+    "loading": "Caricamento conversazione...",
+    "empty": "Nessun messaggio per ora. Avvia una conversazione con <provider>{name}</provider>.",
+    "load_earlier": "Carica precedenti",
+    "loading_messages": "Caricamento messaggi...",
+    "message_deleted": "Questo messaggio è stato eliminato",
+    "deleted": "Eliminato",
+    "edited": "Modificato",
+    "actions": "Azioni",
+    "edit": "Modifica",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "delete_title": "Eliminare il messaggio?",
+    "delete_description": "Questo rimuoverà il messaggio per entrambi i partecipanti.",
+    "composer_disabled": "Disattivato...",
+    "composer_placeholder": "Scrivi un messaggio...",
+    "send": "Invia",
+    "composer_hint": "Premi Invio per inviare, Shift+Invio per andare a capo."
+  }
+}

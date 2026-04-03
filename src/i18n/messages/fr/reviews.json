@@ -1,0 +1,38 @@
+{
+  "page": {
+    "write_title": "Écrire un avis sur {tenantName}",
+    "update_title": "Mettre à jour votre avis sur {tenantName}",
+    "open_provider_page": "Ouvrir la page du prestataire",
+    "go_to_provider_page": "Aller à la page du prestataire",
+    "home": "Accueil"
+  },
+  "form": {
+    "rating": "Votre note",
+    "title": "Titre",
+    "body": "Rédiger un avis",
+    "title_placeholder": "Quelle est l'information la plus importante à savoir ?",
+    "body_placeholder": "Que devraient savoir les autres clients ?",
+    "submit": "Envoyer",
+    "update": "Mettre à jour l'avis",
+    "submitting": "Envoi en cours...",
+    "updating": "Mise à jour en cours..."
+  },
+  "validation": {
+    "rating": "Choisissez entre 1 et 5 étoiles.",
+    "title": "3-120 caractères.",
+    "body": "Au moins 10 caractères."
+  },
+  "toasts": {
+    "create_success": "Votre avis a été envoyé.",
+    "update_success": "Votre avis a été mis à jour.",
+    "purchase_required": "Vous ne pouvez évaluer que des prestataires que vous avez réservés et payés.",
+    "sign_in_required": "Connectez-vous pour écrire un avis.",
+    "account_missing": "Votre compte utilisateur est introuvable.",
+    "tenant_missing": "Le prestataire est introuvable.",
+    "generic_error": "Une erreur s'est produite lors de l'enregistrement de votre avis. Veuillez réessayer."
+  },
+  "a11y": {
+    "rating_group": "Note",
+    "rating_option": "{count, plural, one {# étoile} other {# étoiles}}"
+  }
+}

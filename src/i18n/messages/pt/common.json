@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "home": "Início",
+    "about": "Sobre nós",
+    "features": "Funcionalidades",
+    "pricing": "Preços",
+    "contact": "Contacto",
+    "terms_of_use": "Termos de utilização",
+    "impressum": "Impressum",
+    "profile": "Perfil",
+    "dashboard": "Painel",
+    "dashboard_cta": "Painel",
+    "start_business": "Tornar-se prestador",
+    "start_business_cta": "Torne-se pro",
+    "admin_panel": "Painel de administração",
+    "login": "Iniciar sessão",
+    "logout": "Terminar sessão",
+    "menu": "Menu",
+    "sr_dashboard_available": "Navegação atualizada: botão Painel disponível",
+    "sr_start_business_available": "Navegação atualizada: botão Tornar-se prestador disponível"
+  },
+  "a11y": {
+    "language_selector": "Selecionar idioma"
+  },
+  "footer": {
+    "terms": "Termos",
+    "impressum": "Impressum",
+    "privacy_policy": "Política de privacidade",
+    "cookies": "Cookies",
+    "cookie_preferences": "Preferências de cookies",
+    "all_rights_reserved": "Todos os direitos reservados."
+  },
+  "cookie": {
+    "banner": {
+      "full": "Utilizamos cookies para melhorar a sua experiência. Leia a nossa <policy>política de cookies</policy>. Pode <manage>alterar as suas preferências</manage> a qualquer momento.",
+      "text": "Utilizamos cookies para melhorar a sua experiência.",
+      "policy": "política de cookies",
+      "manage": "alterar as suas preferências"
+    },
+    "dialog": {
+      "title": "Preferências de recolha de dados do website",
+      "description": "Escolha que cookies pretende permitir.",
+      "essential_title": "Essenciais",
+      "essential_text": "Estes cookies são necessários para o funcionamento do site e não podem ser desativados.",
+      "analytics_title": "Marketing e analítica",
+      "analytics_text": "Ajuda-nos a compreender a utilização e a melhorar a experiência do produto.",
+      "advertising_title": "Publicidade",
+      "advertising_text": "Utilizados para personalizar a publicidade e medir a sua eficácia.",
+      "save": "Guardar definições",
+      "cancel": "Cancelar"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Esta ligação de referência não é válida. Ainda assim, pode registar-se normalmente.",
+      "expired": "Este código de referência {code} já não está ativo. Ainda assim, pode registar-se normalmente."
+    }
+  },
+  "buttons": {
+    "accept": "Aceitar",
+    "decline": "Recusar",
+    "save_settings": "Guardar definições",
+    "cancel": "Cancelar",
+    "loading": "A carregar...",
+    "view_all": "Ver tudo"
+  },
+  "home": {
+    "hero": {
+      "line1": "Ligamos clientes a profissionais.",
+      "line2": "A sua solução está apenas a um clique de distância."
+    },
+    "search": {
+      "placeholder": "Pesquisar por nome do prestador..."
+    },
+    "cta": {
+      "guest_text": "Registe-se para localizar a sua pesquisa:",
+      "register_button": "Registar-se",
+      "incomplete_profile_text": "Complete o seu perfil para localizar melhor os profissionais à sua volta:",
+      "complete_profile_button": "Completar perfil",
+      "provider_intro": "Tem uma ideia de negócio? Registe o seu serviço para aparecer neste radar!",
+      "provider_button": "Registar-se como prestador"
+    }
+  }
+}

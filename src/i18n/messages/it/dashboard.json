@@ -1,0 +1,52 @@
+{
+  "page": {
+    "title": "Dashboard"
+  },
+  "nav": {
+    "calendar": "Calendario",
+    "orders": "Ordini",
+    "messages": "Messaggi",
+    "finance": "Finanze"
+  },
+  "navbar": {
+    "public_page": "Vedi la mia pagina",
+    "open_public_page": "Apri la pagina pubblica",
+    "profile": "Il mio profilo",
+    "vendor_profile": "Profilo fornitore",
+    "home": "Home",
+    "tenant_alt": "Fornitore"
+  },
+  "sections": {
+    "calendar": "Calendario",
+    "orders": "Ordini",
+    "messages": "Messaggi"
+  },
+  "tooltips": {
+    "calendar": "Fai clic per aggiungere o rimuovere disponibilità.",
+    "orders": "Segna gli slot come completati, poi emetti le fatture dopo l'accettazione del cliente."
+  },
+  "mismatch": {
+    "title": "Account non corrispondente",
+    "body": "Questo link è per {expectedSlug}, ma hai effettuato l'accesso come {actualSlug}.",
+    "hint": "Disconnettiti per continuare con l'account corretto.",
+    "action": "Esci e continua"
+  },
+  "states": {
+    "loading": "Caricamento...",
+    "unavailable": "Impossibile caricare la dashboard."
+  },
+  "inbox": {
+    "title": "Posta in arrivo",
+    "recent": "Più recenti",
+    "oldest": "Più vecchie",
+    "search_placeholder": "Cerca per nome",
+    "loading": "Caricamento...",
+    "empty": "Ancora nessuna conversazione.",
+    "empty_search": "Nessuna conversazione corrispondente.",
+    "load_more": "Carica altro",
+    "customer_fallback": "Cliente",
+    "mobile_title": "Conversazione con {customerName}",
+    "back_to_inbox": "Torna alla posta in arrivo",
+    "select_conversation": "Seleziona una conversazione a sinistra."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "title": "Termenii de utilizare Infinisimo",
+    "version_label": "Versiune",
+    "effective_date_label": "Data intrării în vigoare"
+  },
+  "section1": {
+    "title": "1. Rolul platformei",
+    "p1": "Infinisimo operează ca un marketplace intermediar. Oferim platforma tehnică ce le permite clienților să descopere furnizori de servicii, să solicite rezervări și, acolo unde este cazul, să plătească furnizorii. Serviciile sunt prestate de furnizori independenți, nu de Infinisimo.",
+    "p2": "Furnizorii sunt singurii responsabili pentru calitatea, legalitatea, siguranța și executarea serviciilor pe care le oferă și le prestează. Infinisimo nu garantează rezultatele serviciilor și nu este parte la contractul de servicii, cu excepția cazurilor în care legislația imperativă privind protecția consumatorilor impune acest lucru."
+  },
+  "section2": {
+    "title": "2. Ciclul rezervării",
+    "p1": "Rezervările rezervă un interval orar la un furnizor. Platforma folosește următoarele concepte de ciclu de viață:",
+    "service_status_label": "Starea serviciului (valori de sistem):",
+    "payment_status_label": "Starea plății (valori de sistem):"
+  },
+  "section3": {
+    "title": "3. Anulări",
+    "p1": "Anulările pot fi permise numai în cadrul ferestrei de anulare aplicabile. În mod implicit, platforma folosește:",
+    "cancellation_window": "Fereastra de anulare: {hours} ore înainte de ora de începere a rezervării (implicit).",
+    "p2": "Condițiile specifice de anulare pot depinde, de asemenea, de furnizor, de categoria serviciului și de orice normă imperativă de protecție a consumatorilor."
+  },
+  "section4": {
+    "title": "4. Confirmări, dispute și termene",
+    "p1": "Platforma poate utiliza ferestre standard de acțiune pentru a susține mementouri, urmărire operațională și gestionarea disputelor. Cu excepția cazului în care se prevede în mod expres altfel pentru un anumit proces, aceste ferestre nu creează prin ele însele acceptare automată, dovadă automată a prestării serviciului sau renunțare automată la drepturi:",
+    "service_action_window": "Fereastra de acțiune pentru serviciu: clienții trebuie să confirme finalizarea în termen de {serviceActionDays} zile după ce furnizorul marchează serviciul ca finalizat. Dacă clientul consideră că serviciul nu a fost prestat conform înțelegerii, acesta trebuie să contacteze prompt furnizorul și poate contacta, de asemenea, suportul Infinisimo pentru asistență legată de platformă.",
+    "payment_window": "Fereastra de plată: atunci când este emisă o factură și aceasta devine exigibilă potrivit fluxului de rezervare aplicabil, clientul trebuie să plătească în termen de {paymentDays} zile sau să contacteze suportul dacă există o problemă.",
+    "p2": "Notificarea de finalizare transmisă de furnizor nu constituie, prin ea însăși, dovada prestării serviciului. Inactivitatea clientului nu constituie automat acceptare, cu excepția cazului în care acest lucru este prevăzut în mod expres pentru un anumit proces.",
+    "p3": "Dacă un client sau un furnizor raportează o dispută ori o problemă legată de serviciu, platforma poate solicita informații de la ambele părți și poate aplica procese de suport ale platformei. Furnizorii și clienții rămân responsabili să coopereze cu bună-credință."
+  },
+  "section5": {
+    "title": "5. Plăți și comisionul platformei",
+    "p1": "În măsura în care platforma acceptă plăți, plățile sunt procesate către furnizor. Platforma poate percepe un comision și alte taxe, după caz, pentru furnizarea infrastructurii marketplace-ului și a plăților.",
+    "customer_fee_policy": "Politica de taxe pentru clienți: clienții plătesc totalul rezervării afișat în timpul plății, inclusiv orice taxe aplicabile. În prezent, Infinisimo nu adaugă o taxă separată de platformă pentru clienți, cu excepția cazului în care aceasta este afișată în mod explicit înainte de plată.",
+    "commission_rate": "Rata standard a comisionului platformei: {commissionPercent}% (rezultată din {commissionBps} puncte de bază). Rate promoționale, specifice unei campanii sau negociate pot fi aplicabile furnizorilor ori tranzacțiilor eligibile, astfel cum sunt comunicate separat și reflectate în timpul plății sau la emiterea facturii.",
+    "provider_fee_policy": "Politica de taxe pentru furnizori: furnizorii autorizează Infinisimo și Stripe să colecteze comisionul aplicabil al platformei și taxele de procesare Stripe din plățile procesate prin platformă. În Stripe, acestea pot apărea ca application fee (taxă de platformă) și taxe de procesare Stripe.",
+    "referral_policy": "Campaniile bazate pe recomandări pot necesita date de atribuire a recomandării pentru a determina eligibilitatea.",
+    "eur_only": "Plățile prin platformă sunt acceptate în prezent numai în EUR. Disponibilitatea plăților, metodele de plată acceptate și suportul valutar pot depinde de configurarea contului de plăți conectat al furnizorului. Dacă EUR nu este acceptat pentru contul unui furnizor, plățile prin platformă pot să nu fie disponibile pentru acel furnizor.",
+    "stripe_enabled": "Plățile prin platformă sunt procesate prin Stripe atunci când această opțiune este activată.",
+    "payment_handling": "Gestionarea plăților și redirecționări: etapa de plată este găzduită de Stripe Checkout atunci când această opțiune este activată. Structurile de taxe și clasificările Stripe sunt stabilite de Stripe și pot varia în funcție de metoda de plată, regiunea cardului și configurarea contului și se pot modifica în timp.",
+    "vat_registration": "Înregistrarea TVA pe platformă este disponibilă doar pentru furnizorii din UE, iar codurile de TVA din UE pot fi validate. Furnizorii rămân responsabili pentru conformitatea fiscală și pentru emiterea facturilor sau chitanțelor necesare.",
+    "p2": "Taxele, inclusiv TVA, sunt tratate conform regulilor aplicabile și statutului fiscal al furnizorului. Furnizorii sunt responsabili pentru emiterea oricăror facturi sau chitanțe necesare și pentru respectarea obligațiilor lor fiscale.",
+    "p3": "Rambursări și dispute. Plățile procesate prin platformă pot fi rambursate de furnizor sau de Infinisimo în numele furnizorului ca parte a proceselor de suport ale platformei sau a gestionării disputelor. Rambursările sunt emise din soldul contului de plăți conectat al furnizorului. Application fees percepute de platformă sunt rambursate numai dacă sunt inversate în mod explicit. Taxele de procesare Stripe pot fi nerambursabile conform politicilor Stripe. Furnizorii rămân responsabili pentru rambursări, dispute și obligațiile de plată aferente serviciilor lor."
+  },
+  "section6": {
+    "title": "6. Utilizare interzisă",
+    "item1": "Fraudă, abuz de chargeback sau denaturare a realității.",
+    "item2": "Hărțuire, amenințări sau conduită ilegală.",
+    "item3": "Încercări de a ocoli plățile prin platformă, acolo unde sunt aplicabile."
+  },
+  "section7": {
+    "title": "7. Suport",
+    "p1": "Pentru probleme legate de platformă, contactați suportul Infinisimo. Pentru probleme legate de executarea serviciului, contrapartea principală este furnizorul, cu excepția cazului în care se aplică gestionarea disputelor de către platformă."
+  }
+}

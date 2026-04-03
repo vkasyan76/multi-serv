@@ -14,6 +14,7 @@ import { useState } from "react";
 import { ChevronRightIcon, ChevronsLeftIcon } from "lucide-react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 
 interface Props {
   open: boolean;
@@ -23,6 +24,7 @@ interface Props {
 
 export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
   const trpc = useTRPC();
+  const tMarketplace = useTranslations("marketplace");
 
   const { data } = useQuery(trpc.categories.getMany.queryOptions());
 
@@ -94,23 +96,25 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
         style={{ backgroundColor }}
       >
         <SheetHeader className="p-4 border-b">
-          <SheetTitle>Categories</SheetTitle>
+          <SheetTitle>{tMarketplace("categories.sidebar_title")}</SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex flex-col overflow-y-auto h-full pb-2">
           {parentCategories && (
             <button
               onClick={handleBackClick}
-              className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base fornt-medium"
+              className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
             >
               <ChevronsLeftIcon className="size-4 mr-2" />
-              Back
+              {/* Step 11 only localizes the sidebar shell text; keep the existing
+                  route handling and breadcrumb/back behavior unchanged. */}
+              {tMarketplace("categories.back")}
             </button>
           )}
           {currenrtCategories.map((category) => (
             <button
               key={category.slug}
               onClick={() => handleCategoryClick(category)}
-              className="w-full text-left p-4 hover:bg-black hover:text-white flex justify-between items-center text-base fornt-medium cursor-pointer"
+              className="w-full text-left p-4 hover:bg-black hover:text-white flex justify-between items-center text-base font-medium cursor-pointer"
             >
               {category.name}
               {category.subcategories && category.subcategories.length > 0 && (

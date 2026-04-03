@@ -1,0 +1,57 @@
+{
+  "section": {
+    "title": "Buchung"
+  },
+  "availability": {
+    "loading": "Verfügbarkeit wird geladen...",
+    "select_slot": "Klicken Sie auf ein verfügbares Zeitfenster, um zu buchen.",
+    "no_slots_day": "An diesem Datum sind keine Zeitfenster verfügbar. Nutzen Sie die Pfeile, um andere Tage zu prüfen.",
+    "no_slots_week": "Diese Woche sind keine freien Zeitfenster verfügbar. Nutzen Sie die Pfeile, um eine andere Woche zu prüfen.",
+    "no_slots_any": "Derzeit sind keine freien Zeitfenster verfügbar. Sie können den Anbieter zur Verfügbarkeit kontaktieren oder später erneut prüfen."
+  },
+  "selection": {
+    "clear": "Auswahl löschen",
+    "limit_reached": "Sie können bis zu {count} Zeitfenster pro Buchung auswählen."
+  },
+  "cta": {
+    "book_slots": "Zeitfenster buchen",
+    "book_slots_count": "Zeitfenster buchen ({count})",
+    "checking_sign_in": "Anmeldung wird geprüft...",
+    "sign_in_to_book_provider": "Melden Sie sich an, um diesen Anbieter zu buchen.",
+    "select_slots_then_sign_in": "Wählen Sie Zeitfenster aus und melden Sie sich dann zur Buchung an.",
+    "sign_in_to_contact": "Melden Sie sich an, um diesen Anbieter zu kontaktieren."
+  },
+  "calendar": {
+    "today": "Heute",
+    "previous_day": "Vorheriger Tag",
+    "next_day": "Nächster Tag",
+    "previous_week": "Vorherige Woche",
+    "next_week": "Nächste Woche",
+    "crosses_midnight": "Das letzte 1-Stunden-Zeitfenster beginnt um 22:00. 23:00 würde Mitternacht überschreiten."
+  },
+  "legend": {
+    "available": "Verfügbar",
+    "scheduled": "Geplant",
+    "completed": "Abgeschlossen",
+    "accepted": "Akzeptiert",
+    "disputed": "Umstritten"
+  },
+  "payment_status": {
+    "unpaid": "Unbezahlt",
+    "pending": "Ausstehend",
+    "paid": "Bezahlt"
+  },
+  "tooltip": {
+    "available": "Verfügbar - {date}",
+    "status": "{label} - {date}"
+  },
+  "errors": {
+    "generic": "Buchung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "slot_not_found": "Dieses Zeitfenster ist nicht mehr verfügbar.",
+    "slot_not_reserved": "Einige ausgewählte Zeitfenster sind nicht mehr reserviert.",
+    "slot_already_taken": "Dieses Zeitfenster ist nicht mehr verfügbar.",
+    "slots_changed": "Einige ausgewählte Zeitfenster haben sich geändert. Bitte versuchen Sie es erneut.",
+    "provider_not_ready": "Dieser Anbieter ist noch nicht bereit, Buchungen anzunehmen.",
+    "profile_incomplete": "Bitte vervollständigen Sie Ihr Profil vor der Buchung."
+  }
+}

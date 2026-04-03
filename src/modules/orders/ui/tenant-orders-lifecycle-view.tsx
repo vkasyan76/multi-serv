@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_LIMIT } from "@/constants";
 import { useTRPC } from "@/trpc/client";
@@ -9,7 +10,7 @@ import {
   OrdersLifecycleSkeleton,
   OrdersLifecycleTable,
 } from "./orders-lifecycle-table";
-import { type AppLang, getInitialLanguage } from "@/modules/profile/location-utils";
+import type { AppLang } from "@/lib/i18n/app-lang";
 
 function pageWindow(current: number, total: number, size = 5) {
   const half = Math.floor(size / 2);
@@ -19,14 +20,22 @@ function pageWindow(current: number, total: number, size = 5) {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
-export function TenantOrdersLifecycleView({ appLang }: { appLang?: AppLang }) {
+export function TenantOrdersLifecycleView({ appLang }: { appLang: AppLang }) {
   const trpc = useTRPC();
+  const tOrders = useTranslations("orders");
   const [page, setPage] = useState(1);
+  const baseOptions = trpc.orders.listForMyTenantSlotLifecycle.queryOptions({
+    page,
+    limit: DEFAULT_LIMIT,
+  });
+  // Scope cached lifecycle rows by route locale so service labels refresh on language switch.
+  const queryKey = [
+    baseOptions.queryKey[0],
+    { ...(baseOptions.queryKey[1] ?? {}), locale: appLang },
+  ] as unknown as typeof baseOptions.queryKey;
   const q = useQuery({
-    ...trpc.orders.listForMyTenantSlotLifecycle.queryOptions({
-      page,
-      limit: DEFAULT_LIMIT,
-    }),
+    ...baseOptions,
+    queryKey,
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
@@ -49,26 +58,23 @@ export function TenantOrdersLifecycleView({ appLang }: { appLang?: AppLang }) {
   }, [page, totalPages]);
 
   if (q.isLoading) return <OrdersLifecycleSkeleton />;
-  if (q.isError) return <div>Failed to load orders.</div>;
+  if (q.isError) return <div role="alert">{tOrders("states.load_error")}</div>;
   if (items.length === 0) {
     return (
       <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        As soon as you receive any orders from your customers, they will appear
-        in this section.
+        {tOrders("states.tenant_empty")}
       </div>
     );
   }
 
   const pages = totalPages > 1 ? pageWindow(page, totalPages, 5) : [];
 
-  const effectiveLang: AppLang = appLang ?? getInitialLanguage();
-
   return (
     <div className="space-y-3">
       <OrdersLifecycleTable
         mode="tenant"
         orders={items}
-        appLang={effectiveLang}
+        appLang={appLang}
       />
 
       {totalPages > 1 ? (

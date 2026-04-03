@@ -9,8 +9,12 @@ import {
 } from "react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { stripLeadingLocale, withLocalePrefix } from "@/i18n/routing";
 
 type Props = {
   isAuthed: boolean;
@@ -35,9 +39,16 @@ export default function CallToAction({
   line1FontClass,
   sentinelId,
 }: Props) {
+  const tCommon = useTranslations("common");
+  const pathname = usePathname();
   // Hooks FIRST (fixes rules-of-hooks warning)
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [reveal, setReveal] = useState(false);
+  const currentLang = normalizeToSupported(
+    stripLeadingLocale(pathname || "/").lang,
+  );
+  const profileHref = withLocalePrefix("/profile", currentLang);
+  const vendorHref = `${withLocalePrefix("/profile", currentLang)}?tab=vendor`;
 
   useEffect(() => {
     const target =
@@ -91,40 +102,41 @@ export default function CallToAction({
 
   if (!isAuthed) {
     // Case 1: guest
-    text = "Register to localize your search:";
+    text = tCommon("home.cta.guest_text");
     cta = (
       <SignInButton>
         <Button
           variant="elevated"
           className="mt-6 w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
         >
-          Register
+          {tCommon("home.cta.register_button")}
         </Button>
       </SignInButton>
     );
   } else if (!isOnboarded) {
     // Case 2: authed, profile not completed (no coords)
-    text = "Complete your profile to better locate professionals around you:";
+    text = tCommon("home.cta.incomplete_profile_text");
     cta = (
       <Button
         variant="elevated"
         asChild
         className="mt-6 w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
       >
-        <Link href="/profile">Complete Profile</Link>
+        <Link href={profileHref}>
+          {tCommon("home.cta.complete_profile_button")}
+        </Link>
       </Button>
     );
   } else if (!hasTenant) {
     // Case 3: authed + coords, not a tenant yet
-    text =
-      "Have a business idea? Register your service to appear on this radar!";
+    text = tCommon("home.cta.provider_intro");
     cta = (
       <Button
         variant="elevated"
         asChild
         className="mt-6 w-full md:w-auto rounded-full px-6 h-11 bg-black text-white hover:bg-pink-400 hover:text-black transition-colors text-lg"
       >
-        <Link href="/profile?tab=vendor">Register as a provider</Link>
+        <Link href={vendorHref}>{tCommon("home.cta.provider_button")}</Link>
       </Button>
     );
   } else {

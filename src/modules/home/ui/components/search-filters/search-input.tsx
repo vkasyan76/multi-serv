@@ -2,41 +2,37 @@
 
 import { Input } from "@/components/ui/input";
 import { BookmarkCheckIcon, ListFilterIcon, SearchIcon } from "lucide-react";
-// import { CustomCategory } from "../types";
-// import { CategoriesSidebar } from "./categories-sidebar";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-// import { CustomCategory } from "../types";
+import { useLocale, useTranslations } from "next-intl";
 import { CategoriesSidebar } from "./categories-sidebar";
 import { SignedIn, useAuth } from "@clerk/nextjs";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 import { useTenantFilters } from "@/modules/tenants/hooks/use-tenant-filters";
 import { debounce } from "nuqs";
 
 interface Props {
   disabled?: boolean;
-  // data: CustomCategory[];
-  defaultValue?: string | undefined;
-  onChange?: (value: string) => void;
 }
 
-export const SearchInput = ({
-  disabled,
-  // data,
-  defaultValue,
-  onChange,
-}: Props) => {
-  const [filters, setFilters] = useTenantFilters(); // search filters
-
+export const SearchInput = ({ disabled }: Props) => {
+  const tCommon = useTranslations("common");
+  const tOrders = useTranslations("orders");
+  const [filters, setFilters] = useTenantFilters();
+  const currentLang = normalizeToSupported(useLocale());
   const { isSignedIn } = useAuth();
 
   const trpc = useTRPC();
 
-  // always refetch + don’t keep stale auth
+  // Always refetch auth-backed state so the Orders CTA reflects the session.
   const session = useQuery({
     ...trpc.auth.session.queryOptions(),
+    // Tenant search stays public; only skip auth-session polling for signed-out users.
+    enabled: isSignedIn,
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: "always",
@@ -44,38 +40,24 @@ export const SearchInput = ({
     refetchOnWindowFocus: true,
   });
 
-  // show Orders button only for users with paid/refunded orders - not “sticky”
-  // show Orders button only for users with paid/refunded orders - not “sticky”
+  // Show Orders only when Clerk is signed in and the backend confirms data.
   const hasOrdersQ = useQuery({
     ...trpc.orders.hasAnyMineSlotLifecycle.queryOptions(),
-    enabled: isSignedIn && !!session.data?.user?.id, // <- add isSignedIn gate
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
+    enabled: isSignedIn && !!session.data?.user?.id,
+    // This flag changes infrequently, so short-lived caching avoids redundant
+    // refetches while still refreshing within the same session.
+    staleTime: 30_000,
+    gcTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
-  // showOrders depends on Clerk + backend answer
   const showOrders = isSignedIn && !!hasOrdersQ.data?.hasAny;
 
-  // showOrders depend on session
-  // const showOrders = !!session.data?.user?.id && !!hasOrdersQ.data?.hasAny;
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [searchValue, setSearchValue] = useState(defaultValue || "");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      onChange?.(searchValue); // eqzuivalent to `if (onChange) onChange(searchValue);`
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [searchValue, onChange]);
 
   return (
     <div className="flex items-center gap-2 w-full">
       <CategoriesSidebar
-        // data={data}
         open={isSidebarOpen}
         onOpenChange={setIsSidebarOpen}
       />
@@ -84,7 +66,7 @@ export const SearchInput = ({
         <Input
           className="pl-10"
           type="search"
-          placeholder="Search by tenant name…"
+          placeholder={tCommon("home.search.placeholder")}
           disabled={disabled}
           value={filters.search}
           onChange={(e) =>
@@ -94,8 +76,7 @@ export const SearchInput = ({
                 search: e.target.value,
               }),
               {
-                // ⏱️ Debounce URL + server updates when typing,
-                // but send empty string immediately to clear the filter
+                // Debounce URL/server updates while typing, but clear immediately.
                 limitUrlUpdates:
                   e.target.value === "" ? undefined : debounce(400),
               },
@@ -103,21 +84,17 @@ export const SearchInput = ({
           }
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              // Force an immediate update when user presses Enter
               setFilters(
                 (prev) => ({
                   ...prev,
                   search: (e.target as HTMLInputElement).value,
                 }),
-                {
-                  // default rate limit (no extra debounce)
-                },
+                {},
               );
             }
           }}
         />
       </div>
-      {/* categories view all button */}
       <Button
         variant="elevated"
         className="size-12 shrink-0 flex lg:hidden"
@@ -125,13 +102,23 @@ export const SearchInput = ({
       >
         <ListFilterIcon className="size-4" />
       </Button>
-      {/* library button */}
       <SignedIn>
         {showOrders && (
-          <Button asChild variant="elevated" className="h-12">
-            <Link href="/orders">
+          <Button
+            asChild
+            variant="elevated"
+            className="h-12 shrink-0 px-3 sm:px-4"
+          >
+            <Link
+              href={withLocalePrefix("/orders", currentLang)}
+              aria-label={tOrders("page.title")}
+              title={tOrders("page.title")}
+            >
               <BookmarkCheckIcon />
-              My Orders
+              {/* Keep the search-bar CTA shorter than the page title so it stays stable across locales. */}
+              <span className="hidden sm:inline">
+                {tOrders("page.cta_short")}
+              </span>
             </Link>
           </Button>
         )}

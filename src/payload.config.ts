@@ -30,6 +30,7 @@ import { CommissionStatements } from "./collections/CommissionStatements.ts";
 import { Promotions } from "./collections/Promotions.ts";
 import { PromotionCounters } from "./collections/PromotionCounters.ts";
 import { PromotionAllocations } from "./collections/PromotionAllocations.ts";
+import { DEFAULT_APP_LANG, SUPPORTED_LANGUAGES } from "./lib/i18n/app-lang.ts";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -76,6 +77,14 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+  },
+  localization: {
+    locales: SUPPORTED_LANGUAGES.map(({ code, label }) => ({
+      code,
+      label,
+    })),
+    defaultLocale: DEFAULT_APP_LANG,
+    fallback: true,
   },
   collections: [
     Users,

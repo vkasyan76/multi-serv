@@ -1,4 +1,4 @@
-import { Language } from "@googlemaps/google-maps-services-js";
+﻿import { Language } from "@googlemaps/google-maps-services-js";
 import type {
   UserCoordinates,
   SelectedLocation,
@@ -262,6 +262,13 @@ export function extractCountry(address: string): string {
 
 // Map country names to ISO country codes for phone number formatting
 export function getCountryCodeFromName(countryName: string): string {
+  const normalizeCountryKey = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
   const countryMap: Record<string, string> = {
     // EU Member States
     Germany: "DE",
@@ -270,13 +277,14 @@ export function getCountryCodeFromName(countryName: string): string {
     Italy: "IT",
     Italia: "IT",
     Spain: "ES",
-    España: "ES",
+    Espana: "ES",
     Netherlands: "NL",
     Nederland: "NL",
     Belgium: "BE",
-    België: "BE",
+    Belgique: "BE",
+    Belgie: "BE",
     Austria: "AT",
-    Österreich: "AT",
+    Osterreich: "AT",
     Poland: "PL",
     Polska: "PL",
     "Czech Republic": "CZ",
@@ -284,17 +292,16 @@ export function getCountryCodeFromName(countryName: string): string {
     Slovakia: "SK",
     Slovensko: "SK",
     Hungary: "HU",
-    Magyarország: "HU",
+    Magyarorszag: "HU",
     Romania: "RO",
-    România: "RO",
     Bulgaria: "BG",
-    България: "BG",
+    Balgariya: "BG",
     Croatia: "HR",
     Hrvatska: "HR",
     Slovenia: "SI",
     Slovenija: "SI",
     Greece: "GR",
-    Ελλάδα: "GR",
+    Ellada: "GR",
     Portugal: "PT",
     Denmark: "DK",
     Danmark: "DK",
@@ -303,10 +310,10 @@ export function getCountryCodeFromName(countryName: string): string {
     Finland: "FI",
     Suomi: "FI",
     Luxembourg: "LU",
-    Lëtzebuerg: "LU",
+    Letzebuerg: "LU",
     Malta: "MT",
     Cyprus: "CY",
-    Κύπρος: "CY",
+    Kypros: "CY",
     Estonia: "EE",
     Eesti: "EE",
     Latvia: "LV",
@@ -314,7 +321,11 @@ export function getCountryCodeFromName(countryName: string): string {
     Lithuania: "LT",
     Lietuva: "LT",
     Ireland: "IE",
-    Éire: "IE",
+    Eire: "IE",
+    "Ελλάδα": "GR",
+    "Κύπρος": "CY",
+    "България": "BG",
+    "Україна": "UA",
 
     // Non-EU European countries
     "United Kingdom": "GB",
@@ -328,24 +339,25 @@ export function getCountryCodeFromName(countryName: string): string {
     Schweiz: "CH",
     Suisse: "CH",
     Ukraine: "UA",
-    Україна: "UA",
+    Ukraina: "UA",
   };
 
   // Normalize country name for matching
-  const normalizedCountry = countryName.trim().toLowerCase();
+  const normalizedCountry = normalizeCountryKey(countryName);
 
   // Try exact match first
   for (const [country, code] of Object.entries(countryMap)) {
-    if (country.toLowerCase() === normalizedCountry) {
+    if (normalizeCountryKey(country) === normalizedCountry) {
       return code;
     }
   }
 
   // Try partial match for common variations
   for (const [country, code] of Object.entries(countryMap)) {
+    const normalizedKey = normalizeCountryKey(country);
     if (
-      country.toLowerCase().includes(normalizedCountry) ||
-      normalizedCountry.includes(country.toLowerCase())
+      normalizedKey.includes(normalizedCountry) ||
+      normalizedCountry.includes(normalizedKey)
     ) {
       return code;
     }
@@ -355,7 +367,7 @@ export function getCountryCodeFromName(countryName: string): string {
   return "DE";
 }
 
-// Google Maps language detection (CLIENT ONLY) – used only for Maps,
+// Google Maps language detection (CLIENT ONLY) - used only for Maps,
 // not for your app UI language.
 
 // ---- Language + appLang helpers ----
@@ -381,10 +393,13 @@ export function detectLanguage(): Language {
  * Use this ONLY in client components (e.g. useState(() => getInitialLanguage())).
  */
 export function getInitialLanguage(): AppLang {
-  if (typeof navigator === "undefined") {
-    return DEFAULT_APP_LANG;
-  }
-  return normalizeToSupported(navigator.language);
+  if (typeof window === "undefined") return DEFAULT_APP_LANG;
+
+  const htmlLang = document.documentElement.lang?.trim();
+  if (htmlLang) return normalizeToSupported(htmlLang);
+
+  const navLang = navigator.languages?.[0] ?? navigator.language;
+  return normalizeToSupported(navLang || DEFAULT_APP_LANG);
 }
 
 /**
@@ -400,163 +415,16 @@ export function getAppLangFromHeaders(headers: Pick<Headers, "get">): AppLang {
 
 // ---- Locale + formatting ----
 
-// Currency formatting
-// For demo, always EUR, but you could map locale to currency if needed
-// mapper:
-export function mapAppLangToLocale(appLang: AppLang): string {
-  switch (appLang) {
-    case "de":
-      return "de-DE";
-    case "fr":
-      return "fr-FR";
-    case "it":
-      return "it-IT";
-    case "es":
-      return "es-ES";
-    case "pt":
-      return "pt-PT";
-    case "en":
-    default:
-      return "en-US";
-  }
-}
-
-// use const locale = mapAppLangToLocale(appLang) instead of const locale = navigator.language || "en-US"  because otherwise the server (SSR): typeof window === "undefined" → we always get "en-US". > mismatch will cause hydration errror
-
-export function getLocaleAndCurrency(appLang: AppLang = DEFAULT_APP_LANG) {
-  const locale = mapAppLangToLocale(appLang);
-  return { locale, currency: "EUR" };
-}
-
-// New helper functions for consistent location display formatting
-export function countryNameFromCode(code?: string, locale = "en"): string {
-  if (!code) return "";
-  try {
-    // Node & modern browsers support this; falls back to the code if not.
-    return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
-
-export function formatLocationFromCoords(
-  coords?: { city?: string; region?: string; countryISO?: string },
-  locale = "en"
-): string {
-  if (!coords) return "";
-  const country = countryNameFromCode(coords.countryISO, locale);
-  if (coords.city) return `${coords.city}, ${country}`;
-  if (coords.region) return `${coords.region}, ${country}`;
-  return country;
-}
-
-// ---- Number / date / currency formatting ----
-
-export function formatDateForLocale(
-  date: Date | string,
-  options: Intl.DateTimeFormatOptions = {},
-  appLang: AppLang = DEFAULT_APP_LANG
-) {
-  const { locale } = getLocaleAndCurrency(appLang);
-  const dateObj = typeof date === "string" ? new Date(date) : date;
-
-  return dateObj.toLocaleDateString(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    ...options,
-  });
-}
-
-export function formatNumberForLocale(
-  value: number,
-  opts: Intl.NumberFormatOptions = {},
-  appLang: AppLang = DEFAULT_APP_LANG
-) {
-  const { locale } = getLocaleAndCurrency(appLang);
-
-  // Extract and normalize
-  let { minimumFractionDigits, maximumFractionDigits } = opts;
-  const rest = { ...opts };
-  delete rest.minimumFractionDigits;
-  delete rest.maximumFractionDigits;
-
-  // Default only if BOTH are missing (maintains your previous default of 1)
-  if (minimumFractionDigits == null && maximumFractionDigits == null) {
-    minimumFractionDigits = 1;
-    maximumFractionDigits = 1;
-  }
-
-  // If only one bound is provided, mirror it to the other so they never conflict
-  if (minimumFractionDigits == null && maximumFractionDigits != null) {
-    minimumFractionDigits = Math.max(0, Math.min(maximumFractionDigits, 20));
-  }
-  if (maximumFractionDigits == null && minimumFractionDigits != null) {
-    maximumFractionDigits = Math.max(0, Math.min(minimumFractionDigits, 20));
-  }
-
-  // Clamp if a caller passed max < min (prevents runtime errors)
-  if (
-    minimumFractionDigits != null &&
-    maximumFractionDigits != null &&
-    maximumFractionDigits < minimumFractionDigits
-  ) {
-    minimumFractionDigits = maximumFractionDigits;
-  }
-
-  return new Intl.NumberFormat(locale, {
-    minimumFractionDigits,
-    maximumFractionDigits,
-    ...rest,
-  }).format(value);
-}
-
-// Convenience wrappers for common formatting patterns
-export const formatIntegerForLocale = (
-  n: number,
-  appLang: AppLang = DEFAULT_APP_LANG
-) =>
-  formatNumberForLocale(
-    n,
-    { minimumFractionDigits: 0, maximumFractionDigits: 0 },
-    appLang
-  );
-
-export const formatOneDecimalForLocale = (
-  n: number,
-  appLang: AppLang = DEFAULT_APP_LANG
-) =>
-  formatNumberForLocale(
-    n,
-    { minimumFractionDigits: 1, maximumFractionDigits: 1 },
-    appLang
-  );
-
-export function formatMonthYearForLocale(
-  date: Date | string,
-  monthStyle: "short" | "long" = "short",
-  appLang: AppLang = DEFAULT_APP_LANG
-) {
-  const { locale } = getLocaleAndCurrency(appLang);
-  const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString(locale, { month: monthStyle, year: "numeric" });
-}
-
-// Currency formatter that uses the user's locale from getLocaleAndCurrency()
-export function formatCurrency(
-  amountMajor: number,
-  currency?: string,
-  appLang: AppLang = DEFAULT_APP_LANG
-) {
-  const { locale } = getLocaleAndCurrency(appLang);
-  const cur = (currency ?? "EUR").toUpperCase();
-
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: cur,
-    }).format(amountMajor);
-  } catch {
-    return `${amountMajor.toFixed(2)} ${cur}`;
-  }
-}
+// Phase 4: keep legacy import path stable while moving canonical helpers to src/lib/i18n/locale.ts.
+export {
+  mapAppLangToLocale,
+  getLocaleAndCurrency,
+  countryNameFromCode,
+  formatLocationFromCoords,
+  formatDateForLocale,
+  formatNumberForLocale,
+  formatIntegerForLocale,
+  formatOneDecimalForLocale,
+  formatMonthYearForLocale,
+  formatCurrency,
+} from "@/lib/i18n/locale";

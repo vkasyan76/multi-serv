@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "features": "Features",
+    "pricing": "Pricing",
+    "contact": "Contact",
+    "terms_of_use": "Terms of Use",
+    "impressum": "Impressum",
+    "profile": "Profile",
+    "dashboard": "Dashboard",
+    "dashboard_cta": "Dashboard",
+    "start_business": "Start Business",
+    "start_business_cta": "Go Pro",
+    "admin_panel": "Admin panel",
+    "login": "Log in",
+    "logout": "Sign out",
+    "menu": "Menu",
+    "sr_dashboard_available": "Navigation updated: Dashboard button available",
+    "sr_start_business_available": "Navigation updated: Start Business button available"
+  },
+  "a11y": {
+    "language_selector": "Select language"
+  },
+  "footer": {
+    "terms": "Terms",
+    "impressum": "Impressum",
+    "privacy_policy": "Privacy policy",
+    "cookies": "Cookies",
+    "cookie_preferences": "Cookie preferences",
+    "all_rights_reserved": "All rights reserved."
+  },
+  "cookie": {
+    "banner": {
+      "full": "We use cookies to improve your experience. Read our <policy>cookie policy</policy>. You can <manage>change your preferences</manage> at any time.",
+      "text": "We use cookies to improve your experience.",
+      "policy": "cookie policy",
+      "manage": "change your preferences"
+    },
+    "dialog": {
+      "title": "Website Data Collection Preferences",
+      "description": "Choose which cookies you want to allow.",
+      "essential_title": "Essential",
+      "essential_text": "These cookies are necessary for the site to function and cannot be turned off.",
+      "analytics_title": "Marketing and Analytics",
+      "analytics_text": "Helps us understand usage and improve the product experience.",
+      "advertising_title": "Advertising",
+      "advertising_text": "Used to personalize and measure advertising effectiveness.",
+      "save": "Save settings",
+      "cancel": "Cancel"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "This referral link is invalid. You can still register normally.",
+      "expired": "This referral code {code} is no longer active. You can still register normally."
+    }
+  },
+  "buttons": {
+    "accept": "Accept",
+    "decline": "Decline",
+    "view_all": "View all",
+    "save_settings": "Save settings",
+    "cancel": "Cancel",
+    "loading": "Loading..."
+  },
+  "home": {
+    "hero": {
+      "line1": "We connect clients with professionals.",
+      "line2": "Your solution is only a click away."
+    },
+    "search": {
+      "placeholder": "Search by provider name..."
+    },
+    "cta": {
+      "guest_text": "Register to localize your search:",
+      "register_button": "Register",
+      "incomplete_profile_text": "Complete your profile to better locate professionals around you:",
+      "complete_profile_button": "Complete Profile",
+      "provider_intro": "Have a business idea? Register your service to appear on this radar!",
+      "provider_button": "Register as a provider"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "section": {
+    "title": "Réservation"
+  },
+  "availability": {
+    "loading": "Chargement des disponibilités...",
+    "select_slot": "Cliquez sur un créneau disponible pour réserver.",
+    "no_slots_day": "Aucun créneau disponible à cette date. Utilisez les flèches pour vérifier d'autres jours.",
+    "no_slots_week": "Aucun créneau libre n'est disponible cette semaine. Utilisez les flèches pour vérifier une autre semaine.",
+    "no_slots_any": "Aucun créneau libre n'est actuellement disponible. Vous pouvez contacter le prestataire au sujet des disponibilités ou revenir plus tard."
+  },
+  "selection": {
+    "clear": "Effacer la sélection",
+    "limit_reached": "Vous pouvez sélectionner jusqu'à {count} créneaux par réservation."
+  },
+  "cta": {
+    "book_slots": "Réserver des créneaux",
+    "book_slots_count": "Réserver des créneaux ({count})",
+    "checking_sign_in": "Vérification de la connexion...",
+    "sign_in_to_book_provider": "Connectez-vous pour réserver ce prestataire.",
+    "select_slots_then_sign_in": "Sélectionnez des créneaux puis connectez-vous pour réserver.",
+    "sign_in_to_contact": "Connectez-vous pour contacter ce prestataire."
+  },
+  "calendar": {
+    "today": "Aujourd'hui",
+    "previous_day": "Jour précédent",
+    "next_day": "Jour suivant",
+    "previous_week": "Semaine précédente",
+    "next_week": "Semaine suivante",
+    "crosses_midnight": "Le dernier créneau d'une heure commence à 22:00. 23:00 dépasserait minuit."
+  },
+  "legend": {
+    "available": "Disponible",
+    "scheduled": "Planifié",
+    "completed": "Terminé",
+    "accepted": "Accepté",
+    "disputed": "Contesté"
+  },
+  "payment_status": {
+    "unpaid": "Non payé",
+    "pending": "En attente",
+    "paid": "Payé"
+  },
+  "tooltip": {
+    "available": "Disponible - {date}",
+    "status": "{label} - {date}"
+  },
+  "errors": {
+    "generic": "La réservation a échoué. Veuillez réessayer.",
+    "slot_not_found": "Ce créneau n'est plus disponible.",
+    "slot_not_reserved": "Certains créneaux sélectionnés ne sont plus réservés.",
+    "slot_already_taken": "Ce créneau n'est plus disponible.",
+    "slots_changed": "Certains créneaux sélectionnés ont changé. Veuillez réessayer.",
+    "provider_not_ready": "Ce prestataire n'est pas encore prêt à accepter des réservations.",
+    "profile_incomplete": "Veuillez compléter votre profil avant de réserver."
+  }
+}

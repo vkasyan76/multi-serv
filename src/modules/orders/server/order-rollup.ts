@@ -6,11 +6,11 @@ import { resolvePayloadUserId } from "./identity";
 import type { Booking, Order, Tenant, User } from "@/payload-types";
 import type { TRPCContext } from "@/trpc/init";
 import { DEFAULT_LIMIT } from "@/constants";
-import { sendDomainEmail } from "@/modules/email/events";
 import type { EmailDeliverability } from "@/modules/email/types";
+import { resolveOrderServiceLabels } from "./order-service-labels";
 
 type DocWithId<T> = T & { id: string };
-type CtxLike = Pick<TRPCContext, "db" | "userId">; // for Stage 1C queries we also need ctx.userId
+type CtxLike = Pick<TRPCContext, "db" | "userId" | "appLang">; // lifecycle reads need db, auth, and route locale
 type DbOnlyCtx = Pick<TRPCContext, "db">;
 type ServiceStatus = Order["serviceStatus"];
 const ADMIN_ORDERS_EXPORT_PAGE_SIZE = 200;
@@ -20,11 +20,13 @@ type SlotLifecycleSlot = Pick<Booking, "id" | "start" | "end"> & {
   serviceStatus: ServiceStatus;
   disputeReason: string | null;
   serviceSnapshot: NonNullable<Booking["serviceSnapshot"]> | null;
+  displayServiceName?: string | null;
 };
 
 type TenantLifecycleListItem = {
   id: string;
   createdAt: string;
+  status: Order["status"];
   serviceStatus: Order["serviceStatus"];
   invoiceStatus: Order["invoiceStatus"];
   lifecycleMode: Order["lifecycleMode"];
@@ -212,6 +214,7 @@ function mapTenantLifecycleItem(o: DocWithId<Order>): TenantLifecycleListItem {
   return {
     id: o.id,
     createdAt: o.createdAt!,
+    status: o.status as Order["status"],
     serviceStatus: o.serviceStatus as Order["serviceStatus"],
     invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
     lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
@@ -219,6 +222,49 @@ function mapTenantLifecycleItem(o: DocWithId<Order>): TenantLifecycleListItem {
     customerSnapshot: o.customerSnapshot,
     slots,
   };
+}
+
+async function sendOrderDomainEmail(
+  args: Parameters<typeof import("@/modules/email/events")["sendDomainEmail"]>[0],
+) {
+  const { sendDomainEmail } = await import("@/modules/email/events");
+  return sendDomainEmail(args);
+}
+
+async function applyLocalizedServiceLabels<T extends { slots: SlotLifecycleSlot[] }>(
+  ctx: Pick<TRPCContext, "db" | "appLang">,
+  items: T[],
+): Promise<T[]> {
+  const allSlots = items.flatMap((item) => item.slots ?? []);
+  if (!allSlots.length) return items;
+
+  const labelBySlotId = await resolveOrderServiceLabels({
+    payload: ctx.db,
+    slots: allSlots.map((slot) => ({
+      id: slot.id,
+      serviceSnapshot: slot.serviceSnapshot
+        ? {
+            serviceSlug: slot.serviceSnapshot.serviceSlug,
+            serviceName: slot.serviceSnapshot.serviceName,
+          }
+        : null,
+    })),
+    appLang: ctx.appLang,
+  });
+
+  return items.map((item) => ({
+    ...item,
+    slots: (item.slots ?? []).map((slot) => {
+      const slotId = slot.id?.trim();
+      return {
+        ...slot,
+        displayServiceName:
+          (slotId ? labelBySlotId.get(slotId)?.trim() : "") ||
+          slot.serviceSnapshot?.serviceName?.trim() ||
+          null,
+      };
+    }),
+  }));
 }
 
 function tenantMetaFromOrder(
@@ -334,17 +380,20 @@ export async function listMineSlotLifecycle(ctx: CtxLike) {
     overrideAccess: true,
   })) as { docs?: Array<DocWithId<Order>> };
 
-  return (res.docs ?? []).map((o) => {
+  const items = (res.docs ?? []).map((o) => {
     const slots = mapSlotsFromOrder(o);
     return {
       id: o.id,
       createdAt: o.createdAt!,
+      status: o.status as Order["status"],
       serviceStatus: o.serviceStatus as Order["serviceStatus"],
       invoiceStatus: o.invoiceStatus as Order["invoiceStatus"],
       lifecycleMode: o.lifecycleMode as Order["lifecycleMode"],
       slots,
     };
   });
+
+  return applyLocalizedServiceLabels(ctx, items);
 }
 
 /**
@@ -386,7 +435,8 @@ export async function listForMyTenantSlotLifecycle(
     hasPrevPage?: boolean;
   };
 
-  const items = (res.docs ?? []).map((o) => mapTenantLifecycleItem(o));
+  const rawItems = (res.docs ?? []).map((o) => mapTenantLifecycleItem(o));
+  const items = await applyLocalizedServiceLabels(ctx, rawItems);
 
   return {
     items,
@@ -706,7 +756,7 @@ export async function recomputeOrdersForBookingId(
       if (!customerUser?.email) continue;
       // Customer notification: service completed (confirm/dispute).
       try {
-        await sendDomainEmail({
+        await sendOrderDomainEmail({
           db: ctx.db,
           eventType: "order.completed.customer",
           entityType: "order",
@@ -748,8 +798,9 @@ export async function recomputeOrdersForBookingId(
 
       const tenantName = displayNameFromUser(tenantUser) ?? tenantNameRaw;
 
+      // Keep the email send inside this try so delivery failures stay best-effort.
       try {
-        await sendDomainEmail({
+        await sendOrderDomainEmail({
           db: ctx.db,
           eventType: "order.accepted.tenant",
           entityType: "order",
@@ -791,7 +842,7 @@ export async function recomputeOrdersForBookingId(
       const tenantName = displayNameFromUser(tenantUser) ?? tenantNameRaw;
 
       try {
-        await sendDomainEmail({
+        await sendOrderDomainEmail({
           db: ctx.db,
           eventType: "order.disputed.tenant",
           entityType: "order",

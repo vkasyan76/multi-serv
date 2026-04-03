@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "title": "Conditions d'utilisation d'Infinisimo",
+    "version_label": "Version",
+    "effective_date_label": "Date d'entrée en vigueur"
+  },
+  "section1": {
+    "title": "1. Rôle de la plateforme",
+    "p1": "Infinisimo exploite une marketplace intermédiaire. Nous fournissons la plateforme technique permettant aux clients de trouver des prestataires de services, de demander des réservations et, le cas échéant, de payer les prestataires. Les services sont fournis par des prestataires indépendants, et non par Infinisimo.",
+    "p2": "Les prestataires sont seuls responsables de la qualité, de la légalité, de la sécurité et de l'exécution des services qu'ils proposent et fournissent. Infinisimo ne garantit pas les résultats des services et n'est pas partie au contrat de service, sauf lorsque le droit impératif de la consommation l'exige."
+  },
+  "section2": {
+    "title": "2. Cycle de vie de la réservation",
+    "p1": "Les réservations permettent de réserver un créneau horaire auprès d'un prestataire. La plateforme utilise les concepts de cycle de vie suivants :",
+    "service_status_label": "Statut du service (valeurs système) :",
+    "payment_status_label": "Statut du paiement (valeurs système) :"
+  },
+  "section3": {
+    "title": "3. Annulations",
+    "p1": "Les annulations ne peuvent être autorisées que dans le délai d'annulation applicable. Par défaut, la plateforme utilise :",
+    "cancellation_window": "Délai d'annulation : {hours} heures avant l'heure de début de la réservation (par défaut).",
+    "p2": "Les conditions d'annulation spécifiques peuvent également dépendre du prestataire, de la catégorie de service et de toute règle impérative du droit de la consommation."
+  },
+  "section4": {
+    "title": "4. Confirmations, litiges et délais",
+    "p1": "La plateforme peut utiliser des fenêtres d'action standard afin de gérer les rappels, le suivi opérationnel et le traitement des litiges. Sauf indication expresse pour un processus spécifique, ces fenêtres ne créent pas, à elles seules, une acceptation automatique, une preuve automatique de la fourniture du service ou une renonciation automatique à des droits :",
+    "service_action_window": "Fenêtre d'action du service : les clients doivent confirmer l'achèvement dans un délai de {serviceActionDays} jours après que le prestataire a marqué le service comme terminé. Si le client estime que le service n'a pas été exécuté comme convenu, il doit contacter rapidement le prestataire et peut également contacter le support Infinisimo pour une assistance liée à la plateforme.",
+    "payment_window": "Fenêtre de paiement : lorsqu'une facture est émise et devient exigible selon le flux de réservation applicable, le client doit payer dans un délai de {paymentDays} jours ou contacter le support en cas de problème.",
+    "p2": "La notification d'achèvement d'un prestataire ne constitue pas, à elle seule, une preuve de la fourniture du service. L'inaction du client ne vaut pas automatiquement acceptation, sauf indication expresse pour un processus spécifique.",
+    "p3": "Si un client ou un prestataire signale un litige ou un problème lié au service, la plateforme peut demander des informations aux deux parties et appliquer des processus de support de la plateforme. Les prestataires et les clients demeurent tenus de coopérer de bonne foi."
+  },
+  "section5": {
+    "title": "5. Paiements et commission de la plateforme",
+    "p1": "Lorsque la plateforme prend en charge les paiements, les paiements sont traités au profit du prestataire. La plateforme peut facturer une commission et/ou des frais pour la mise à disposition de l'infrastructure de marketplace et de paiement.",
+    "customer_fee_policy": "Politique de frais pour les clients : les clients paient le montant total de la réservation affiché lors du paiement, y compris les taxes applicables. Infinisimo n'ajoute pas actuellement de frais de plateforme distincts à la charge du client, sauf s'ils sont explicitement affichés avant le paiement.",
+    "commission_rate": "Taux de commission standard de la plateforme : {commissionPercent}% (calculé à partir de {commissionBps} points de base). Des taux de commission promotionnels, spécifiques à une campagne ou négociés peuvent s'appliquer aux prestataires ou transactions éligibles, comme communiqué séparément et reflété lors du paiement ou de la création de la facture.",
+    "provider_fee_policy": "Politique de frais pour les prestataires : les prestataires autorisent Infinisimo et Stripe à prélever la commission applicable de la plateforme ainsi que les frais de traitement Stripe sur les paiements traités via la plateforme. Dans Stripe, ceux-ci peuvent apparaître comme une application fee (frais de plateforme) et des frais de traitement Stripe.",
+    "referral_policy": "Les campagnes fondées sur le parrainage peuvent nécessiter des données d'attribution du parrainage afin de déterminer l'éligibilité.",
+    "eur_only": "Les paiements de la plateforme sont actuellement pris en charge uniquement en EUR. La disponibilité des paiements, les moyens de paiement pris en charge et la prise en charge des devises peuvent dépendre de la configuration du compte de paiement connecté du prestataire. Si l'EUR n'est pas pris en charge pour le compte d'un prestataire, les paiements via la plateforme peuvent ne pas être disponibles pour ce prestataire.",
+    "stripe_enabled": "Les paiements de la plateforme sont traités via Stripe lorsque cette option est activée.",
+    "payment_handling": "Traitement des paiements et redirections : l'étape de paiement est hébergée par Stripe Checkout lorsqu'elle est activée. Les grilles tarifaires et classifications de Stripe sont définies par Stripe et peuvent varier selon le moyen de paiement, la région de la carte et la configuration du compte, et peuvent évoluer dans le temps.",
+    "vat_registration": "L'enregistrement à la TVA sur la plateforme n'est disponible que pour les prestataires de l'UE, et les numéros de TVA de l'UE peuvent être vérifiés. Les prestataires restent responsables de leur conformité fiscale et de l'émission des factures ou reçus requis.",
+    "p2": "Les taxes, y compris la TVA, sont traitées conformément aux règles applicables et au statut fiscal du prestataire. Les prestataires sont responsables de l'émission de toute facture ou reçu requis et du respect de leurs obligations fiscales.",
+    "p3": "Remboursements et litiges. Les paiements traités via la plateforme peuvent être remboursés par le prestataire ou par Infinisimo pour le compte du prestataire dans le cadre des processus de support de la plateforme ou du traitement des litiges. Les remboursements sont émis sur le solde du compte de paiement connecté du prestataire. Les application fees facturées par la plateforme ne sont remboursées que si elles sont expressément annulées. Les frais de traitement Stripe peuvent ne pas être remboursables conformément aux politiques de Stripe. Les prestataires restent responsables des remboursements, des litiges et des obligations de paiement associées à leurs services."
+  },
+  "section6": {
+    "title": "6. Utilisation interdite",
+    "item1": "Fraude, abus de rétrofacturation ou fausse déclaration.",
+    "item2": "Harcèlement, menaces ou conduite illégale.",
+    "item3": "Tentatives de contourner les paiements de la plateforme lorsque ceux-ci sont applicables."
+  },
+  "section7": {
+    "title": "7. Support",
+    "p1": "Pour les problèmes liés à la plateforme, contactez le support Infinisimo. Pour les problèmes liés à l'exécution du service, l'interlocuteur principal est le prestataire, sauf lorsque le traitement des litiges de la plateforme s'applique."
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "tabs": {
+    "general": "General Settings",
+    "provider": "Service Provider",
+    "payments": "Payments"
+  },
+  "header": {
+    "home": "Home",
+    "logo_alt": "Infinisimo Logo"
+  },
+  "general": {
+    "title": "Profile settings",
+    "labels": {
+      "first_name": "First name",
+      "last_name": "Last name",
+      "username": "Username",
+      "email": "Email address",
+      "address": "Address",
+      "country": "Country",
+      "language": "Language"
+    },
+    "placeholders": {
+      "first_name": "Enter your first name",
+      "last_name": "Enter your last name",
+      "username": "Enter your username",
+      "address_search": "Search for your address...",
+      "language": "Select language"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* cannot be changed after onboarding is completed",
+      "profile_updated": "Profile updated successfully!",
+      "form_invalid": "Please fix the errors in the form."
+    },
+    "actions": {
+      "save": "Save Profile",
+      "update": "Update Profile",
+      "saving": "Saving...",
+      "updating": "Updating..."
+    },
+    "errors": {
+      "save_failed": "Failed to update profile. Please try again.",
+      "full_street_address_required": "Please choose a full street address that includes a house number.",
+      "location_details_failed": "Failed to get location details. Please try again.",
+      "select_address_from_suggestions": "Please select an address from the suggestions.",
+      "house_number_required": "Address must include a house number."
+    },
+    "validation": {
+      "first_name_required": "First name is required",
+      "last_name_required": "Last name is required",
+      "invalid_email": "Invalid email address",
+      "username_min": "Username must be at least 3 characters",
+      "username_max": "Username must be less than 63 characters",
+      "username_format": "Username can only contain letters, numbers, dots, underscores and hyphens. It must start and end with a letter or number",
+      "username_consecutive_separators": "Username cannot contain consecutive separators (., _, -)",
+      "select_location": "Please select a location",
+      "country_required": "Country required"
+    }
+  },
+  "provider": {
+    "title": "Service Provider Settings",
+    "labels": {
+      "business_name": "Business Name (for your page URL)",
+      "hourly_rate": "Hourly Rate ({currency})",
+      "service_types": "Type of Service",
+      "categories": "Categories",
+      "subcategories": "Subcategories",
+      "business_country": "Business country",
+      "vat_registered": "Do you have VAT ID? (optional)",
+      "vat_id": "VAT ID",
+      "phone": "Phone Number (optional)",
+      "description": "Description"
+    },
+    "service_options": {
+      "on_site": "On-site",
+      "online": "Online"
+    },
+    "placeholders": {
+      "business_name": "Enter business name",
+      "hourly_rate": "Enter hourly rate in {currency}",
+      "services": "Select service types",
+      "categories": "Select categories",
+      "subcategories_first": "Select categories first",
+      "subcategories": "Select subcategories",
+      "vat_id": "DE123456789",
+      "phone": "+49 123 4567",
+      "website": "Website (optional)",
+      "description": "Describe your services, experience, and what makes you unique..."
+    },
+    "actions": {
+      "validate_vat": "Validate",
+      "validating_vat": "Validating...",
+      "select_image": "Select Image for upload (max 5MB)",
+      "uploading": "Uploading...",
+      "updating": "Updating...",
+      "creating": "Creating...",
+      "update_profile": "Update Provider Profile",
+      "create_profile": "Create Provider Profile"
+    },
+    "messages": {
+      "form_invalid": "Please fix the errors in the form.",
+      "updated_success": "Vendor profile updated successfully!",
+      "image_upload_partial_success": "Profile created successfully, but image upload failed. You can add the image later from the profile editor.",
+      "created_next_payouts": "Vendor profile created. Next: set up payouts.",
+      "complete_payments_onboarding": "Complete payments onboarding",
+      "finish_stripe_onboarding": "To receive payouts, finish your Stripe onboarding. <link>Go to Payments</link>",
+      "name_locked": "* cannot be changed after creation (used in your page URL)",
+      "country_from_profile": "Prepopulated from your user profile. To change it, edit <link>General settings</link>.",
+      "vat_valid_vies": "VAT number is valid via VIES.",
+      "vat_valid_status": "Valid VAT ID",
+      "image_preview_alt": "Profile preview",
+      "character_count": "{count}/{max} characters"
+    },
+    "errors": {
+      "vat_validation_failed": "VAT validation failed. Please try again.",
+      "vat_eu_only": "VAT can be set only for EU countries.",
+      "update_failed": "Failed to update profile. Please try again.",
+      "name_taken": "Business name is already taken. Please choose a different name.",
+      "create_failed": "Failed to create vendor profile. Please try again.",
+      "upload_failed": "Failed to upload image. Please try again.",
+      "vat_invalid_vies": "VAT number is not valid.",
+      "vat_invalid_status": "Invalid VAT ID"
+    },
+    "validation": {
+      "name_required": "Business name is required",
+      "name_max": "Business name must be less than 50 characters",
+      "name_format": "Business name can contain letters, numbers, hyphens, and underscores",
+      "bio_max": "Description must be under 1200 characters",
+      "services_required": "Select at least one service type",
+      "categories_required": "Select at least one category",
+      "website_invalid": "Website must be a valid URL.",
+      "phone_invalid": "Must be a valid international phone number in E.164 format",
+      "hourly_rate_number": "Hourly rate must be a number",
+      "hourly_rate_min": "Hourly rate must be at least 1 EUR",
+      "hourly_rate_max": "Hourly rate seems too high",
+      "country_iso": "Use ISO-2 code",
+      "vat_required": "VAT number required when VAT-registered is selected."
+    }
+  },
+  "confirmation": {
+    "titles": {
+      "prereq": "Complete your general profile to continue",
+      "confirm": "Become a service provider"
+    },
+    "messages": {
+      "prereq_intro": "Your location is needed so customers can find you.",
+      "prereq_location": "Add your location to appear in local searches",
+      "confirm_intro": "Start offering your services and connect with clients in your area",
+      "search_visibility": "Appear in search results for your location",
+      "pricing_setup": "Set your hourly rate and service categories",
+      "availability": "Manage your availability and bookings"
+    },
+    "actions": {
+      "close": "Close and return to general settings",
+      "complete_general": "Complete General Settings",
+      "loading": "Loading...",
+      "create_provider": "Create Provider Profile",
+      "maybe_later": "Maybe next time",
+      "retry": "Retry"
+    },
+    "errors": {
+      "profile_load_failed": "Failed to load your profile. Please try again."
+    }
+  },
+  "payouts": {
+    "title": "Payments & Payouts",
+    "messages": {
+      "provider_required": "Create your Service Provider profile first.",
+      "active": "Payouts are active. Manage your Stripe account from the dashboard.",
+      "finish_onboarding": "Finish Stripe onboarding to enable payouts.",
+      "no_balance": "No balance yet"
+    },
+    "actions": {
+      "onboarding": "Stripe Onboarding",
+      "update_details": "Update Stripe Details",
+      "open_dashboard": "Open Stripe Dashboard",
+      "create_provider": "Create Service Provider profile",
+      "retry": "Retry"
+    },
+    "errors": {
+      "open_onboarding_failed": "Couldn't open Stripe onboarding. Please try again.",
+      "open_dashboard_failed": "Couldn't open Stripe dashboard. Please try again.",
+      "status_load_failed": "Failed to load payout status.",
+      "balance_load_failed": "Failed to load balances."
+    },
+    "table": {
+      "field": "Field",
+      "status": "Status",
+      "onboarding": "Onboarding",
+      "charges": "Charges",
+      "payouts": "Payouts",
+      "mode": "Mode",
+      "currency": "Currency",
+      "available": "Available",
+      "pending": "Pending",
+      "total": "Total",
+      "next_payout": "Next Payout:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "completed": "Completed",
+      "in_progress": "In progress",
+      "restricted": "Restricted",
+      "not_started": "Not started",
+      "loading": "Loading"
+    },
+    "aria": {
+      "open_onboarding": "Open Stripe onboarding in a new tab",
+      "open_dashboard": "Open Stripe dashboard in a new tab"
+    }
+  }
+}

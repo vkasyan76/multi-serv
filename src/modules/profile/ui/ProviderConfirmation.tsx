@@ -18,6 +18,7 @@ import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { TERMS_VERSION } from "@/constants";
 import { TermsAcceptanceDialog } from "@/modules/profile/ui/terms-acceptance-dialog";
+import { useTranslations } from "next-intl";
 
 type Mode = "prereq" | "confirm";
 
@@ -36,6 +37,7 @@ export default function ProviderConfirmation({
   isSubmitting,
 }: ProviderConfirmationProps) {
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const tProfile = useTranslations("profile");
 
   // Focus management for accessibility
   useEffect(() => {
@@ -94,7 +96,7 @@ export default function ProviderConfirmation({
       >
         <button
           onClick={onSecondaryAction}
-          aria-label="Close and return to general settings"
+          aria-label={tProfile("confirmation.actions.close")}
           className="absolute top-2 right-2 inline-flex items-center justify-center
                      h-8 w-8 rounded-full bg-background shadow-md
                      hover:bg-muted focus-visible:outline-none
@@ -120,51 +122,48 @@ export default function ProviderConfirmation({
             id="provider-confirmation-title"
           >
             {isPrereq
-              ? "Complete your general profile to continue"
-              : "Become a service provider"}
+              ? tProfile("confirmation.titles.prereq")
+              : tProfile("confirmation.titles.confirm")}
           </CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-6 text-sm">
           {isPrereq ? (
             <>
-              {/* Alert Card - Simplified content focused on location requirement */}
               <p className="text-muted-foreground text-center">
-                Your location is needed so customers can find you.
+                {tProfile("confirmation.messages.prereq_intro")}
               </p>
               <div className="space-y-3 flex flex-col items-center">
                 <div className="flex items-center gap-3">
                   <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-muted-foreground">
-                    Add your location to appear in local searches
+                    {tProfile("confirmation.messages.prereq_location")}
                   </span>
                 </div>
               </div>
             </>
           ) : (
             <>
-              {/* Confirmation Card - Keep existing content unchanged */}
               <p className="text-muted-foreground text-center">
-                Start offering your services and connect with clients in your
-                area
+                {tProfile("confirmation.messages.confirm_intro")}
               </p>
               <div className="space-y-3 flex flex-col items-center">
                 <div className="flex items-center gap-3">
                   <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-muted-foreground">
-                    Appear in search results for your location
+                    {tProfile("confirmation.messages.search_visibility")}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Settings className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-muted-foreground">
-                    Set your hourly rate and service categories
+                    {tProfile("confirmation.messages.pricing_setup")}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-muted-foreground">
-                    Manage your availability and bookings
+                    {tProfile("confirmation.messages.availability")}
                   </span>
                 </div>
               </div>
@@ -173,15 +172,13 @@ export default function ProviderConfirmation({
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
             {isPrereq ? (
-              // Alert Card - Single button that redirects to General Profile
               <Button
                 onClick={onSecondaryAction}
                 className="w-full sm:w-auto min-w-[200px]"
               >
-                Complete General Settings
+                {tProfile("confirmation.actions.complete_general")}
               </Button>
             ) : (
-              // Confirmation Card - Two buttons as intended
               <>
                 <Button
                   onClick={handlePrimaryClick}
@@ -199,7 +196,7 @@ export default function ProviderConfirmation({
                         className="mr-2 h-4 w-4 animate-spin"
                         aria-hidden
                       />
-                      Loading...
+                      {tProfile("confirmation.actions.loading")}
                     </>
                   ) : isSubmitting ? (
                     <Loader2
@@ -207,30 +204,29 @@ export default function ProviderConfirmation({
                       aria-hidden
                     />
                   ) : null}
-                  Create Provider Profile
+                  {tProfile("confirmation.actions.create_provider")}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={onSecondaryAction}
                   className="w-full sm:flex-1 min-w-[140px]"
                 >
-                  Maybe next time
+                  {tProfile("confirmation.actions.maybe_later")}
                 </Button>
               </>
             )}
           </div>
-          {/* NEW: error feedback + retry (confirm-mode only) */}
           {!isPrereq && profileError && (
             <div className="mt-2 text-center space-y-2">
               <p className="text-sm text-destructive">
-                Failed to load your profile. Please try again.
+                {tProfile("confirmation.errors.profile_load_failed")}
               </p>
               <Button
                 variant="outline"
                 onClick={() => profile.refetch()}
                 disabled={isSubmitting}
               >
-                Retry
+                {tProfile("confirmation.actions.retry")}
               </Button>
             </div>
           )}

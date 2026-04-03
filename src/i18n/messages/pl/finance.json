@@ -1,0 +1,132 @@
+{
+  "wallet": {
+    "filters": {
+      "labels": {
+        "period": "Okres",
+        "year": "Rok",
+        "month": "Miesiąc",
+        "invoice_date_range": "Zakres dat faktury",
+        "status": "Status",
+        "tenant": "Usługodawca"
+      },
+      "placeholders": {
+        "select_period": "Wybierz okres",
+        "pick_date_range": "Wybierz zakres dat",
+        "select_status": "Wybierz status",
+        "loading_tenants": "Ładowanie...",
+        "all_tenants": "Wszyscy usługodawcy"
+      },
+      "options": {
+        "full_history": "Pełna historia",
+        "year": "Rok",
+        "month": "Miesiąc",
+        "custom_range": "Własny zakres"
+      }
+    },
+    "summary": {
+      "loading": "Ładowanie podsumowania portfela...",
+      "load_error": "Nie udało się załadować podsumowania portfela.",
+      "full_history": "Pełna historia",
+      "payments_received": "Otrzymane płatności",
+      "due_from_customers": "Należne od klientów",
+      "total_invoiced": "Łącznie zafakturowano",
+      "platform_fees": "Opłaty platformy"
+    },
+    "table": {
+      "title": "Transakcje",
+      "updating": "Aktualizowanie...",
+      "loading": "Ładowanie transakcji...",
+      "load_error": "Nie udało się załadować transakcji.",
+      "empty": "Brak transakcji.",
+      "headers": {
+        "invoice_date": "Data faktury",
+        "status": "Status",
+        "tenant": "Usługodawca",
+        "amount": "Kwota",
+        "fee_percent": "Opłata %",
+        "promo": "Promo",
+        "order_date": "Data zamówienia",
+        "actions": "Akcje"
+      },
+      "unknown_tenant": "Nieznany usługodawca",
+      "no_promo": "Brak"
+    },
+    "actions": {
+      "clear_filters": "Wyczyść filtry",
+      "download_csv": "Pobierz CSV",
+      "view_invoice": "Zobacz fakturę",
+      "load_more": "Załaduj więcej"
+    },
+    "status": {
+      "all": "Wszystko",
+      "paid": "Opłacone",
+      "payment_due": "Do zapłaty",
+      "fees": "Opłaty",
+      "fee": "Opłata",
+      "paid_on": "Opłacone {date}",
+      "fee_on": "Opłata {date}"
+    }
+  },
+  "dashboard": {
+    "title": "Finanse"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Po ukończeniu <link>konfiguracji wypłat</link> będzie można dodawać terminy do kalendarza.",
+      "open_panel": "Otwórz panel wypłat i sald w swoim profilu."
+    },
+    "actions": {
+      "open": "Otwórz wypłaty"
+    }
+  },
+  "invoice": {
+    "title": "Faktura",
+    "topbar": {
+      "public_page": "Strona publiczna",
+      "home": "Strona główna"
+    },
+    "sections": {
+      "service_provider": "Usługodawca",
+      "client": "Klient",
+      "details": "Szczegóły"
+    },
+    "fields": {
+      "issued": "Wystawiona",
+      "paid": "Opłacona",
+      "currency": "Waluta",
+      "vat": "VAT",
+      "vat_id": "NIP VAT"
+    },
+    "table": {
+      "service": "Usługa",
+      "hours": "Godziny",
+      "hourly_rate": "Stawka godzinowa",
+      "amount": "Kwota"
+    },
+    "totals": {
+      "subtotal": "Suma częściowa",
+      "total": "Razem"
+    },
+    "status": {
+      "paid": "Opłacona",
+      "issued": "Wystawiona",
+      "overdue": "Przeterminowana",
+      "draft": "Szkic",
+      "void": "Anulowana",
+      "unknown": "Nieznana"
+    },
+    "fallbacks": {
+      "service": "Usługa",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Pobierz PDF",
+      "downloading": "Pobieranie..."
+    },
+    "errors": {
+      "download_failed": "Nie udało się pobrać pliku PDF. Spróbuj ponownie."
+    }
+  }
+}

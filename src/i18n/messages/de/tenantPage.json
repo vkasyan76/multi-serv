@@ -1,0 +1,80 @@
+{
+  "sections": {
+    "about": "Über mich",
+    "services": "Dienstleistungen",
+    "reviews": "Bewertungen"
+  },
+  "bio": {
+    "empty": "Keine Beschreibung verfügbar."
+  },
+  "services": {
+    "competencies": "Meine Kompetenzen:",
+    "specialisation": "Spezialisierung:"
+  },
+  "subnav": {
+    "about": "Über mich",
+    "services": "Dienstleistungen",
+    "booking": "Buchung",
+    "reviews": "Bewertungen"
+  },
+  "navbar": {
+    "powered_by": "Bereitgestellt von",
+    "home_tooltip": "Startseite",
+    "home_aria": "Infinisimo Startseite",
+    "tenant_alt": "Anbieter"
+  },
+  "card": {
+    "rating_sr": "Bewertung",
+    "new": "Neu",
+    "unavailable": "Nicht verfügbar",
+    "log_in_for_distance": "Anmelden, um die Distanz zu sehen",
+    "on_site": "Beim Kunden",
+    "on_line": "Online",
+    "orders": "{count, plural, one {# Auftrag} other {# Aufträge}}",
+    "since": "Seit:",
+    "dashboard": "Dashboard",
+    "profile": "Profil",
+    "book_service": "Service buchen",
+    "contact": "Kontakt",
+    "aria_book_service": "Service buchen",
+    "aria_contact_provider": "Anbieter kontaktieren"
+  },
+  "reviews": {
+    "load_error": "Wir konnten die Bewertungen gerade nicht laden. Bitte versuchen Sie es später erneut.",
+    "empty": "Noch keine Bewertungen. Sobald Kundinnen und Kunden Feedback hinterlassen, werden ihre Bewertungen hier angezeigt.",
+    "details_error": "Wir konnten die Bewertungsdetails gerade nicht laden. Bitte versuchen Sie es später erneut.",
+    "out_of_five": "{rating} von 5",
+    "rating_one": "Bewertung",
+    "rating_other": "Bewertungen",
+    "star_label": "{star} Stern",
+    "show_less": "Weniger anzeigen",
+    "show_more": "Mehr anzeigen",
+    "loading": "Lädt...",
+    "load_more": "Mehr laden"
+  },
+  "conversation": {
+    "sign_in_to_contact": "Melden Sie sich an, um diesen Anbieter zu kontaktieren.",
+    "start_failed": "Die Konversation konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
+    "checking_sign_in": "Anmeldung wird geprüft...",
+    "starting": "Konversation wird gestartet...",
+    "ready": "Konversation bereit",
+    "loading": "Konversation wird geladen...",
+    "empty": "Noch keine Nachrichten. Starten Sie eine Konversation mit <provider>{name}</provider>.",
+    "load_earlier": "Frühere laden",
+    "loading_messages": "Nachrichten werden geladen...",
+    "message_deleted": "Diese Nachricht wurde gelöscht",
+    "deleted": "Gelöscht",
+    "edited": "Bearbeitet",
+    "actions": "Aktionen",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "delete_title": "Nachricht löschen?",
+    "delete_description": "Dadurch wird die Nachricht für beide Teilnehmer entfernt.",
+    "composer_disabled": "Deaktiviert...",
+    "composer_placeholder": "Nachricht schreiben...",
+    "send": "Senden",
+    "composer_hint": "Drücken Sie Enter zum Senden, Shift+Enter für eine neue Zeile."
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import type { FallbackProps } from "react-error-boundary";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
@@ -17,24 +18,27 @@ import { OrbitAndCarousel } from "./OrbitAndCarousel";
 
 import {
   type AppLang,
-  getInitialLanguage,
   normalizeToSupported,
 } from "@/modules/profile/location-utils";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
 
 function RadarError({ resetErrorBoundary }: FallbackProps) {
+  const tMarketplace = useTranslations("marketplace");
+
   return (
     <>
       <div className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]">
         <div className="rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-          Couldn&apos;t load providers. Please adjust filters or retry.
+          {tMarketplace("error.home_radar_body")}
           <div className="mt-3">
             <button
               onClick={resetErrorBoundary}
               className="px-3 py-1 rounded-md border text-xs"
             >
-              Retry
+              {/* Step 12 keeps the same error-boundary retry behavior and only
+                  localizes the visible home listing-surface copy. */}
+              {tMarketplace("error.retry")}
             </button>
           </div>
         </div>
@@ -46,6 +50,8 @@ function RadarError({ resetErrorBoundary }: FallbackProps) {
 
 export default function HomeView() {
   const trpc = useTRPC();
+  const tCommon = useTranslations("common");
+  const appLang: AppLang = normalizeToSupported(useLocale());
 
   // Auth + profile (do NOT block Suspense)
   const { data: session, isLoading: sessionLoading } = useQuery(
@@ -67,16 +73,10 @@ export default function HomeView() {
       : undefined;
 
   const [filters] = useTenantFilters();
+  // Route locale stays authoritative for the tenant data below; don't derive it
+  // from profile/browser state or the localized query cache can drift on switch.
 
   // Single source of truth for app language: profile.language → supported code → fallback
-  const appLang: AppLang = useMemo(() => {
-    const profileLang = profileQ.data?.language;
-    if (profileLang) {
-      return normalizeToSupported(profileLang);
-    }
-    return getInitialLanguage();
-  }, [profileQ.data?.language]);
-
   // Distance mode needs viewer coords; otherwise first mount would re-suspend when viewer arrives.
 
   const queryInput = useMemo(
@@ -103,6 +103,8 @@ export default function HomeView() {
   return (
     <div className="container mx-auto px-4 pt-6 pb-4 overflow-x-hidden">
       <Headline
+        line1={tCommon("home.hero.line1")}
+        line2={tCommon("home.hero.line2")}
         className="md:max-w-6xl lg:max-w-7xl"
         line1FontClass={poppins.className}
         line2FontClass={poppins.className}

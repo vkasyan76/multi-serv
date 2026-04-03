@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { DEFAULT_LIMIT } from "@/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { formatDateForLocale } from "@/lib/i18n/locale";
 
 type ReviewSummary = {
   avgRating: number;
@@ -30,10 +34,9 @@ export function TenantReviewSummary({
   summaryIsError,
 }: TenantReviewSummaryProps) {
   const trpc = useTRPC();
-
-  // ---------- Review summary generated at tenant-content level ----------
-
-  // ---------- Review comments: list (paginated) ----------
+  const tTenantPage = useTranslations("tenantPage");
+  const params = useParams<{ lang?: string }>();
+  const appLang = normalizeToSupported(params?.lang);
 
   const listBase = trpc.reviews.listForTenant.infiniteQueryOptions(
     { slug, limit: DEFAULT_LIMIT },
@@ -66,18 +69,15 @@ export function TenantReviewSummary({
     return parts.map((p) => p[0]?.toUpperCase()).join("");
   };
 
-  // Loading state – simple skeleton
+  // Loading state: simple skeleton.
   if (summaryIsLoading) {
     return (
       <div className="space-y-8">
-        {/* ===== Summary ===== */}
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left: overall rating block */}
           <div className="flex flex-col gap-2 min-w-[220px]">
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-4 w-20" />
           </div>
-          {/* Right: breakdown per star (Amazon-style bars) */}
           <div className="flex-1 max-w-xl space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-3 w-full" />
@@ -88,49 +88,50 @@ export function TenantReviewSummary({
     );
   }
 
-  // Error or no reviews yet
   if (summaryIsError) {
     return (
       <div>
         <p className="text-sm text-muted-foreground">
-          We couldn’t load reviews right now. Please try again later.
+          {tTenantPage("reviews.load_error")}
         </p>
       </div>
     );
   }
+
   if (!summary || summary.totalReviews === 0) {
     return (
       <div>
         <p className="text-sm text-muted-foreground">
-          No reviews yet. Once customers start leaving feedback, their ratings
-          will be displayed here.
+          {tTenantPage("reviews.empty")}
         </p>
       </div>
     );
   }
 
   const { avgRating, totalReviews, breakdown } = summary;
-  const roundedAvg = Math.round(avgRating * 10) / 10; // 4.44 -> 4.4
+  const roundedAvg = Math.round(avgRating * 10) / 10;
   const rows = [5, 4, 3, 2, 1] as const;
 
   return (
     <div className="space-y-8">
-      {/* ===== Summary ===== */}
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left: overall rating block */}
         <div className="flex flex-col gap-2 min-w-[220px]">
           <div className="flex items-center gap-2">
             <StarRating rating={avgRating ?? 0} />
             <span className="text-lg font-medium">
-              {roundedAvg.toFixed(1)} out of 5
+              {tTenantPage("reviews.out_of_five", {
+                rating: roundedAvg.toFixed(1),
+              })}
             </span>
           </div>
           <div className="text-sm text-muted-foreground">
-            {totalReviews} {totalReviews === 1 ? "rating" : "ratings"}
+            {totalReviews}{" "}
+            {totalReviews === 1
+              ? tTenantPage("reviews.rating_one")
+              : tTenantPage("reviews.rating_other")}
           </div>
         </div>
 
-        {/* Right: breakdown per star (Amazon-style bars) */}
         <div className="flex-1 max-w-xl space-y-1">
           {rows.map((star) => {
             const count = breakdown[star] ?? 0;
@@ -140,7 +141,9 @@ export function TenantReviewSummary({
 
             return (
               <div key={star} className="flex items-center gap-2 text-sm">
-                <span className="w-12 text-right">{star} star</span>
+                <span className="w-12 text-right">
+                  {tTenantPage("reviews.star_label", { star })}
+                </span>
                 <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                   <div
                     className="h-2 bg-amber-500 rounded-full"
@@ -156,11 +159,10 @@ export function TenantReviewSummary({
         </div>
       </div>
 
-      {/* ===== Reviews list ===== */}
       <div className="space-y-4">
         {listQ.isError && (
           <p className="text-sm text-muted-foreground">
-            We couldn’t load review details right now. Please try again later.
+            {tTenantPage("reviews.details_error")}
           </p>
         )}
 
@@ -213,7 +215,7 @@ export function TenantReviewSummary({
                       </div>
                       {r.createdAt ? (
                         <div className="text-xs text-muted-foreground">
-                          {new Date(r.createdAt).toLocaleDateString()}
+                          {formatDateForLocale(r.createdAt, {}, appLang)}
                         </div>
                       ) : null}
                     </div>
@@ -246,7 +248,9 @@ export function TenantReviewSummary({
                       onClick={() => toggleExpanded(r.id)}
                       className="text-sm font-medium text-blue-700 hover:underline"
                     >
-                      {isExpanded ? "Show less" : "Show more"}
+                      {isExpanded
+                        ? tTenantPage("reviews.show_less")
+                        : tTenantPage("reviews.show_more")}
                     </button>
                   )}
                 </div>
@@ -266,10 +270,10 @@ export function TenantReviewSummary({
               {listQ.isFetchingNextPage ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
+                  {tTenantPage("reviews.loading")}
                 </span>
               ) : (
-                "Load more"
+                tTenantPage("reviews.load_more")
               )}
             </Button>
           </div>

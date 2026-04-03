@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { generateTenantUrl } from "@/lib/utils";
-import { useMemo } from "react";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import {
   type AppLang,
   normalizeToSupported,
-  getInitialLanguage,
 } from "@/modules/profile/location-utils";
 
 interface Props {
@@ -27,7 +27,9 @@ interface Props {
 
 export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   const trpc = useTRPC();
+  const tMarketplace = useTranslations("marketplace");
   const [filters] = useTenantFilters();
+  const params = useParams<{ lang?: string }>();
 
   // Prefer route params; strip them out of filters to avoid duplicate keys:
   // You were sending duplicate keys for category (and sometimes subcategory) in your query: once from route params and once from filters. Depending on spread order, the filter value ("") could overwrite the route slug, leading to no category filtering. The TenantList merge below removes the duplication and prefers the route param.
@@ -48,14 +50,7 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
     enabled: isSignedIn, // Only fetch if user is signed in
   });
 
-  // use language of the profile or initial language (browser)
-  const appLang: AppLang = useMemo(() => {
-    const profileLang = userProfile?.language;
-    if (profileLang) {
-      return normalizeToSupported(profileLang);
-    }
-    return getInitialLanguage();
-  }, [userProfile?.language]);
+  const appLang: AppLang = normalizeToSupported(params?.lang);
 
   // Use infinite query for tenants with Load More functionality
   const base = trpc.tenants.getMany.infiniteQueryOptions(
@@ -78,11 +73,17 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
       },
     }
   );
+  // Keep list pages on a locale-scoped cache entry for localized tenant fields.
+  const queryKey = [
+    base.queryKey[0],
+    { ...(base.queryKey[1] ?? {}), locale: appLang },
+  ] as unknown as typeof base.queryKey;
 
   // Add cache controls (mirror tenant detail page)
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useSuspenseInfiniteQuery({
       ...base,
+      queryKey,
       staleTime: 0,
       gcTime: 0,
       refetchOnMount: "always",
@@ -129,10 +130,10 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 text-lg">
-          No tenants found for this category.
+          {tMarketplace("list.empty_title")}
         </div>
         <div className="text-gray-400 text-sm mt-2">
-          Try adjusting your filters or check back later.
+          {tMarketplace("list.empty_body")}
         </div>
       </div>
     );
@@ -149,7 +150,7 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
           return (
             <Link
               key={tenant.id}
-              href={generateTenantUrl(tenant.slug)}
+              href={generateTenantUrl(tenant.slug, params?.lang)}
               className="block hover:scale-[1.02] transition-transform duration-200"
             >
               <TenantCard
@@ -176,13 +177,15 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
             size="lg"
             className="min-w-[140px]"
           >
+            {/* Step 8 keeps pagination behavior unchanged and only localizes the
+                visible list states around it. */}
             {isFetchingNextPage ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading...</span>
+                <span>{tMarketplace("list.loading_more")}</span>
               </div>
             ) : (
-              "Load More"
+              tMarketplace("list.load_more")
             )}
           </Button>
         </div>
@@ -193,7 +196,10 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
 
       {/* Results Summary */}
       <div className="text-center text-sm text-gray-500">
-        Showing {allTenants.length} providers out of {totalTenants}
+        {tMarketplace("list.results_summary", {
+          shown: allTenants.length,
+          total: totalTenants,
+        })}
       </div>
     </div>
   );

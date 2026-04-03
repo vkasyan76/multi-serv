@@ -1,0 +1,92 @@
+{
+  "page": {
+    "title": "Moje zamówienia",
+    "cta_short": "Zamówienia",
+    "flow_info_label": "Informacje o przebiegu zamówienia",
+    "flow_info_tooltip": "Wykonawca oznacza usługę jako wykonaną, akceptujesz ją lub zgłaszasz zastrzeżenia, a następnie płacisz, gdy zostanie o to poproszony.",
+    "home": "Strona główna"
+  },
+  "table": {
+    "provider": "Wykonawca",
+    "customer": "Klient",
+    "date_range": "Zakres dat",
+    "status": "Status",
+    "payment": "Płatność",
+    "actions": "Działania",
+    "date_time": "Data/godzina",
+    "service": "Usługa",
+    "expand": "Rozwiń zamówienie",
+    "collapse": "Zwiń zamówienie",
+    "open_menu": "Otwórz menu"
+  },
+  "status": {
+    "scheduled": "Zaplanowane",
+    "accepted": "Zaakceptowane",
+    "completed": "Zakończone",
+    "disputed": "Sporne",
+    "canceled": "Anulowano"
+  },
+  "payment_status": {
+    "paid": "opłacone",
+    "payment_due": "płatność wymagana",
+    "not_invoiced_yet": "jeszcze niezafakturowane"
+  },
+  "actions": {
+    "request_payment": "Poproś o płatność",
+    "pay": "Zapłać",
+    "view_invoice": "Zobacz fakturę",
+    "write_review": "Napisz opinię",
+    "cancel_order": "Anuluj zamówienie"
+  },
+  "tooltips": {
+    "request_payment": "Możesz poprosić o płatność po akceptacji klienta.",
+    "invoice_already_issued": "Faktura została już wystawiona.",
+    "write_review": "Możesz napisać opinię po dokonaniu płatności."
+  },
+  "dialog": {
+    "dispute_title": "Zgłosić zastrzeżenie do tego terminu?",
+    "dispute_body": "Możesz dodać opcjonalny powód. Pomoże to wykonawcy zrozumieć, co wymaga poprawy.",
+    "dispute_reason": "Powód (opcjonalnie)",
+    "dispute_placeholder": "Opisz, co poszło nie tak...",
+    "cancel": "Anuluj",
+    "submitting": "Wysyłanie...",
+    "submit_dispute": "Wyślij zastrzeżenie",
+    "cancel_order_title_customer": "Anulować to zamówienie?",
+    "cancel_order_title_tenant": "Anulować to zamówienie?",
+    "cancel_order_body_customer": "Spowoduje to zwolnienie zarezerwowanych terminów, jeśli okno anulowania jest nadal otwarte.",
+    "cancel_order_body_tenant": "Spowoduje to zwolnienie zarezerwowanych terminów, jeśli okno anulowania jest nadal otwarte.",
+    "cancel_reason": "Powód (opcjonalnie)",
+    "cancel_placeholder_customer": "Dodaj krótką notatkę, jeśli to pomocne...",
+    "cancel_placeholder_tenant": "Dodaj krótki powód anulowania...",
+    "confirm_cancel": "Potwierdź anulowanie",
+    "submitting_cancel": "Anulowanie...",
+    "cancel_error_short_reason": "Powód jest opcjonalny, ale jeśli go podasz, musi mieć co najmniej 3 znaki."
+  },
+  "states": {
+    "load_error": "Nie udało się załadować zamówień.",
+    "tenant_empty": "Gdy tylko otrzymasz zamówienia od klientów, pojawią się one w tej sekcji."
+  },
+  "toasts": {
+    "slot_completed": "Termin został oznaczony jako zakończony.",
+    "slot_update_failed": "Nie udało się zaktualizować terminu.",
+    "slot_accepted": "Termin został zaakceptowany.",
+    "slot_accept_failed": "Nie udało się zaakceptować terminu.",
+    "dispute_submitted": "Zastrzeżenie zostało wysłane.",
+    "dispute_failed": "Nie udało się wysłać zastrzeżenia.",
+    "invoice_issued": "Faktura została wystawiona.",
+    "invoice_issue_failed": "Nie udało się wystawić faktury.",
+    "checkout_url_missing": "Brakuje adresu URL płatności.",
+    "checkout_start_failed": "Nie udało się rozpocząć płatności.",
+    "invoice_missing": "Nie znaleziono jeszcze faktury dla tego zamówienia.",
+    "invoice_open_failed": "Nie udało się otworzyć faktury.",
+    "review_slug_missing": "Brakuje slugu wykonawcy do opinii.",
+    "invoice_finalize_failed": "Nie udało się sfinalizować faktury. Spróbuj ponownie.",
+    "order_canceled": "Zamówienie anulowano.",
+    "cancel_failed": "Nie udało się anulować zamówienia.",
+    "cancel_cutoff_passed": "Okno anulowania już minęło.",
+    "cancel_payment_locked": "Tego zamówienia nie można już anulować, ponieważ płatność lub fakturowanie już się rozpoczęły.",
+    "cancel_already_canceled": "To zamówienie zostało już anulowane.",
+    "cancel_invalid_slots": "Tego zamówienia nie można anulować, ponieważ jego terminy nie są już prawidłowe.",
+    "cancel_release_failed": "Zamówienie zostało anulowane, ale nie udało się w pełni zweryfikować zwolnienia terminów."
+  }
+}

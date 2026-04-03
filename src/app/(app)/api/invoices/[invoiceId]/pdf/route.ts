@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { auth } from "@clerk/nextjs/server";
 import type { Invoice, Tenant } from "@/payload-types";
 import {
-  countryNameFromCode,
-  getAppLangFromHeaders,
-  getLocaleAndCurrency,
-  formatDateForLocale,
+  DEFAULT_APP_LANG,
+  SUPPORTED_APP_LANGS,
   type AppLang,
-} from "@/modules/profile/location-utils";
+} from "@/lib/i18n/app-lang";
+import {
+  countryNameFromCode,
+  formatDateForLocale,
+  formatNumberForLocale,
+  getLocaleAndCurrency,
+} from "@/lib/i18n/locale";
+import { resolveInvoiceLineItemLabels } from "@/modules/invoices/server/invoice-line-item-labels";
+import { getAppLangFromHeaders } from "@/modules/profile/location-utils";
 
 export const runtime = "nodejs";
 
@@ -30,9 +37,23 @@ function relId(input: unknown): string | null {
   return null;
 }
 
-function formatAmount(amountCents: number, currency: string) {
+function formatAmount(amountCents: number, currency: string, appLang: AppLang) {
   const major = amountCents / 100;
-  return `${major.toFixed(2)} ${currency}`;
+  return `${formatNumberForLocale(
+    major,
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+    appLang,
+  )} ${currency}`;
+}
+
+function readExplicitAppLang(input: string | null): AppLang | null {
+  if (!input) return null;
+  const short = (input.split(",")[0]?.split(/[-_]/)[0] ?? input)
+    .trim()
+    .toLowerCase();
+  return (SUPPORTED_APP_LANGS as readonly string[]).includes(short)
+    ? (short as AppLang)
+    : null;
 }
 
 async function buildPdf(params: {
@@ -41,10 +62,22 @@ async function buildPdf(params: {
   tenantName?: string | null;
   providerName?: string | null;
   avatarBuffer?: Buffer | null;
+  lineItemLabels: string[];
 }): Promise<Buffer> {
-  const { invoice, appLang, tenantName, providerName, avatarBuffer } = params;
+  const {
+    invoice,
+    appLang,
+    tenantName,
+    providerName,
+    avatarBuffer,
+    lineItemLabels,
+  } = params;
   type PDFDocumentCtor = PDFKit.PDFDocument;
   const mod = await import("pdfkit");
+  const tFinance = await getTranslations({
+    locale: appLang,
+    namespace: "finance",
+  });
   const PDFDocument =
     (mod as { default?: PDFDocumentCtor }).default ??
     (mod as unknown as PDFDocumentCtor);
@@ -66,6 +99,7 @@ async function buildPdf(params: {
       const pageWidth = doc.page.width;
       const margin = 48;
       const contentWidth = pageWidth - margin * 2;
+      const emptyValue = tFinance("invoice.fallbacks.empty_value");
 
       const leftColWidth = Math.floor(contentWidth * 0.34);
       const midColWidth = Math.floor(contentWidth * 0.34);
@@ -84,9 +118,7 @@ async function buildPdf(params: {
       if (tenantName) {
         doc.fontSize(14).text(tenantName, nameX, headerY + 6);
       }
-      doc
-        .fontSize(22)
-        .text("Invoice", margin, headerY + 42);
+      doc.fontSize(22).text(tFinance("invoice.title"), margin, headerY + 42);
       doc
         .fontSize(10)
         .fillColor("#666666")
@@ -105,7 +137,7 @@ async function buildPdf(params: {
         const startLabel = formatDateForLocale(
           startDate,
           { year: "numeric", month: "short", day: "numeric" },
-          appLang
+          appLang,
         );
         const startTime = timeFmt.format(startDate);
         if (!end) return `${startLabel}, ${startTime}`;
@@ -119,7 +151,7 @@ async function buildPdf(params: {
         const endLabel = formatDateForLocale(
           endDate,
           { year: "numeric", month: "short", day: "numeric" },
-          appLang
+          appLang,
         );
         return `${startLabel}, ${startTime} \u2013 ${endLabel}, ${endTime}`;
       };
@@ -127,13 +159,24 @@ async function buildPdf(params: {
       doc
         .fontSize(11)
         .fillColor("#666666")
-        .text("SERVICE PROVIDER", leftX, topY);
+        .text(
+          tFinance("invoice.sections.service_provider").toLocaleUpperCase(
+            locale,
+          ),
+          leftX,
+          topY,
+        );
       doc.fillColor("#000000");
-      doc
-        .fontSize(10)
-        .text(providerName ?? invoice.sellerLegalName ?? "", leftX, topY + 16, {
-        width: leftColWidth - 8,
-      });
+      doc.fontSize(10).text(
+        providerName ??
+          invoice.sellerLegalName ??
+          tFinance("invoice.sections.service_provider"),
+        leftX,
+        topY + 16,
+        {
+          width: leftColWidth - 8,
+        },
+      );
       doc.text(invoice.sellerAddressLine1 ?? "", leftX, topY + 16 + lineGap, {
         width: leftColWidth - 8,
       });
@@ -141,7 +184,7 @@ async function buildPdf(params: {
         `${invoice.sellerPostal ?? ""} ${invoice.sellerCity ?? ""}`,
         leftX,
         topY + 16 + lineGap * 2,
-        { width: leftColWidth - 8 }
+        { width: leftColWidth - 8 },
       );
       const sellerCountry =
         countryNameFromCode(invoice.sellerCountryISO, locale) ??
@@ -151,23 +194,27 @@ async function buildPdf(params: {
         width: leftColWidth - 8,
       });
       if (invoice.sellerEmail) {
-        doc.text(
-          invoice.sellerEmail,
-          leftX,
-          topY + 16 + lineGap * 4,
-          { width: leftColWidth - 8 }
-        );
+        doc.text(invoice.sellerEmail, leftX, topY + 16 + lineGap * 4, {
+          width: leftColWidth - 8,
+        });
       }
       if (invoice.sellerVatId) {
         doc.text(
-          `VAT ID: ${invoice.sellerVatId}`,
+          `${tFinance("invoice.fields.vat_id")}: ${invoice.sellerVatId}`,
           leftX,
           topY + 16 + lineGap * 5,
-          { width: leftColWidth - 8 }
+          { width: leftColWidth - 8 },
         );
       }
 
-      doc.fontSize(11).fillColor("#666666").text("CLIENT", midX, topY);
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text(
+          tFinance("invoice.sections.client").toLocaleUpperCase(locale),
+          midX,
+          topY,
+        );
       doc.fillColor("#000000");
       doc.fontSize(10).text(invoice.buyerName ?? "", midX, topY + 16, {
         width: midColWidth - 8,
@@ -179,7 +226,7 @@ async function buildPdf(params: {
         `${invoice.buyerPostal ?? ""} ${invoice.buyerCity ?? ""}`,
         midX,
         topY + 16 + lineGap * 2,
-        { width: midColWidth - 8 }
+        { width: midColWidth - 8 },
       );
       const buyerCountry =
         countryNameFromCode(invoice.buyerCountryISO, locale) ??
@@ -189,42 +236,56 @@ async function buildPdf(params: {
         width: midColWidth - 8,
       });
       if (invoice.buyerEmail) {
-        doc.text(
-          invoice.buyerEmail,
-          midX,
-          topY + 16 + lineGap * 4,
-          { width: midColWidth - 8 }
-        );
+        doc.text(invoice.buyerEmail, midX, topY + 16 + lineGap * 4, {
+          width: midColWidth - 8,
+        });
       }
 
-      doc.fontSize(11).fillColor("#666666").text("DETAILS", rightX, topY);
+      doc
+        .fontSize(11)
+        .fillColor("#666666")
+        .text(
+          tFinance("invoice.sections.details").toLocaleUpperCase(locale),
+          rightX,
+          topY,
+        );
       doc.fillColor("#000000");
       doc.fontSize(10).text(
-        `Issued: ${
+        `${tFinance("invoice.fields.issued")}: ${
           invoice.issuedAt
-            ? new Date(invoice.issuedAt).toLocaleDateString(locale)
-            : "--"
+            ? formatDateForLocale(invoice.issuedAt, {}, appLang)
+            : emptyValue
         }`,
         rightX,
         topY + 16,
-        { width: rightColWidth - 8 }
+        { width: rightColWidth - 8 },
       );
       doc.text(
-        `Paid: ${
+        `${tFinance("invoice.fields.paid")}: ${
           invoice.paidAt
-            ? new Date(invoice.paidAt).toLocaleDateString(locale)
-            : "--"
+            ? formatDateForLocale(invoice.paidAt, {}, appLang)
+            : emptyValue
         }`,
         rightX,
         topY + 16 + lineGap,
-        { width: rightColWidth - 8 }
+        { width: rightColWidth - 8 },
       );
-      doc.text(`Currency: ${currency}`, rightX, topY + 16 + lineGap * 2, {
-        width: rightColWidth - 8,
-      });
-      doc.text(`VAT: ${vatRate.toFixed(2)}%`, rightX, topY + 16 + lineGap * 3, {
-        width: rightColWidth - 8,
-      });
+      doc.text(
+        `${tFinance("invoice.fields.currency")}: ${currency}`,
+        rightX,
+        topY + 16 + lineGap * 2,
+        { width: rightColWidth - 8 },
+      );
+      doc.text(
+        `${tFinance("invoice.fields.vat")}: ${formatNumberForLocale(
+          vatRate,
+          { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+          appLang,
+        )}%`,
+        rightX,
+        topY + 16 + lineGap * 3,
+        { width: rightColWidth - 8 },
+      );
 
       const dividerY = topY + 16 + lineGap * 6;
       doc
@@ -241,30 +302,27 @@ async function buildPdf(params: {
       const colUnit = margin + Math.floor(contentWidth * 0.7);
       const colAmount = margin + Math.floor(contentWidth * 0.85);
 
-      doc
-        .fillColor("#F3F4F6")
-        .rect(margin, tableTop, contentWidth, rowHeight)
-        .fill();
+      doc.fillColor("#F3F4F6").rect(margin, tableTop, contentWidth, rowHeight).fill();
       doc.fillColor("#000000").fontSize(10);
-      doc.text("Service", colItem + 6, tableTop + 6, {
+      doc.text(tFinance("invoice.table.service"), colItem + 6, tableTop + 6, {
         width: colQty - colItem - 8,
       });
-      doc.text("Hours", colQty, tableTop + 6, {
+      doc.text(tFinance("invoice.table.hours"), colQty, tableTop + 6, {
         width: colUnit - colQty - 6,
         align: "right",
       });
-      doc.text("Hourly Rate", colUnit, tableTop + 6, {
+      doc.text(tFinance("invoice.table.hourly_rate"), colUnit, tableTop + 6, {
         width: colAmount - colUnit - 6,
         align: "right",
       });
-      doc.text("Amount", colAmount, tableTop + 6, {
+      doc.text(tFinance("invoice.table.amount"), colAmount, tableTop + 6, {
         width: margin + contentWidth - colAmount - 6,
         align: "right",
       });
 
       let y = tableTop + rowHeight;
       const lineItems = invoice.lineItems ?? [];
-      lineItems.forEach((li) => {
+      lineItems.forEach((li, index) => {
         doc
           .strokeColor("#E5E7EB")
           .moveTo(margin, y)
@@ -275,9 +333,17 @@ async function buildPdf(params: {
         const qty = Number(li.qty ?? 0);
         const unit = Number(li.unitAmountCents ?? 0);
         const amount = Number(li.amountCents ?? 0);
-        doc.text(li.title ?? "Service", colItem + 6, y + 4, {
-          width: colQty - colItem - 8,
-        });
+        const displayTitle = lineItemLabels[index]?.trim()
+          ? lineItemLabels[index]
+          : tFinance("invoice.fallbacks.service");
+        doc.text(
+          displayTitle,
+          colItem + 6,
+          y + 4,
+          {
+            width: colQty - colItem - 8,
+          },
+        );
         doc
           .fillColor("#6B7280")
           .fontSize(8)
@@ -289,11 +355,11 @@ async function buildPdf(params: {
           width: colUnit - colQty - 6,
           align: "right",
         });
-        doc.text(formatAmount(unit, currency), colUnit, y + 8, {
+        doc.text(formatAmount(unit, currency, appLang), colUnit, y + 8, {
           width: colAmount - colUnit - 6,
           align: "right",
         });
-        doc.text(formatAmount(amount, currency), colAmount, y + 8, {
+        doc.text(formatAmount(amount, currency, appLang), colAmount, y + 8, {
           width: margin + contentWidth - colAmount - 6,
           align: "right",
         });
@@ -310,29 +376,36 @@ async function buildPdf(params: {
       const total = Number(invoice.amountTotalCents ?? 0);
 
       doc.fontSize(10).fillColor("#000000");
-      doc.text("Subtotal", totalsX, totalsTop, {
+      doc.text(tFinance("invoice.totals.subtotal"), totalsX, totalsTop, {
         width: totalsWidth - 80,
       });
-      doc.text(formatAmount(subtotal, currency), totalsX, totalsTop, {
+      doc.text(formatAmount(subtotal, currency, appLang), totalsX, totalsTop, {
         width: totalsWidth,
         align: "right",
       });
 
-      doc.text("VAT", totalsX, totalsTop + 16, {
+      doc.text(tFinance("invoice.fields.vat"), totalsX, totalsTop + 16, {
         width: totalsWidth - 80,
       });
-      doc.text(formatAmount(vat, currency), totalsX, totalsTop + 16, {
+      doc.text(formatAmount(vat, currency, appLang), totalsX, totalsTop + 16, {
         width: totalsWidth,
         align: "right",
       });
 
       doc
         .fontSize(12)
-        .text("Total", totalsX, totalsTop + 36, { width: totalsWidth - 80 });
-      doc.fontSize(12).text(formatAmount(total, currency), totalsX, totalsTop + 36, {
-        width: totalsWidth,
-        align: "right",
-      });
+        .text(tFinance("invoice.totals.total"), totalsX, totalsTop + 36, {
+          width: totalsWidth - 80,
+        });
+      doc.fontSize(12).text(
+        formatAmount(total, currency, appLang),
+        totalsX,
+        totalsTop + 36,
+        {
+          width: totalsWidth,
+          align: "right",
+        },
+      );
 
       doc.end();
     } catch (err) {
@@ -342,8 +415,8 @@ async function buildPdf(params: {
 }
 
 export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ invoiceId: string }> }
+  req: Request,
+  { params }: { params: Promise<{ invoiceId: string }> },
 ) {
   const { userId } = await auth();
   if (!userId) {
@@ -416,7 +489,17 @@ export async function GET(
 
   try {
     const h = await headers();
-    const appLang = getAppLangFromHeaders(h);
+    const requestUrl = new URL(req.url);
+    const explicitLang = readExplicitAppLang(requestUrl.searchParams.get("lang"));
+    const appLang = explicitLang ?? getAppLangFromHeaders(h) ?? DEFAULT_APP_LANG;
+    const lineItemLabels = await resolveInvoiceLineItemLabels({
+      payload,
+      lineItems: (invoice.lineItems ?? []).map((li) => ({
+        slotId: li.slotId,
+        title: li.title,
+      })),
+      appLang,
+    });
     let avatarBuffer: Buffer | null = null;
     if (avatarUrl) {
       const proto = h.get("x-forwarded-proto") ?? "http";
@@ -426,10 +509,14 @@ export async function GET(
         : host
           ? `${proto}://${host}${avatarUrl}`
           : avatarUrl;
-      const res = await fetch(absoluteUrl);
-      if (res.ok) {
-        const arr = await res.arrayBuffer();
-        avatarBuffer = Buffer.from(arr);
+      try {
+        const res = await fetch(absoluteUrl);
+        const contentType = res.headers.get("content-type") ?? "";
+        if (res.ok && contentType.startsWith("image/")) {
+          avatarBuffer = Buffer.from(await res.arrayBuffer());
+        }
+      } catch {
+        avatarBuffer = null;
       }
     }
     const pdf = await buildPdf({
@@ -438,6 +525,7 @@ export async function GET(
       tenantName,
       providerName,
       avatarBuffer,
+      lineItemLabels,
     });
 
     const pdfBody = new Uint8Array(pdf);
@@ -455,7 +543,7 @@ export async function GET(
     }
     return NextResponse.json(
       { message: "PDF generation failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

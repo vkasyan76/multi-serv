@@ -1,0 +1,54 @@
+{
+  "filters": {
+    "title": "Filtros",
+    "clear": "Restablecer",
+    "max_hourly_rate": "Tarifa máxima por hora",
+    "location_distance": "Ubicación y distancia",
+    "service_delivery": "Modalidad del servicio",
+    "category": "Categoría",
+    "all_categories": "Todas las categorías"
+  },
+  "distance": {
+    "search_nearby": "Buscar cerca",
+    "max_distance": "Distancia máxima",
+    "online_hint": "Los servicios en línea funcionan desde cualquier lugar. Considera desactivar el filtro de distancia."
+  },
+  "services": {
+    "on_site": "A domicilio",
+    "on_line": "En línea"
+  },
+  "sort": {
+    "distance": "Distancia",
+    "price": "Precio",
+    "market_tenure": "Antigüedad en el mercado",
+    "distance_aria": "Ordenar por distancia",
+    "distance_auth_required": "Inicia sesión para ordenar por distancia",
+    "sorted_by_price_low_to_high": "Ordenado por precio (de menor a mayor)",
+    "sorted_by_price_high_to_low": "Ordenado por precio (de mayor a menor)",
+    "sorted_by_tenure_newest": "Ordenado por antigüedad en el mercado (más recientes primero)",
+    "sorted_by_tenure_oldest": "Ordenado por antigüedad en el mercado (más antiguos primero)",
+    "sorted_by_distance": "Ordenado por distancia (más cercanos primero)"
+  },
+  "list": {
+    "empty_title": "No se encontraron proveedores.",
+    "empty_body": "Prueba ajustando los filtros o vuelve más tarde.",
+    "load_more": "Cargar más",
+    "loading_more": "Cargando...",
+    "results_summary": "Mostrando {shown} proveedores de {total}"
+  },
+  "error": {
+    "title": "Algo salió mal",
+    "body": "No pudimos cargar los proveedores. Intenta actualizar la página.",
+    "refresh": "Actualizar página",
+    "refresh_aria": "Actualizar la página para volver a cargar los proveedores",
+    "retry": "Reintentar",
+    "home_radar_body": "No se pudieron cargar los proveedores. Ajusta los filtros o vuelve a intentarlo."
+  },
+  "auth": {
+    "distance_tooltip": "Inicia sesión para determinar tu ubicación para las funciones de distancia."
+  },
+  "categories": {
+    "sidebar_title": "Categorías",
+    "back": "Atrás"
+  }
+}

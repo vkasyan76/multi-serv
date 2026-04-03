@@ -1,9 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Home } from "lucide-react";
 import clsx from "clsx";
+import { useTranslations } from "next-intl";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { stripLeadingLocale, withLocalePrefix } from "@/i18n/routing";
 
 type SettingsHeaderProps = {
   title: string;
@@ -16,11 +21,21 @@ type SettingsHeaderProps = {
 
 export default function SettingsHeader({
   title,
-  homeHref = "/",
-  homeLabel = "Home",
+  homeHref,
+  homeLabel,
   className,
   children,
 }: SettingsHeaderProps) {
+  const tProfile = useTranslations("profile");
+  const pathname = usePathname();
+  const effectiveHomeLabel = homeLabel ?? tProfile("header.home");
+  const effectiveHomeHref = useMemo(() => {
+    if (homeHref) return homeHref;
+
+    const { lang } = stripLeadingLocale(pathname || "/");
+    return withLocalePrefix("/", normalizeToSupported(lang));
+  }, [homeHref, pathname]);
+
   return (
     <div
       className={clsx(
@@ -32,7 +47,7 @@ export default function SettingsHeader({
       <div className="flex items-center gap-4">
         <Image
           src="/images/infinisimo_logo_illustrator.png"
-          alt="Infinisimo Logo"
+          alt={tProfile("header.logo_alt")}
           width={44}
           height={44}
           className="rounded-full bg-white"
@@ -46,12 +61,14 @@ export default function SettingsHeader({
       <div className="flex items-center gap-3">
         {children}
         <Link
-          href={homeHref}
+          href={effectiveHomeHref}
           className="inline-flex items-center gap-2 self-start sm:self-auto px-4 py-2
                      bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
         >
           <Home className="w-5 h-5 text-muted-foreground" />
-          <span className="text-sm sm:text-base font-medium">{homeLabel}</span>
+          <span className="text-sm sm:text-base font-medium">
+            {effectiveHomeLabel}
+          </span>
         </Link>
       </div>
     </div>

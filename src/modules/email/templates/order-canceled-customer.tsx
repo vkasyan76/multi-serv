@@ -1,0 +1,174 @@
+import "server-only";
+import * as React from "react";
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Preview,
+  Section,
+  Text,
+} from "@react-email/components";
+import { render } from "@react-email/render";
+import {
+  formatOrderEmailDateRangeUtc,
+  formatOrderEmailTenantLabel,
+  getOrderCanceledCustomerCopy,
+  type OrderCanceledByRole,
+} from "./order-email-copy";
+
+type OrderCanceledCustomerTemplateProps = {
+  customerName?: string;
+  tenantName?: string;
+  tenantSlug?: string;
+  orderId: string;
+  ordersUrl: string;
+  services?: string[];
+  dateRangeStart?: string;
+  dateRangeEnd?: string;
+  locale?: string;
+  canceledByRole?: OrderCanceledByRole;
+};
+
+function OrderCanceledCustomerEmail(props: OrderCanceledCustomerTemplateProps) {
+  const tenantLabel = formatOrderEmailTenantLabel(
+    props.tenantSlug,
+    props.tenantName,
+  );
+  const copy = getOrderCanceledCustomerCopy(props.locale);
+  const greeting = copy.greeting(props.customerName);
+  const dateRange = formatOrderEmailDateRangeUtc(
+    props.dateRangeStart,
+    props.dateRangeEnd,
+    props.locale,
+  );
+  const services = Array.isArray(props.services)
+    ? props.services.map((s) => String(s).trim()).filter(Boolean)
+    : [];
+  const intro =
+    props.canceledByRole === "tenant"
+      ? copy.introTenantCanceled(tenantLabel, dateRange)
+      : copy.introCustomerCanceled(tenantLabel, dateRange);
+
+  return (
+    <Html>
+      <Head />
+      <Preview>{copy.preview(tenantLabel)}</Preview>
+      <Body style={{ backgroundColor: "#f6f7f8", padding: "24px 0" }}>
+        <Container
+          style={{
+            backgroundColor: "#ffffff",
+            borderRadius: "10px",
+            border: "1px solid #e5e7eb",
+            padding: "24px",
+            maxWidth: "560px",
+          }}
+        >
+          <Heading style={{ margin: "0 0 16px", fontSize: "24px" }}>
+            {copy.heading}
+          </Heading>
+          <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
+          <Text style={{ margin: "0 0 8px" }}>{intro}</Text>
+          {services.length ? (
+            <Section style={{ margin: "8px 0 16px" }}>
+              <ul style={{ margin: "0", paddingLeft: "20px" }}>
+                {services.map((service, idx) => (
+                  <li key={`${service}-${idx}`}>{service}</li>
+                ))}
+              </ul>
+            </Section>
+          ) : null}
+          <Text style={{ margin: "0 0 12px" }}>{copy.slotsReleasedNote}</Text>
+          <Text style={{ margin: "0 0 20px" }}>
+            <strong>{copy.orderLabel}:</strong> {props.orderId}
+          </Text>
+          <Section style={{ margin: "20px 0 8px" }}>
+            <Button
+              href={props.ordersUrl}
+              style={{
+                backgroundColor: "#111827",
+                color: "#ffffff",
+                borderRadius: "8px",
+                padding: "12px 18px",
+                textDecoration: "none",
+              }}
+            >
+              {copy.ctaLabel}
+            </Button>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
+  );
+}
+
+export async function renderOrderCanceledCustomerTemplate(
+  data: Record<string, unknown>,
+) {
+  const orderId = String(data.orderId ?? "");
+  const ordersUrl = String(data.ordersUrl ?? "");
+  const customerName =
+    data.customerName == null ? undefined : String(data.customerName);
+  const tenantName =
+    data.tenantName == null ? undefined : String(data.tenantName);
+  const tenantSlug =
+    data.tenantSlug == null ? undefined : String(data.tenantSlug);
+  const servicesRaw = data.services;
+  const services = Array.isArray(servicesRaw)
+    ? servicesRaw.map((s) => String(s)).filter(Boolean)
+    : [];
+  const dateRangeStart =
+    data.dateRangeStart == null ? undefined : String(data.dateRangeStart);
+  const dateRangeEnd =
+    data.dateRangeEnd == null ? undefined : String(data.dateRangeEnd);
+  const locale = data.locale == null ? undefined : String(data.locale);
+  const canceledByRole: OrderCanceledByRole =
+    data.canceledByRole === "tenant" ? "tenant" : "customer";
+
+  const tenantLabel = formatOrderEmailTenantLabel(tenantSlug, tenantName);
+  const copy = getOrderCanceledCustomerCopy(locale);
+  const dateRange = formatOrderEmailDateRangeUtc(
+    dateRangeStart,
+    dateRangeEnd,
+    locale,
+  );
+  const intro =
+    canceledByRole === "tenant"
+      ? copy.introTenantCanceled(tenantLabel, dateRange)
+      : copy.introCustomerCanceled(tenantLabel, dateRange);
+
+  const subject = copy.subject(tenantLabel);
+  const html = await render(
+    <OrderCanceledCustomerEmail
+      customerName={customerName}
+      tenantName={tenantName}
+      tenantSlug={tenantSlug}
+      orderId={orderId}
+      ordersUrl={ordersUrl}
+      services={services}
+      dateRangeStart={dateRangeStart}
+      dateRangeEnd={dateRangeEnd}
+      locale={locale}
+      canceledByRole={canceledByRole}
+    />,
+  );
+
+  const text = [
+    copy.greeting(customerName),
+    "",
+    intro,
+    "",
+    ...services.map((service) => `- ${service}`),
+    copy.slotsReleasedNote,
+    "",
+    `${copy.orderLabel}: ${orderId}`,
+    "",
+    `${copy.ctaLabel}: ${ordersUrl}`,
+  ]
+    .filter((value) => value !== undefined && value !== null)
+    .join("\n");
+
+  return { subject, html, text };
+}

@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "title": "Términos de uso de Infinisimo",
+    "version_label": "Versión",
+    "effective_date_label": "Fecha de entrada en vigor"
+  },
+  "section1": {
+    "title": "1. Función de la plataforma",
+    "p1": "Infinisimo opera como un marketplace intermediario. Proporcionamos la plataforma técnica que permite a los clientes descubrir proveedores de servicios, solicitar reservas y, cuando corresponda, pagar a los proveedores. Los servicios son prestados por proveedores independientes, no por Infinisimo.",
+    "p2": "Los proveedores son los únicos responsables de la calidad, legalidad, seguridad y prestación de los servicios que ofrecen y realizan. Infinisimo no garantiza resultados del servicio y no es parte del contrato de servicios, salvo cuando la normativa imperativa de protección al consumidor así lo exija."
+  },
+  "section2": {
+    "title": "2. Ciclo de la reserva",
+    "p1": "Las reservas reservan una franja horaria con un proveedor. La plataforma utiliza los siguientes conceptos de ciclo de vida:",
+    "service_status_label": "Estado del servicio (valores del sistema):",
+    "payment_status_label": "Estado del pago (valores del sistema):"
+  },
+  "section3": {
+    "title": "3. Cancelaciones",
+    "p1": "Las cancelaciones solo pueden permitirse dentro de la ventana de cancelación aplicable. Por defecto, la plataforma utiliza:",
+    "cancellation_window": "Ventana de cancelación: {hours} horas antes de la hora de inicio de la reserva (por defecto).",
+    "p2": "Las condiciones específicas de cancelación también pueden depender del proveedor, de la categoría del servicio y de cualquier normativa imperativa de protección al consumidor."
+  },
+  "section4": {
+    "title": "4. Confirmaciones, disputas y plazos",
+    "p1": "La plataforma puede utilizar ventanas de actuación estándar para respaldar recordatorios, seguimiento operativo y gestión de disputas. Salvo que se indique expresamente lo contrario para un proceso específico, estas ventanas no crean por sí mismas aceptación automática, prueba automática de prestación del servicio ni renuncia automática de derechos:",
+    "service_action_window": "Ventana de actuación del servicio: los clientes deben confirmar la finalización dentro de los {serviceActionDays} días siguientes a que el proveedor marque el servicio como completado. Si el cliente considera que el servicio no se ha completado según lo acordado, debe ponerse en contacto con el proveedor sin demora y también puede ponerse en contacto con el soporte de Infinisimo para recibir asistencia relacionada con la plataforma.",
+    "payment_window": "Ventana de pago: cuando se emite una factura y esta resulta pagadera conforme al flujo de reserva aplicable, el cliente debe pagar dentro de los {paymentDays} días siguientes o contactar con soporte si existe algún problema.",
+    "p2": "La notificación de finalización por parte de un proveedor no constituye por sí sola prueba de la prestación del servicio. La inactividad del cliente no constituye automáticamente aceptación, salvo que se indique expresamente para un proceso específico.",
+    "p3": "Si un cliente o un proveedor informa de una disputa o de un problema con el servicio, la plataforma puede solicitar información a ambas partes y aplicar procesos de soporte de la plataforma. Los proveedores y los clientes siguen siendo responsables de cooperar de buena fe."
+  },
+  "section5": {
+    "title": "5. Pagos y comisión de la plataforma",
+    "p1": "Cuando la plataforma admite pagos, los pagos se procesan al proveedor. La plataforma puede cobrar una comisión y/o tarifas por proporcionar la infraestructura del marketplace y de pagos.",
+    "customer_fee_policy": "Política de tarifas para clientes: los clientes pagan el total de la reserva mostrado durante el pago, incluidos los impuestos aplicables. Infinisimo no añade actualmente una tarifa de plataforma separada para el cliente, salvo que se muestre expresamente antes del pago.",
+    "commission_rate": "Comisión estándar de la plataforma: {commissionPercent}% (derivada de {commissionBps} puntos básicos). Pueden aplicarse comisiones promocionales, específicas de campañas o negociadas a proveedores o transacciones elegibles, según se comunique por separado y se refleje durante el pago o en la creación de la factura.",
+    "provider_fee_policy": "Política de tarifas para proveedores: los proveedores autorizan a Infinisimo y a Stripe a cobrar la comisión aplicable de la plataforma y las tarifas de procesamiento de Stripe a partir de los pagos procesados a través de la plataforma. En Stripe, estas pueden aparecer como una application fee (tarifa de plataforma) y como tarifas de procesamiento de Stripe.",
+    "referral_policy": "Las campañas basadas en referencias pueden requerir datos de atribución de referencias para determinar la elegibilidad.",
+    "eur_only": "Los pagos de la plataforma actualmente solo están disponibles en EUR. La disponibilidad de los pagos, los métodos de pago admitidos y la compatibilidad de divisas pueden depender de la configuración de la cuenta de pagos conectada del proveedor. Si la cuenta de un proveedor no admite EUR, los pagos de la plataforma pueden no estar disponibles para ese proveedor.",
+    "stripe_enabled": "Los pagos de la plataforma se procesan mediante Stripe cuando está habilitado.",
+    "payment_handling": "Gestión de pagos y redirecciones: el paso de pago se aloja en Stripe Checkout cuando está habilitado. Los esquemas de tarifas y clasificaciones de Stripe son establecidos por Stripe y pueden variar según el método de pago, la región de la tarjeta y la configuración de la cuenta, además de poder cambiar con el tiempo.",
+    "vat_registration": "El registro de IVA en la plataforma está disponible únicamente para proveedores de la UE, y los números de IVA de la UE pueden ser validados. Los proveedores siguen siendo responsables del cumplimiento fiscal y de emitir las facturas o recibos requeridos.",
+    "p2": "Los impuestos, incluido el IVA, se gestionan conforme a las normas aplicables y al estado fiscal del proveedor. Los proveedores son responsables de emitir las facturas o recibos que sean necesarios y de cumplir con sus obligaciones fiscales.",
+    "p3": "Reembolsos y disputas. Los pagos procesados a través de la plataforma pueden ser reembolsados por el proveedor o por Infinisimo en nombre del proveedor como parte de los procesos de soporte de la plataforma o de la gestión de disputas. Los reembolsos se emiten con cargo al saldo de la cuenta de pagos conectada del proveedor. Las application fees cobradas por la plataforma solo se reembolsan si se revierten expresamente. Las tarifas de procesamiento de Stripe pueden no ser reembolsables según las políticas de Stripe. Los proveedores siguen siendo responsables de los reembolsos, disputas y obligaciones de pago relacionadas con sus servicios."
+  },
+  "section6": {
+    "title": "6. Uso prohibido",
+    "item1": "Fraude, abuso de chargebacks o tergiversación.",
+    "item2": "Acoso, amenazas o conducta ilícita.",
+    "item3": "Intentos de eludir los pagos de la plataforma cuando correspondan."
+  },
+  "section7": {
+    "title": "7. Soporte",
+    "p1": "Para cuestiones relacionadas con la plataforma, contacte con el soporte de Infinisimo. Para cuestiones relacionadas con la ejecución del servicio, la contraparte principal es el proveedor, salvo cuando resulte aplicable la gestión de disputas de la plataforma."
+  }
+}

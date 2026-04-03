@@ -1,0 +1,38 @@
+{
+  "page": {
+    "write_title": "Write a review for {tenantName}",
+    "update_title": "Update your review for {tenantName}",
+    "open_provider_page": "Open provider page",
+    "go_to_provider_page": "Go to provider page",
+    "home": "Home"
+  },
+  "form": {
+    "rating": "Your rating",
+    "title": "Title",
+    "body": "Write a review",
+    "title_placeholder": "What's most important to know?",
+    "body_placeholder": "What should other customers know?",
+    "submit": "Submit",
+    "update": "Update review",
+    "submitting": "Submitting...",
+    "updating": "Updating..."
+  },
+  "validation": {
+    "rating": "Pick 1-5 stars.",
+    "title": "3-120 characters.",
+    "body": "At least 10 characters."
+  },
+  "toasts": {
+    "create_success": "Your review has been submitted.",
+    "update_success": "Your review has been updated.",
+    "purchase_required": "You can only review providers you have booked and paid.",
+    "sign_in_required": "Sign in to write a review.",
+    "account_missing": "Your user account could not be found.",
+    "tenant_missing": "The provider could not be found.",
+    "generic_error": "Something went wrong while saving your review. Please try again."
+  },
+  "a11y": {
+    "rating_group": "Rating",
+    "rating_option": "{count, plural, one {# star} other {# stars}}"
+  }
+}

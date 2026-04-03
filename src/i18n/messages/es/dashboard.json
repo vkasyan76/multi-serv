@@ -1,0 +1,52 @@
+{
+  "page": {
+    "title": "Panel"
+  },
+  "nav": {
+    "calendar": "Calendario",
+    "orders": "Pedidos",
+    "messages": "Mensajes",
+    "finance": "Finanzas"
+  },
+  "navbar": {
+    "public_page": "Ver mi página",
+    "open_public_page": "Abrir página pública",
+    "profile": "Mi perfil",
+    "vendor_profile": "Perfil del proveedor",
+    "home": "Inicio",
+    "tenant_alt": "Proveedor"
+  },
+  "sections": {
+    "calendar": "Calendario",
+    "orders": "Pedidos",
+    "messages": "Mensajes"
+  },
+  "tooltips": {
+    "calendar": "Haz clic para añadir o quitar franjas disponibles.",
+    "orders": "Marca las franjas como completadas y luego emite facturas tras la aceptación del cliente."
+  },
+  "mismatch": {
+    "title": "Cuenta incorrecta",
+    "body": "Este enlace es para {expectedSlug}, pero has iniciado sesión como {actualSlug}.",
+    "hint": "Cierra sesión para continuar con la cuenta correcta.",
+    "action": "Cerrar sesión y continuar"
+  },
+  "states": {
+    "loading": "Cargando...",
+    "unavailable": "No se pudo cargar el panel."
+  },
+  "inbox": {
+    "title": "Bandeja de entrada",
+    "recent": "Recientes",
+    "oldest": "Antiguas",
+    "search_placeholder": "Buscar por nombre",
+    "loading": "Cargando...",
+    "empty": "Aún no hay conversaciones.",
+    "empty_search": "No hay conversaciones coincidentes.",
+    "load_more": "Cargar más",
+    "customer_fallback": "Cliente",
+    "mobile_title": "Conversación con {customerName}",
+    "back_to_inbox": "Volver a la bandeja de entrada",
+    "select_conversation": "Selecciona una conversación a la izquierda."
+  }
+}

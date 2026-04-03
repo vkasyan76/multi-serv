@@ -1,0 +1,57 @@
+{
+  "section": {
+    "title": "Rezerwacja"
+  },
+  "availability": {
+    "loading": "Ładowanie dostępności...",
+    "select_slot": "Kliknij dostępny termin, aby zarezerwować.",
+    "no_slots_day": "Brak dostępnych terminów w tym dniu. Użyj strzałek, aby sprawdzić inne dni.",
+    "no_slots_week": "W tym tygodniu nie ma wolnych terminów. Użyj strzałek, aby sprawdzić inny tydzień.",
+    "no_slots_any": "Obecnie nie ma dostępnych wolnych terminów. Możesz skontaktować się z wykonawcą w sprawie dostępności lub sprawdzić ponownie później."
+  },
+  "selection": {
+    "clear": "Wyczyść wybór",
+    "limit_reached": "Możesz wybrać maksymalnie {count} terminów na jedną rezerwację."
+  },
+  "cta": {
+    "book_slots": "Rezerwuj terminy",
+    "book_slots_count": "Rezerwuj terminy ({count})",
+    "checking_sign_in": "Sprawdzanie logowania...",
+    "sign_in_to_book_provider": "Zaloguj się, aby zarezerwować tego wykonawcę.",
+    "select_slots_then_sign_in": "Wybierz terminy, a następnie zaloguj się, aby zarezerwować.",
+    "sign_in_to_contact": "Zaloguj się, aby skontaktować się z tym wykonawcą."
+  },
+  "calendar": {
+    "today": "Dzisiaj",
+    "previous_day": "Poprzedni dzień",
+    "next_day": "Następny dzień",
+    "previous_week": "Poprzedni tydzień",
+    "next_week": "Następny tydzień",
+    "crosses_midnight": "Ostatni 1-godzinny termin zaczyna się o 22:00. 23:00 przekroczyłoby północ."
+  },
+  "legend": {
+    "available": "Dostępne",
+    "scheduled": "Zaplanowane",
+    "completed": "Zakończone",
+    "accepted": "Zaakceptowane",
+    "disputed": "Sporne"
+  },
+  "payment_status": {
+    "unpaid": "Nieopłacone",
+    "pending": "Oczekujące",
+    "paid": "Opłacone"
+  },
+  "tooltip": {
+    "available": "Dostępne - {date}",
+    "status": "{label} - {date}"
+  },
+  "errors": {
+    "generic": "Rezerwacja nie powiodła się. Spróbuj ponownie.",
+    "slot_not_found": "Ten termin nie jest już dostępny.",
+    "slot_not_reserved": "Niektóre wybrane terminy nie są już zarezerwowane.",
+    "slot_already_taken": "Ten termin nie jest już dostępny.",
+    "slots_changed": "Niektóre wybrane terminy uległy zmianie. Spróbuj ponownie.",
+    "provider_not_ready": "Ten wykonawca nie jest jeszcze gotowy do przyjmowania rezerwacji.",
+    "profile_incomplete": "Uzupełnij swój profil przed dokonaniem rezerwacji."
+  }
+}

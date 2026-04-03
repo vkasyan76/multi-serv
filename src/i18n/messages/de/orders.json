@@ -1,0 +1,92 @@
+{
+  "page": {
+    "title": "Meine Bestellungen",
+    "cta_short": "Bestellungen",
+    "flow_info_label": "Informationen zum Bestellablauf",
+    "flow_info_tooltip": "Der Anbieter markiert die Leistung als abgeschlossen, Sie akzeptieren oder beanstanden sie, und zahlen, sobald die Zahlung angefordert wird.",
+    "home": "Startseite"
+  },
+  "table": {
+    "provider": "Anbieter",
+    "customer": "Kunde",
+    "date_range": "Zeitraum",
+    "status": "Status",
+    "payment": "Zahlung",
+    "actions": "Aktionen",
+    "date_time": "Datum/Uhrzeit",
+    "service": "Leistung",
+    "expand": "Bestellung ausklappen",
+    "collapse": "Bestellung einklappen",
+    "open_menu": "Menü öffnen"
+  },
+  "status": {
+    "scheduled": "Geplant",
+    "accepted": "Akzeptiert",
+    "completed": "Abgeschlossen",
+    "disputed": "Beanstandet",
+    "canceled": "Storniert"
+  },
+  "payment_status": {
+    "paid": "bezahlt",
+    "payment_due": "Zahlung fällig",
+    "not_invoiced_yet": "noch nicht fakturiert"
+  },
+  "actions": {
+    "request_payment": "Zahlung anfordern",
+    "pay": "Bezahlen",
+    "view_invoice": "Rechnung ansehen",
+    "write_review": "Bewertung schreiben",
+    "cancel_order": "Bestellung stornieren"
+  },
+  "tooltips": {
+    "request_payment": "Sie können die Zahlung anfordern, nachdem der Kunde die Leistung akzeptiert hat.",
+    "invoice_already_issued": "Die Rechnung wurde bereits erstellt.",
+    "write_review": "Sie können nach der Zahlung eine Bewertung schreiben."
+  },
+  "dialog": {
+    "dispute_title": "Diesen Termin beanstanden?",
+    "dispute_body": "Sie können optional einen Grund angeben. Das hilft dem Anbieter zu verstehen, was korrigiert werden muss.",
+    "dispute_reason": "Grund (optional)",
+    "dispute_placeholder": "Beschreiben Sie, was schiefgelaufen ist...",
+    "cancel": "Abbrechen",
+    "submitting": "Wird gesendet...",
+    "submit_dispute": "Beanstandung senden",
+    "cancel_order_title_customer": "Diese Bestellung stornieren?",
+    "cancel_order_title_tenant": "Diese Bestellung stornieren?",
+    "cancel_order_body_customer": "Dadurch werden die reservierten Zeitfenster wieder freigegeben, sofern das Stornierungsfenster noch offen ist.",
+    "cancel_order_body_tenant": "Dadurch werden die reservierten Zeitfenster wieder freigegeben, sofern das Stornierungsfenster noch offen ist.",
+    "cancel_reason": "Grund (optional)",
+    "cancel_placeholder_customer": "Optional eine kurze Notiz hinzufügen...",
+    "cancel_placeholder_tenant": "Optional einen kurzen Stornierungsgrund angeben...",
+    "confirm_cancel": "Stornierung bestätigen",
+    "submitting_cancel": "Wird storniert...",
+    "cancel_error_short_reason": "Eine Begründung ist optional, muss aber mindestens 3 Zeichen lang sein, wenn sie angegeben wird."
+  },
+  "states": {
+    "load_error": "Bestellungen konnten nicht geladen werden.",
+    "tenant_empty": "Sobald Sie Bestellungen von Ihren Kunden erhalten, erscheinen sie in diesem Bereich."
+  },
+  "toasts": {
+    "slot_completed": "Der Termin wurde als abgeschlossen markiert.",
+    "slot_update_failed": "Der Termin konnte nicht aktualisiert werden.",
+    "slot_accepted": "Der Termin wurde akzeptiert.",
+    "slot_accept_failed": "Der Termin konnte nicht akzeptiert werden.",
+    "dispute_submitted": "Die Beanstandung wurde gesendet.",
+    "dispute_failed": "Die Beanstandung konnte nicht gesendet werden.",
+    "invoice_issued": "Die Rechnung wurde erstellt.",
+    "invoice_issue_failed": "Die Rechnung konnte nicht erstellt werden.",
+    "checkout_url_missing": "Die Zahlungs-URL fehlt.",
+    "checkout_start_failed": "Die Zahlung konnte nicht gestartet werden.",
+    "invoice_missing": "Für diese Bestellung wurde noch keine Rechnung gefunden.",
+    "invoice_open_failed": "Die Rechnung konnte nicht geöffnet werden.",
+    "review_slug_missing": "Der Slug des Anbieters für die Bewertung fehlt.",
+    "invoice_finalize_failed": "Die Rechnung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
+    "order_canceled": "Die Bestellung wurde storniert.",
+    "cancel_failed": "Die Bestellung konnte nicht storniert werden.",
+    "cancel_cutoff_passed": "Das Stornierungsfenster ist bereits abgelaufen.",
+    "cancel_payment_locked": "Diese Bestellung kann nicht mehr storniert werden, weil Zahlung oder Rechnungsstellung bereits begonnen hat.",
+    "cancel_already_canceled": "Diese Bestellung wurde bereits storniert.",
+    "cancel_invalid_slots": "Diese Bestellung kann nicht storniert werden, weil ihre Zeitfenster nicht mehr gültig sind.",
+    "cancel_release_failed": "Die Bestellung wurde storniert, aber die Freigabe der Zeitfenster konnte nicht vollständig verifiziert werden."
+  }
+}

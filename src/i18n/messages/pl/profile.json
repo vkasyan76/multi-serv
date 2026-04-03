@@ -1,0 +1,214 @@
+{
+  "tabs": {
+    "general": "Ustawienia ogólne",
+    "provider": "Usługodawca",
+    "payments": "Płatności"
+  },
+  "header": {
+    "home": "Strona główna",
+    "logo_alt": "Logo Infinisimo"
+  },
+  "general": {
+    "title": "Ustawienia profilu",
+    "labels": {
+      "first_name": "Imię",
+      "last_name": "Nazwisko",
+      "username": "Nazwa użytkownika",
+      "email": "Adres e-mail",
+      "address": "Adres",
+      "country": "Kraj",
+      "language": "Język"
+    },
+    "placeholders": {
+      "first_name": "Wpisz swoje imię",
+      "last_name": "Wpisz swoje nazwisko",
+      "username": "Wpisz swoją nazwę użytkownika",
+      "address_search": "Wyszukaj swój adres...",
+      "language": "Wybierz język"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* nie można zmienić po zakończeniu onboardingu",
+      "profile_updated": "Profil został zaktualizowany!",
+      "form_invalid": "Popraw błędy w formularzu."
+    },
+    "actions": {
+      "save": "Zapisz profil",
+      "update": "Zaktualizuj profil",
+      "saving": "Zapisywanie...",
+      "updating": "Aktualizowanie..."
+    },
+    "errors": {
+      "save_failed": "Nie udało się zaktualizować profilu. Spróbuj ponownie.",
+      "full_street_address_required": "Wybierz pełny adres ulicy z numerem domu.",
+      "location_details_failed": "Nie udało się pobrać szczegółów lokalizacji. Spróbuj ponownie.",
+      "select_address_from_suggestions": "Wybierz adres z podpowiedzi.",
+      "house_number_required": "Adres musi zawierać numer domu."
+    },
+    "validation": {
+      "first_name_required": "Imię jest wymagane",
+      "last_name_required": "Nazwisko jest wymagane",
+      "invalid_email": "Nieprawidłowy adres e-mail",
+      "username_min": "Nazwa użytkownika musi mieć co najmniej 3 znaki",
+      "username_max": "Nazwa użytkownika musi mieć mniej niż 63 znaki",
+      "username_format": "Nazwa użytkownika może zawierać tylko litery, cyfry, kropki, podkreślenia i myślniki. Musi zaczynać się i kończyć literą lub cyfrą",
+      "username_consecutive_separators": "Nazwa użytkownika nie może zawierać kolejnych separatorów (., _, -)",
+      "select_location": "Wybierz lokalizację",
+      "country_required": "Kraj jest wymagany"
+    }
+  },
+  "provider": {
+    "title": "Ustawienia usługodawcy",
+    "labels": {
+      "business_name": "Nazwa firmy (dla adresu URL Twojej strony)",
+      "hourly_rate": "Stawka godzinowa ({currency})",
+      "service_types": "Rodzaj usługi",
+      "categories": "Kategorie",
+      "subcategories": "Podkategorie",
+      "business_country": "Kraj działalności",
+      "vat_registered": "Czy masz numer VAT? (opcjonalnie)",
+      "vat_id": "Numer VAT",
+      "phone": "Numer telefonu (opcjonalnie)",
+      "description": "Opis"
+    },
+    "service_options": {
+      "on_site": "U klienta",
+      "online": "Online"
+    },
+    "placeholders": {
+      "business_name": "Wpisz nazwę firmy",
+      "hourly_rate": "Wpisz stawkę godzinową w {currency}",
+      "services": "Wybierz rodzaje usług",
+      "categories": "Wybierz kategorie",
+      "subcategories_first": "Najpierw wybierz kategorie",
+      "subcategories": "Wybierz podkategorie",
+      "vat_id": "PL1234567890",
+      "phone": "+48 123 456 789",
+      "website": "Strona internetowa (opcjonalnie)",
+      "description": "Opisz swoje usługi, doświadczenie i to, co Cię wyróżnia..."
+    },
+    "actions": {
+      "validate_vat": "Zweryfikuj",
+      "validating_vat": "Weryfikacja...",
+      "select_image": "Wybierz obraz do przesłania (maks. 5 MB)",
+      "uploading": "Przesyłanie...",
+      "updating": "Aktualizowanie...",
+      "creating": "Tworzenie...",
+      "update_profile": "Zaktualizuj profil usługodawcy",
+      "create_profile": "Utwórz profil usługodawcy"
+    },
+    "messages": {
+      "form_invalid": "Popraw błędy w formularzu.",
+      "updated_success": "Profil usługodawcy został zaktualizowany!",
+      "image_upload_partial_success": "Profil został utworzony, ale nie udało się przesłać obrazu. Możesz dodać go później w edytorze profilu.",
+      "created_next_payouts": "Profil usługodawcy utworzony. Następny krok: skonfiguruj wypłaty.",
+      "complete_payments_onboarding": "Dokończ konfigurację płatności",
+      "finish_stripe_onboarding": "Aby otrzymywać wypłaty, dokończ onboarding Stripe. <link>Przejdź do płatności</link>",
+      "name_locked": "* nie może zostać zmieniona po utworzeniu (jest używana w adresie URL Twojej strony)",
+      "country_from_profile": "Pole jest uzupełniane na podstawie Twojego profilu użytkownika. Aby je zmienić, otwórz <link>Ustawienia ogólne</link>.",
+      "vat_valid_vies": "Numer VAT jest prawidłowy w systemie VIES.",
+      "vat_valid_status": "Prawidłowy numer VAT",
+      "image_preview_alt": "Podgląd profilu",
+      "character_count": "{count}/{max} znaków"
+    },
+    "errors": {
+      "vat_validation_failed": "Weryfikacja numeru VAT nie powiodła się. Spróbuj ponownie.",
+      "vat_eu_only": "VAT można ustawić tylko dla krajów UE.",
+      "update_failed": "Nie udało się zaktualizować profilu. Spróbuj ponownie.",
+      "name_taken": "Ta nazwa firmy jest już zajęta. Wybierz inną.",
+      "create_failed": "Nie udało się utworzyć profilu usługodawcy. Spróbuj ponownie.",
+      "upload_failed": "Nie udało się przesłać obrazu. Spróbuj ponownie.",
+      "vat_invalid_vies": "Numer VAT jest nieprawidłowy.",
+      "vat_invalid_status": "Nieprawidłowy numer VAT"
+    },
+    "validation": {
+      "name_required": "Nazwa firmy jest wymagana",
+      "name_max": "Nazwa firmy musi mieć mniej niż 50 znaków",
+      "name_format": "Nazwa firmy może zawierać litery, cyfry, myślniki i podkreślenia",
+      "bio_max": "Opis musi mieć mniej niż 1200 znaków",
+      "services_required": "Wybierz co najmniej jeden rodzaj usługi",
+      "categories_required": "Wybierz co najmniej jedną kategorię",
+      "website_invalid": "Strona internetowa musi być prawidłowym adresem URL.",
+      "phone_invalid": "Musi to być prawidłowy międzynarodowy numer telefonu w formacie E.164",
+      "hourly_rate_number": "Stawka godzinowa musi być liczbą",
+      "hourly_rate_min": "Stawka godzinowa musi wynosić co najmniej 1 EUR",
+      "hourly_rate_max": "Stawka godzinowa wydaje się zbyt wysoka",
+      "country_iso": "Użyj kodu ISO-2",
+      "vat_required": "Numer VAT jest wymagany po zaznaczeniu rejestracji VAT."
+    }
+  },
+  "confirmation": {
+    "titles": {
+      "prereq": "Uzupełnij swój profil ogólny, aby kontynuować",
+      "confirm": "Zostań usługodawcą"
+    },
+    "messages": {
+      "prereq_intro": "Twoja lokalizacja jest potrzebna, aby klienci mogli Cię znaleźć.",
+      "prereq_location": "Dodaj lokalizację, aby pojawiać się w lokalnych wyszukiwaniach",
+      "confirm_intro": "Zacznij oferować swoje usługi i nawiązuj kontakt z klientami w swojej okolicy",
+      "search_visibility": "Pojawiaj się w wynikach wyszukiwania dla swojej lokalizacji",
+      "pricing_setup": "Ustaw stawkę godzinową i kategorie usług",
+      "availability": "Zarządzaj dostępnością i rezerwacjami"
+    },
+    "actions": {
+      "close": "Zamknij i wróć do ustawień ogólnych",
+      "complete_general": "Uzupełnij ustawienia ogólne",
+      "loading": "Ładowanie...",
+      "create_provider": "Utwórz profil usługodawcy",
+      "maybe_later": "Może następnym razem",
+      "retry": "Spróbuj ponownie"
+    },
+    "errors": {
+      "profile_load_failed": "Nie udało się załadować Twojego profilu. Spróbuj ponownie."
+    }
+  },
+  "payouts": {
+    "title": "Płatności i wypłaty",
+    "messages": {
+      "provider_required": "Najpierw utwórz profil usługodawcy.",
+      "active": "Wypłaty są aktywne. Zarządzaj kontem Stripe z poziomu panelu.",
+      "finish_onboarding": "Dokończ konfigurację Stripe, aby włączyć wypłaty.",
+      "no_balance": "Brak salda"
+    },
+    "actions": {
+      "onboarding": "Konfiguracja Stripe",
+      "update_details": "Zaktualizuj dane Stripe",
+      "open_dashboard": "Otwórz panel Stripe",
+      "create_provider": "Utwórz profil usługodawcy",
+      "retry": "Spróbuj ponownie"
+    },
+    "errors": {
+      "open_onboarding_failed": "Nie udało się otworzyć konfiguracji Stripe. Spróbuj ponownie.",
+      "open_dashboard_failed": "Nie udało się otworzyć panelu Stripe. Spróbuj ponownie.",
+      "status_load_failed": "Nie udało się wczytać statusu wypłat.",
+      "balance_load_failed": "Nie udało się wczytać sald."
+    },
+    "table": {
+      "field": "Pole",
+      "status": "Status",
+      "onboarding": "Konfiguracja",
+      "charges": "Płatności",
+      "payouts": "Wypłaty",
+      "mode": "Tryb",
+      "currency": "Waluta",
+      "available": "Dostępne",
+      "pending": "Oczekujące",
+      "total": "Razem",
+      "next_payout": "Następna wypłata:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Włączone",
+      "disabled": "Wyłączone",
+      "completed": "Zakończono",
+      "in_progress": "W toku",
+      "restricted": "Ograniczone",
+      "not_started": "Nie rozpoczęto",
+      "loading": "Ładowanie"
+    },
+    "aria": {
+      "open_onboarding": "Otwórz konfigurację Stripe w nowej karcie",
+      "open_dashboard": "Otwórz panel Stripe w nowej karcie"
+    }
+  }
+}

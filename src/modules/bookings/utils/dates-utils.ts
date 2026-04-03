@@ -4,7 +4,7 @@ import { dateFnsLocalizer, type Formats } from "react-big-calendar";
 
 // ===== EU ONLY date-fns locales (add more EU locales as needed) =====
 import {
-  enGB, de, fr, it, es, nl, da, fi, cs, sk, sl, hr, bg, el, hu, ro, pl, lt, lv, et, pt
+  enGB, de, fr, it, es, nl, da, fi, cs, sk, sl, hr, bg, el, hu, ro, pl, lt, lv, et, pt, uk
 } from "date-fns/locale";
 import type { Locale } from "date-fns";
 
@@ -13,6 +13,7 @@ export const SUPPORTED_LOCALES: Record<string, Locale> = {
   "en-GB": enGB,
   de, fr, es, it,
   "pt-PT": pt,
+  uk,
   nl, da, fi,
   cs, sk, sl, hr,
   bg, el, hu, pl, ro,

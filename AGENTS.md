@@ -59,6 +59,12 @@ Required env groups are defined in `README.md`:
 - Payload collections are admin-restricted by default; app logic often uses server-side `overrideAccess: true` with explicit guards.
 - Tenant isolation is enforced in server procedures through tenant membership checks.
 
+## Checkout UI Note
+
+- The active slot-order customer drawer is `src/modules/checkout/ui/slots-cart-drawer.tsx`.
+- Treat `src/modules/checkout/ui/cart-drawer.tsx` as legacy unless a task explicitly says otherwise.
+- For current slot-lifecycle booking/order UX, prefer tracing changes through `slots-cart-drawer.tsx` and the slot checkout flow instead of the legacy drawer.
+
 ## Admin Dashboard Status (Brief)
 
 - Phase 1 is implemented:
@@ -99,15 +105,128 @@ Required env groups are defined in `README.md`:
 
 - Single source of truth for supported app languages is `src/lib/i18n/app-lang.ts`.
   - Canonical exports: `SUPPORTED_APP_LANGS`, `AppLang`, `DEFAULT_APP_LANG`, `SUPPORTED_LANGUAGES`, `normalizeToSupported`.
+- Phase 6 invariant:
+  - route locale (`/[lang]/...`) is the active truth
+  - `app_lang` cookie is mirror/bootstrap only
+  - persisted profile language is preference only and must never silently override an explicit route
 - `src/modules/profile/location-utils.ts` re-exports language helpers for backward compatibility.
   - Prefer importing from `src/lib/i18n/app-lang.ts` for new code.
 - Locale detection priority for client UX text should be:
   - `document.documentElement.lang` -> `navigator.languages`/`navigator.language` -> `"en"`.
 - `normalizeToSupported` must handle region/case variants robustly (`de-DE`, `EN_us`, etc.).
+- Bare `/` locale bootstrap still resolves from `app_lang` -> `Accept-Language` -> default.
+  - Locale-prefixed routes always win over cookie/bootstrap state.
 - Do not add new hardcoded app-language lists/unions in feature files.
   - Reuse `SUPPORTED_APP_LANGS` or `SUPPORTED_LANGUAGES` instead.
 - Payload-generated types in `src/payload-types.ts` are derived artifacts, not source of truth.
   - After language option/schema changes, run `npm run generate:types`.
+
+### i18n Rollout Status (Implemented So Far)
+
+- Phase 1 (edge routing composition) is implemented on Next 15 in `src/middleware.ts`:
+  - locale-prefix enforcement for page routes (`/{lang}/...`)
+  - strict bypass for technical paths (`/_next`, `/_vercel`, `/api`, `/trpc`, `/admin`, static assets)
+  - Clerk callback/deep-link param normalization (`redirect_url`, `returnTo`, `return_to`)
+  - locale-aware protected-route checks using de-localized paths (`/dashboard`, `/profile`)
+  - conditional locale cookie persistence via `LOCALE_COOKIE_NAME` (`app_lang`) to avoid per-request `Set-Cookie`
+- Phase 2 (localized app route tree) is implemented under `src/app/(app)/[lang]/...`:
+  - bridge rewrite removed; localized routes are now real route segments
+  - tenant rewrite target is localized (`/${lang}/tenants/${slug}/...`)
+  - locale guard added in `src/app/(app)/[lang]/layout.tsx` (`notFound()` for unsupported locale segments)
+  - locale-aware sign-in/sign-up and server redirects use `/${lang}/...` paths
+  - referral route `src/app/(app)/[lang]/(home)/ref/[code]/route.ts` redirects to `/${lang}`
+- First-request `<html lang>` correctness fix is implemented:
+  - middleware stamps `x-app-lang` on `NextResponse.next()` and tenant `rewrite()` request headers
+  - `src/app/(app)/layout.tsx` resolves lang as `x-app-lang` -> `app_lang` cookie -> `Accept-Language`
+- Profile form stabilization fixes (post Phase 2) are implemented:
+  - language select hydration uses field-level dirty/touched precedence to keep persisted profile language stable
+  - hydration reset is guarded with `useFormState(...).isDirty` to avoid clobbering in-progress edits
+  - country display prefers ISO-derived localized labels while avoiding stale profile ISO during active location edits
+  - `getInitialLanguage()` follows required priority: `document.documentElement.lang` -> `navigator.languages`/`navigator.language` -> `en`
+- Phase 3 (runtime i18n + shell/common migration + governance) is implemented:
+  - `next-intl` plugin is wired in `next.config.ts` using `src/i18n/request.ts`
+  - request locale precedence in `src/i18n/request.ts` is `x-app-lang` -> `app_lang` cookie -> `requestLocale` -> `DEFAULT_APP_LANG`
+  - `common` dictionary loading merges locale-specific messages onto `en` fallback baseline
+  - `src/app/(app)/layout.tsx` owns the root `IntlProvider` (`getMessages` + provider wrap)
+  - `src/app/(app)/[lang]/layout.tsx` only validates locale and pins request locale via `setRequestLocale`
+  - shell/common components use `useTranslations("common")` with locale-safe links:
+    `src/modules/home/ui/components/navbar.tsx`,
+    `src/modules/home/ui/components/navbar-sidebar.tsx`,
+    `src/modules/home/ui/components/footer.tsx`,
+    `src/modules/legal/cookies/ui/cookie-banner.tsx`,
+    `src/modules/legal/cookies/ui/cookie-preferences-dialog.tsx`,
+    `src/modules/home/ui/components/referral-notice.tsx`
+  - governance checks are in `src/i18n/rollout.ts` + `src/scripts/i18n-check.ts`, executed via `npm run test:i18n:messages`
+- Phase 4 (formatting consolidation) is implemented:
+  - canonical locale/format helpers live in `src/lib/i18n/locale.ts`
+  - `src/modules/profile/location-utils.ts` remains a compatibility surface for older imports
+  - key formatting consumers now import from the canonical locale module
+- Phase 4A (CMS/category localization) is implemented:
+  - Payload localization is configured from the canonical app-language registry
+  - `categories.name` is localized in Payload while `slug` remains canonical
+  - category seed/upsert runs with localized names for all launched locales
+  - category and tenant reads resolve localized category labels with `en` fallback
+- Phase 5 Wave 1 (checkout + bookings) is implemented:
+  - `bookings` and `checkout` namespaces are loaded and governed for all launched locales
+  - tenant booking UI, calendar, pay-later drawer, payment setup, and terms dialog chrome are localized
+  - pay-later booking flow no longer leaks raw English server errors in the customer path
+- Tenant public page completion pass is implemented:
+  - `tenantPage` namespace is loaded and governed for all launched locales
+  - tenant page shell, shared tenant card, review summary, and conversation UI are localized
+  - tenant-page review dates use route-aware locale formatting
+- Phase 5 Wave 3 Commit 1 (profile shell + general profile form) is implemented:
+  - `profile` namespace is loaded and governed for all launched locales
+  - `ProfileTabs`, `SettingsHeader`, and `GeneralProfileForm` are localized
+  - live profile validation-summary mapping is aligned with `src/modules/profile/schemas.ts`
+- Phase 5 Wave 3 Commit 2 (vendor onboarding + provider confirmation) is implemented:
+  - `VendorProfileForm` and `ProviderConfirmation` are localized under `profile`
+  - vendor onboarding preserves locale-aware profile tab links and avoids raw user-facing error passthrough in the main vendor flow
+  - launched-locale `profile.json` coverage now includes the vendor/provider confirmation surfaces
+- Phase 5 Wave 3 Commit 3 (payouts panel) is implemented:
+  - `PayoutsPanel` is localized under `profile`
+  - Stripe onboarding/dashboard fallback copy and payouts panel states are localized
+  - payouts/profile prerequisite links preserve the active locale
+- Phase 5 Wave 4 Commit 1 (finance namespace + shared wallet UI) is implemented:
+  - `finance` namespace is loaded and governed for all launched locales
+  - shared wallet filters, summary cards, transactions table, and common finance status labels are localized
+  - wallet export filenames now use stable filename-safe segments instead of visible UI labels
+- Phase 5 Wave 4 wrapper locale-source follow-up is partially implemented:
+  - tenant/admin finance wrappers now derive finance `appLang` from the active route locale instead of profile/browser fallback
+  - tenant finance payouts links preserve locale when linking back into profile
+- Phase 6 (language switcher + route-authoritative sync) is implemented:
+  - `src/i18n/ui/language-switcher.tsx` is the canonical language switcher and rebuilds the current URL with `stripLeadingLocale` + `withLocalePrefix`
+  - desktop and mobile nav both host the same switcher:
+    `src/modules/home/ui/components/navbar.tsx`,
+    `src/modules/home/ui/components/navbar-sidebar.tsx`
+  - the primary nav is intentionally slimmed:
+    desktop keeps only home + legal links,
+    mobile intentionally hides `/about`, `/features`, `/pricing`, and `/contact`
+    to keep the shell stable across locales; do not treat that omission as an accidental regression unless product requirements change
+  - the signed-in admin CTA label remains intentionally English (`Admin Panel`)
+    in `src/modules/home/ui/components/navbar.tsx` and
+    `src/modules/home/ui/components/navbar-sidebar.tsx`;
+    treat it as an internal/admin-facing exception unless product requirements change
+  - switcher UI uses explicit `react-country-flag` mapping; flags are presentation-only and must not affect locale logic
+  - authenticated navbar/mobile switches persist language asynchronously through `auth.updateLanguagePreference`
+  - explicit language changes mirror `app_lang` immediately via `mirrorLocaleCookie` in `src/i18n/routing.ts`
+  - profile language edits do not live-switch the UI while dirty; after successful save they may navigate to the same route under the saved locale using `stripLeadingLocale` + `withLocalePrefix`
+  - profile-save success toasts are deferred to the destination locale when a language-changing save triggers navigation
+  - `SettingsHeader` now derives its default Home link from the active locale route instead of bare `/`
+  - mobile sidebar dashboard/start-business CTA mirrors desktop routing:
+    uses `hasTenant` as the stable label/source-of-truth signal,
+    keeps `isDashLoading = hasTenant && !myTenant && isMineLoading`,
+    and escapes tenant hosts via `platformHomeHref()` for dashboard links
+  - home-page hero and CTA chrome now use `common.home.*` message keys for all launched locales
+
+### i18n Rollout Status (Still Open)
+
+- Phase 5 Wave 2 (orders) is outside this note and should be tracked separately if completed on another branch/PR.
+- Phase 5 Wave 3:
+  - Commit 4 remains conditional: auth leftovers only if confirmed live
+- Phase 5 Wave 4 remains in progress:
+  - translate the tenant/admin finance wrapper chrome still left in English
+  - localize the invoice viewer and PDF download path
+- Phase 6A and Phase 7 remain open.
 
 ## Promotions Reservation (Phase 3)
 

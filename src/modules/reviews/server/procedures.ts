@@ -2,6 +2,7 @@ import { createTRPCRouter, clerkProcedure, baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import type { Where } from "payload";
 import type {
   Tenant,
   Order,
@@ -21,6 +22,29 @@ const createInput = z.object({
   title: z.string().min(3).max(120),
   body: z.string().min(10).max(5000),
 });
+
+function buildReviewEligibleOrderWhere(
+  payloadUserId: string,
+  tenantId: string,
+): Where {
+  return {
+    and: [
+      { user: { equals: payloadUserId } },
+      { tenant: { equals: tenantId } },
+      {
+        or: [
+          { status: { equals: "paid" } },
+          {
+            and: [
+              { lifecycleMode: { equals: "slot" } },
+              { invoiceStatus: { equals: "paid" } },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
 
 export const reviewsRouter = createTRPCRouter({
   getMineForTenant: clerkProcedure
@@ -94,13 +118,7 @@ export const reviewsRouter = createTRPCRouter({
         if (payloadUserId) {
           const orderRes = await db.find({
             collection: "orders",
-            where: {
-              and: [
-                { status: { equals: "paid" } },
-                { user: { equals: payloadUserId } }, // <- here
-                { tenant: { equals: tenant.id } },
-              ],
-            },
+            where: buildReviewEligibleOrderWhere(payloadUserId, tenant.id),
             sort: "-createdAt",
             limit: 1,
             depth: 2,
@@ -180,13 +198,7 @@ export const reviewsRouter = createTRPCRouter({
         // IMPORTANT in your project (Orders.read is superadmin-only)
         const orderCheck = await db.find({
           collection: "orders",
-          where: {
-            and: [
-              { status: { equals: "paid" } },
-              { user: { equals: payloadUserId } },
-              { tenant: { equals: tenant.id } },
-            ],
-          },
+          where: buildReviewEligibleOrderWhere(payloadUserId, tenant.id),
           limit: 1,
           depth: 0,
           overrideAccess: true,

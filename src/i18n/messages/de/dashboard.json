@@ -1,0 +1,52 @@
+{
+  "page": {
+    "title": "Dashboard"
+  },
+  "nav": {
+    "calendar": "Kalender",
+    "orders": "Aufträge",
+    "messages": "Nachrichten",
+    "finance": "Finanzen"
+  },
+  "navbar": {
+    "public_page": "Meine Seite ansehen",
+    "open_public_page": "Öffentliche Seite öffnen",
+    "profile": "Mein Profil",
+    "vendor_profile": "Anbieterprofil",
+    "home": "Startseite",
+    "tenant_alt": "Anbieter"
+  },
+  "sections": {
+    "calendar": "Kalender",
+    "orders": "Aufträge",
+    "messages": "Nachrichten"
+  },
+  "tooltips": {
+    "calendar": "Klicke, um verfügbare Zeitfenster hinzuzufügen oder zu entfernen.",
+    "orders": "Markiere Zeitfenster als abgeschlossen und stelle nach der Kundenbestätigung Rechnungen aus."
+  },
+  "mismatch": {
+    "title": "Falsches Konto",
+    "body": "Dieser Link ist für {expectedSlug}, aber du bist als {actualSlug} angemeldet.",
+    "hint": "Melde dich ab, um mit dem richtigen Konto fortzufahren.",
+    "action": "Abmelden und fortfahren"
+  },
+  "states": {
+    "loading": "Wird geladen...",
+    "unavailable": "Dashboard konnte nicht geladen werden."
+  },
+  "inbox": {
+    "title": "Posteingang",
+    "recent": "Neueste",
+    "oldest": "Älteste",
+    "search_placeholder": "Nach Namen suchen",
+    "loading": "Wird geladen...",
+    "empty": "Noch keine Unterhaltungen.",
+    "empty_search": "Keine passenden Unterhaltungen.",
+    "load_more": "Mehr laden",
+    "customer_fallback": "Kunde",
+    "mobile_title": "Unterhaltung mit {customerName}",
+    "back_to_inbox": "Zurück zum Posteingang",
+    "select_conversation": "Wähle links eine Unterhaltung aus."
+  }
+}

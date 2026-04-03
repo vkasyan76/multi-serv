@@ -1,0 +1,214 @@
+{
+  "tabs": {
+    "general": "Setări generale",
+    "provider": "Prestator de servicii",
+    "payments": "Plăți"
+  },
+  "header": {
+    "home": "Acasă",
+    "logo_alt": "Sigla Infinisimo"
+  },
+  "general": {
+    "title": "Setările profilului",
+    "labels": {
+      "first_name": "Prenume",
+      "last_name": "Nume",
+      "username": "Nume de utilizator",
+      "email": "Adresă de e-mail",
+      "address": "Adresă",
+      "country": "Țară",
+      "language": "Limbă"
+    },
+    "placeholders": {
+      "first_name": "Introdu prenumele tău",
+      "last_name": "Introdu numele tău",
+      "username": "Introdu numele tău de utilizator",
+      "address_search": "Caută adresa ta...",
+      "language": "Selectează limba"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* nu poate fi modificat după finalizarea onboardingului",
+      "profile_updated": "Profil actualizat cu succes!",
+      "form_invalid": "Corectează erorile din formular."
+    },
+    "actions": {
+      "save": "Salvează profilul",
+      "update": "Actualizează profilul",
+      "saving": "Se salvează...",
+      "updating": "Se actualizează..."
+    },
+    "errors": {
+      "save_failed": "Profilul nu a putut fi actualizat. Încearcă din nou.",
+      "full_street_address_required": "Selectează o adresă completă care include numărul clădirii.",
+      "location_details_failed": "Nu s-au putut obține detaliile locației. Încearcă din nou.",
+      "select_address_from_suggestions": "Selectează o adresă din sugestii.",
+      "house_number_required": "Adresa trebuie să includă un număr al clădirii."
+    },
+    "validation": {
+      "first_name_required": "Prenumele este obligatoriu",
+      "last_name_required": "Numele este obligatoriu",
+      "invalid_email": "Adresă de e-mail invalidă",
+      "username_min": "Numele de utilizator trebuie să aibă cel puțin 3 caractere",
+      "username_max": "Numele de utilizator trebuie să aibă mai puțin de 63 de caractere",
+      "username_format": "Numele de utilizator poate conține doar litere, cifre, puncte, underscore și cratime. Trebuie să înceapă și să se termine cu o literă sau o cifră",
+      "username_consecutive_separators": "Numele de utilizator nu poate conține separatori consecutivi (., _, -)",
+      "select_location": "Selectează o locație",
+      "country_required": "Țara este obligatorie"
+    }
+  },
+  "provider": {
+    "title": "Setări furnizor de servicii",
+    "labels": {
+      "business_name": "Numele afacerii (pentru URL-ul paginii tale)",
+      "hourly_rate": "Tarif orar ({currency})",
+      "service_types": "Tip de serviciu",
+      "categories": "Categorii",
+      "subcategories": "Subcategorii",
+      "business_country": "Țara afacerii",
+      "vat_registered": "Aveți număr de TVA? (opțional)",
+      "vat_id": "Număr TVA",
+      "phone": "Număr de telefon (opțional)",
+      "description": "Descriere"
+    },
+    "service_options": {
+      "on_site": "La client",
+      "online": "Online"
+    },
+    "placeholders": {
+      "business_name": "Introduceți numele afacerii",
+      "hourly_rate": "Introduceți tariful orar în {currency}",
+      "services": "Selectați tipurile de servicii",
+      "categories": "Selectați categorii",
+      "subcategories_first": "Selectați mai întâi categoriile",
+      "subcategories": "Selectați subcategoriile",
+      "vat_id": "DE123456789",
+      "phone": "+49 123 4567",
+      "website": "Site web (opțional)",
+      "description": "Descrieți serviciile, experiența și ce vă face unic..."
+    },
+    "actions": {
+      "validate_vat": "Validează",
+      "validating_vat": "Se validează...",
+      "select_image": "Selectați o imagine pentru încărcare (max. 5 MB)",
+      "uploading": "Se încarcă...",
+      "updating": "Se actualizează...",
+      "creating": "Se creează...",
+      "update_profile": "Actualizează profilul furnizorului",
+      "create_profile": "Creează profilul furnizorului"
+    },
+    "messages": {
+      "form_invalid": "Corectați erorile din formular.",
+      "updated_success": "Profilul furnizorului a fost actualizat cu succes!",
+      "image_upload_partial_success": "Profilul a fost creat cu succes, dar imaginea nu a putut fi încărcată. O puteți adăuga mai târziu din editorul de profil.",
+      "created_next_payouts": "Profilul furnizorului a fost creat. Următorul pas: configurați plățile.",
+      "complete_payments_onboarding": "Finalizați configurarea plăților",
+      "finish_stripe_onboarding": "Pentru a primi plăți, finalizați onboardingul Stripe. <link>Mergi la Plăți</link>",
+      "name_locked": "* nu poate fi modificat după creare (este folosit în URL-ul paginii tale)",
+      "country_from_profile": "Completat automat din profilul tău de utilizator. Pentru a-l schimba, deschide <link>Setările generale</link>.",
+      "vat_valid_vies": "Numărul de TVA este valid prin VIES.",
+      "vat_valid_status": "Număr TVA valid",
+      "image_preview_alt": "Previzualizare profil",
+      "character_count": "{count}/{max} caractere"
+    },
+    "errors": {
+      "vat_validation_failed": "Validarea TVA a eșuat. Încercați din nou.",
+      "vat_eu_only": "TVA poate fi setată doar pentru țările UE.",
+      "update_failed": "Actualizarea profilului a eșuat. Încercați din nou.",
+      "name_taken": "Acest nume de afacere este deja folosit. Alegeți altul.",
+      "create_failed": "Crearea profilului furnizorului a eșuat. Încercați din nou.",
+      "upload_failed": "Încărcarea imaginii a eșuat. Încercați din nou.",
+      "vat_invalid_vies": "Numărul de TVA nu este valid.",
+      "vat_invalid_status": "Număr TVA invalid"
+    },
+    "validation": {
+      "name_required": "Numele afacerii este obligatoriu",
+      "name_max": "Numele afacerii trebuie să aibă mai puțin de 50 de caractere",
+      "name_format": "Numele afacerii poate conține litere, cifre, cratime și underscore-uri",
+      "bio_max": "Descrierea trebuie să aibă mai puțin de 1200 de caractere",
+      "services_required": "Selectați cel puțin un tip de serviciu",
+      "categories_required": "Selectați cel puțin o categorie",
+      "website_invalid": "Site-ul web trebuie să fie un URL valid.",
+      "phone_invalid": "Trebuie să fie un număr de telefon internațional valid în format E.164",
+      "hourly_rate_number": "Tariful orar trebuie să fie un număr",
+      "hourly_rate_min": "Tariful orar trebuie să fie de cel puțin 1 EUR",
+      "hourly_rate_max": "Tariful orar pare prea mare",
+      "country_iso": "Folosiți un cod ISO-2",
+      "vat_required": "Numărul de TVA este obligatoriu când este selectată înregistrarea TVA."
+    }
+  },
+  "confirmation": {
+    "titles": {
+      "prereq": "Completați profilul general pentru a continua",
+      "confirm": "Deveniți furnizor de servicii"
+    },
+    "messages": {
+      "prereq_intro": "Locația dvs. este necesară pentru ca clienții să vă poată găsi.",
+      "prereq_location": "Adăugați locația pentru a apărea în căutările locale",
+      "confirm_intro": "Începeți să oferiți servicii și conectați-vă cu clienți din zona dvs.",
+      "search_visibility": "Apăreți în rezultatele de căutare pentru zona dvs.",
+      "pricing_setup": "Stabiliți tariful orar și categoriile de servicii",
+      "availability": "Gestionați disponibilitatea și rezervările"
+    },
+    "actions": {
+      "close": "Închideți și reveniți la setările generale",
+      "complete_general": "Completați setările generale",
+      "loading": "Se încarcă...",
+      "create_provider": "Creează profilul furnizorului",
+      "maybe_later": "Poate altă dată",
+      "retry": "Încercați din nou"
+    },
+    "errors": {
+      "profile_load_failed": "Profilul tău nu a putut fi încărcat. Încercați din nou."
+    }
+  },
+  "payouts": {
+    "title": "Plăți și retrageri",
+    "messages": {
+      "provider_required": "Creați mai întâi profilul dvs. de furnizor de servicii.",
+      "active": "Retragerile sunt active. Gestionați contul Stripe din panou.",
+      "finish_onboarding": "Finalizați configurarea Stripe pentru a activa retragerile.",
+      "no_balance": "Încă nu există sold"
+    },
+    "actions": {
+      "onboarding": "Configurare Stripe",
+      "update_details": "Actualizați detaliile Stripe",
+      "open_dashboard": "Deschideți panoul Stripe",
+      "create_provider": "Creați profilul furnizorului",
+      "retry": "Încercați din nou"
+    },
+    "errors": {
+      "open_onboarding_failed": "Nu s-a putut deschide configurarea Stripe. Încercați din nou.",
+      "open_dashboard_failed": "Nu s-a putut deschide panoul Stripe. Încercați din nou.",
+      "status_load_failed": "Nu s-a putut încărca starea retragerilor.",
+      "balance_load_failed": "Nu s-au putut încărca soldurile."
+    },
+    "table": {
+      "field": "Câmp",
+      "status": "Stare",
+      "onboarding": "Configurare",
+      "charges": "Încasări",
+      "payouts": "Retrageri",
+      "mode": "Mod",
+      "currency": "Monedă",
+      "available": "Disponibil",
+      "pending": "În așteptare",
+      "total": "Total",
+      "next_payout": "Următoarea retragere:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Activat",
+      "disabled": "Dezactivat",
+      "completed": "Finalizat",
+      "in_progress": "În curs",
+      "restricted": "Restricționat",
+      "not_started": "Neînceput",
+      "loading": "Se încarcă"
+    },
+    "aria": {
+      "open_onboarding": "Deschideți configurarea Stripe într-o filă nouă",
+      "open_dashboard": "Deschideți panoul Stripe într-o filă nouă"
+    }
+  }
+}

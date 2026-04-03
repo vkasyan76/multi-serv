@@ -1,0 +1,52 @@
+{
+  "page": {
+    "title": "Painel"
+  },
+  "nav": {
+    "calendar": "Calendário",
+    "orders": "Encomendas",
+    "messages": "Mensagens",
+    "finance": "Finanças"
+  },
+  "navbar": {
+    "public_page": "Ver a minha página",
+    "open_public_page": "Abrir página pública",
+    "profile": "O meu perfil",
+    "vendor_profile": "Perfil do prestador",
+    "home": "Início",
+    "tenant_alt": "Prestador"
+  },
+  "sections": {
+    "calendar": "Calendário",
+    "orders": "Encomendas",
+    "messages": "Mensagens"
+  },
+  "tooltips": {
+    "calendar": "Clique para adicionar ou remover horários disponíveis.",
+    "orders": "Marque os horários como concluídos e depois emita faturas após a aceitação do cliente."
+  },
+  "mismatch": {
+    "title": "Conta incorreta",
+    "body": "Esta ligação é para {expectedSlug}, mas iniciou sessão como {actualSlug}.",
+    "hint": "Termine a sessão para continuar com a conta correta.",
+    "action": "Terminar sessão e continuar"
+  },
+  "states": {
+    "loading": "A carregar...",
+    "unavailable": "Não foi possível carregar o painel."
+  },
+  "inbox": {
+    "title": "Caixa de entrada",
+    "recent": "Recentes",
+    "oldest": "Antigas",
+    "search_placeholder": "Pesquisar por nome",
+    "loading": "A carregar...",
+    "empty": "Ainda não há conversas.",
+    "empty_search": "Não há conversas correspondentes.",
+    "load_more": "Carregar mais",
+    "customer_fallback": "Cliente",
+    "mobile_title": "Conversa com {customerName}",
+    "back_to_inbox": "Voltar à caixa de entrada",
+    "select_conversation": "Selecione uma conversa à esquerda."
+  }
+}

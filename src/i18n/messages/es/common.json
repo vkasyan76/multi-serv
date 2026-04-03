@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "features": "Funciones",
+    "pricing": "Precios",
+    "contact": "Contacto",
+    "terms_of_use": "Términos de uso",
+    "impressum": "Aviso legal",
+    "profile": "Perfil",
+    "dashboard": "Panel",
+    "dashboard_cta": "Panel",
+    "start_business": "Hazte proveedor",
+    "start_business_cta": "Hazte pro",
+    "admin_panel": "Panel de administración",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "menu": "Menú",
+    "sr_dashboard_available": "Navegación actualizada: botón Panel disponible",
+    "sr_start_business_available": "Navegación actualizada: botón Hazte proveedor disponible"
+  },
+  "a11y": {
+    "language_selector": "Seleccionar idioma"
+  },
+  "footer": {
+    "terms": "Términos",
+    "impressum": "Aviso legal",
+    "privacy_policy": "Política de privacidad",
+    "cookies": "Cookies",
+    "cookie_preferences": "Preferencias de cookies",
+    "all_rights_reserved": "Todos los derechos reservados."
+  },
+  "cookie": {
+    "banner": {
+      "full": "Usamos cookies para mejorar tu experiencia. Lee nuestra <policy>política de cookies</policy>. Puedes <manage>cambiar tus preferencias</manage> en cualquier momento.",
+      "text": "Usamos cookies para mejorar tu experiencia.",
+      "policy": "política de cookies",
+      "manage": "cambiar tus preferencias"
+    },
+    "dialog": {
+      "title": "Preferencias de recopilación de datos del sitio web",
+      "description": "Elige qué cookies quieres permitir.",
+      "essential_title": "Esenciales",
+      "essential_text": "Estas cookies son necesarias para que el sitio funcione y no se pueden desactivar.",
+      "analytics_title": "Marketing y analítica",
+      "analytics_text": "Nos ayuda a entender el uso y a mejorar la experiencia del producto.",
+      "advertising_title": "Publicidad",
+      "advertising_text": "Se utilizan para personalizar la publicidad y medir su eficacia.",
+      "save": "Guardar ajustes",
+      "cancel": "Cancelar"
+    }
+  },
+  "toast": {
+    "referral": {
+      "invalid": "Este enlace de recomendación no es válido. Aun así puedes registrarte con normalidad.",
+      "expired": "Este código de recomendación {code} ya no está activo. Aun así puedes registrarte con normalidad."
+    }
+  },
+  "buttons": {
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "save_settings": "Guardar ajustes",
+    "cancel": "Cancelar",
+    "loading": "Cargando...",
+    "view_all": "Ver todo"
+  },
+  "home": {
+    "hero": {
+      "line1": "Conectamos a los clientes con profesionales.",
+      "line2": "Su solución está a solo un clic."
+    },
+    "search": {
+      "placeholder": "Buscar por nombre del proveedor..."
+    },
+    "cta": {
+      "guest_text": "Regístrese para localizar su búsqueda:",
+      "register_button": "Registrarse",
+      "incomplete_profile_text": "Complete su perfil para localizar mejor a los profesionales cerca de usted:",
+      "complete_profile_button": "Completar perfil",
+      "provider_intro": "¿Tiene una idea de negocio? Registre su servicio para aparecer en este radar!",
+      "provider_button": "Registrarse como proveedor"
+    }
+  }
+}

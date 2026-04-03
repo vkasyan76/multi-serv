@@ -1,0 +1,92 @@
+{
+  "page": {
+    "title": "I miei ordini",
+    "cta_short": "Ordini",
+    "flow_info_label": "Informazioni sul flusso dell'ordine",
+    "flow_info_tooltip": "Il professionista contrassegna il servizio come completato, tu lo accetti o lo contesti e paghi quando viene richiesto il pagamento.",
+    "home": "Home"
+  },
+  "table": {
+    "provider": "Professionista",
+    "customer": "Cliente",
+    "date_range": "Intervallo di date",
+    "status": "Stato",
+    "payment": "Pagamento",
+    "actions": "Azioni",
+    "date_time": "Data/ora",
+    "service": "Servizio",
+    "expand": "Espandi ordine",
+    "collapse": "Comprimi ordine",
+    "open_menu": "Apri menu"
+  },
+  "status": {
+    "scheduled": "Programmato",
+    "accepted": "Accettato",
+    "completed": "Completato",
+    "disputed": "Contestato",
+    "canceled": "Annullato"
+  },
+  "payment_status": {
+    "paid": "pagato",
+    "payment_due": "pagamento dovuto",
+    "not_invoiced_yet": "non ancora fatturato"
+  },
+  "actions": {
+    "request_payment": "Richiedi pagamento",
+    "pay": "Paga",
+    "view_invoice": "Visualizza fattura",
+    "write_review": "Scrivi una recensione",
+    "cancel_order": "Annulla ordine"
+  },
+  "tooltips": {
+    "request_payment": "Puoi richiedere il pagamento dopo l'accettazione da parte del cliente.",
+    "invoice_already_issued": "La fattura è già stata emessa.",
+    "write_review": "Puoi scrivere una recensione dopo il pagamento."
+  },
+  "dialog": {
+    "dispute_title": "Contestare questa fascia oraria?",
+    "dispute_body": "Puoi aggiungere un motivo facoltativo. Questo aiuta il professionista a capire cosa deve essere corretto.",
+    "dispute_reason": "Motivo (facoltativo)",
+    "dispute_placeholder": "Spiega cosa è andato storto...",
+    "cancel": "Annulla",
+    "submitting": "Invio in corso...",
+    "submit_dispute": "Invia contestazione",
+    "cancel_order_title_customer": "Annullare questo ordine?",
+    "cancel_order_title_tenant": "Annullare questo ordine?",
+    "cancel_order_body_customer": "Questo rimetterà gli slot riservati in disponibilità se la finestra di cancellazione è ancora aperta.",
+    "cancel_order_body_tenant": "Questo rimetterà gli slot riservati in disponibilità se la finestra di cancellazione è ancora aperta.",
+    "cancel_reason": "Motivo (facoltativo)",
+    "cancel_placeholder_customer": "Aggiungi una breve nota se utile...",
+    "cancel_placeholder_tenant": "Aggiungi un breve motivo della cancellazione...",
+    "confirm_cancel": "Conferma annullamento",
+    "submitting_cancel": "Annullamento...",
+    "cancel_error_short_reason": "Il motivo è facoltativo, ma se fornito deve contenere almeno 3 caratteri."
+  },
+  "states": {
+    "load_error": "Impossibile caricare gli ordini.",
+    "tenant_empty": "Non appena riceverai ordini dai tuoi clienti, appariranno in questa sezione."
+  },
+  "toasts": {
+    "slot_completed": "La fascia oraria è stata contrassegnata come completata.",
+    "slot_update_failed": "Impossibile aggiornare la fascia oraria.",
+    "slot_accepted": "La fascia oraria è stata accettata.",
+    "slot_accept_failed": "Impossibile accettare la fascia oraria.",
+    "dispute_submitted": "La contestazione è stata inviata.",
+    "dispute_failed": "Impossibile inviare la contestazione.",
+    "invoice_issued": "La fattura è stata emessa.",
+    "invoice_issue_failed": "Impossibile emettere la fattura.",
+    "checkout_url_missing": "URL di pagamento mancante.",
+    "checkout_start_failed": "Impossibile avviare il pagamento.",
+    "invoice_missing": "Nessuna fattura disponibile per questo ordine.",
+    "invoice_open_failed": "Impossibile aprire la fattura.",
+    "review_slug_missing": "Slug del professionista mancante per la recensione.",
+    "invoice_finalize_failed": "Impossibile finalizzare la fattura. Riprova.",
+    "order_canceled": "Ordine annullato.",
+    "cancel_failed": "Impossibile annullare l'ordine.",
+    "cancel_cutoff_passed": "La finestra di cancellazione è già scaduta.",
+    "cancel_payment_locked": "Questo ordine non può più essere annullato perché il pagamento o la fatturazione sono già iniziati.",
+    "cancel_already_canceled": "Questo ordine è già stato annullato.",
+    "cancel_invalid_slots": "Questo ordine non può essere annullato perché i suoi slot non sono più validi.",
+    "cancel_release_failed": "L'ordine è stato annullato, ma il rilascio degli slot non ha potuto essere verificato completamente."
+  }
+}

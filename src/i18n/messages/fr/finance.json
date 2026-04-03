@@ -1,0 +1,132 @@
+{
+  "wallet": {
+    "filters": {
+      "labels": {
+        "period": "Période",
+        "year": "Année",
+        "month": "Mois",
+        "invoice_date_range": "Période de facturation",
+        "status": "Statut",
+        "tenant": "Prestataire"
+      },
+      "placeholders": {
+        "select_period": "Sélectionner une période",
+        "pick_date_range": "Choisir une plage de dates",
+        "select_status": "Sélectionner un statut",
+        "loading_tenants": "Chargement...",
+        "all_tenants": "Tous les prestataires"
+      },
+      "options": {
+        "full_history": "Historique complet",
+        "year": "Année",
+        "month": "Mois",
+        "custom_range": "Plage personnalisée"
+      }
+    },
+    "summary": {
+      "loading": "Chargement du récapitulatif du portefeuille...",
+      "load_error": "Impossible de charger le récapitulatif du portefeuille.",
+      "full_history": "Historique complet",
+      "payments_received": "Paiements reçus",
+      "due_from_customers": "Dû par les clients",
+      "total_invoiced": "Total facturé",
+      "platform_fees": "Frais de plateforme"
+    },
+    "table": {
+      "title": "Transactions",
+      "updating": "Mise à jour...",
+      "loading": "Chargement des transactions...",
+      "load_error": "Impossible de charger les transactions.",
+      "empty": "Aucune transaction pour le moment.",
+      "headers": {
+        "invoice_date": "Date de facture",
+        "status": "Statut",
+        "tenant": "Prestataire",
+        "amount": "Montant",
+        "fee_percent": "Frais %",
+        "promo": "Promo",
+        "order_date": "Date de commande",
+        "actions": "Actions"
+      },
+      "unknown_tenant": "Prestataire inconnu",
+      "no_promo": "Aucune"
+    },
+    "actions": {
+      "clear_filters": "Effacer les filtres",
+      "download_csv": "Télécharger le CSV",
+      "view_invoice": "Voir la facture",
+      "load_more": "Afficher plus"
+    },
+    "status": {
+      "all": "Tous",
+      "paid": "Payé",
+      "payment_due": "Paiement dû",
+      "fees": "Frais",
+      "fee": "Frais",
+      "paid_on": "Payé {date}",
+      "fee_on": "Frais {date}"
+    }
+  },
+  "dashboard": {
+    "title": "Finances"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Après avoir terminé la <link>configuration des paiements</link>, vous pourrez ajouter des créneaux à votre calendrier.",
+      "open_panel": "Ouvrez votre panneau de paiements et de soldes dans votre profil."
+    },
+    "actions": {
+      "open": "Ouvrir les paiements"
+    }
+  },
+  "invoice": {
+    "title": "Facture",
+    "topbar": {
+      "public_page": "Page publique",
+      "home": "Accueil"
+    },
+    "sections": {
+      "service_provider": "Prestataire",
+      "client": "Client",
+      "details": "Détails"
+    },
+    "fields": {
+      "issued": "Émise",
+      "paid": "Payée",
+      "currency": "Devise",
+      "vat": "TVA",
+      "vat_id": "N° de TVA"
+    },
+    "table": {
+      "service": "Service",
+      "hours": "Heures",
+      "hourly_rate": "Taux horaire",
+      "amount": "Montant"
+    },
+    "totals": {
+      "subtotal": "Sous-total",
+      "total": "Total"
+    },
+    "status": {
+      "paid": "Payée",
+      "issued": "Émise",
+      "overdue": "En retard",
+      "draft": "Brouillon",
+      "void": "Annulée",
+      "unknown": "Inconnue"
+    },
+    "fallbacks": {
+      "service": "Service",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Télécharger le PDF",
+      "downloading": "Téléchargement..."
+    },
+    "errors": {
+      "download_failed": "Impossible de télécharger le PDF. Veuillez réessayer."
+    }
+  }
+}

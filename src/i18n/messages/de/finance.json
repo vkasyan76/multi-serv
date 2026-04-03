@@ -1,0 +1,132 @@
+{
+  "wallet": {
+    "filters": {
+      "labels": {
+        "period": "Zeitraum",
+        "year": "Jahr",
+        "month": "Monat",
+        "invoice_date_range": "Rechnungszeitraum",
+        "status": "Status",
+        "tenant": "Anbieter"
+      },
+      "placeholders": {
+        "select_period": "Zeitraum wählen",
+        "pick_date_range": "Datumsbereich wählen",
+        "select_status": "Status wählen",
+        "loading_tenants": "Wird geladen...",
+        "all_tenants": "Alle Anbieter"
+      },
+      "options": {
+        "full_history": "Gesamter Verlauf",
+        "year": "Jahr",
+        "month": "Monat",
+        "custom_range": "Benutzerdefinierter Bereich"
+      }
+    },
+    "summary": {
+      "loading": "Wallet-Zusammenfassung wird geladen...",
+      "load_error": "Wallet-Zusammenfassung konnte nicht geladen werden.",
+      "full_history": "Gesamter Verlauf",
+      "payments_received": "Eingegangene Zahlungen",
+      "due_from_customers": "Ausstehend bei Kunden",
+      "total_invoiced": "Insgesamt in Rechnung gestellt",
+      "platform_fees": "Plattformgebühren"
+    },
+    "table": {
+      "title": "Transaktionen",
+      "updating": "Wird aktualisiert...",
+      "loading": "Transaktionen werden geladen...",
+      "load_error": "Transaktionen konnten nicht geladen werden.",
+      "empty": "Noch keine Transaktionen.",
+      "headers": {
+        "invoice_date": "Rechnungsdatum",
+        "status": "Status",
+        "tenant": "Anbieter",
+        "amount": "Betrag",
+        "fee_percent": "Gebühr %",
+        "promo": "Promo",
+        "order_date": "Bestelldatum",
+        "actions": "Aktionen"
+      },
+      "unknown_tenant": "Unbekannter Anbieter",
+      "no_promo": "Keine"
+    },
+    "actions": {
+      "clear_filters": "Filter zurücksetzen",
+      "download_csv": "CSV herunterladen",
+      "view_invoice": "Rechnung ansehen",
+      "load_more": "Mehr laden"
+    },
+    "status": {
+      "all": "Alle",
+      "paid": "Bezahlt",
+      "payment_due": "Zahlung ausstehend",
+      "fees": "Gebühren",
+      "fee": "Gebühr",
+      "paid_on": "Bezahlt {date}",
+      "fee_on": "Gebühr {date}"
+    }
+  },
+  "dashboard": {
+    "title": "Finanzen"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Sobald Sie die <link>Auszahlungseinrichtung</link> abgeschlossen haben, können Sie Zeitfenster in Ihrem Kalender hinzufügen.",
+      "open_panel": "Öffnen Sie den Bereich für Auszahlungen und Guthaben in Ihrem Profil."
+    },
+    "actions": {
+      "open": "Auszahlungen öffnen"
+    }
+  },
+  "invoice": {
+    "title": "Rechnung",
+    "topbar": {
+      "public_page": "Öffentliche Seite",
+      "home": "Startseite"
+    },
+    "sections": {
+      "service_provider": "Dienstleister",
+      "client": "Kunde",
+      "details": "Details"
+    },
+    "fields": {
+      "issued": "Ausgestellt",
+      "paid": "Bezahlt",
+      "currency": "Währung",
+      "vat": "MwSt.",
+      "vat_id": "USt-IdNr."
+    },
+    "table": {
+      "service": "Leistung",
+      "hours": "Stunden",
+      "hourly_rate": "Stundensatz",
+      "amount": "Betrag"
+    },
+    "totals": {
+      "subtotal": "Zwischensumme",
+      "total": "Gesamt"
+    },
+    "status": {
+      "paid": "Bezahlt",
+      "issued": "Ausgestellt",
+      "overdue": "Überfällig",
+      "draft": "Entwurf",
+      "void": "Storniert",
+      "unknown": "Unbekannt"
+    },
+    "fallbacks": {
+      "service": "Leistung",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "PDF herunterladen",
+      "downloading": "Wird heruntergeladen..."
+    },
+    "errors": {
+      "download_failed": "PDF konnte nicht heruntergeladen werden. Bitte versuchen Sie es erneut."
+    }
+  }
+}

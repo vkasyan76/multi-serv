@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { TenantInbox } from "@/modules/conversations/ui/tenant-inbox";
@@ -28,6 +29,7 @@ function getImageUrl(image: unknown): string | null {
 
 export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
   const trpc = useTRPC();
+  const tDashboard = useTranslations("dashboard");
   const [active, setActive] = useState<InboxItem | null>(null);
 
   const vendorQ = useQuery(trpc.auth.getVendorProfile.queryOptions());
@@ -42,8 +44,8 @@ export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
   const conversationId = active?.id ?? null;
 
   const customerName = useMemo(
-    () => active?.customer?.name ?? "Customer",
-    [active]
+    () => active?.customer?.name ?? tDashboard("inbox.customer_fallback"),
+    [active, tDashboard]
   );
 
   // Optional: only if your listForTenant actually includes it; otherwise keep null.
@@ -140,7 +142,9 @@ export function TenantMessagesSection({ tenantSlug }: { tenantSlug: string }) {
           >
             {/* ✅ Required for Radix a11y: DialogTitle must exist */}
             <SheetHeader className="sr-only">
-              <SheetTitle>{`Conversation with ${customerName}`}</SheetTitle>
+              <SheetTitle>
+                {tDashboard("inbox.mobile_title", { customerName })}
+              </SheetTitle>
             </SheetHeader>
             <TenantConversationPanel
               conversationId={conversationId}

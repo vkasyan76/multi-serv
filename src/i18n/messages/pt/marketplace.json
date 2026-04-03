@@ -1,0 +1,54 @@
+{
+  "filters": {
+    "title": "Filtros",
+    "clear": "Limpar",
+    "max_hourly_rate": "Tarifa horária máxima",
+    "location_distance": "Localização e distância",
+    "service_delivery": "Prestação do serviço",
+    "category": "Categoria",
+    "all_categories": "Todas as categorias"
+  },
+  "distance": {
+    "search_nearby": "Pesquisar nas proximidades",
+    "max_distance": "Distância máxima",
+    "online_hint": "Os serviços online funcionam a partir de qualquer lugar. Considere desativar o filtro de distância."
+  },
+  "services": {
+    "on_site": "No local do cliente",
+    "on_line": "Online"
+  },
+  "sort": {
+    "distance": "Distância",
+    "price": "Preço",
+    "market_tenure": "Tempo no mercado",
+    "distance_aria": "Ordenar por distância",
+    "distance_auth_required": "Inicie sessão para ordenar por distância",
+    "sorted_by_price_low_to_high": "Ordenado por preço (do mais baixo ao mais alto)",
+    "sorted_by_price_high_to_low": "Ordenado por preço (do mais alto ao mais baixo)",
+    "sorted_by_tenure_newest": "Ordenado por tempo no mercado (mais recentes primeiro)",
+    "sorted_by_tenure_oldest": "Ordenado por tempo no mercado (mais antigos primeiro)",
+    "sorted_by_distance": "Ordenado por distância (mais próximos primeiro)"
+  },
+  "list": {
+    "empty_title": "Nenhum prestador encontrado.",
+    "empty_body": "Tente ajustar os filtros ou volte mais tarde.",
+    "load_more": "Carregar mais",
+    "loading_more": "A carregar...",
+    "results_summary": "A mostrar {shown} prestadores de {total}"
+  },
+  "error": {
+    "title": "Algo correu mal",
+    "body": "Não foi possível carregar os prestadores. Atualize a página.",
+    "refresh": "Atualizar página",
+    "refresh_aria": "Atualizar a página para recarregar os prestadores",
+    "retry": "Tentar novamente",
+    "home_radar_body": "Não foi possível carregar os prestadores. Ajuste os filtros ou tente novamente."
+  },
+  "auth": {
+    "distance_tooltip": "Inicie sessão para determinar a sua localização para funcionalidades de distância."
+  },
+  "categories": {
+    "sidebar_title": "Categorias",
+    "back": "Voltar"
+  }
+}

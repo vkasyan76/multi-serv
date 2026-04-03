@@ -1,0 +1,38 @@
+{
+  "page": {
+    "write_title": "Scrivi una recensione per {tenantName}",
+    "update_title": "Aggiorna la tua recensione per {tenantName}",
+    "open_provider_page": "Apri la pagina del professionista",
+    "go_to_provider_page": "Vai alla pagina del professionista",
+    "home": "Home"
+  },
+  "form": {
+    "rating": "La tua valutazione",
+    "title": "Titolo",
+    "body": "Scrivi una recensione",
+    "title_placeholder": "Qual è la cosa più importante da sapere?",
+    "body_placeholder": "Cosa dovrebbero sapere gli altri clienti?",
+    "submit": "Invia",
+    "update": "Aggiorna recensione",
+    "submitting": "Invio in corso...",
+    "updating": "Aggiornamento in corso..."
+  },
+  "validation": {
+    "rating": "Scegli da 1 a 5 stelle.",
+    "title": "3-120 caratteri.",
+    "body": "Almeno 10 caratteri."
+  },
+  "toasts": {
+    "create_success": "La tua recensione è stata inviata.",
+    "update_success": "La tua recensione è stata aggiornata.",
+    "purchase_required": "Puoi recensire solo professionisti che hai prenotato e pagato.",
+    "sign_in_required": "Accedi per scrivere una recensione.",
+    "account_missing": "Non è stato possibile trovare il tuo account utente.",
+    "tenant_missing": "Non è stato possibile trovare il professionista.",
+    "generic_error": "Si è verificato un errore durante il salvataggio della recensione. Riprova."
+  },
+  "a11y": {
+    "rating_group": "Valutazione",
+    "rating_option": "{count, plural, one {# stella} other {# stelle}}"
+  }
+}

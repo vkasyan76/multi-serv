@@ -1,0 +1,92 @@
+{
+  "page": {
+    "title": "Mis pedidos",
+    "cta_short": "Pedidos",
+    "flow_info_label": "Información sobre el flujo del pedido",
+    "flow_info_tooltip": "El proveedor marca el servicio como completado, usted lo acepta o lo impugna, y paga cuando se solicita el pago.",
+    "home": "Inicio"
+  },
+  "table": {
+    "provider": "Proveedor",
+    "customer": "Cliente",
+    "date_range": "Rango de fechas",
+    "status": "Estado",
+    "payment": "Pago",
+    "actions": "Acciones",
+    "date_time": "Fecha/hora",
+    "service": "Servicio",
+    "expand": "Expandir pedido",
+    "collapse": "Contraer pedido",
+    "open_menu": "Abrir menú"
+  },
+  "status": {
+    "scheduled": "Programado",
+    "accepted": "Aceptado",
+    "completed": "Completado",
+    "disputed": "Impugnado",
+    "canceled": "Cancelado"
+  },
+  "payment_status": {
+    "paid": "pagado",
+    "payment_due": "pago pendiente",
+    "not_invoiced_yet": "aún no facturado"
+  },
+  "actions": {
+    "request_payment": "Solicitar pago",
+    "pay": "Pagar",
+    "view_invoice": "Ver factura",
+    "write_review": "Escribir una reseña",
+    "cancel_order": "Cancelar pedido"
+  },
+  "tooltips": {
+    "request_payment": "Puede solicitar el pago después de que el cliente haya aceptado el servicio.",
+    "invoice_already_issued": "La factura ya fue emitida.",
+    "write_review": "Puede escribir una reseña después del pago."
+  },
+  "dialog": {
+    "dispute_title": "¿Impugnar esta franja?",
+    "dispute_body": "Puede añadir un motivo opcional. Esto ayuda al proveedor a entender qué debe corregirse.",
+    "dispute_reason": "Motivo (opcional)",
+    "dispute_placeholder": "Cuente qué salió mal...",
+    "cancel": "Cancelar",
+    "submitting": "Enviando...",
+    "submit_dispute": "Enviar impugnación",
+    "cancel_order_title_customer": "¿Cancelar este pedido?",
+    "cancel_order_title_tenant": "¿Cancelar este pedido?",
+    "cancel_order_body_customer": "Esto liberará las franjas reservadas para que vuelvan a estar disponibles si la ventana de cancelación sigue abierta.",
+    "cancel_order_body_tenant": "Esto liberará las franjas reservadas para que vuelvan a estar disponibles si la ventana de cancelación sigue abierta.",
+    "cancel_reason": "Motivo (opcional)",
+    "cancel_placeholder_customer": "Añade una nota breve si ayuda...",
+    "cancel_placeholder_tenant": "Añade un motivo breve para la cancelación...",
+    "confirm_cancel": "Confirmar cancelación",
+    "submitting_cancel": "Cancelando...",
+    "cancel_error_short_reason": "El motivo es opcional, pero si se proporciona debe tener al menos 3 caracteres."
+  },
+  "states": {
+    "load_error": "No se pudieron cargar los pedidos.",
+    "tenant_empty": "En cuanto reciba pedidos de sus clientes, aparecerán en esta sección."
+  },
+  "toasts": {
+    "slot_completed": "La franja se marcó como completada.",
+    "slot_update_failed": "No se pudo actualizar la franja.",
+    "slot_accepted": "La franja fue aceptada.",
+    "slot_accept_failed": "No se pudo aceptar la franja.",
+    "dispute_submitted": "La impugnación se envió correctamente.",
+    "dispute_failed": "No se pudo enviar la impugnación.",
+    "invoice_issued": "La factura fue emitida.",
+    "invoice_issue_failed": "No se pudo emitir la factura.",
+    "checkout_url_missing": "Falta la URL de pago.",
+    "checkout_start_failed": "No se pudo iniciar el pago.",
+    "invoice_missing": "Aún no se encontró ninguna factura para este pedido.",
+    "invoice_open_failed": "No se pudo abrir la factura.",
+    "review_slug_missing": "Falta el slug del proveedor para la reseña.",
+    "invoice_finalize_failed": "No se pudo finalizar la factura. Inténtelo de nuevo.",
+    "order_canceled": "Pedido cancelado.",
+    "cancel_failed": "No se pudo cancelar el pedido.",
+    "cancel_cutoff_passed": "La ventana de cancelación ya ha pasado.",
+    "cancel_payment_locked": "Este pedido ya no se puede cancelar porque el pago o la facturación ya han comenzado.",
+    "cancel_already_canceled": "Este pedido ya estaba cancelado.",
+    "cancel_invalid_slots": "Este pedido no se puede cancelar porque sus franjas horarias ya no son válidas.",
+    "cancel_release_failed": "El pedido fue cancelado, pero no se pudo verificar completamente la liberación de las franjas."
+  }
+}

@@ -7,7 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,8 +18,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { MessageActions } from "@/modules/conversations/ui/message-actions";
-
 import { Loader2, Send } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/trpc/routers/_app";
@@ -45,25 +44,24 @@ type ConversationThreadProps = {
   myAvatarUrl?: string | null;
   disabled?: boolean;
   emptyStateText?: React.ReactNode;
-  appLang?: AppLang; // NEW (optional)
+  appLang?: AppLang;
 };
 
 type MessageBodyProps = {
+  tTenantPage: (key: string) => string;
   mine: boolean;
   deleted: boolean;
   isEditing: boolean;
   text: string;
-
   editDraft: string;
   onEditDraftChange: (value: string) => void;
-
   onCancelEditAction: () => void;
   onSaveEditAction: () => void;
-
   saveDisabled: boolean;
 };
 
 function MessageBody({
+  tTenantPage,
   mine,
   deleted,
   isEditing,
@@ -93,7 +91,7 @@ function MessageBody({
               onCancelEditAction();
             }}
           >
-            Cancel
+            {tTenantPage("conversation.cancel")}
           </Button>
           <Button
             type="button"
@@ -104,7 +102,7 @@ function MessageBody({
               onSaveEditAction();
             }}
           >
-            Save
+            {tTenantPage("conversation.save")}
           </Button>
         </div>
       </div>
@@ -116,7 +114,7 @@ function MessageBody({
       <div
         className={mine ? "italic opacity-80" : "italic text-muted-foreground"}
       >
-        This message was deleted
+        {tTenantPage("conversation.message_deleted")}
       </div>
     );
   }
@@ -136,10 +134,9 @@ export function ConversationThread({
   appLang,
 }: ConversationThreadProps) {
   const trpc = useTRPC();
+  const tTenantPage = useTranslations("tenantPage");
   const [draft, setDraft] = useState("");
   const [historyEnabled, setHistoryEnabled] = useState(false);
-
-  // Message Editing
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
@@ -147,14 +144,6 @@ export function ConversationThread({
 
   const { user } = useUser();
 
-  //!mine should render otherAvatarUrl / otherInitial
-  // mine should render myAvatarSrc / myInitial
-  //   Each message belongs to a senderRole: "customer" or "tenant" (stored in messages.senderRole).
-  // viewerRole tells the thread who is currently viewing:
-  // In the public ConversationSheet: viewerRole="customer"
-  // In the tenant dashboard: viewerRole="tenant"
-
-  // fall back to Clerk user image url
   const myAvatarSrc =
     myAvatarUrl ?? (viewerRole === "customer" ? user?.imageUrl : undefined);
 
@@ -166,14 +155,10 @@ export function ConversationThread({
     ""
   ).trim();
 
-  // myName/myAvatarUrl = avatar/name of the person using the UI
-  // otherName/otherAvatarUrl = the other party in the conversation
-
   const otherLabel = (otherName ?? "").trim();
   const otherInitial = otherLabel ? otherLabel.slice(0, 1).toUpperCase() : "👤";
   const myInitial = myLabel ? myLabel.slice(0, 1).toUpperCase() : "👤";
 
-  // Compute locale + format helpers (date + time)
   const locale = useMemo(() => {
     if (appLang) return mapAppLangToLocale(appLang);
     if (typeof navigator !== "undefined") return navigator.language || "en-US";
@@ -193,15 +178,10 @@ export function ConversationThread({
       day: "numeric",
     });
 
-  // local “day key” (so separators follow the viewer’s local timezone)
   const dayKey = (iso: string) => {
     const d = new Date(iso);
     return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   };
-
-  // Fetch messages with interval: poll only the newest chunk with a normal query, and load older pages separately.
-
-  // -- MESSAGE FETCHING LOGIC --
 
   const latestQ = useQuery({
     ...trpc.messages.list.queryOptions({
@@ -216,8 +196,6 @@ export function ConversationThread({
 
   useEffect(() => {
     setHistoryEnabled(false);
-
-    // reset per-conversation UI state
     setMenuOpenId(null);
     setEditingId(null);
     setEditDraft("");
@@ -238,7 +216,6 @@ export function ConversationThread({
     getNextPageParam: (last) => last.nextCursor ?? null,
   });
 
-  // Editing Mutations
   const editMsg = useMutation({
     ...trpc.messages.edit.mutationOptions(),
     onSuccess: () => {
@@ -258,13 +235,11 @@ export function ConversationThread({
     },
   });
 
-  // older pages: reverse pages then flatten
   const olderMessages = useMemo(() => {
     const pages = olderQ.data?.pages ?? [];
     return [...pages].reverse().flatMap((p) => p.items);
   }, [olderQ.data]);
 
-  // Make message ordering robust (so separators work)
   const allMessages: MessageItem[] = useMemo(() => {
     const latestMessages = latestQ.data?.items ?? [];
     return [...olderMessages, ...latestMessages];
@@ -273,7 +248,7 @@ export function ConversationThread({
   const sortedMessages = useMemo(() => {
     return [...allMessages].sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
   }, [allMessages]);
 
@@ -281,13 +256,11 @@ export function ConversationThread({
     ...trpc.messages.send.mutationOptions(),
     onSuccess: () => {
       setDraft("");
-      latestQ.refetch(); // ✅ refetch newest chunk only
+      latestQ.refetch();
     },
   });
 
   const hasOlder = !!latestQ.data?.nextCursor;
-
-  //---
 
   const canSend =
     draft.trim().length > 0 && !!conversationId && !disabled && !send.isPending;
@@ -317,34 +290,33 @@ export function ConversationThread({
             {olderQ.isFetchingNextPage || olderQ.isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              "Load earlier"
+              tTenantPage("conversation.load_earlier")
             )}
           </Button>
         )}
 
         {latestQ.isLoading ? (
-          <div className="text-xs text-muted-foreground">Loading messages…</div>
+          <div className="text-xs text-muted-foreground">
+            {tTenantPage("conversation.loading_messages")}
+          </div>
         ) : sortedMessages.length === 0 ? (
           <div className="text-xs text-muted-foreground">
-            {emptyStateText ?? (
-              <>
-                No messages yet. Start a conversation with{" "}
-                <span className="font-medium">{otherName}</span>.
-              </>
-            )}
+            {emptyStateText ??
+              tTenantPage.rich("conversation.empty", {
+                provider: (chunks) => (
+                  <span className="font-medium">{chunks}</span>
+                ),
+                name: otherName,
+              })}
           </div>
         ) : (
-          // Date pill separators (per day, localized) & Time under each message (localized)
           <div className="space-y-3">
             {sortedMessages.map((m, idx) => {
               const mine = isMe(m);
-
               const deleted = !!(m as { deletedAt?: string | null }).deletedAt;
               const updatedAt =
                 (m as { updatedAt?: string | null }).updatedAt ?? null;
-              const edited =
-                !deleted && !!updatedAt && updatedAt !== m.createdAt;
-
+              const edited = !deleted && !!updatedAt && updatedAt !== m.createdAt;
               const prev = sortedMessages[idx - 1];
               const showDateSeparator =
                 !prev || dayKey(prev.createdAt) !== dayKey(m.createdAt);
@@ -358,7 +330,6 @@ export function ConversationThread({
                       </span>
                     </div>
                   )}
-                  {/* Message Bubble */}
                   <div
                     className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}
                   >
@@ -368,17 +339,6 @@ export function ConversationThread({
                         <AvatarFallback>{otherInitial}</AvatarFallback>
                       </Avatar>
                     )}
-                    {/* Message Bubble */}
-                    {/* Actions button (only for my messages, not deleted, not editing) */}
-                    {/* <div
-                      className={`relative group max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
-                        mine
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted text-foreground rounded-bl-md"
-                      }`}
-                      
-                    > */}
-                    {/* Alternative: Blue bg (Facebook-like): "bg-blue-600 || "bg-emerald-600" ||  pink-400 || text text-black or text-white */}
                     <div
                       className={`relative group max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
                         mine
@@ -404,8 +364,8 @@ export function ConversationThread({
                         />
                       )}
 
-                      {/* ✅ (message body) */}
                       <MessageBody
+                        tTenantPage={tTenantPage}
                         mine={mine}
                         deleted={deleted}
                         isEditing={editingId === m.id}
@@ -426,7 +386,6 @@ export function ConversationThread({
                         }
                       />
 
-                      {/* WhatsApp-style timestamp incl. deleted or edited */}
                       <div
                         className={[
                           "mt-1 flex items-center justify-end gap-1 text-[10px] leading-none",
@@ -435,13 +394,13 @@ export function ConversationThread({
                       >
                         {deleted && (
                           <span className="rounded-full bg-background/60 px-2 py-0.5">
-                            Deleted
+                            {tTenantPage("conversation.deleted")}
                           </span>
                         )}
 
                         {!deleted && edited && (
                           <span className="rounded-full bg-background/60 px-2 py-0.5">
-                            Edited
+                            {tTenantPage("conversation.edited")}
                           </span>
                         )}
 
@@ -463,16 +422,17 @@ export function ConversationThread({
         )}
       </ScrollArea>
 
-      {/* Delete confirmation */}
       <AlertDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete message?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {tTenantPage("conversation.delete_title")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the message for both participants.
+              {tTenantPage("conversation.delete_description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -480,7 +440,7 @@ export function ConversationThread({
               onClick={() => setDeleteId(null)}
               disabled={removeMsg.isPending}
             >
-              Cancel
+              {tTenantPage("conversation.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
@@ -489,19 +449,22 @@ export function ConversationThread({
               }}
               disabled={removeMsg.isPending}
             >
-              Delete
+              {tTenantPage("conversation.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Composer */}
       <div className="border-t p-3 bg-background">
         <div className="flex gap-2 items-end">
           <Textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={disabled ? "Disabled…" : "Write a message…"}
+            placeholder={
+              disabled
+                ? tTenantPage("conversation.composer_disabled")
+                : tTenantPage("conversation.composer_placeholder")
+            }
             disabled={disabled || !conversationId}
             className="min-h-11 max-h-32 resize-none"
             onKeyDown={(e) => {
@@ -517,13 +480,13 @@ export function ConversationThread({
             className="h-11 w-11"
             disabled={!canSend}
             onClick={sendMessage}
-            aria-label="Send"
+            aria-label={tTenantPage("conversation.send")}
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Press Enter to send, Shift+Enter for a new line.
+          {tTenantPage("conversation.composer_hint")}
         </p>
       </div>
     </div>

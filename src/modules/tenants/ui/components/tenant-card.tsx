@@ -10,20 +10,21 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WALLET_CURRENCY } from "@/constants";
+import type { AppLang } from "@/lib/i18n/app-lang";
 import Image from "next/image";
 import type { TenantWithRelations } from "../../types";
 import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
 import {
   formatMonthYearForLocale,
   formatNumberForLocale,
-  formatIntegerForLocale,
   formatOneDecimalForLocale,
-  type AppLang,
   getInitialLanguage,
   formatCurrency,
 } from "@/modules/profile/location-utils";
 import { cn, platformHomeHref } from "@/lib/utils";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 // Helper function to handle image errors
 const handleImageError = (
@@ -65,6 +66,7 @@ export const TenantCard = ({
   appLang,
   isOwner = false,
 }: TenantCardProps) => {
+  const tTenantPage = useTranslations("tenantPage");
   const effectiveLang: AppLang = appLang ?? getInitialLanguage();
 
   const homeHref = platformHomeHref();
@@ -146,7 +148,7 @@ export const TenantCard = ({
               aria-hidden
               className="h-3 w-3 text-yellow-400 fill-yellow-400"
             />
-            <span className="sr-only">Rating</span>
+            <span className="sr-only">{tTenantPage("card.rating_sr")}</span>
             <span suppressHydrationWarning>
               {formatNumberForLocale(
                 reviewRating,
@@ -161,7 +163,7 @@ export const TenantCard = ({
           </div>
         ) : (
           <div className="absolute top-2 right-2 rounded-full bg-green-600  backdrop-blur px-2 py-1 text-white text-xs">
-            New
+            {tTenantPage("card.new")}
           </div>
         )}
       </div>
@@ -210,7 +212,8 @@ export const TenantCard = ({
                 )}
                 suppressHydrationWarning
               >
-                {formatCurrency(tenant.hourlyRate, "EUR", effectiveLang)} /h
+                {formatCurrency(tenant.hourlyRate, WALLET_CURRENCY, effectiveLang)}{" "}
+                /h
               </span>
             )}
           </div>
@@ -257,7 +260,7 @@ export const TenantCard = ({
                 />
               ) : isSignedIn === true ? (
                 <span className="truncate max-w-[10ch] text-gray-500">
-                  Unavailable
+                  {tTenantPage("card.unavailable")}
                 </span>
               ) : (
                 // signed out (known) → show tooltip
@@ -270,7 +273,7 @@ export const TenantCard = ({
                         : "text-sm text-gray-400"
                     )}
                   >
-                    Log in for distance
+                    {tTenantPage("card.log_in_for_distance")}
                   </span>
                 </AuthTooltip>
               )}
@@ -296,12 +299,12 @@ export const TenantCard = ({
                     {service === "on-site" ? (
                       <>
                         <MapPin className="h-3 w-3" />
-                        On-site
+                        {tTenantPage("card.on_site")}
                       </>
                     ) : (
                       <>
                         <Monitor className="h-3 w-3" />
-                        On-line
+                        {tTenantPage("card.on_line")}
                       </>
                     )}
                   </span>
@@ -319,15 +322,14 @@ export const TenantCard = ({
               <div className="flex items-center gap-1">
                 <BadgeCheck className="h-4 w-4 text-emerald-600" />
                 <span suppressHydrationWarning>
-                  {formatIntegerForLocale(ordersCount ?? 0, effectiveLang)}{" "}
-                  {(ordersCount ?? 0) === 1 ? "order" : "orders"}
+                  {tTenantPage("card.orders", { count: ordersCount ?? 0 })}
                 </span>
               </div>
             )}
 
             {/* Right: Active since (Month + Year) */}
             <div className="flex items-center gap-1">
-              <span className="text-gray-500">Since:</span>
+              <span className="text-gray-500">{tTenantPage("card.since")}</span>
               <span suppressHydrationWarning>
                 {formatMonthYearForLocale(
                   tenant.createdAt,
@@ -346,12 +348,12 @@ export const TenantCard = ({
               <>
                 <Button size="lg" className="w-full" asChild>
                   <Link href={dashboardHref} prefetch={false}>
-                    Dashboard
+                    {tTenantPage("card.dashboard")}
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="w-full" asChild>
                   <Link href={profileHref} prefetch={false}>
-                    Profile
+                    {tTenantPage("card.profile")}
                   </Link>
                 </Button>
               </>
@@ -360,20 +362,21 @@ export const TenantCard = ({
                 <Button
                   size="lg"
                   className="w-full"
-                  aria-label="Book service"
+                  aria-label={tTenantPage("card.aria_book_service")}
                   onClick={onBook}
                 >
-                  Book service
+                  {tTenantPage("card.book_service")}
                 </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full"
-                  aria-label="Contact provider"
-                  onClick={onContact ?? (() => console.log("TODO: Contact"))}
-                >
-                  Contact
-                </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full"
+                    aria-label={tTenantPage("card.aria_contact_provider")}
+                    onClick={onContact}
+                    disabled={!onContact}
+                  >
+                    {tTenantPage("card.contact")}
+                  </Button>
               </>
             )}
           </div>

@@ -13,6 +13,7 @@ import LoadingPage from "@/components/shared/loading";
 
 import type { Category } from "@/payload-types";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 
 import { BookingActionButton } from "./booking-action-button";
 
@@ -30,6 +31,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { platformHomeHref } from "@/lib/utils";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 
 import { useTenantAuth } from "./hooks/use-tenant-auth";
 
@@ -47,8 +49,18 @@ const TenantCalendar = dynamic(
 const PM_CART_KEY = "pm_cart_restore_v1";
 const PM_CART_TTL_MS = 5 * 60 * 1000;
 
-export default function TenantContent({ slug }: { slug: string }) {
+export default function TenantContent({
+  slug,
+  routeLang,
+}: {
+  slug: string;
+  routeLang: string;
+}) {
   const homeHref = platformHomeHref();
+  const tBookings = useTranslations("bookings");
+  const tCheckout = useTranslations("checkout");
+  const tTenantPage = useTranslations("tenantPage");
+  const appLang = normalizeToSupported(routeLang);
 
   // ensures "/plumbing" becomes "https://root-domain/plumbing" in prod,
   // and stays "/plumbing" in dev
@@ -67,7 +79,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   type CalendarAvail = {
     loading: boolean;
     hasAvailableSlots: boolean; // in the CURRENT visible view (day on mobile, week on desktop)
-    hasAnyAvailableSlots: boolean; // in the fetched window (so mobile can know “other days”)
+    hasAnyAvailableSlots: boolean; // in the fetched window (so mobile can know "other days")
     view: "day" | "week";
   };
 
@@ -117,14 +129,13 @@ export default function TenantContent({ slug }: { slug: string }) {
     ...trpc.checkout.releaseOnCancel.mutationOptions(),
     retry: false,
   });
-  const isCancelling = cancel && !!sessionId; // canvelling paymente process
+  const isCancelling = cancel && !!sessionId; // cancelling payment process
 
-  // Auth + language + “warmup gate” in one place.
+  // Auth + language + "warmup gate" in one place.
   // waiting for bridge validation
   const {
     signedState,
     viewerKey,
-    appLang,
     onBridgeResync,
     profileQ, // to pass to pass into CartDrawer for checking terms acceptance
   } = useTenantAuth(slug);
@@ -141,7 +152,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   const handleBookService = () => {
     scrollToCalendar();
     if (signedState === false)
-      toast.info("Select slots, then sign in to book.");
+      toast.info(tBookings("cta.select_slots_then_sign_in"));
   };
 
   // conversation
@@ -149,7 +160,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   // must be before any early return
   const [chatOpen, setChatOpen] = useState(false);
 
-  // If the user is logged out, bridge.authenticated === false → you get the toast and the sheet does not open.
+  // If the user is logged out, bridge.authenticated === false -> you get the toast and the sheet does not open.
   const handleContact = async () => {
     if (signedState === true) {
       setChatOpen(true);
@@ -157,7 +168,7 @@ export default function TenantContent({ slug }: { slug: string }) {
     }
 
     if (signedState === false) {
-      toast.error("Sign in to contact this provider.");
+      toast.error(tBookings("cta.sign_in_to_contact"));
       return;
     }
 
@@ -165,9 +176,9 @@ export default function TenantContent({ slug }: { slug: string }) {
     try {
       const ok = await onBridgeResync();
       if (ok) setChatOpen(true);
-      else toast.error("Sign in to contact this provider.");
+      else toast.error(tBookings("cta.sign_in_to_contact"));
     } catch {
-      toast.error("Sign in to contact this provider.");
+      toast.error(tBookings("cta.sign_in_to_contact"));
     }
   };
 
@@ -186,7 +197,7 @@ export default function TenantContent({ slug }: { slug: string }) {
   useEffect(() => {
     if (!pmSetup) return;
 
-    // ✅ restore cart BEFORE opening drawer (otherwise it opens empty and may auto-close)
+    // Restore cart BEFORE opening drawer (otherwise it opens empty and may auto-close).
     if (cartLen === 0) {
       try {
         const raw = sessionStorage.getItem(PM_CART_KEY);
@@ -209,7 +220,7 @@ export default function TenantContent({ slug }: { slug: string }) {
             snap.items.length > 0
           ) {
             setCart(slug, snap.items);
-            setSelected(snap.items.map((i) => i.id)); // ✅ restore calendar highlight too
+            setSelected(snap.items.map((i) => i.id)); // Restore calendar highlight too.
           }
 
           sessionStorage.removeItem(PM_CART_KEY);
@@ -236,21 +247,21 @@ export default function TenantContent({ slug }: { slug: string }) {
     return () => window.removeEventListener("focus", onFocus);
   }, [cartOpen, refetchProfile]);
 
-  // best-effort success handler — after redirect from Stripe Checkout
+  // Best-effort success handler after redirect from Stripe Checkout.
   useEffect(() => {
     if (!success || !sessionId || successHandledRef.current) return;
     successHandledRef.current = true;
 
     // UX: acknowledge and clean up immediately
-    toast.success("Payment received. Finalizing your booking…");
+    toast.success(tCheckout("toast.payment_received_finalizing"));
 
-    // clear local cart so user doesn’t see stale items
+    // Clear local cart so the user does not see stale items.
     clearCart();
 
     // remove the query params (?checkout=success&session_id=...)
     router.replace(pathname);
     // NEW: after a Stripe redirect, do one best-effort bridge/profile resync
-    // so chat/booking doesn’t hit the rare “still resolving” window.
+    // So chat/booking does not hit the rare "still resolving" window.
     (async () => {
       try {
         await onBridgeResync();
@@ -259,7 +270,15 @@ export default function TenantContent({ slug }: { slug: string }) {
         // ignore (best-effort only)
       }
     })();
-  }, [success, sessionId, clearCart, router, pathname, onBridgeResync]);
+  }, [
+    success,
+    sessionId,
+    clearCart,
+    router,
+    pathname,
+    onBridgeResync,
+    tCheckout,
+  ]);
 
   // grey slots selection cleared when cart closes
   useEffect(() => {
@@ -284,13 +303,11 @@ export default function TenantContent({ slug }: { slug: string }) {
             // Only clear params once the release worked
             router.replace(pathname);
           },
-          // explicit success/error handling. Don’t clear the URL on failure, and allow a retry.
+          // Explicit success/error handling. Do not clear the URL on failure, and allow a retry.
           onError: () => {
             // Let the effect try again later (or user can refresh)
             didReleaseRef.current = false;
-            toast.error(
-              "We couldn't release your checkout session. Please retry in a moment.",
-            );
+            toast.error(tCheckout("errors.release_checkout_failed"));
             // Keep the URL params so the next run can retry
           },
         },
@@ -308,7 +325,9 @@ export default function TenantContent({ slug }: { slug: string }) {
       // enforce selection cap
       if (prev.length >= MAX_SLOTS_PER_BOOKING) {
         toast.warning(
-          `You can select up to ${MAX_SLOTS_PER_BOOKING} slots per booking.`,
+          tBookings("selection.limit_reached", {
+            count: MAX_SLOTS_PER_BOOKING,
+          }),
         );
         return prev;
       }
@@ -321,9 +340,9 @@ export default function TenantContent({ slug }: { slug: string }) {
   const { data: cardTenant, isLoading: cardLoading } = useQuery({
     ...trpc.tenants.getOneForCard.queryOptions({ slug }),
     enabled: !!slug && !isCancelling, // pause heavy data work while the cancel flow is in progress
-    staleTime: 0, // ← was 60_000; must be 0
-    gcTime: 0, // ← optional but good to prevent leaking last-user cache after unmount
-    refetchOnMount: "always", // ← force fresh fetch when page opens/navigates
+    staleTime: 0, // Was 60_000; must be 0.
+    gcTime: 0, // Optional, but helps avoid leaking last-user cache after unmount.
+    refetchOnMount: "always", // Force fresh fetch when the page opens or navigates.
     refetchOnReconnect: "always",
     refetchOnWindowFocus: false,
     // placeholderData: keepPreviousData,
@@ -338,8 +357,7 @@ export default function TenantContent({ slug }: { slug: string }) {
 
   const subcatsSpan = subcatsTooMany ? "md:col-span-2" : "md:col-span-1";
 
-  // grab “parent” category once (used for subcategory links/colors)
-  // grab parent category (used for subcategory links/colors)
+  // Grab "parent" category once (used for subcategory links/colors).
   const categoriesArr = cardTenant?.categories ?? [];
 
   // to avoid a runtime error is because you access cardTenant.categories before cardTenant exists.
@@ -389,7 +407,7 @@ export default function TenantContent({ slug }: { slug: string }) {
           tenant={cardTenant}
           reviewRating={reviewRating}
           reviewCount={reviewCount}
-          isSignedIn={signedState} // ← tri-state: true | false | null
+          isSignedIn={signedState} // tri-state: true | false | null
           variant="detail"
           showActions
           ordersCount={ordersCount}
@@ -418,11 +436,11 @@ export default function TenantContent({ slug }: { slug: string }) {
                 height={56}
                 className="opacity-90"
               />
-              <span>About</span>
+              <span>{tTenantPage("sections.about")}</span>
             </h2>
             <div className="rounded-2xl border bg-white/70 p-5 shadow-sm">
               <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed wrap-break-word">
-                {cardTenant?.bio || "No bio available."}
+                {cardTenant?.bio || tTenantPage("bio.empty")}
               </p>
             </div>
           </section>
@@ -441,7 +459,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                 height={64}
                 className="opacity-90"
               />
-              <span>Services</span>
+              <span>{tTenantPage("sections.services")}</span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -466,7 +484,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                     </div>
 
                     <h3 className="text-base font-semibold leading-6">
-                      My Competencies:
+                      {tTenantPage("services.competencies")}
                     </h3>
                   </div>
 
@@ -524,7 +542,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                 </div>
               )}
 
-              {/* My Offer (Subcategories) — full width to avoid gaps */}
+              {/* My Offer (Subcategories) - full width to avoid gaps */}
               {cardTenant?.subcategories &&
                 cardTenant.subcategories.length > 0 && (
                   <div
@@ -547,7 +565,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                         </div>
 
                         <h3 className="text-base font-semibold leading-6">
-                          Specialisation:
+                          {tTenantPage("services.specialisation")}
                         </h3>
                       </div>
 
@@ -615,13 +633,14 @@ export default function TenantContent({ slug }: { slug: string }) {
                 height={64}
                 className="opacity-90"
               />
-              <span>Booking</span>
+              <span>{tBookings("section.title")}</span>
             </h2>
 
             <div className="relative min-h-[50vh]">
               <TenantCalendar
                 key={slug}
                 tenantSlug={slug}
+                appLang={appLang}
                 editable={false}
                 selectForBooking={true}
                 selectedIds={selected}
@@ -636,25 +655,16 @@ export default function TenantContent({ slug }: { slug: string }) {
             {selected.length === 0 && (
               <div className="mt-4 rounded-lg border bg-white/70 px-4 py-3 text-sm text-muted-foreground">
                 {!calendarAvail || calendarAvail.loading ? (
-                  <>Loading availability…</>
+                  <>{tBookings("availability.loading")}</>
                 ) : calendarAvail.hasAvailableSlots ? (
-                  <>Click on an available slot to book.</>
+                  <>{tBookings("availability.select_slot")}</>
                 ) : calendarAvail.view === "day" &&
                   calendarAvail.hasAnyAvailableSlots ? (
-                  <>
-                    No slots available on this date. Use the arrows to check
-                    other days.
-                  </>
+                  <>{tBookings("availability.no_slots_day")}</>
                 ) : calendarAvail.view === "week" ? (
-                  <>
-                    No free slots available this week. Use the arrows to check
-                    another week.
-                  </>
+                  <>{tBookings("availability.no_slots_week")}</>
                 ) : (
-                  <>
-                    No free slots are currently available. You can contact the
-                    provider regarding availability or check back later.
-                  </>
+                  <>{tBookings("availability.no_slots_any")}</>
                 )}
               </div>
             )}
@@ -675,7 +685,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                   onClick={handleClearSelection}
                   className="flex-1"
                 >
-                  Clear selection
+                  {tBookings("selection.clear")}
                 </Button>
               </div>
             )}
@@ -728,7 +738,7 @@ export default function TenantContent({ slug }: { slug: string }) {
                 height={56}
                 className="opacity-90"
               />
-              <span>Reviews</span>
+              <span>{tTenantPage("sections.reviews")}</span>
             </h2>
 
             <TenantReviewSummary

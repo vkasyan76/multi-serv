@@ -1,8 +1,10 @@
 // src/modules/profile/ui/GeneralProfileForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useState, useEffect, useMemo } from "react";
+import { useForm, useFormState, useWatch } from "react-hook-form";
+import { useTranslations } from "next-intl";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { profileSchema } from "@/modules/profile/schemas";
 import * as z from "zod";
@@ -17,6 +19,10 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   SUPPORTED_LANGUAGES,
+  normalizeToSupported,
+} from "@/lib/i18n/app-lang";
+import { mapAppLangToLocale, countryNameFromCode } from "@/lib/i18n/locale";
+import {
   getInitialLanguage,
   extractAddressComponents,
 } from "../location-utils";
@@ -25,6 +31,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { autocomplete } from "@/lib/google";
 import type {
@@ -34,41 +41,80 @@ import type {
 
 import { toast } from "sonner";
 import { FieldErrors } from "react-hook-form";
-import { PROFILE_FIELD_LABELS } from "@/modules/profile/schemas";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingPage from "@/components/shared/loading";
 import { Loader2 } from "lucide-react";
 import SettingsHeader from "./SettingsHeader"; // responsive reusable profile tabs header
+import {
+  mirrorLocaleCookie,
+  stripLeadingLocale,
+  withLocalePrefix,
+} from "@/i18n/routing";
 
 interface GeneralProfileFormProps {
   onSuccess?: () => void;
 }
 
+const PROFILE_LANG_FLASH_KEY = "profile_language_saved_flash";
+
 export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
+  const tProfile = useTranslations("profile");
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Fetch user profile data from database
   const { data: userProfile, isLoading } = useQuery(
     trpc.auth.getUserProfile.queryOptions()
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const flash = sessionStorage.getItem(PROFILE_LANG_FLASH_KEY);
+    if (flash !== "1") return;
+
+    sessionStorage.removeItem(PROFILE_LANG_FLASH_KEY);
+    toast.success(tProfile("general.messages.profile_updated"));
+  }, [tProfile]);
+
   const updateUserProfile = useMutation(
     trpc.auth.updateUserProfile.mutationOptions({
-      onSuccess: () => {
-        toast.success("Profile updated successfully!");
-        // Invalidate the getUserProfile query to update the cache
-        queryClient.invalidateQueries({
+      onSuccess: async (_data, variables) => {
+        await queryClient.invalidateQueries({
           queryKey: trpc.auth.getUserProfile.queryOptions().queryKey,
         });
+        // Allow exactly one profile refetch to rehydrate after the fresh profile is back.
+        setAllowProfileResync(true);
         onSuccess?.(); // Call the onSuccess callback if provided
+
+        const savedLang = normalizeToSupported(variables.language);
+        const { lang: routeLang, restPathname } = stripLeadingLocale(
+          pathname || "/",
+        );
+        const currentRouteLang = normalizeToSupported(routeLang);
+
+        if (savedLang !== currentRouteLang) {
+          // Defer the success toast so it renders in the destination locale.
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(PROFILE_LANG_FLASH_KEY, "1");
+          }
+          mirrorLocaleCookie(savedLang);
+          const nextPath = withLocalePrefix(restPathname, savedLang);
+          const query = searchParams.toString();
+          router.push(query ? `${nextPath}?${query}` : nextPath);
+          return;
+        }
+
+        toast.success(tProfile("general.messages.profile_updated"));
       },
       onError: (error) => {
+        setAllowProfileResync(false);
         console.error("Error updating profile:", error);
-        toast.error(
-          error.message || "Failed to update profile. Please try again."
-        );
+        toast.error(tProfile("general.errors.save_failed"));
       },
     })
   );
@@ -93,11 +139,89 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
     name: "language",
     defaultValue: getInitialLanguage(),
   });
+  const { isDirty } = useFormState({ control: form.control });
+  const watchedCountry = useWatch({
+    control: form.control,
+    name: "country",
+    defaultValue: "",
+  });
   const [locationInput, setLocationInput] = useState("");
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [selectedLocation, setSelectedLocation] =
     useState<SelectedLocation | null>(null);
   const [sessionToken, setSessionToken] = useState<string | undefined>();
+  const [allowProfileResync, setAllowProfileResync] = useState(false);
+
+  const effectiveAppLang = useMemo(() => {
+    const langState = form.getFieldState("language", form.formState);
+    const resolvedLang =
+      langState.isDirty || langState.isTouched
+        ? (selectedLanguage ?? userProfile?.language)
+        : (userProfile?.language ?? selectedLanguage);
+    return normalizeToSupported(resolvedLang ?? undefined);
+  }, [form, selectedLanguage, userProfile?.language]);
+
+  const countryDisplay = useMemo(() => {
+    const locale = mapAppLangToLocale(effectiveAppLang);
+    const countryISO = selectedLocation?.countryISO;
+    // Only use persisted ISO while the hydrated country field has not been cleared by a new edit.
+    const profileISO =
+      !selectedLocation && watchedCountry
+        ? userProfile?.coordinates?.countryISO
+        : undefined;
+
+    // Render ISO-localized name first, then current form value.
+    return (
+      countryNameFromCode(countryISO ?? profileISO ?? undefined, locale) ||
+      selectedLocation?.countryName ||
+      watchedCountry ||
+      ""
+    );
+  }, [
+    effectiveAppLang,
+    selectedLocation,
+    userProfile?.coordinates?.countryISO,
+    watchedCountry,
+  ]);
+
+  const fieldLabels = useMemo(
+    () => ({
+      firstName: tProfile("general.labels.first_name"),
+      lastName: tProfile("general.labels.last_name"),
+      username: tProfile("general.labels.username"),
+      email: tProfile("general.labels.email"),
+      location: tProfile("general.labels.address"),
+      country: tProfile("general.labels.country"),
+      language: tProfile("general.labels.language"),
+    }),
+    [tProfile]
+  );
+
+  const mapValidationMessage = (message: string | undefined) => {
+    // Keep this mapper aligned with the exact profileSchema messages in schemas.ts.
+    switch (message) {
+      case "First name is required":
+        return tProfile("general.validation.first_name_required");
+      case "Last name is required":
+        return tProfile("general.validation.last_name_required");
+      case "Invalid email address":
+        return tProfile("general.validation.invalid_email");
+      case "Username must be at least 3 characters":
+        return tProfile("general.validation.username_min");
+      case "Username must be less than 63 characters":
+        return tProfile("general.validation.username_max");
+      case "Username can only contain letters, numbers, dots, underscores and hyphens. It must start and end with a letter or number":
+        return tProfile("general.validation.username_format");
+      case "Username cannot contain consecutive separators (., _, -)":
+        return tProfile("general.validation.username_consecutive_separators");
+      case "Please select a location":
+        return tProfile("general.validation.select_location");
+      case "Country required":
+        return tProfile("general.validation.country_required");
+      default:
+        return tProfile("general.messages.form_invalid");
+    }
+  };
 
   // Add session token management
   useEffect(() => {
@@ -112,48 +236,83 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
 
   // Populate form with user data when it loads
   useEffect(() => {
-    if (userProfile) {
-      form.setValue("firstName", userProfile.firstName || "");
-      form.setValue("lastName", userProfile.lastName || "");
+    if (!userProfile) return;
+    if (isDirty && !allowProfileResync) return;
 
-      form.setValue("username", userProfile.username || "");
-      form.setValue("email", userProfile.email || "");
-      form.setValue("language", userProfile.language || "en");
+    const shouldPrefillLocation =
+      isProfileCompleted || userProfile.coordinates?.manuallySet;
 
-      // Only populate location and country if user has completed onboarding
-      // or if they have manually set a location
-      if (isProfileCompleted || userProfile.coordinates?.manuallySet) {
-        form.setValue("location", userProfile.location || "");
-        form.setValue("country", userProfile.country || "");
+    // Reset all fields at once so async profile hydration cannot leave stale defaults.
+    form.reset({
+      firstName: userProfile.firstName || "",
+      lastName: userProfile.lastName || "",
+      username: userProfile.username || "",
+      email: userProfile.email || "",
+      location: shouldPrefillLocation ? (userProfile.location || "") : "",
+      country: shouldPrefillLocation ? (userProfile.country || "") : "",
+      // Persisted profile language wins; otherwise use client-detected initial language.
+      language: normalizeToSupported(
+        userProfile.language ?? getInitialLanguage(),
+      ),
+    });
 
-        if (userProfile.location) {
-          setLocationInput(userProfile.location);
-        }
-
-        // Set selected location if country exists - only display fields, not coordinate details
-        if (userProfile.country) {
-          setSelectedLocation({
-            formattedAddress: userProfile.location || "",
-            countryName: userProfile.country,
-            countryISO: userProfile.coordinates?.countryISO,
-            // Don't populate old coordinate details - they will be fetched fresh when user selects new location
-            lat: undefined,
-            lng: undefined,
-            city: undefined,
-            region: undefined,
-            postalCode: undefined,
-            street: undefined,
-          });
-        }
+    // Only populate location and country if user has completed onboarding
+    // or if they have manually set a location
+    if (shouldPrefillLocation) {
+      if (userProfile.location) {
+        setLocationInput(userProfile.location);
       } else {
-        // For first-time users, show placeholder and don't auto-populate
-        form.setValue("location", "");
-        form.setValue("country", "");
         setLocationInput("");
+      }
+
+      // Set selected location if country exists - only display fields, not coordinate details
+      if (userProfile.country) {
+        setSelectedLocation({
+          formattedAddress: userProfile.location || "",
+          countryName: userProfile.country,
+          countryISO: userProfile.coordinates?.countryISO,
+          // Preserve house-number validation for manually prefilled locations.
+          streetNumber: userProfile.coordinates?.streetNumber ?? undefined,
+          // Don't populate old coordinate details - they will be fetched fresh when user selects new location
+          lat: undefined,
+          lng: undefined,
+          city: undefined,
+          region: undefined,
+          postalCode: undefined,
+          street: undefined,
+        });
+      } else {
         setSelectedLocation(null);
       }
+    } else {
+      // For first-time users, show placeholder and don't auto-populate
+      setLocationInput("");
+      setSelectedLocation(null);
     }
-  }, [userProfile, form, isProfileCompleted]);
+
+    if (allowProfileResync) {
+      setAllowProfileResync(false);
+    }
+  }, [userProfile, form, isProfileCompleted, isDirty, allowProfileResync]);
+
+  useEffect(() => {
+    const profileLang = userProfile?.language;
+    if (!profileLang) return;
+
+    const normalizedProfileLang = normalizeToSupported(profileLang);
+    const langState = form.getFieldState("language", form.formState);
+    if (langState.isDirty || langState.isTouched) return;
+
+    const currentLang = normalizeToSupported(form.getValues("language"));
+    if (currentLang === normalizedProfileLang) return;
+
+    // Keep language field aligned with fetched profile value after async hydration.
+    form.setValue("language", normalizedProfileLang, {
+      shouldDirty: false,
+      shouldTouch: false,
+      shouldValidate: false,
+    });
+  }, [form, userProfile?.language]);
 
   useEffect(() => {
     if (!locationInput) {
@@ -194,9 +353,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       // Check if the street number is included:
 
       if (!(addressComponents.streetNumber ?? "").trim()) {
-        toast.error(
-          "Please choose a full street address that includes a house number."
-        );
+        toast.error(tProfile("general.errors.full_street_address_required"));
         return;
       }
 
@@ -225,7 +382,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       });
     } catch (error) {
       console.error("Error fetching place details:", error);
-      toast.error("Failed to get location details. Please try again.");
+      toast.error(tProfile("general.errors.location_details_failed"));
     }
   };
 
@@ -235,9 +392,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       if (!selectedLocation) {
         form.setError("location", {
           type: "manual",
-          message: "Please select an address from the suggestions.",
+          message: tProfile("general.errors.select_address_from_suggestions"),
         });
-        toast.error("Please select an address from the suggestions.");
+        toast.error(tProfile("general.errors.select_address_from_suggestions"));
         return;
       }
 
@@ -246,9 +403,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
       if (!streetNumber) {
         form.setError("location", {
           type: "manual",
-          message: "Address must include a house number.",
+          message: tProfile("general.errors.house_number_required"),
         });
-        toast.error("Address must include a house number.");
+        toast.error(tProfile("general.errors.house_number_required"));
         return;
       }
     }
@@ -301,19 +458,19 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
   const onError = (errors: FieldErrors<z.infer<typeof profileSchema>>) => {
     const messages = Object.entries(errors)
       .map(([field, err]) => {
-        const label =
-          PROFILE_FIELD_LABELS[field as keyof typeof PROFILE_FIELD_LABELS] ||
-          field;
+        const label = fieldLabels[field as keyof typeof fieldLabels] || field;
         if (Array.isArray(err)) {
-          return err.map((e) => `${label}: ${e?.message}`).join("\n");
+          return err
+            .map((e) => `${label}: ${mapValidationMessage(e?.message)}`)
+            .join("\n");
         }
-        return `${label}: ${err?.message}`;
+        return `${label}: ${mapValidationMessage(err?.message)}`;
       })
       .filter(Boolean)
       .join("\n");
     toast.error(
       <span style={{ whiteSpace: "pre-line" }}>
-        {messages || "Please fix the errors in the form."}
+        {messages || tProfile("general.messages.form_invalid")}
       </span>
     );
   };
@@ -331,7 +488,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
         autoComplete="off"
         // Remove the key prop that was causing form re-renders
       >
-        <SettingsHeader title="Profile settings" />
+        <SettingsHeader title={tProfile("general.title")} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left column: identity */}
@@ -341,12 +498,12 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>First name</FormLabel>
+                  <FormLabel>{tProfile("general.labels.first_name")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       autoComplete="given-name"
-                      placeholder="Enter your first name"
+                      placeholder={tProfile("general.placeholders.first_name")}
                     />
                   </FormControl>
                 </FormItem>
@@ -358,12 +515,12 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Last name</FormLabel>
+                  <FormLabel>{tProfile("general.labels.last_name")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       autoComplete="family-name"
-                      placeholder="Enter your last name"
+                      placeholder={tProfile("general.placeholders.last_name")}
                     />
                   </FormControl>
                 </FormItem>
@@ -375,12 +532,12 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>{tProfile("general.labels.username")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       autoComplete="off"
-                      placeholder="Enter your username"
+                      placeholder={tProfile("general.placeholders.username")}
                       value={field.value}
                       disabled={usernameLocked}
                       className={
@@ -392,7 +549,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                   </FormControl>
                   {!usernameLocked && (
                     <span className="block text-xs text-gray-500 mt-1">
-                      * cannot be changed after onboarding is completed
+                      {tProfile(
+                        "general.messages.field_locked_after_onboarding"
+                      )}
                     </span>
                   )}
                 </FormItem>
@@ -404,7 +563,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email address</FormLabel>
+                  <FormLabel>{tProfile("general.labels.email")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -427,7 +586,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address</FormLabel>
+                  <FormLabel>{tProfile("general.labels.address")}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -445,7 +604,7 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                           }
                         }}
                         autoComplete="off"
-                        placeholder="Search for your address…"
+                        placeholder={tProfile("general.placeholders.address_search")}
                       />
                       {predictions.length > 0 &&
                         locationInput !==
@@ -473,15 +632,11 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Country</FormLabel>
+                  <FormLabel>{tProfile("general.labels.country")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      value={
-                        selectedLocation?.countryName ||
-                        userProfile?.country ||
-                        ""
-                      }
+                      value={countryDisplay}
                       readOnly
                       disabled
                       tabIndex={-1}
@@ -495,15 +650,15 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
               name="language"
               control={form.control}
               render={({ field }) => {
-                const langCode = field.value ?? getInitialLanguage();
-
                 return (
                   <FormItem>
-                    <FormLabel>Language</FormLabel>
+                    <FormLabel>{tProfile("general.labels.language")}</FormLabel>
                     <FormControl>
                       <Select
-                        value={langCode}
-                        onValueChange={field.onChange}
+                        value={effectiveAppLang}
+                        onValueChange={(value) =>
+                          field.onChange(normalizeToSupported(value))
+                        }
                         disabled={
                           updateUserProfile.isPending ||
                           form.formState.isSubmitting ||
@@ -511,8 +666,9 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
                         }
                       >
                         <SelectTrigger className="w-full">
-                          {SUPPORTED_LANGUAGES.find((l) => l.code === langCode)
-                            ?.label ?? "English"}
+                          <SelectValue
+                            placeholder={tProfile("general.placeholders.language")}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {SUPPORTED_LANGUAGES.map(({ code, label }) => (
@@ -534,17 +690,19 @@ export function GeneralProfileForm({ onSuccess }: GeneralProfileFormProps) {
           type="submit"
           size="lg"
           className="bg-black text-white hover:bg-pink-400 hover:text-primary"
-          disabled={updateUserProfile.isPending || form.formState.isSubmitting} // ✅ block during mutation too
+          disabled={updateUserProfile.isPending || form.formState.isSubmitting}
         >
           {updateUserProfile.isPending || form.formState.isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isProfileCompleted ? "Updating..." : "Saving..."}
+              {isProfileCompleted
+                ? tProfile("general.actions.updating")
+                : tProfile("general.actions.saving")}
             </>
           ) : isProfileCompleted ? (
-            "Update Profile"
+            tProfile("general.actions.update")
           ) : (
-            "Save Profile"
+            tProfile("general.actions.save")
           )}
         </Button>
       </form>

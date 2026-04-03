@@ -1,0 +1,80 @@
+{
+  "sections": {
+    "about": "Sobre mim",
+    "services": "Serviços",
+    "reviews": "Avaliações"
+  },
+  "bio": {
+    "empty": "Sem biografia disponível."
+  },
+  "services": {
+    "competencies": "As minhas competências:",
+    "specialisation": "Especialização:"
+  },
+  "subnav": {
+    "about": "Sobre mim",
+    "services": "Serviços",
+    "booking": "Reserva",
+    "reviews": "Avaliações"
+  },
+  "navbar": {
+    "powered_by": "Disponibilizado por",
+    "home_tooltip": "Início",
+    "home_aria": "Página inicial da Infinisimo",
+    "tenant_alt": "Prestador"
+  },
+  "card": {
+    "rating_sr": "Avaliação",
+    "new": "Novo",
+    "unavailable": "Indisponível",
+    "log_in_for_distance": "Inicie sessão para ver a distância",
+    "on_site": "No local do cliente",
+    "on_line": "Online",
+    "orders": "{count, plural, one {# encomenda} other {# encomendas}}",
+    "since": "Desde:",
+    "dashboard": "Painel",
+    "profile": "Perfil",
+    "book_service": "Reservar serviço",
+    "contact": "Contactar",
+    "aria_book_service": "Reservar serviço",
+    "aria_contact_provider": "Contactar o prestador"
+  },
+  "reviews": {
+    "load_error": "Não foi possível carregar as avaliações neste momento. Tente novamente mais tarde.",
+    "empty": "Ainda não existem avaliações. Quando os clientes começarem a deixar feedback, as suas avaliações aparecerão aqui.",
+    "details_error": "Não foi possível carregar os detalhes das avaliações neste momento. Tente novamente mais tarde.",
+    "out_of_five": "{rating} em 5",
+    "rating_one": "avaliação",
+    "rating_other": "avaliações",
+    "star_label": "{star} estrela",
+    "show_less": "Mostrar menos",
+    "show_more": "Mostrar mais",
+    "loading": "A carregar...",
+    "load_more": "Carregar mais"
+  },
+  "conversation": {
+    "sign_in_to_contact": "Inicie sessão para contactar este prestador.",
+    "start_failed": "Não foi possível iniciar a conversa. Tente novamente.",
+    "checking_sign_in": "A verificar a sessão...",
+    "starting": "A iniciar a conversa...",
+    "ready": "Conversa pronta",
+    "loading": "A carregar conversa...",
+    "empty": "Ainda não existem mensagens. Inicie uma conversa com <provider>{name}</provider>.",
+    "load_earlier": "Carregar anteriores",
+    "loading_messages": "A carregar mensagens...",
+    "message_deleted": "Esta mensagem foi apagada",
+    "deleted": "Apagada",
+    "edited": "Editada",
+    "actions": "Ações",
+    "edit": "Editar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "delete_title": "Eliminar mensagem?",
+    "delete_description": "Isto irá remover a mensagem para ambos os participantes.",
+    "composer_disabled": "Desativado...",
+    "composer_placeholder": "Escreva uma mensagem...",
+    "send": "Enviar",
+    "composer_hint": "Prima Enter para enviar e Shift+Enter para uma nova linha."
+  }
+}

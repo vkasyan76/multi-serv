@@ -122,7 +122,7 @@ export interface Config {
   };
   globals: {};
   globalsSelect: {};
-  locale: null;
+  locale: 'en' | 'de' | 'fr' | 'it' | 'es' | 'pt' | 'pl' | 'ro' | 'uk';
   user: User & {
     collection: 'users';
   };
@@ -200,7 +200,7 @@ export interface User {
   /**
    * User's preferred language
    */
-  language?: ('en' | 'de' | 'fr' | 'it' | 'es' | 'pt') | null;
+  language?: ('en' | 'de' | 'fr' | 'it' | 'es' | 'pt' | 'pl' | 'ro' | 'uk') | null;
   /**
    * Location coordinates with metadata
    */
@@ -504,6 +504,15 @@ export interface Order {
   serviceCompletedAt?: string | null;
   acceptedAt?: string | null;
   disputedAt?: string | null;
+  canceledAt?: string | null;
+  /**
+   * Who triggered the self-service cancellation for this slot-lifecycle order.
+   */
+  canceledByRole?: ('customer' | 'tenant') | null;
+  /**
+   * Optional reason captured when a slot-lifecycle order is canceled.
+   */
+  cancelReason?: string | null;
   invoiceNumber?: string | null;
   invoiceIssuedAt?: string | null;
   paymentDueAt?: string | null;
@@ -1196,6 +1205,9 @@ export interface OrdersSelect<T extends boolean = true> {
   serviceCompletedAt?: T;
   acceptedAt?: T;
   disputedAt?: T;
+  canceledAt?: T;
+  canceledByRole?: T;
+  cancelReason?: T;
   invoiceNumber?: T;
   invoiceIssuedAt?: T;
   paymentDueAt?: T;

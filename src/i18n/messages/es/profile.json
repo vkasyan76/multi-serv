@@ -1,0 +1,214 @@
+{
+  "tabs": {
+    "general": "Configuración general",
+    "provider": "Proveedor de servicios",
+    "payments": "Pagos"
+  },
+  "header": {
+    "home": "Inicio",
+    "logo_alt": "Logotipo de Infinisimo"
+  },
+  "general": {
+    "title": "Configuración del perfil",
+    "labels": {
+      "first_name": "Nombre",
+      "last_name": "Apellido",
+      "username": "Nombre de usuario",
+      "email": "Correo electrónico",
+      "address": "Dirección",
+      "country": "País",
+      "language": "Idioma"
+    },
+    "placeholders": {
+      "first_name": "Introduce tu nombre",
+      "last_name": "Introduce tu apellido",
+      "username": "Introduce tu nombre de usuario",
+      "address_search": "Busca tu dirección...",
+      "language": "Selecciona un idioma"
+    },
+    "messages": {
+      "field_locked_after_onboarding": "* no se puede cambiar después de completar el registro",
+      "profile_updated": "¡Perfil actualizado correctamente!",
+      "form_invalid": "Corrige los errores del formulario."
+    },
+    "actions": {
+      "save": "Guardar perfil",
+      "update": "Actualizar perfil",
+      "saving": "Guardando...",
+      "updating": "Actualizando..."
+    },
+    "errors": {
+      "save_failed": "No se pudo actualizar el perfil. Inténtalo de nuevo.",
+      "full_street_address_required": "Selecciona una dirección completa que incluya un número de puerta.",
+      "location_details_failed": "No se pudieron obtener los detalles de la ubicación. Inténtalo de nuevo.",
+      "select_address_from_suggestions": "Selecciona una dirección de las sugerencias.",
+      "house_number_required": "La dirección debe incluir un número de puerta."
+    },
+    "validation": {
+      "first_name_required": "El nombre es obligatorio",
+      "last_name_required": "El apellido es obligatorio",
+      "invalid_email": "Correo electrónico no válido",
+      "username_min": "El nombre de usuario debe tener al menos 3 caracteres",
+      "username_max": "El nombre de usuario debe tener menos de 63 caracteres",
+      "username_format": "El nombre de usuario solo puede contener letras, números, puntos, guiones bajos y guiones. Debe empezar y terminar con una letra o un número",
+      "username_consecutive_separators": "El nombre de usuario no puede contener separadores consecutivos (., _, -)",
+      "select_location": "Selecciona una ubicación",
+      "country_required": "El país es obligatorio"
+    }
+  },
+  "provider": {
+    "title": "Configuración del proveedor de servicios",
+    "labels": {
+      "business_name": "Nombre del negocio (para la URL de tu página)",
+      "hourly_rate": "Tarifa por hora ({currency})",
+      "service_types": "Tipo de servicio",
+      "categories": "Categorías",
+      "subcategories": "Subcategorías",
+      "business_country": "País del negocio",
+      "vat_registered": "¿Tienes número de IVA? (opcional)",
+      "vat_id": "Número de IVA",
+      "phone": "Número de teléfono (opcional)",
+      "description": "Descripción"
+    },
+    "service_options": {
+      "on_site": "A domicilio",
+      "online": "Online"
+    },
+    "placeholders": {
+      "business_name": "Introduce el nombre del negocio",
+      "hourly_rate": "Introduce la tarifa por hora en {currency}",
+      "services": "Selecciona tipos de servicio",
+      "categories": "Selecciona categorías",
+      "subcategories_first": "Primero selecciona categorías",
+      "subcategories": "Selecciona subcategorías",
+      "vat_id": "DE123456789",
+      "phone": "+49 123 4567",
+      "website": "Sitio web (opcional)",
+      "description": "Describe tus servicios, tu experiencia y lo que te hace único..."
+    },
+    "actions": {
+      "validate_vat": "Validar",
+      "validating_vat": "Validando...",
+      "select_image": "Selecciona una imagen para subir (máx. 5 MB)",
+      "uploading": "Subiendo...",
+      "updating": "Actualizando...",
+      "creating": "Creando...",
+      "update_profile": "Actualizar perfil de proveedor",
+      "create_profile": "Crear perfil de proveedor"
+    },
+    "messages": {
+      "form_invalid": "Corrige los errores del formulario.",
+      "updated_success": "¡Perfil de proveedor actualizado correctamente!",
+      "image_upload_partial_success": "El perfil se creó correctamente, pero la imagen no se pudo subir. Puedes añadirla más tarde desde el editor del perfil.",
+      "created_next_payouts": "Perfil de proveedor creado. Siguiente paso: configurar pagos.",
+      "complete_payments_onboarding": "Completa la configuración de pagos",
+      "finish_stripe_onboarding": "Para recibir pagos, completa tu onboarding de Stripe. <link>Ir a pagos</link>",
+      "name_locked": "* no se puede cambiar después de la creación (se usa en la URL de tu página)",
+      "country_from_profile": "Se completa automáticamente desde tu perfil de usuario. Para cambiarlo, abre la <link>Configuración general</link>.",
+      "vat_valid_vies": "El número de IVA es válido según VIES.",
+      "vat_valid_status": "Número de IVA válido",
+      "image_preview_alt": "Vista previa del perfil",
+      "character_count": "{count}/{max} caracteres"
+    },
+    "errors": {
+      "vat_validation_failed": "La validación del IVA falló. Inténtalo de nuevo.",
+      "vat_eu_only": "El IVA solo se puede configurar para países de la UE.",
+      "update_failed": "No se pudo actualizar el perfil. Inténtalo de nuevo.",
+      "name_taken": "Ese nombre de negocio ya está en uso. Elige otro.",
+      "create_failed": "No se pudo crear el perfil de proveedor. Inténtalo de nuevo.",
+      "upload_failed": "No se pudo subir la imagen. Inténtalo de nuevo.",
+      "vat_invalid_vies": "El número de IVA no es válido.",
+      "vat_invalid_status": "Número de IVA no válido"
+    },
+    "validation": {
+      "name_required": "El nombre del negocio es obligatorio",
+      "name_max": "El nombre del negocio debe tener menos de 50 caracteres",
+      "name_format": "El nombre del negocio puede contener letras, números, guiones y guiones bajos",
+      "bio_max": "La descripción debe tener menos de 1200 caracteres",
+      "services_required": "Selecciona al menos un tipo de servicio",
+      "categories_required": "Selecciona al menos una categoría",
+      "website_invalid": "El sitio web debe ser una URL válida.",
+      "phone_invalid": "Debe ser un número de teléfono internacional válido en formato E.164",
+      "hourly_rate_number": "La tarifa por hora debe ser un número",
+      "hourly_rate_min": "La tarifa por hora debe ser al menos 1 EUR",
+      "hourly_rate_max": "La tarifa por hora parece demasiado alta",
+      "country_iso": "Usa un código ISO-2",
+      "vat_required": "El número de IVA es obligatorio cuando se selecciona el registro de IVA."
+    }
+  },
+  "confirmation": {
+    "titles": {
+      "prereq": "Completa tu perfil general para continuar",
+      "confirm": "Conviértete en proveedor de servicios"
+    },
+    "messages": {
+      "prereq_intro": "Tu ubicación es necesaria para que los clientes puedan encontrarte.",
+      "prereq_location": "Añade tu ubicación para aparecer en las búsquedas locales",
+      "confirm_intro": "Empieza a ofrecer tus servicios y conecta con clientes de tu zona",
+      "search_visibility": "Aparece en los resultados de búsqueda de tu zona",
+      "pricing_setup": "Configura tu tarifa por hora y tus categorías de servicio",
+      "availability": "Gestiona tu disponibilidad y tus reservas"
+    },
+    "actions": {
+      "close": "Cerrar y volver a la configuración general",
+      "complete_general": "Completar configuración general",
+      "loading": "Cargando...",
+      "create_provider": "Crear perfil de proveedor",
+      "maybe_later": "Quizás más tarde",
+      "retry": "Reintentar"
+    },
+    "errors": {
+      "profile_load_failed": "No se pudo cargar tu perfil. Inténtalo de nuevo."
+    }
+  },
+  "payouts": {
+    "title": "Pagos y retiros",
+    "messages": {
+      "provider_required": "Crea primero tu perfil de proveedor de servicios.",
+      "active": "Los retiros están activos. Gestiona tu cuenta de Stripe desde el panel.",
+      "finish_onboarding": "Completa la configuración de Stripe para habilitar los retiros.",
+      "no_balance": "Aún no hay saldo"
+    },
+    "actions": {
+      "onboarding": "Configuración de Stripe",
+      "update_details": "Actualizar datos de Stripe",
+      "open_dashboard": "Abrir panel de Stripe",
+      "create_provider": "Crear perfil de proveedor",
+      "retry": "Reintentar"
+    },
+    "errors": {
+      "open_onboarding_failed": "No se pudo abrir la configuración de Stripe. Inténtalo de nuevo.",
+      "open_dashboard_failed": "No se pudo abrir el panel de Stripe. Inténtalo de nuevo.",
+      "status_load_failed": "No se pudo cargar el estado de los retiros.",
+      "balance_load_failed": "No se pudieron cargar los saldos."
+    },
+    "table": {
+      "field": "Campo",
+      "status": "Estado",
+      "onboarding": "Configuración",
+      "charges": "Cobros",
+      "payouts": "Retiros",
+      "mode": "Modo",
+      "currency": "Moneda",
+      "available": "Disponible",
+      "pending": "Pendiente",
+      "total": "Total",
+      "next_payout": "Próximo retiro:"
+    },
+    "status": {
+      "live": "LIVE",
+      "test": "TEST",
+      "enabled": "Activado",
+      "disabled": "Desactivado",
+      "completed": "Completado",
+      "in_progress": "En curso",
+      "restricted": "Restringido",
+      "not_started": "No iniciado",
+      "loading": "Cargando"
+    },
+    "aria": {
+      "open_onboarding": "Abrir la configuración de Stripe en una pestaña nueva",
+      "open_dashboard": "Abrir el panel de Stripe en una pestaña nueva"
+    }
+  }
+}

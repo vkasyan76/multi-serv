@@ -1,14 +1,31 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Facebook, Linkedin, Mail } from "lucide-react";
 import { OpenCookiePreferencesButton } from "@/modules/legal/cookies/ui/open-cookie-preferences-button";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 
 export const Footer = () => {
+  const t = useTranslations("common");
+  const params = useParams<{ lang?: string }>();
+  const lang = normalizeToSupported(params?.lang);
+
+  // Footer legal links stay localized without relying on middleware redirects.
+  const href = (pathnameWithQuery: string) => {
+    const [pathPart, query = ""] = pathnameWithQuery.split("?");
+    const localizedPath = withLocalePrefix(pathPart || "/", lang);
+    return query ? `${localizedPath}?${query}` : localizedPath;
+  };
+
   return (
     <footer className="border-t">
       <div className="wrapper p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Logo */}
-        <Link href="/" className="shrink-0">
+        <Link href={href("/")} className="shrink-0">
           <Image
             src="/images/infinisimo_logo_illustrator.png"
             alt="Infinisimo logo"
@@ -57,45 +74,36 @@ export const Footer = () => {
             title="Email us"
           >
             <Mail className="h-5 w-5" />
-            <span className="text-sm hidden sm:inline">
-              info@infinisimo.com
-            </span>
+            <span className="text-sm hidden sm:inline">info@infinisimo.com</span>
           </a>
         </nav>
 
         {/* Legal / Preferences */}
         <nav className="flex items-center gap-4 text-gray-600 text-sm">
-          <Link
-            href="/legal/terms-of-use"
-            className="hover:text-black transition-colors"
-          >
-            Terms
+          <Link href={href("/legal/terms-of-use")} className="hover:text-black transition-colors">
+            {t("footer.terms")}
           </Link>
 
-          <Link
-            href="/legal/impressum"
-            className="hover:text-black transition-colors"
-          >
-            Impressum
+          <Link href={href("/legal/impressum")} className="hover:text-black transition-colors">
+            {t("footer.impressum")}
           </Link>
 
-          <Link
-            href="/legal/cookies"
-            className="hover:text-black transition-colors"
-          >
-            Cookies
+          <Link href={href("/legal/cookies")} className="hover:text-black transition-colors">
+            {t("footer.cookies")}
           </Link>
 
           <OpenCookiePreferencesButton className="hover:text-black transition-colors underline underline-offset-2">
-            Cookie preferences
+            {t("footer.cookie_preferences")}
           </OpenCookiePreferencesButton>
         </nav>
 
         {/* Copyright */}
         <p className="text-center sm:text-right text-sm text-gray-600">
-          © 2025 Infinisimo. All rights reserved.
+          &copy; {new Date().getFullYear()} Infinisimo.{" "}
+          {t("footer.all_rights_reserved")}
         </p>
       </div>
     </footer>
   );
 };
+

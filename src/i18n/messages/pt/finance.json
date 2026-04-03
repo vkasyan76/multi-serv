@@ -1,0 +1,132 @@
+{
+  "wallet": {
+    "filters": {
+      "labels": {
+        "period": "Período",
+        "year": "Ano",
+        "month": "Mês",
+        "invoice_date_range": "Intervalo da data da fatura",
+        "status": "Estado",
+        "tenant": "Prestador"
+      },
+      "placeholders": {
+        "select_period": "Selecionar período",
+        "pick_date_range": "Selecionar intervalo de datas",
+        "select_status": "Selecionar estado",
+        "loading_tenants": "A carregar...",
+        "all_tenants": "Todos os prestadores"
+      },
+      "options": {
+        "full_history": "Histórico completo",
+        "year": "Ano",
+        "month": "Mês",
+        "custom_range": "Intervalo personalizado"
+      }
+    },
+    "summary": {
+      "loading": "A carregar resumo da carteira...",
+      "load_error": "Não foi possível carregar o resumo da carteira.",
+      "full_history": "Histórico completo",
+      "payments_received": "Pagamentos recebidos",
+      "due_from_customers": "Em dívida pelos clientes",
+      "total_invoiced": "Total faturado",
+      "platform_fees": "Taxas da plataforma"
+    },
+    "table": {
+      "title": "Transações",
+      "updating": "A atualizar...",
+      "loading": "A carregar transações...",
+      "load_error": "Não foi possível carregar as transações.",
+      "empty": "Ainda não existem transações.",
+      "headers": {
+        "invoice_date": "Data da fatura",
+        "status": "Estado",
+        "tenant": "Prestador",
+        "amount": "Montante",
+        "fee_percent": "Taxa %",
+        "promo": "Promo",
+        "order_date": "Data da encomenda",
+        "actions": "Ações"
+      },
+      "unknown_tenant": "Prestador desconhecido",
+      "no_promo": "Nenhuma"
+    },
+    "actions": {
+      "clear_filters": "Limpar filtros",
+      "download_csv": "Descarregar CSV",
+      "view_invoice": "Ver fatura",
+      "load_more": "Carregar mais"
+    },
+    "status": {
+      "all": "Tudo",
+      "paid": "Pago",
+      "payment_due": "Pagamento pendente",
+      "fees": "Taxas",
+      "fee": "Taxa",
+      "paid_on": "Pago {date}",
+      "fee_on": "Taxa {date}"
+    }
+  },
+  "dashboard": {
+    "title": "Finanças"
+  },
+  "payouts": {
+    "messages": {
+      "calendar_unlock": "Depois de concluir a <link>configuração dos levantamentos</link>, poderá adicionar horários ao seu calendário.",
+      "open_panel": "Abra o painel de levantamentos e saldos no seu perfil."
+    },
+    "actions": {
+      "open": "Abrir levantamentos"
+    }
+  },
+  "invoice": {
+    "title": "Fatura",
+    "topbar": {
+      "public_page": "Página pública",
+      "home": "Início"
+    },
+    "sections": {
+      "service_provider": "Prestador de serviços",
+      "client": "Cliente",
+      "details": "Detalhes"
+    },
+    "fields": {
+      "issued": "Emitida",
+      "paid": "Paga",
+      "currency": "Moeda",
+      "vat": "IVA",
+      "vat_id": "NIF-IVA"
+    },
+    "table": {
+      "service": "Serviço",
+      "hours": "Horas",
+      "hourly_rate": "Tarifa horária",
+      "amount": "Montante"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "total": "Total"
+    },
+    "status": {
+      "paid": "Paga",
+      "issued": "Emitida",
+      "overdue": "Vencida",
+      "draft": "Rascunho",
+      "void": "Anulada",
+      "unknown": "Desconhecida"
+    },
+    "fallbacks": {
+      "service": "Serviço",
+      "empty_value": "--"
+    }
+  },
+  "pdf": {
+    "actions": {
+      "download": "Descarregar PDF",
+      "downloading": "A descarregar..."
+    },
+    "errors": {
+      "download_failed": "Não foi possível descarregar o PDF. Tente novamente."
+    }
+  }
+}

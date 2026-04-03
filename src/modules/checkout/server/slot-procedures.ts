@@ -7,10 +7,13 @@ import { addHours } from "date-fns";
 import { assertTermsAccepted } from "@/modules/legal/terms-of-use/assert-terms-accepted";
 import { sendDomainEmail } from "@/modules/email/events";
 import type { EmailDeliverability } from "@/modules/email/types";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { resolveOrderServiceLabels } from "@/modules/orders/server/order-service-labels";
 import {
   COMMISSION_RATE_BPS_DEFAULT as COMMISSION_RATE_BPS,
   MAX_SLOTS_PER_BOOKING,
 } from "@/constants";
+import type { Payload } from "payload";
 
 type DocWithId<T> = T & { id: string };
 
@@ -43,6 +46,42 @@ function extractServiceNames(slots: Array<DocWithId<Booking>>): string[] {
     .map((name) => name.trim())
     .filter(Boolean);
   return Array.from(new Set(names));
+}
+
+async function extractLocalizedServiceNames(params: {
+  payload: Payload;
+  slots: Array<DocWithId<Booking>>;
+  locale?: string;
+}) {
+  const { payload, slots, locale } = params;
+  const fallback = extractServiceNames(slots);
+
+  try {
+    const labelBySlotId = await resolveOrderServiceLabels({
+      payload,
+      slots: slots.map((slot) => ({
+        id: slot.id,
+        serviceSnapshot: slot.serviceSnapshot ?? null,
+      })),
+      appLang: normalizeToSupported(locale),
+    });
+
+    const names = slots
+      .map(
+        (slot) =>
+          labelBySlotId.get(slot.id)?.trim() ||
+          slot.serviceSnapshot?.serviceName?.trim() ||
+          null,
+      )
+      .filter((name): name is string => !!name);
+
+    return Array.from(new Set(names));
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[email] localized service labels failed", error);
+    }
+    return fallback;
+  }
 }
 
 // Helper: compute a single date range across all slots (UTC).
@@ -119,7 +158,7 @@ export const slotCheckoutRouter = createTRPCRouter({
       if (bookings.length !== input.slotIds.length) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Some slots not found",
+          message: "bookings.errors.slot_not_found",
         });
       }
 
@@ -135,7 +174,7 @@ export const slotCheckoutRouter = createTRPCRouter({
         if (b.status !== "booked") {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "Some slots are not reserved",
+            message: "bookings.errors.slot_not_reserved",
           });
         }
 
@@ -190,7 +229,7 @@ export const slotCheckoutRouter = createTRPCRouter({
       if (tenant.onboardingStatus !== "completed") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Provider is not ready to take bookings yet.",
+          message: "bookings.errors.provider_not_ready",
         });
       }
 
@@ -203,8 +242,7 @@ export const slotCheckoutRouter = createTRPCRouter({
       if (!firstName || !lastName || !location || !country) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message:
-            "Please complete your profile (name and address) before booking.",
+          message: "bookings.errors.profile_incomplete",
         });
       }
 
@@ -351,7 +389,7 @@ export const slotCheckoutRouter = createTRPCRouter({
 
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Some slots changed while checking out. Please try again.",
+          message: "bookings.errors.slots_changed",
         });
       }
 
@@ -365,9 +403,15 @@ export const slotCheckoutRouter = createTRPCRouter({
           ? `/dashboard?tenant=${encodeURIComponent(tenantSlug)}`
           : "/dashboard",
       );
-      const services = extractServiceNames(bookings);
       const dateRange = extractDateRange(bookings);
       const customerName = `${firstName} ${lastName}`.trim();
+      const customerLocale = payloadUser.language ?? "en";
+      // Reuse the shared order label resolver so email service names match the recipient locale.
+      const customerServices = await extractLocalizedServiceNames({
+        payload: ctx.db,
+        slots: bookings,
+        locale: customerLocale,
+      });
 
       // Customer notification: order created (best-effort, non-blocking).
       if (payloadUser.email) {
@@ -386,10 +430,10 @@ export const slotCheckoutRouter = createTRPCRouter({
               customerName,
               orderId: order.id,
               ordersUrl,
-              services,
+              services: customerServices,
               dateRangeStart: dateRange?.start,
               dateRangeEnd: dateRange?.end ?? undefined,
-              locale: payloadUser.language ?? "en",
+              locale: customerLocale,
             },
           });
         } catch (err) {
@@ -410,6 +454,13 @@ export const slotCheckoutRouter = createTRPCRouter({
         })) as DocWithId<User> | null;
 
         if (tenantUser?.email) {
+          const tenantLocale = tenantUser.language ?? "en";
+          const tenantServices = await extractLocalizedServiceNames({
+            payload: ctx.db,
+            slots: bookings,
+            locale: tenantLocale,
+          });
+
           try {
             await sendDomainEmail({
               db: ctx.db,
@@ -424,10 +475,10 @@ export const slotCheckoutRouter = createTRPCRouter({
                 customerName,
                 orderId: order.id,
                 dashboardUrl,
-                services,
+                services: tenantServices,
                 dateRangeStart: dateRange?.start,
                 dateRangeEnd: dateRange?.end ?? undefined,
-                locale: tenantUser.language ?? "en",
+                locale: tenantLocale,
               },
             });
           } catch (err) {

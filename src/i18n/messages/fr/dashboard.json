@@ -1,0 +1,52 @@
+{
+  "page": {
+    "title": "Tableau de bord"
+  },
+  "nav": {
+    "calendar": "Calendrier",
+    "orders": "Réservations",
+    "messages": "Messages",
+    "finance": "Finances"
+  },
+  "navbar": {
+    "public_page": "Voir ma page",
+    "open_public_page": "Ouvrir la page publique",
+    "profile": "Mon profil",
+    "vendor_profile": "Profil prestataire",
+    "home": "Accueil",
+    "tenant_alt": "Prestataire"
+  },
+  "sections": {
+    "calendar": "Calendrier",
+    "orders": "Réservations",
+    "messages": "Messages"
+  },
+  "tooltips": {
+    "calendar": "Cliquez pour ajouter ou supprimer des créneaux disponibles.",
+    "orders": "Marquez les créneaux comme terminés puis émettez les factures après l'acceptation du client."
+  },
+  "mismatch": {
+    "title": "Compte incorrect",
+    "body": "Ce lien est prévu pour {expectedSlug}, mais vous êtes connecté en tant que {actualSlug}.",
+    "hint": "Déconnectez-vous pour continuer avec le bon compte.",
+    "action": "Se déconnecter et continuer"
+  },
+  "states": {
+    "loading": "Chargement...",
+    "unavailable": "Impossible de charger le tableau de bord."
+  },
+  "inbox": {
+    "title": "Boîte de réception",
+    "recent": "Récentes",
+    "oldest": "Anciennes",
+    "search_placeholder": "Rechercher par nom",
+    "loading": "Chargement...",
+    "empty": "Aucune conversation pour le moment.",
+    "empty_search": "Aucune conversation correspondante.",
+    "load_more": "Charger plus",
+    "customer_fallback": "Client",
+    "mobile_title": "Conversation avec {customerName}",
+    "back_to_inbox": "Retour à la boîte de réception",
+    "select_conversation": "Sélectionnez une conversation à gauche."
+  }
+}
