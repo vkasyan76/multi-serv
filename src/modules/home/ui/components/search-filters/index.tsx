@@ -9,6 +9,7 @@ import { useTRPC } from "@/trpc/client";
 import { useParams } from "next/navigation";
 import { DEFAULT_BG_COLOR } from "../../../constants";
 import { BreadcrumbNavigation } from "./breadcrumbs-navigation";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 
 // interface Props {
 //   data: CustomCategory[];
@@ -22,6 +23,7 @@ export const SearchFilters = () => {
 
   // make the backgroundcolor in the style dynamic depending on the category to which we are redirected:
   const params = useParams();
+  const lang = normalizeToSupported(params.lang as string | undefined);
   const categoryParam = params.category as string | undefined;
   const activeCategory = categoryParam || "all";
   const activeCategoryData = data.find(
@@ -33,6 +35,10 @@ export const SearchFilters = () => {
 
   // For Breadcrumnb Navigation:
   const activeCategoryName = activeCategoryData?.name || null;
+  const activeCategoryIcon =
+    typeof activeCategoryData?.icon === "string"
+      ? activeCategoryData.icon
+      : null;
   const activeSubcategory = params.subcategory as string | undefined;
   const activeSubcategoryName =
     activeCategoryData?.subcategories?.find(
@@ -55,8 +61,10 @@ export const SearchFilters = () => {
         <Categories data={data} />
       </div>
       <BreadcrumbNavigation
+        lang={lang}
         activeCategoryName={activeCategoryName}
         activeCategory={activeCategory}
+        activeCategoryIcon={activeCategoryIcon}
         activeSubcategoryName={activeSubcategoryName}
       />
     </div>

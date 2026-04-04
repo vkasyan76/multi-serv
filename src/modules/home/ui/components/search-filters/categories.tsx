@@ -18,6 +18,7 @@ export const Categories = ({ data }: Props) => {
   const params = useParams();
   const t = useTranslations("common");
   const viewAllLabel = t("buttons.view_all");
+  const activeSubcategory = params.subcategory as string | undefined;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -30,6 +31,7 @@ export const Categories = ({ data }: Props) => {
 
   const categoryParam = params.category as string | undefined;
   const activeCategory = categoryParam || "all";
+  const useLightText = activeCategory !== "all";
 
   const activeCategoryIndex = data.findIndex(
     (category) => category.slug === activeCategory,
@@ -37,6 +39,7 @@ export const Categories = ({ data }: Props) => {
 
   const isActiveCategoryHidden =
     activeCategoryIndex >= visibleCount && activeCategoryIndex !== -1;
+  const isViewAllHighlighted = isActiveCategoryHidden && !isAnyHovered;
 
   const measurementKey = data
     .map((category) => `${category.id}:${category.name}`)
@@ -102,6 +105,8 @@ export const Categories = ({ data }: Props) => {
             <CategoryDropdown
               category={category}
               isActive={activeCategory === category.slug}
+              activeSubcategory={activeSubcategory}
+              useLightText={useLightText}
               isNavigationHovered={false}
             />
           </div>
@@ -123,6 +128,8 @@ export const Categories = ({ data }: Props) => {
                 <CategoryDropdown
                   category={category}
                   isActive={activeCategory === category.slug}
+                  activeSubcategory={activeSubcategory}
+                  useLightText={useLightText}
                   isNavigationHovered={isAnyHovered}
                 />
               </div>
@@ -134,10 +141,12 @@ export const Categories = ({ data }: Props) => {
           <Button
             variant="elevated"
             className={cn(
-              "h-11 rounded-full border-transparent bg-transparent px-4 text-black hover:border-primary hover:bg-white",
-              isActiveCategoryHidden &&
-                !isAnyHovered &&
-                "border-primary bg-white",
+              "h-11 rounded-full border-transparent bg-transparent px-4 hover:border-primary hover:bg-white",
+              useLightText && !isViewAllHighlighted
+                ? "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.7),0_0_1px_rgba(0,0,0,0.65)] hover:text-black"
+                : "text-black",
+              isViewAllHighlighted &&
+                "border-primary bg-white text-black [text-shadow:none]",
             )}
             onClick={() => setIsSidebarOpen(true)}
           >
