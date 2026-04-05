@@ -48,7 +48,7 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
 
   // if we have parent Categories, show ThermometerSnowflake, otherwise show root categories:
 
-  const currenrtCategories = parentCategories ?? data ?? [];
+  const currentCategories = parentCategories ?? data ?? [];
 
   //   reset everything:
   const handleOpenChange = (open: boolean) => {
@@ -116,7 +116,7 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
               {tMarketplace("categories.back")}
             </button>
           )}
-          {currenrtCategories.map((category) => (
+          {currentCategories.map((category) => (
             <button
               key={category.slug}
               onClick={() => handleCategoryClick(category)}
