@@ -2,15 +2,19 @@ import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { CategoriesGetManyOutput } from "@/modules/categories/types";
 import { cn } from "@/lib/utils";
+import { withLocalePrefix } from "@/i18n/routing";
+import type { AppLang } from "@/lib/i18n/app-lang";
 
 interface Props {
   category: CategoriesGetManyOutput[1];
+  lang: AppLang;
   isOpen: boolean;
   activeSubcategory?: string;
 }
 
 export const SubcategoryMenu = ({
   category,
+  lang,
   isOpen,
   activeSubcategory,
 }: Props) => {
@@ -55,7 +59,10 @@ export const SubcategoryMenu = ({
           {category.subcategories?.map((subcategory) => (
             <Link
               key={subcategory.slug}
-              href={`/${category.slug}/${subcategory.slug}`}
+              href={withLocalePrefix(
+                `/${category.slug}/${subcategory.slug}`,
+                lang,
+              )}
               className={cn(
                 "flex w-full items-center justify-between gap-3 border-b px-4 py-3 text-left text-sm font-medium leading-snug transition-colors last:border-b-0",
                 rowHoverClass,

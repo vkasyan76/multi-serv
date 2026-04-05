@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { CategoriesSidebar } from "./categories-sidebar";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { normalizeToSupported, type AppLang } from "@/lib/i18n/app-lang";
 
 interface Props {
   data: CategoriesGetManyOutput;
@@ -19,6 +20,7 @@ export const Categories = ({ data }: Props) => {
   const t = useTranslations("common");
   const viewAllLabel = t("buttons.view_all");
   const activeSubcategory = params.subcategory as string | undefined;
+  const lang: AppLang = normalizeToSupported(params.lang as string | undefined);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -104,6 +106,7 @@ export const Categories = ({ data }: Props) => {
           <div key={category.id} className="shrink-0">
             <CategoryDropdown
               category={category}
+              lang={lang}
               isActive={activeCategory === category.slug}
               activeSubcategory={activeSubcategory}
               useLightText={useLightText}
@@ -127,6 +130,7 @@ export const Categories = ({ data }: Props) => {
               <div key={category.id} className="shrink-0">
                 <CategoryDropdown
                   category={category}
+                  lang={lang}
                   isActive={activeCategory === category.slug}
                   activeSubcategory={activeSubcategory}
                   useLightText={useLightText}

@@ -7,9 +7,12 @@ import { SubcategoryMenu } from "./subcategory-menu";
 // import { CustomCategory } from "../types";
 import { CategoriesGetManyOutput } from "@/modules/categories/types";
 import Link from "next/link";
+import { withLocalePrefix } from "@/i18n/routing";
+import type { AppLang } from "@/lib/i18n/app-lang";
 
 interface Props {
   category: CategoriesGetManyOutput[1];
+  lang: AppLang;
   isActive?: boolean;
   activeSubcategory?: string;
   useLightText?: boolean;
@@ -18,6 +21,7 @@ interface Props {
 
 export const CategoryDropdown = ({
   category,
+  lang,
   isActive,
   activeSubcategory,
   useLightText,
@@ -36,6 +40,14 @@ export const CategoryDropdown = ({
   const onMouseLeave = () => {
     setIsOpen(false);
   };
+
+  // Category navigation must preserve the active locale. Bare category slugs
+  // trigger middleware redirects in production, which delays visible loading
+  // feedback and makes the content area appear blank before the fallback.
+  const categoryHref =
+    category.slug === "all"
+      ? withLocalePrefix("/", lang)
+      : withLocalePrefix(`/${category.slug}`, lang);
 
   return (
     <div
@@ -63,12 +75,7 @@ export const CategoryDropdown = ({
               "bg-white border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-[4px] -translate-y-[4px]",
           )}
         >
-          <Link
-            // prefetch
-            href={`/${category.slug === "all" ? "" : category.slug}`}
-          >
-            {category.name}
-          </Link>
+          <Link href={categoryHref}>{category.name}</Link>
         </Button>
         {category.subcategories && category.subcategories.length > 0 && (
           <div
@@ -86,6 +93,7 @@ export const CategoryDropdown = ({
       </div>
       <SubcategoryMenu
         category={category}
+        lang={lang}
         isOpen={isOpen}
         activeSubcategory={activeSubcategory}
       />
