@@ -14,7 +14,9 @@ import { useState } from "react";
 import { ChevronRightIcon, ChevronsLeftIcon } from "lucide-react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 
 interface Props {
   open: boolean;
@@ -25,6 +27,7 @@ interface Props {
 export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
   const trpc = useTRPC();
   const tMarketplace = useTranslations("marketplace");
+  const currentLang = normalizeToSupported(useLocale());
 
   const { data } = useQuery(trpc.categories.getMany.queryOptions());
 
@@ -45,7 +48,7 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
 
   // if we have parent Categories, show ThermometerSnowflake, otherwise show root categories:
 
-  const currenrtCategories = parentCategories ?? data ?? [];
+  const currentCategories = parentCategories ?? data ?? [];
 
   //   reset everything:
   const handleOpenChange = (open: boolean) => {
@@ -64,14 +67,17 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
     } else {
       // this is a leaf category (no subcategories)
       if (parentCategories && selectedCategory) {
-        // This is a subcategory - navigate to /category/subcategory
-        router.push(`${selectedCategory.slug}/${category.slug}`);
+        router.push(
+          withLocalePrefix(
+            `/${selectedCategory.slug}/${category.slug}`,
+            currentLang,
+          ),
+        );
       } else {
-        //   This is a main category - navigate to /category
         if (category.slug === "all") {
-          router.push("/");
+          router.push(withLocalePrefix("/", currentLang));
         } else {
-          router.push(`/${category.slug}`);
+          router.push(withLocalePrefix(`/${category.slug}`, currentLang));
         }
       }
       //   close Sidebar only wehn we redirecting:
@@ -110,7 +116,7 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
               {tMarketplace("categories.back")}
             </button>
           )}
-          {currenrtCategories.map((category) => (
+          {currentCategories.map((category) => (
             <button
               key={category.slug}
               onClick={() => handleCategoryClick(category)}

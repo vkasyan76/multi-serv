@@ -15,15 +15,17 @@ const NEW_ONLY = process.argv.includes("--new-only");
 const ALL_LOCALES = "all" as never;
 
 type LocalizedLabel = Record<AppLang, string>;
+type WorkType = "manual" | "consulting" | "digital";
 
 type SeedSubcategory = {
   name: LocalizedLabel;
   slug: string;
 };
 
-type Cat = {
+type RootCategory = {
   name: LocalizedLabel;
   slug: string;
+  workType: WorkType;
   color?: string;
   icon?: string; // Lucide icon name for the category
   subcategories?: SeedSubcategory[];
@@ -74,7 +76,10 @@ function changedLabelLocales(current: unknown, next: LocalizedLabel): AppLang[] 
   });
 }
 
-const MANUAL_CATEGORIES: Cat[] = [
+// Authoritative taxonomy source for the workType rollout. Root categories own
+// the classification and child records store the inherited value for simpler
+// later sorting/filtering.
+const ROOT_CATEGORIES: RootCategory[] = [
   {
     name: label(
       "Auto Repair",
@@ -88,6 +93,7 @@ const MANUAL_CATEGORIES: Cat[] = [
       "Ремонт автомобілів",
     ),
     slug: "auto-repair",
+    workType: "manual",
     color: "#374151",
     icon: "lucide:car",
     subcategories: [
@@ -176,6 +182,7 @@ const MANUAL_CATEGORIES: Cat[] = [
       "Сантехніка",
     ),
     slug: "plumbing",
+    workType: "manual",
     color: "#2563eb",
     icon: "lucide:wrench",
     subcategories: [
@@ -264,6 +271,7 @@ const MANUAL_CATEGORIES: Cat[] = [
       "Мурування та кам'яні роботи",
     ),
     slug: "bricklaying-masonry",
+    workType: "manual",
     color: "#d97706",
     icon: "lucide:brick-wall",
     subcategories: [
@@ -352,6 +360,7 @@ const MANUAL_CATEGORIES: Cat[] = [
       "Покрівельні роботи",
     ),
     slug: "roofing",
+    workType: "manual",
     color: "#6b7280",
     icon: "fa6-solid:house-chimney",
     subcategories: [
@@ -440,6 +449,7 @@ const MANUAL_CATEGORIES: Cat[] = [
       "Збирання меблів",
     ),
     slug: "furniture-assembly",
+    workType: "manual",
     color: "#10b981",
     icon: "lucide:armchair",
     subcategories: [
@@ -528,6 +538,7 @@ const MANUAL_CATEGORIES: Cat[] = [
       "Переїзд",
     ),
     slug: "relocation",
+    workType: "manual",
     color: "#0ea5e9",
     icon: "lucide:truck",
     subcategories: [
@@ -616,6 +627,7 @@ const MANUAL_CATEGORIES: Cat[] = [
       "Прибирання",
     ),
     slug: "cleaning",
+    workType: "manual",
     color: "#a855f7",
     icon: "mdi:broom",
     subcategories: [
@@ -704,6 +716,7 @@ const MANUAL_CATEGORIES: Cat[] = [
       "Садові роботи",
     ),
     slug: "gardening",
+    workType: "manual",
     color: "#16a34a",
     icon: "lucide:trees",
     subcategories: [
@@ -779,6 +792,531 @@ const MANUAL_CATEGORIES: Cat[] = [
       },
     ],
   },
+  {
+    name: label(
+      "Coaching",
+      "Coaching",
+      "Coaching",
+      "Coaching",
+      "Coaching",
+      "Coaching",
+      "Coaching",
+      "Coaching",
+      "Коучинг",
+    ),
+    slug: "coaching",
+    workType: "consulting",
+    color: "#7c3aed",
+    icon: "lucide:briefcase-business",
+    subcategories: [
+      {
+        name: label(
+          "Life Coaching",
+          "Life Coaching",
+          "Coaching de vie",
+          "Life coaching",
+          "Coaching de vida",
+          "Coaching de vida",
+          "Coaching życiowy",
+          "Coaching de viață",
+          "Лайф-коучинг",
+        ),
+        slug: "life-coaching",
+      },
+      {
+        name: label(
+          "Career Coaching",
+          "Karrierecoaching",
+          "Coaching de carrière",
+          "Career coaching",
+          "Coaching profesional",
+          "Coaching de carreira",
+          "Coaching kariery",
+          "Coaching de carieră",
+          "Кар’єрний коучинг",
+        ),
+        slug: "career-coaching",
+      },
+      {
+        name: label(
+          "Business Coaching",
+          "Business Coaching",
+          "Coaching d'entreprise",
+          "Business coaching",
+          "Coaching empresarial",
+          "Coaching empresarial",
+          "Coaching biznesowy",
+          "Coaching de business",
+          "Бізнес-коучинг",
+        ),
+        slug: "business-coaching",
+      },
+      {
+        name: label(
+          "Executive Coaching",
+          "Executive Coaching",
+          "Coaching exécutif",
+          "Executive coaching",
+          "Coaching ejecutivo",
+          "Coaching executivo",
+          "Coaching menedżerski",
+          "Coaching executiv",
+          "Виконавчий коучинг",
+        ),
+        slug: "executive-coaching",
+      },
+    ],
+  },
+  {
+    name: label(
+      "Tutoring",
+      "Nachhilfe",
+      "Cours particuliers",
+      "Ripetizioni",
+      "Clases particulares",
+      "Explicações",
+      "Korepetycje",
+      "Meditații",
+      "Репетиторство",
+    ),
+    slug: "tutoring",
+    workType: "consulting",
+    color: "#2563eb",
+    icon: "lucide:graduation-cap",
+    subcategories: [
+      {
+        name: label(
+          "Language Tutoring",
+          "Sprachunterricht",
+          "Cours de langues",
+          "Ripetizioni di lingue",
+          "Clases de idiomas",
+          "Aulas de línguas",
+          "Korepetycje językowe",
+          "Meditații limbi străine",
+          "Репетиторство з мов",
+        ),
+        slug: "language-tutoring",
+      },
+      {
+        name: label(
+          "Math Tutoring",
+          "Mathe-Nachhilfe",
+          "Cours de mathématiques",
+          "Ripetizioni di matematica",
+          "Clases de matemáticas",
+          "Explicações de matemática",
+          "Korepetycje z matematyki",
+          "Meditații la matematică",
+          "Репетиторство з математики",
+        ),
+        slug: "math-tutoring",
+      },
+      {
+        name: label(
+          "Science Tutoring",
+          "Nachhilfe in Naturwissenschaften",
+          "Cours de sciences",
+          "Ripetizioni di scienze",
+          "Clases de ciencias",
+          "Explicações de ciências",
+          "Korepetycje z przedmiotów ścisłych",
+          "Meditații la științe",
+          "Репетиторство з природничих наук",
+        ),
+        slug: "science-tutoring",
+      },
+      {
+        name: label(
+          "Exam Preparation",
+          "Prüfungsvorbereitung",
+          "Préparation aux examens",
+          "Preparazione agli esami",
+          "Preparación de exámenes",
+          "Preparação para exames",
+          "Przygotowanie do egzaminów",
+          "Pregătire pentru examene",
+          "Підготовка до іспитів",
+        ),
+        slug: "exam-preparation",
+      },
+    ],
+  },
+  {
+    name: label(
+      "Tax Advisory",
+      "Steuerberatung",
+      "Conseil fiscal",
+      "Consulenza fiscale",
+      "Asesoría fiscal",
+      "Consultoria fiscal",
+      "Doradztwo podatkowe",
+      "Consultanță fiscală",
+      "Податкове консультування",
+    ),
+    slug: "tax-advisory",
+    workType: "consulting",
+    color: "#0f766e",
+    icon: "lucide:receipt-text",
+    subcategories: [
+      {
+        name: label(
+          "Personal Tax Returns",
+          "Private Steuererklärungen",
+          "Déclarations fiscales personnelles",
+          "Dichiarazioni fiscali personali",
+          "Declaraciones fiscales personales",
+          "Declarações fiscais pessoais",
+          "Prywatne rozliczenia podatkowe",
+          "Declarații fiscale personale",
+          "Особисті податкові декларації",
+        ),
+        slug: "personal-tax-returns",
+      },
+      {
+        name: label(
+          "Business Tax Filing",
+          "Betriebliche Steuererklärungen",
+          "Déclarations fiscales d'entreprise",
+          "Dichiarazioni fiscali aziendali",
+          "Declaraciones fiscales empresariales",
+          "Declarações fiscais empresariais",
+          "Rozliczenia podatkowe firm",
+          "Declarații fiscale pentru afaceri",
+          "Податкова звітність для бізнесу",
+        ),
+        slug: "business-tax-filing",
+      },
+      {
+        name: label(
+          "VAT Support",
+          "Umsatzsteuer-Unterstützung",
+          "Assistance TVA",
+          "Supporto IVA",
+          "Soporte de IVA",
+          "Suporte de IVA",
+          "Wsparcie VAT",
+          "Asistență TVA",
+          "Підтримка з ПДВ",
+        ),
+        slug: "vat-support",
+      },
+      {
+        name: label(
+          "Tax Planning",
+          "Steuerplanung",
+          "Planification fiscale",
+          "Pianificazione fiscale",
+          "Planificación fiscal",
+          "Planeamento fiscal",
+          "Planowanie podatkowe",
+          "Planificare fiscală",
+          "Податкове планування",
+        ),
+        slug: "tax-planning",
+      },
+    ],
+  },
+  {
+    name: label(
+      "Project Management",
+      "Projektmanagement",
+      "Gestion de projet",
+      "Project management",
+      "Gestión de proyectos",
+      "Gestão de projetos",
+      "Zarządzanie projektami",
+      "Management de proiect",
+      "Управління проєктами",
+    ),
+    slug: "project-management",
+    workType: "consulting",
+    color: "#1d4ed8",
+    icon: "lucide:kanban-square",
+    subcategories: [
+      {
+        name: label(
+          "Project Planning",
+          "Projektplanung",
+          "Planification de projet",
+          "Pianificazione del progetto",
+          "Planificación de proyectos",
+          "Planeamento de projetos",
+          "Planowanie projektu",
+          "Planificare de proiect",
+          "Планування проєкту",
+        ),
+        slug: "project-planning",
+      },
+      {
+        name: label(
+          "Project Support",
+          "Projektunterstützung",
+          "Support de projet",
+          "Supporto di progetto",
+          "Soporte de proyectos",
+          "Suporte de projetos",
+          "Wsparcie projektu",
+          "Suport de proiect",
+          "Підтримка проєкту",
+        ),
+        slug: "project-support",
+      },
+      {
+        name: label(
+          "Agile Project Management",
+          "Agiles Projektmanagement",
+          "Gestion de projet agile",
+          "Project management agile",
+          "Gestión ágil de proyectos",
+          "Gestão ágil de projetos",
+          "Zwinne zarządzanie projektami",
+          "Management agil de proiect",
+          "Гнучке управління проєктами",
+        ),
+        slug: "agile-project-management",
+      },
+      {
+        name: label(
+          "Project Coordination",
+          "Projektkoordination",
+          "Coordination de projet",
+          "Coordinamento di progetto",
+          "Coordinación de proyectos",
+          "Coordenação de projetos",
+          "Koordynacja projektu",
+          "Coordonare de proiect",
+          "Координація проєкту",
+        ),
+        slug: "project-coordination",
+      },
+    ],
+  },
+  {
+    name: label(
+      "Web Design",
+      "Webdesign",
+      "Web design",
+      "Web design",
+      "Diseño web",
+      "Web design",
+      "Projektowanie stron www",
+      "Web design",
+      "Вебдизайн",
+    ),
+    slug: "web-design",
+    workType: "digital",
+    color: "#0ea5e9",
+    icon: "lucide:monitor-smartphone",
+    subcategories: [
+      {
+        name: label(
+          "Business Websites",
+          "Business-Websites",
+          "Sites web d'entreprise",
+          "Siti web aziendali",
+          "Sitios web corporativos",
+          "Websites empresariais",
+          "Strony firmowe",
+          "Site-uri de business",
+          "Бізнес-сайти",
+        ),
+        slug: "business-websites",
+      },
+      {
+        name: label(
+          "Landing Pages",
+          "Landingpages",
+          "Pages d'atterrissage",
+          "Landing page",
+          "Landing pages",
+          "Landing pages",
+          "Landing pages",
+          "Landing pages",
+          "Лендінги",
+        ),
+        slug: "landing-pages",
+      },
+      {
+        name: label(
+          "E-commerce Websites",
+          "E-Commerce-Websites",
+          "Sites e-commerce",
+          "Siti e-commerce",
+          "Sitios web e-commerce",
+          "Websites e-commerce",
+          "Sklepy internetowe",
+          "Site-uri e-commerce",
+          "E-commerce сайти",
+        ),
+        slug: "ecommerce-websites",
+      },
+      {
+        name: label(
+          "Website Maintenance",
+          "Website-Wartung",
+          "Maintenance de site web",
+          "Manutenzione siti web",
+          "Mantenimiento web",
+          "Manutenção de websites",
+          "Utrzymanie stron internetowych",
+          "Mentenanță site-uri",
+          "Підтримка сайтів",
+        ),
+        slug: "website-maintenance",
+      },
+    ],
+  },
+  {
+    name: label(
+      "Graphic Design",
+      "Grafikdesign",
+      "Design graphique",
+      "Graphic design",
+      "Diseño gráfico",
+      "Design gráfico",
+      "Projektowanie graficzne",
+      "Design grafic",
+      "Графічний дизайн",
+    ),
+    slug: "graphic-design",
+    workType: "digital",
+    color: "#db2777",
+    icon: "lucide:palette",
+    subcategories: [
+      {
+        name: label(
+          "Logo Design",
+          "Logo-Design",
+          "Création de logo",
+          "Logo design",
+          "Diseño de logotipos",
+          "Design de logótipos",
+          "Projektowanie logo",
+          "Design logo",
+          "Дизайн логотипів",
+        ),
+        slug: "logo-design",
+      },
+      {
+        name: label(
+          "Brand Identity",
+          "Markenidentität",
+          "Identité de marque",
+          "Brand identity",
+          "Identidad de marca",
+          "Identidade de marca",
+          "Identyfikacja wizualna",
+          "Identitate de brand",
+          "Айдентика бренду",
+        ),
+        slug: "brand-identity",
+      },
+      {
+        name: label(
+          "Marketing Materials",
+          "Marketingmaterialien",
+          "Supports marketing",
+          "Materiali di marketing",
+          "Materiales de marketing",
+          "Materiais de marketing",
+          "Materiały marketingowe",
+          "Materiale de marketing",
+          "Маркетингові матеріали",
+        ),
+        slug: "marketing-materials",
+      },
+      {
+        name: label(
+          "Social Media Design",
+          "Social-Media-Design",
+          "Design pour réseaux sociaux",
+          "Design per social media",
+          "Diseño para redes sociales",
+          "Design para redes sociais",
+          "Grafiki do social media",
+          "Design pentru social media",
+          "Дизайн для соцмереж",
+        ),
+        slug: "social-media-design",
+      },
+    ],
+  },
+  {
+    name: label(
+      "Copywriting",
+      "Copywriting",
+      "Copywriting",
+      "Copywriting",
+      "Copywriting",
+      "Copywriting",
+      "Copywriting",
+      "Copywriting",
+      "Копірайтинг",
+    ),
+    slug: "copywriting",
+    workType: "digital",
+    color: "#f97316",
+    icon: "lucide:pen-tool",
+    subcategories: [
+      {
+        name: label(
+          "Website Copy",
+          "Website-Texte",
+          "Textes de site web",
+          "Testi per siti web",
+          "Textos para sitios web",
+          "Textos para websites",
+          "Teksty na strony internetowe",
+          "Texte pentru website",
+          "Тексти для сайтів",
+        ),
+        slug: "website-copy",
+      },
+      {
+        name: label(
+          "Blog Articles",
+          "Blogartikel",
+          "Articles de blog",
+          "Articoli per blog",
+          "Artículos de blog",
+          "Artigos para blog",
+          "Artykuły blogowe",
+          "Articole de blog",
+          "Блог-статті",
+        ),
+        slug: "blog-articles",
+      },
+      {
+        name: label(
+          "Product Descriptions",
+          "Produktbeschreibungen",
+          "Descriptions de produits",
+          "Descrizioni prodotto",
+          "Descripciones de producto",
+          "Descrições de produtos",
+          "Opisy produktów",
+          "Descrieri produse",
+          "Опис товарів",
+        ),
+        slug: "product-descriptions",
+      },
+      {
+        name: label(
+          "Ad Copy",
+          "Anzeigentexte",
+          "Textes publicitaires",
+          "Testi pubblicitari",
+          "Textos publicitarios",
+          "Textos publicitários",
+          "Teksty reklamowe",
+          "Texte publicitare",
+          "Рекламні тексти",
+        ),
+        slug: "ad-copy",
+      },
+    ],
+  },
 ];
 
 type UpsertResult = { id: string; action: "created" | "updated" | "skipped" };
@@ -814,6 +1352,7 @@ async function upsertCategory(
   data: {
     name: LocalizedLabel;
     slug: string;
+    workType?: WorkType | null;
     color?: string;
     icon?: string;
     parent?: string | null;
@@ -835,6 +1374,7 @@ async function upsertCategory(
     const doc = existing.docs[0]! as {
       id: string;
       name?: unknown;
+      workType?: WorkType | null;
       color?: string | null;
       icon?: string | null;
       parent?: string | { id?: string } | null;
@@ -848,6 +1388,9 @@ async function upsertCategory(
     }
     if ((doc.icon ?? null) !== (data.icon ?? null)) {
       patch.icon = data.icon ?? null;
+    }
+    if ((doc.workType ?? null) !== (data.workType ?? null)) {
+      patch.workType = data.workType ?? null;
     }
 
     // parent can be string or populated object; compare as strings
@@ -885,6 +1428,7 @@ async function upsertCategory(
     data: {
       name: normalizedName[DEFAULT_APP_LANG],
       slug: data.slug,
+      workType: data.workType ?? null,
       color: data.color,
       icon: data.icon ?? null,
       parent: data.parent ?? null,
@@ -908,10 +1452,11 @@ async function run() {
 
   const summary: Array<{ slug: string; action: UpsertResult["action"] }> = [];
 
-  for (const cat of MANUAL_CATEGORIES) {
+  for (const cat of ROOT_CATEGORIES) {
     const parent = await upsertCategory(payload, {
       name: cat.name,
       slug: cat.slug,
+      workType: cat.workType,
       color: cat.color,
       icon: cat.icon,
       parent: null,
@@ -922,6 +1467,9 @@ async function run() {
       const subRes = await upsertCategory(payload, {
         name: sub.name,
         slug: sub.slug,
+        // Child records store the inherited value too so querying/sorting can
+        // stay simple later, but the value is still authored by the root group.
+        workType: cat.workType,
         parent: parent.id,
       });
       summary.push({ slug: sub.slug, action: subRes.action });

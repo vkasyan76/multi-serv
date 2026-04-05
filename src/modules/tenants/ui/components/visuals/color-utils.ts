@@ -56,10 +56,12 @@ export function getReadableTextStyle(bgHex?: string) {
   const useDarkText = cDark >= cWhite;
   const color = useDarkText ? DARK : WHITE;
 
-  // shadow opposite to the text color
+  // Orbit badges are small, so keep the dynamic text-color choice but use a
+  // lighter touch on shadows: dark text generally reads cleanly without one,
+  // while white text benefits from a subtle dark edge on saturated fills.
   const textShadow = useDarkText
-    ? "0 1px 2px rgba(255,255,255,0.9), 0 0 1px rgba(255,255,255,0.9)"
-    : "0 1px 2px rgba(0,0,0,0.85), 0 0 1px rgba(0,0,0,0.85)";
+    ? undefined
+    : "0 1px 2px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.45)";
 
   return { color, textShadow, useDarkText };
 }

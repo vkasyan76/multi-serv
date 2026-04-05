@@ -26,10 +26,14 @@ export const categoriesRouter = createTRPCRouter({
     });
 
     const formattedData = data.docs.map((doc) => ({
+      // Keep workType explicit in the read contract so future filter/sorting UI
+      // can group both root categories and subcategories without another API pass.
       ...doc,
-      subcategories: (doc.subcategories?.docs ?? []).map((doc) => ({
+      workType: doc.workType ?? null,
+      subcategories: (doc.subcategories?.docs ?? []).map((subcategoryDoc) => ({
         // Because of "depth: 1" we are confident doc will be a type of category
-        ...(doc as Category),
+        ...(subcategoryDoc as Category),
+        workType: (subcategoryDoc as Category).workType ?? null,
         subcategories: undefined,
       })),
     }));

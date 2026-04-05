@@ -59,6 +59,40 @@ Required env groups are defined in `README.md`:
 - Payload collections are admin-restricted by default; app logic often uses server-side `overrideAccess: true` with explicit guards.
 - Tenant isolation is enforced in server procedures through tenant membership checks.
 
+## Categories and Filter Logic
+
+- Category taxonomy source of truth for the app is `src/scripts/categories.ts`.
+  - Treat `src/seed.ts` as legacy for categories unless a task explicitly requires reconciling it.
+- `categories` now have a taxonomy-owned `workType` attribute:
+  - field: `workType`
+  - values: `manual`, `consulting`, `digital`
+  - root categories own the value
+  - subcategories inherit it and must not diverge
+  - the admin UI hides `workType` on subcategories because hooks overwrite child values from the parent
+- Category enforcement lives in `src/collections/Categories.ts`.
+  - root categories must define `workType`
+  - subcategories can only belong to root categories
+  - parent `workType` changes cascade to direct children
+  - cascade paging is intentional even though category groups are expected to stay small
+- Category read contract lives in `src/modules/categories/server/procedures.ts`.
+  - `categories.getMany` explicitly returns `workType` on both root categories and subcategories
+  - this is intentional so future search/filter UI can group by `workType` without another backend pass
+- Marketplace filter semantics in `src/modules/tenants/server/procedures.ts`:
+  - route/category selection is taxonomy-driven, not tenant-entered
+  - selecting a parent category expands to include tenants tagged with either that parent category or any of its subcategories
+  - if an explicit subcategory is selected, that subcategory wins over parent expansion
+  - tenant `services` (`on-site` / `on-line`) remains a separate delivery-mode axis and must not be conflated with category `workType`
+- Home/category search-filter UI notes:
+  - desktop category row in `src/modules/home/ui/components/search-filters/categories.tsx` trims visible categories to fit the viewport while keeping `View all` visible
+  - on colored category/subcategory pages, idle category labels and `View all` use white text with subtle shadow for contrast; active/open chips still use the white-pill treatment
+  - breadcrumb links in `src/modules/home/ui/components/search-filters/breadcrumbs-navigation.tsx` must preserve the active locale in their hrefs
+  - subcategory dropdowns use consistent white text on category-colored panels; this is an intentional UI choice, not a dynamic contrast bug
+  - the search bar in `src/modules/home/ui/components/search-filters/search-input.tsx` is still a provider/tenant text search, not a category/workType picker
+  - search state is stored in the `search` query param via `nuqs` (`src/modules/tenants/hooks/use-tenant-filters.ts`)
+  - typing debounces URL/server updates by 400ms; clearing applies immediately; pressing Enter flushes the current value immediately
+  - current backend search behavior in `src/modules/tenants/server/procedures.ts` is free-text `OR` over tenant `name` and `bio`, then `AND`ed with all other active filters (category, subcategory, services, price, distance, sort)
+  - do not treat the current search input as a generic marketplace search across categories/subcategories unless a task explicitly changes that product behavior
+
 ## Checkout UI Note
 
 - The active slot-order customer drawer is `src/modules/checkout/ui/slots-cart-drawer.tsx`.
