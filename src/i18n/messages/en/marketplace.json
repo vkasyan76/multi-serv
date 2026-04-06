@@ -51,6 +51,9 @@
     "sidebar_title": "Categories",
     "back": "Back"
   },
+  "tenant": {
+    "fallback_bio": "Professional services."
+  },
   "home_search": {
     "placeholder": "What are you looking for?",
     "submit": "Search",

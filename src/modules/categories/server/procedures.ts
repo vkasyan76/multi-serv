@@ -60,8 +60,9 @@ export const categoriesRouter = createTRPCRouter({
   getAvailableForHomepage: baseProcedure.query(async ({ ctx }) => {
     const usedCategoryIds = new Set<string>();
     let page = 1;
+    const MAX_PAGES = 100;
 
-    while (true) {
+    while (page <= MAX_PAGES) {
       const tenants = await ctx.db.find({
         collection: "tenants",
         depth: 0,
@@ -93,6 +94,14 @@ export const categoriesRouter = createTRPCRouter({
       }
 
       page += 1;
+    }
+
+    if (page > MAX_PAGES) {
+      // Keep this as a simple server-side safeguard so a malformed pagination
+      // response cannot trap homepage availability reads in an endless loop.
+      console.warn(
+        `categories.getAvailableForHomepage hit the ${MAX_PAGES}-page safety limit.`,
+      );
     }
 
     const categories = await ctx.db.find({

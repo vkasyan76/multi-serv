@@ -29,6 +29,10 @@ export function buildHomeMarketplaceQueryInput({
   isSignedIn: boolean;
   limit?: number;
 }) {
+  // Match the tenants.getMany schema bounds here so future callers cannot
+  // accidentally build an out-of-range homepage preview query.
+  const safeLimit = Math.min(100, Math.max(1, limit));
+
   return {
     sort: "distance" as const,
     search: filters.search.trim(),
@@ -42,6 +46,6 @@ export function buildHomeMarketplaceQueryInput({
       isSignedIn && filters.distanceFilterEnabled ? filters.maxDistance : null,
     userLat: viewer?.lat ?? null,
     userLng: viewer?.lng ?? null,
-    limit,
+    limit: safeLimit,
   };
 }

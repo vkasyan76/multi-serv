@@ -51,6 +51,9 @@
     "sidebar_title": "Categorías",
     "back": "Atrás"
   },
+  "tenant": {
+    "fallback_bio": "Servicios profesionales."
+  },
   "home_search": {
     "placeholder": "¿Qué quieres encontrar?",
     "submit": "Buscar",

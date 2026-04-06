@@ -51,6 +51,9 @@
     "sidebar_title": "Категорії",
     "back": "Назад"
   },
+  "tenant": {
+    "fallback_bio": "Професійні послуги."
+  },
   "home_search": {
     "placeholder": "Що ви шукаєте?",
     "submit": "Шукати",

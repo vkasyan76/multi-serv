@@ -164,7 +164,7 @@ export function OrbitAndCarousel({
               ? formatMonthYearForLocale(tenant.createdAt, "short", appLang)
               : "",
             orders: ordersSummary?.ordersCount ?? 0,
-            blurb: toPlain(tenant.bio) || "Professional services.",
+            blurb: toPlain(tenant.bio) || tMarketplace("tenant.fallback_bio"),
             categoryName: primaryCategory?.name,
             categoryColor:
               typeof primaryCategory?.color === "string"
@@ -174,7 +174,7 @@ export function OrbitAndCarousel({
               typeof categoryIcon === "string" ? categoryIcon : null,
           };
         }),
-    [appLang, currency, ordersMap, reviewMap, tenants]
+    [appLang, currency, ordersMap, reviewMap, tMarketplace, tenants]
   );
 
   const [activeSlug, setActiveSlug] = useState<string | undefined>(undefined);

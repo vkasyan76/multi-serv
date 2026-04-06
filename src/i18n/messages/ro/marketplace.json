@@ -51,6 +51,9 @@
     "sidebar_title": "Categorii",
     "back": "Înapoi"
   },
+  "tenant": {
+    "fallback_bio": "Servicii profesionale."
+  },
   "home_search": {
     "placeholder": "Ce cauți?",
     "submit": "Caută",
