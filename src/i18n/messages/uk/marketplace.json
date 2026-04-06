@@ -50,5 +50,12 @@
   "categories": {
     "sidebar_title": "Категорії",
     "back": "Назад"
+  },
+  "home_search": {
+    "placeholder": "Що ви шукаєте?",
+    "submit": "Шукати",
+    "category_search_placeholder": "Знайти категорію...",
+    "category_loading": "Завантаження категорій...",
+    "category_empty": "Категорій не знайдено."
   }
 }

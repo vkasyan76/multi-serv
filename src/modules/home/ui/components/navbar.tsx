@@ -14,9 +14,10 @@ import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 
 import { NavbarSidebar } from "./navbar-sidebar";
-import { MenuIcon } from "lucide-react";
+import { LayoutGridIcon, MenuIcon } from "lucide-react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { CategoriesSidebar } from "./search-filters/categories-sidebar";
 
 import {
   SignInButton,
@@ -53,6 +54,7 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
 
 export const Navbar = () => {
   const t = useTranslations("common");
+  const tMarketplace = useTranslations("marketplace");
   const trpc = useTRPC();
   const { isLoaded, isSignedIn } = useAuth();
   const session = useQuery({
@@ -130,6 +132,15 @@ export const Navbar = () => {
 
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const isHomeRoute = pathname === href("/");
+
+  const homepageCategoriesQ = useQuery({
+    ...trpc.categories.getAvailableForHomepage.queryOptions(),
+    enabled: isHomeRoute,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
 
   return (
     //  <na className="h-16 flex border-b justify-between font-medium bg-white">
@@ -144,6 +155,12 @@ export const Navbar = () => {
         open={isSidebarOpen}
         onOpenChange={setIsSidebarOpen}
         items={navbarItems}
+      />
+      <CategoriesSidebar
+        open={isCategoriesOpen}
+        onOpenChange={setIsCategoriesOpen}
+        data={homepageCategoriesQ.data}
+        fallbackToFullTaxonomy={false}
       />
 
       <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center gap-2 overflow-hidden px-4">
@@ -250,11 +267,26 @@ export const Navbar = () => {
 
       {/* oposite of large screens */}
 
-      <div className="flex lg:hidden items-center justify-center">
+      <div className="flex lg:hidden items-center justify-center gap-1 pr-2">
+        {isHomeRoute && (
+          <Button
+            variant="ghost"
+            className="size-12 border-transparent bg-white"
+            onClick={() => setIsCategoriesOpen(true)}
+            aria-label={tMarketplace("filters.all_categories")}
+            title={tMarketplace("filters.all_categories")}
+            disabled={homepageCategoriesQ.isLoading}
+          >
+            {/* Keep taxonomy browsing separate from orbit filters while moving
+            the mobile opener into the navbar to save page space. */}
+            <LayoutGridIcon />
+          </Button>
+        )}
         <Button
           variant="ghost"
           className="size-12 border-transparent bg-white"
           onClick={() => setIsSidebarOpen(true)}
+          aria-label={t("nav.menu")}
         >
           <MenuIcon />
         </Button>

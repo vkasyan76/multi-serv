@@ -21,15 +21,24 @@ import { withLocalePrefix } from "@/i18n/routing";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // data: CustomCategory[]; // TODO: Remove this later.
+  data?: CategoriesGetManyOutput;
+  fallbackToFullTaxonomy?: boolean;
 }
 
-export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
+export const CategoriesSidebar = ({
+  open,
+  onOpenChange,
+  data,
+  fallbackToFullTaxonomy = true,
+}: Props) => {
   const trpc = useTRPC();
   const tMarketplace = useTranslations("marketplace");
   const currentLang = normalizeToSupported(useLocale());
 
-  const { data } = useQuery(trpc.categories.getMany.queryOptions());
+  const categoriesQ = useQuery({
+    ...trpc.categories.getMany.queryOptions(),
+    enabled: fallbackToFullTaxonomy && !data,
+  });
 
   const router = useRouter();
 
@@ -48,7 +57,9 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
 
   // if we have parent Categories, show ThermometerSnowflake, otherwise show root categories:
 
-  const currentCategories = parentCategories ?? data ?? [];
+  // Homepage can inject its availability-filtered taxonomy, while listing pages
+  // keep the existing full-taxonomy sidebar behavior by leaving fallback enabled.
+  const currentCategories = parentCategories ?? data ?? categoriesQ.data ?? [];
 
   //   reset everything:
   const handleOpenChange = (open: boolean) => {

@@ -13,9 +13,10 @@ import { normalizeToSupported, type AppLang } from "@/lib/i18n/app-lang";
 
 interface Props {
   data: CategoriesGetManyOutput;
+  sidebarData?: CategoriesGetManyOutput;
 }
 
-export const Categories = ({ data }: Props) => {
+export const Categories = ({ data, sidebarData }: Props) => {
   const params = useParams();
   const t = useTranslations("common");
   const viewAllLabel = t("buttons.view_all");
@@ -92,6 +93,7 @@ export const Categories = ({ data }: Props) => {
       <CategoriesSidebar
         open={isSidebarOpen}
         onOpenChange={setIsSidebarOpen}
+        data={sidebarData}
       />
 
       {/* Hidden measurement row: render every category at its natural width so

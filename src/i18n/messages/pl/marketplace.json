@@ -50,5 +50,12 @@
   "categories": {
     "sidebar_title": "Kategorie",
     "back": "Wstecz"
+  },
+  "home_search": {
+    "placeholder": "Czego szukasz?",
+    "submit": "Szukaj",
+    "category_search_placeholder": "Szukaj kategorii...",
+    "category_loading": "Ładowanie kategorii...",
+    "category_empty": "Nie znaleziono kategorii."
   }
 }

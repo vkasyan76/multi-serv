@@ -1,59 +1,36 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import type { FallbackProps } from "react-error-boundary";
 import { useQuery } from "@tanstack/react-query";
-import { ErrorBoundary } from "react-error-boundary";
 import { useTRPC } from "@/trpc/client";
 
 import Headline from "@/modules/home/ui/billboard/headline";
 import CallToAction from "@/modules/home/ui/cta/call-to-action";
-import { TenantFilters } from "@/modules/tenants/ui/components/tenant-filters";
-import { useTenantFilters } from "@/modules/tenants/hooks/use-tenant-filters";
 
 import { Poppins } from "next/font/google";
-import { HomeRadarSkeleton } from "@/modules/home/ui/HomeRadarSkeleton";
 import { OrbitAndCarousel } from "./OrbitAndCarousel";
+import { HomeMarketplaceSearchBlock } from "./components/home-marketplace-search-block";
+import { HomeBrowseCategories } from "./components/home-browse-categories";
 
+import { type AppLang, normalizeToSupported } from "@/lib/i18n/app-lang";
+import { buildHomeMarketplaceHref } from "./build-home-marketplace-href";
 import {
-  type AppLang,
-  normalizeToSupported,
-} from "@/modules/profile/location-utils";
+  DEFAULT_HOME_MARKETPLACE_FILTERS,
+  buildHomeMarketplaceQueryInput,
+} from "./home-marketplace-filters";
+import { useDebouncedValue } from "./use-debounced-value";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
 
-function RadarError({ resetErrorBoundary }: FallbackProps) {
-  const tMarketplace = useTranslations("marketplace");
-
-  return (
-    <>
-      <div className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]">
-        <div className="rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-          {tMarketplace("error.home_radar_body")}
-          <div className="mt-3">
-            <button
-              onClick={resetErrorBoundary}
-              className="px-3 py-1 rounded-md border text-xs"
-            >
-              {/* Step 12 keeps the same error-boundary retry behavior and only
-                  localizes the visible home listing-surface copy. */}
-              {tMarketplace("error.retry")}
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="w-full lg:h-full flex justify-end lg:px-12" />
-    </>
-  );
-}
-
 export default function HomeView() {
+  const router = useRouter();
   const trpc = useTRPC();
   const tCommon = useTranslations("common");
   const appLang: AppLang = normalizeToSupported(useLocale());
+  const [filters, setFilters] = useState(DEFAULT_HOME_MARKETPLACE_FILTERS);
 
-  // Auth + profile (do NOT block Suspense)
   const { data: session, isLoading: sessionLoading } = useQuery(
     trpc.auth.session.queryOptions()
   );
@@ -72,27 +49,23 @@ export default function HomeView() {
         }
       : undefined;
 
-  const [filters] = useTenantFilters();
-  // Route locale stays authoritative for the tenant data below; don't derive it
-  // from profile/browser state or the localized query cache can drift on switch.
-
-  // Single source of truth for app language: profile.language → supported code → fallback
-  // Distance mode needs viewer coords; otherwise first mount would re-suspend when viewer arrives.
+  const debouncedSearch = useDebouncedValue(filters.search, 400);
+  const previewFilters = useMemo(
+    () => ({ ...filters, search: debouncedSearch }),
+    [debouncedSearch, filters]
+  );
 
   const queryInput = useMemo(
-    () => ({
-      ...filters,
-      ...(session?.user
-        ? {}
-        : {
-            distanceFilterEnabled: false,
-            maxDistance: null as number | null,
-          }),
-      userLat: viewer?.lat ?? null,
-      userLng: viewer?.lng ?? null,
-      limit: 24,
-    }),
-    [filters, session?.user, viewer?.lat, viewer?.lng]
+    () =>
+      buildHomeMarketplaceQueryInput({
+        // Homepage preview stays local-state driven. Listing URL state remains
+        // separate and is only used when the user opens full results.
+        filters: previewFilters,
+        viewer,
+        isSignedIn: !!session?.user,
+        limit: 24,
+      }),
+    [previewFilters, session?.user, viewer]
   );
 
   const isAuthed = !!session?.user;
@@ -100,46 +73,61 @@ export default function HomeView() {
   const hasTenant = !!session?.user?.tenants?.length;
   const ctaLoading = sessionLoading || profileQ.isLoading;
 
+  const handleViewResults = useCallback(() => {
+    router.push(
+      buildHomeMarketplaceHref({
+        lang: appLang,
+        filters,
+        isSignedIn: !!session?.user,
+      })
+    );
+  }, [appLang, filters, router, session?.user]);
+
   return (
-    <div className="container mx-auto px-4 pt-6 pb-4 overflow-x-hidden">
-      <Headline
-        line1={tCommon("home.hero.line1")}
-        line2={tCommon("home.hero.line2")}
-        className="md:max-w-6xl lg:max-w-7xl"
-        line1FontClass={poppins.className}
-        line2FontClass={poppins.className}
-      />
+    <>
+      <div className="sticky top-16 z-40 hidden border-b border-black/10 bg-[#F4F4F0] lg:block">
+        <div className="container mx-auto px-4 py-3">
+          {/* Restore the desktop browse rail as its own opaque header layer so
+          sticky behavior matches the old homepage navigation more closely. */}
+          <HomeBrowseCategories />
+        </div>
+      </div>
 
-      {/* 3-column row: Filters | Orbit | Carousel */}
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-[250px_1fr_minmax(360px,520px)] gap-10 items-start">
-        {/* Filters stay mounted; we don't touch their internals */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-28 space-y-4">
-            <TenantFilters isSignedIn={!!session?.user} showCategory />
-          </div>
-        </aside>
+      <div className="overflow-x-hidden">
+        <div className="container mx-auto px-4 pt-6 pb-4">
+          <Headline
+            line1={tCommon("home.hero.line1")}
+            line2={tCommon("home.hero.line2")}
+            className="md:max-w-6xl lg:max-w-7xl"
+            line1FontClass={poppins.className}
+            line2FontClass={poppins.className}
+          />
 
-        {/* Orbit + Carousel are suspended together with a combined skeleton */}
-        <Suspense fallback={<HomeRadarSkeleton />}>
-          <ErrorBoundary FallbackComponent={RadarError}>
+          <HomeMarketplaceSearchBlock
+            isSignedIn={isAuthed}
+            filters={filters}
+            onFiltersChange={setFilters}
+            onViewResultsAction={handleViewResults}
+          />
+
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_minmax(360px,520px)] gap-10 items-start">
             <OrbitAndCarousel
               queryInput={queryInput}
               viewer={viewer}
               appLang={appLang}
             />
-          </ErrorBoundary>
-        </Suspense>
-      </div>
+          </div>
 
-      {/* CTA sentinel */}
-      <div id="cta-sentinel" className="h-px w-full" aria-hidden="true" />
-      <CallToAction
-        isAuthed={isAuthed}
-        isOnboarded={isOnboarded}
-        hasTenant={hasTenant}
-        loading={ctaLoading}
-        sentinelId="cta-sentinel"
-      />
-    </div>
+          <div id="cta-sentinel" className="h-px w-full" aria-hidden="true" />
+          <CallToAction
+            isAuthed={isAuthed}
+            isOnboarded={isOnboarded}
+            hasTenant={hasTenant}
+            loading={ctaLoading}
+            sentinelId="cta-sentinel"
+          />
+        </div>
+      </div>
+    </>
   );
 }

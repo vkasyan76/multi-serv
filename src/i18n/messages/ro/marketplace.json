@@ -50,5 +50,12 @@
   "categories": {
     "sidebar_title": "Categorii",
     "back": "Înapoi"
+  },
+  "home_search": {
+    "placeholder": "Ce cauți?",
+    "submit": "Caută",
+    "category_search_placeholder": "Caută o categorie...",
+    "category_loading": "Se încarcă categoriile...",
+    "category_empty": "Nu a fost găsită nicio categorie."
   }
 }
