@@ -40,6 +40,14 @@ export type TenantOrbitProps = {
   onSelect?: (slug: string) => void;
   /** NEW: app language used for formatting prices */
   appLang?: AppLang;
+  /**
+   * absolute_distance:
+   *   use raw km values for ring radius
+   * relative_spread:
+   *   preserve near/far ordering, but spread the currently visible tenants
+   *   across the full orbit so filtered homepage results do not visually collapse
+   */
+  radiusMode?: "absolute_distance" | "relative_spread";
 };
 
 type Viewer = { lat: number; lng: number; city?: string | null };
@@ -168,6 +176,7 @@ export default function TenantOrbit({
   selectedSlug,
   onSelect,
   appLang = DEFAULT_APP_LANG,
+  radiusMode = "absolute_distance",
 }: TenantOrbitProps) {
   const R = size / 2;
 
@@ -250,6 +259,23 @@ export default function TenantOrbit({
     [minR, maxR, maxDistanceKm]
   );
 
+  const radiusFromRank = useCallback(
+    (index: number, total: number) => {
+      // Filtering can leave only a few close-by tenants visible. Spread the
+      // visible set across the orbit while preserving near/far order so the
+      // homepage radar keeps a stable footprint after any filter change.
+      if (total <= 1) {
+        return minR + (maxR - minR) * 0.55;
+      }
+
+      const usableMin = minR + (maxR - minR) * 0.08;
+      const usableMax = maxR;
+      const t = index / (total - 1);
+      return usableMin + (usableMax - usableMin) * t;
+    },
+    [minR, maxR]
+  );
+
   // bearing utils
 
   const bearingDeg = useCallback(
@@ -304,6 +330,15 @@ export default function TenantOrbit({
       return { t, r0, base };
     });
 
+    if (radiusMode === "relative_spread") {
+      const ordered = [...prelim].sort(
+        (a, b) => (a.t.distance ?? 9e9) - (b.t.distance ?? 9e9)
+      );
+      ordered.forEach((entry, index) => {
+        entry.r0 = radiusFromRank(index, ordered.length);
+      });
+    }
+
     // Enforce radial spacing from inner to outer
     prelim.sort((a, b) => a.r0 - b.r0);
     let last = minR - RING_GAP;
@@ -336,6 +371,8 @@ export default function TenantOrbit({
     minR,
     maxR,
     radiusFromDistance,
+    radiusFromRank,
+    radiusMode,
     bearingDeg,
   ]);
 

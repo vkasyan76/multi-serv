@@ -22,7 +22,6 @@ import {
 } from "@/modules/profile/location-utils";
 import TenantOrbit from "@/modules/tenants/ui/components/visuals/TenantOrbit";
 import TenantsCarousel from "@/modules/tenants/ui/components/visuals/TenantsCarousel";
-import { HomeRadarSkeleton } from "./HomeRadarSkeleton";
 import { Category } from "@/payload-types";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +33,9 @@ type GetManyInput = Parameters<
 
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
+
+const orbitShellClassName =
+  "relative w-full max-w-[720px] aspect-square min-h-[280px]";
 
 export function OrbitAndCarousel({
   queryInput,
@@ -222,62 +224,80 @@ export function OrbitAndCarousel({
     return () => resizeObserver.disconnect();
   }, []);
 
-  if (tenantsQ.isPending && !data) {
-    return <HomeRadarSkeleton />;
-  }
-
-  if (tenantsQ.isError && !data) {
-    return (
-      <>
-        <div className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]">
-          <div className="rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-            {tMarketplace("error.home_radar_body")}
-            <div className="mt-3">
-              <button
-                onClick={() => tenantsQ.refetch()}
-                className="rounded-md border px-3 py-1 text-xs"
-              >
-                {tMarketplace("error.retry")}
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="w-full lg:h-full flex justify-end lg:px-12" />
-      </>
-    );
-  }
-
-  if (tenants.length === 0) {
-    return null;
-  }
-
   return (
     <>
       <div
-        ref={radarRef}
-        className={cn(
-          "relative flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]",
-          isRefreshing && "opacity-80 transition-opacity"
-        )}
+        className="flex w-full min-w-0 justify-center lg:justify-start pr-6"
       >
-        {isRefreshing && (
-          <div className="absolute right-2 top-2 z-10 rounded-full bg-background/85 p-1 shadow-sm">
-            <Loader2 className="size-4 animate-spin text-muted-foreground" />
-          </div>
-        )}
-        {size !== null && (
-          <TenantOrbit
-            size={size}
-            maxDistanceKm={80}
-            baseSeconds={16}
-            parallax={18}
-            tenants={tenants}
-            selectedSlug={activeSlug}
-            onSelect={onOrbitSelect}
-            {...(viewer ? { viewer } : {})}
-            appLang={appLang}
-          />
-        )}
+        <div
+          ref={radarRef}
+          className={cn(
+            orbitShellClassName,
+            isRefreshing && "opacity-80 transition-opacity"
+          )}
+        >
+          {isRefreshing && size !== null && tenants.length > 0 && (
+            <div className="absolute right-2 top-2 z-10 rounded-full bg-background/85 p-1 shadow-sm">
+              <Loader2 className="size-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {tenantsQ.isPending && !data ? (
+            <div
+              role="status"
+              aria-busy="true"
+              aria-label="Loading providers"
+              className="relative h-full w-full"
+            >
+              <div className="absolute inset-0 rounded-full border border-border/70 shadow-sm shimmer" />
+              <div
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                aria-hidden
+              >
+                <span className="relative block h-5 w-5">
+                  <span className="absolute inset-0 rounded-full bg-zinc-300/60 animate-ping" />
+                  <span className="absolute inset-1 rounded-full bg-zinc-400" />
+                </span>
+              </div>
+            </div>
+          ) : tenantsQ.isError && !data ? (
+            <div className="flex h-full w-full items-center justify-center rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+              <div>
+                {tMarketplace("error.home_radar_body")}
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => tenantsQ.refetch()}
+                    className="rounded-md border px-3 py-1 text-xs"
+                  >
+                    {tMarketplace("error.retry")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : tenants.length === 0 ? (
+            <div className="flex h-full w-full items-center justify-center rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+              {tMarketplace("list.empty_body")}
+            </div>
+          ) : size !== null ? (
+            <TenantOrbit
+              size={size}
+              maxDistanceKm={80}
+              baseSeconds={16}
+              parallax={18}
+              tenants={tenants}
+              // Homepage is a discovery surface, so keep the visible result set
+              // spread across the radar after any local filter reduces results.
+              radiusMode="relative_spread"
+              selectedSlug={activeSlug}
+              onSelect={onOrbitSelect}
+              {...(viewer ? { viewer } : {})}
+              appLang={appLang}
+            />
+          ) : (
+            <div className="h-full w-full" />
+          )}
+        </div>
       </div>
 
       <div
@@ -285,8 +305,15 @@ export function OrbitAndCarousel({
           "w-full lg:h-full flex justify-end transition-opacity",
           isRefreshing && "opacity-80"
         )}
-        style={{ visibility: size !== null ? "visible" : "hidden" }}
-        aria-hidden={size === null}
+        style={{
+          visibility:
+            size !== null && tenants.length > 0 && !(tenantsQ.isError && !data)
+              ? "visible"
+              : "hidden",
+        }}
+        aria-hidden={
+          size === null || tenants.length === 0 || (tenantsQ.isError && !data)
+        }
       >
         <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
           <TenantsCarousel
