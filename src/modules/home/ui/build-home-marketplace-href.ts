@@ -1,4 +1,3 @@
-import { SERVICES_OPTIONS } from "@/constants";
 import { withLocalePrefix } from "@/i18n/routing";
 import type { AppLang } from "@/lib/i18n/app-lang";
 import type { HomeMarketplaceFilters } from "./home-marketplace-filters";
@@ -9,8 +8,6 @@ type BuildHomeMarketplaceHrefInput = {
   isSignedIn: boolean;
 };
 
-const VALID_SERVICES = new Set(SERVICES_OPTIONS.map((option) => option.value));
-
 export function buildHomeMarketplaceHref({
   lang,
   filters,
@@ -19,7 +16,6 @@ export function buildHomeMarketplaceHref({
   const {
     category,
     search,
-    services,
     maxPrice,
     distanceFilterEnabled,
     maxDistance,
@@ -35,14 +31,6 @@ export function buildHomeMarketplaceHref({
   const normalizedPrice = maxPrice.trim();
   if (normalizedPrice && Number(normalizedPrice) > 0) {
     params.set("maxPrice", normalizedPrice);
-  }
-
-  const canonicalServices = services.filter((service) =>
-    VALID_SERVICES.has(service as (typeof SERVICES_OPTIONS)[number]["value"])
-  );
-  if (canonicalServices.length > 0) {
-    // Mirror the existing nuqs array contract used by listing pages.
-    params.set("services", canonicalServices.join(","));
   }
 
   if (

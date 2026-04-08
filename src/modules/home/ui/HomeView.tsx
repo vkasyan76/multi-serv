@@ -48,6 +48,7 @@ export default function HomeView() {
           city: profileQ.data.coordinates.city ?? null,
         }
       : undefined;
+  const hasViewerCoords = !!viewer;
 
   const debouncedSearch = useDebouncedValue(filters.search, 400);
   const previewFilters = useMemo(
@@ -105,6 +106,7 @@ export default function HomeView() {
 
           <HomeMarketplaceSearchBlock
             isSignedIn={isAuthed}
+            hasViewerCoords={hasViewerCoords}
             filters={filters}
             onFiltersChange={setFilters}
             onViewResultsAction={handleViewResults}

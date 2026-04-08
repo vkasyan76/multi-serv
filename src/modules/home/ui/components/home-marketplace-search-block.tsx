@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { ChevronDownIcon, SearchIcon, SlidersHorizontalIcon } from "lucide-react";
@@ -10,12 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PriceFilter } from "@/modules/tenants/ui/components/price-filter";
 import { DistanceFilter } from "@/modules/tenants/ui/components/distance-filter";
-import { ServicesFilter } from "@/modules/tenants/ui/components/services-filter";
 import { HomeCategoryPickerDialog } from "./home-category-picker-dialog";
 import type { HomeMarketplaceFilters } from "../home-marketplace-filters";
+import { HomeDistanceSelect } from "./home-distance-select";
+import { HomePriceInput } from "./home-price-input";
+import { HomeWorkTypeSelect } from "./home-work-type-select";
 
 type Props = {
   isSignedIn: boolean;
+  hasViewerCoords: boolean;
   filters: HomeMarketplaceFilters;
   onFiltersChange: Dispatch<SetStateAction<HomeMarketplaceFilters>>;
   onViewResultsAction?: () => void;
@@ -23,6 +32,7 @@ type Props = {
 
 export function HomeMarketplaceSearchBlock({
   isSignedIn,
+  hasViewerCoords,
   filters,
   onFiltersChange,
   onViewResultsAction,
@@ -48,6 +58,15 @@ export function HomeMarketplaceSearchBlock({
       })),
     [categoriesQ.data]
   );
+  const filteredCategoryOptions = useMemo(
+    () =>
+      filters.workType
+        ? categoryOptions.filter(
+            (option) => option.workType === filters.workType
+          )
+        : categoryOptions,
+    [categoryOptions, filters.workType]
+  );
 
   const updateFilters = (patch: Partial<HomeMarketplaceFilters>) =>
     onFiltersChange((prev) => ({ ...prev, ...patch }));
@@ -66,19 +85,91 @@ export function HomeMarketplaceSearchBlock({
     });
   };
 
+  useEffect(() => {
+    if (!filters.category || categoriesQ.isLoading) return;
+
+    const selectedStillValid = filteredCategoryOptions.some(
+      (option) => option.value === filters.category
+    );
+
+    if (!selectedStillValid) {
+      // workType owns category availability in this compact homepage flow, so
+      // clear stale category picks when the chosen work type excludes them.
+      updateFilters({ category: "" });
+    }
+  }, [
+    categoriesQ.isLoading,
+    filteredCategoryOptions,
+    filters.category,
+    onFiltersChange,
+  ]);
+
   const selectedCategoryLabel =
     categoriesQ.isLoading
       ? tMarketplace("home_search.category_loading")
-      : categoryOptions.find((option) => option.value === filters.category)
+      : filteredCategoryOptions.find((option) => option.value === filters.category)
           ?.label ??
         tMarketplace("filters.all_categories");
 
   return (
     <>
-      <section className="mt-6 rounded-[28px] border border-black/10 bg-white p-4 shadow-[0_18px_40px_rgba(0,0,0,0.06)] md:p-6">
-        <div className="space-y-4">
-          <div className="overflow-hidden rounded-[24px] border border-black/10 bg-white lg:grid lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="relative border-b border-black/10 lg:border-r lg:border-b-0">
+      <section className="mt-6 rounded-[28px] border border-black/10 bg-white p-3 shadow-[0_18px_40px_rgba(0,0,0,0.06)] md:p-4">
+        <div className="space-y-3">
+          <div className="hidden rounded-[24px] border border-black/10 bg-[#F4F4F0] p-2 lg:block">
+            {/* Desktop homepage controls stay compact and local-state driven so
+            the orbit preview gets more space without changing listing behavior.
+            Keep this shell tight and avoid a second action row underneath. */}
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_240px_170px_210px_190px] lg:grid-cols-[minmax(0,1fr)_220px_160px_200px_180px]">
+              <div className="relative">
+                <SearchIcon className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-neutral-500" />
+                <Input
+                  type="search"
+                  value={filters.search}
+                  onChange={(event) =>
+                    updateFilters({ search: event.target.value })
+                  }
+                  placeholder={tMarketplace("home_search.placeholder")}
+                  className="h-12 rounded-full border-black/10 bg-white pl-11 shadow-none"
+                />
+              </div>
+
+              <button
+                type="button"
+                className="flex h-12 items-center justify-between gap-3 rounded-full border border-black/10 bg-white px-4 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => setIsCategoryPickerOpen(true)}
+                disabled={categoriesQ.isLoading}
+              >
+                <span className="truncate">{selectedCategoryLabel}</span>
+                <ChevronDownIcon className="size-4 text-muted-foreground" />
+              </button>
+
+              <HomePriceInput
+                value={filters.maxPrice}
+                onChange={(maxPrice) => updateFilters({ maxPrice })}
+              />
+
+              <HomeDistanceSelect
+                isSignedIn={isSignedIn}
+                hasViewerCoords={hasViewerCoords}
+                distanceFilterEnabled={filters.distanceFilterEnabled}
+                maxDistance={filters.maxDistance}
+                onChange={({ enabled, maxDistance }) =>
+                  updateFilters({
+                    distanceFilterEnabled: enabled,
+                    maxDistance,
+                  })
+                }
+              />
+
+              <HomeWorkTypeSelect
+                value={filters.workType}
+                onChange={(workType) => updateFilters({ workType })}
+              />
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-[24px] border border-black/10 bg-white lg:hidden">
+            <div className="relative border-b border-black/10">
               <SearchIcon className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-neutral-500" />
               <Input
                 type="search"
@@ -93,7 +184,7 @@ export function HomeMarketplaceSearchBlock({
 
             <button
               type="button"
-              className="flex h-14 items-center justify-between gap-3 border-b border-black/10 px-4 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60 lg:border-b-0"
+              className="flex h-14 items-center justify-between gap-3 border-b border-black/10 px-4 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => setIsCategoryPickerOpen(true)}
               disabled={categoriesQ.isLoading}
             >
@@ -112,67 +203,8 @@ export function HomeMarketplaceSearchBlock({
             </Button>
           </div>
 
-          <div className="hidden gap-4 rounded-[24px] border border-black/10 bg-[#F4F4F0] p-4 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-            <div className="space-y-3">
-              <p className="text-sm font-medium">
-                {tMarketplace("filters.service_delivery")}
-              </p>
-              <ServicesFilter
-                value={filters.services}
-                onChange={(services) => updateFilters({ services })}
-              />
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-sm font-medium">
-                {tMarketplace("filters.max_hourly_rate")}
-              </p>
-              <PriceFilter
-                maxPrice={filters.maxPrice}
-                onMaxPriceChange={(maxPrice) => updateFilters({ maxPrice })}
-              />
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-sm font-medium">
-                {tMarketplace("filters.location_distance")}
-              </p>
-              <DistanceFilter
-                maxDistance={filters.maxDistance}
-                isEnabled={filters.distanceFilterEnabled}
-                onMaxDistanceChangeAction={handleDistanceChange}
-                onToggleChangeAction={handleDistanceToggle}
-                hasOnlineServices={filters.services.includes("on-line")}
-                isSignedIn={isSignedIn}
-              />
-            </div>
-
-            {onViewResultsAction && (
-              <div className="flex items-end justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-full"
-                  onClick={onViewResultsAction}
-                >
-                  {tCommon("buttons.view_all")}
-                </Button>
-              </div>
-            )}
-          </div>
-
           {showAdvanced && (
             <div className="grid gap-4 rounded-[24px] border border-black/10 bg-[#F4F4F0] p-4 lg:hidden">
-              <div className="space-y-3">
-                <p className="text-sm font-medium">
-                  {tMarketplace("filters.service_delivery")}
-                </p>
-                <ServicesFilter
-                  value={filters.services}
-                  onChange={(services) => updateFilters({ services })}
-                />
-              </div>
-
               <div className="space-y-3">
                 <p className="text-sm font-medium">
                   {tMarketplace("filters.max_hourly_rate")}
@@ -192,8 +224,19 @@ export function HomeMarketplaceSearchBlock({
                   isEnabled={filters.distanceFilterEnabled}
                   onMaxDistanceChangeAction={handleDistanceChange}
                   onToggleChangeAction={handleDistanceToggle}
-                  hasOnlineServices={filters.services.includes("on-line")}
+                  hasOnlineServices={false}
                   isSignedIn={isSignedIn}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-medium">
+                  {tMarketplace("filters.type_of_work")}
+                </p>
+                <HomeWorkTypeSelect
+                  value={filters.workType}
+                  onChange={(workType) => updateFilters({ workType })}
+                  className="min-w-0"
                 />
               </div>
 
@@ -219,7 +262,7 @@ export function HomeMarketplaceSearchBlock({
         onOpenChange={setIsCategoryPickerOpen}
         value={filters.category}
         onValueChange={(category) => updateFilters({ category })}
-        options={categoryOptions}
+        options={filteredCategoryOptions}
         loading={categoriesQ.isLoading}
       />
     </>

@@ -55,7 +55,7 @@ export function HomeCategoryPickerDialog({
   const orderedOptions = useMemo(
     () =>
       [...options].sort((a, b) => {
-        // workType stays presentation-only in v1. It only influences list order.
+        // Keep workType as a stable secondary grouping hint inside the picker.
         const aOrder =
           a.workType && a.workType in WORK_TYPE_ORDER
             ? WORK_TYPE_ORDER[a.workType as keyof typeof WORK_TYPE_ORDER]

@@ -2,20 +2,30 @@
   "filters": {
     "title": "Filtros",
     "clear": "Limpar",
-    "max_hourly_rate": "Tarifa horária máxima",
+    "max_hourly_rate": "Preço máximo por hora",
     "location_distance": "Localização e distância",
-    "service_delivery": "Prestação do serviço",
+    "type_of_work": "Tipo de trabalho",
+    "service_delivery": "Forma de prestação",
     "category": "Categoria",
-    "all_categories": "Todas as categorias"
+    "all_categories": "Todas as categorias",
+    "max_hourly_rate_placeholder": "Preço máx/h",
+    "any_type_of_work": "Qualquer tipo de trabalho",
+    "service_delivery_all": "Todos os formatos"
   },
   "distance": {
-    "search_nearby": "Pesquisar nas proximidades",
+    "search_nearby": "Pesquisar por perto",
     "max_distance": "Distância máxima",
-    "online_hint": "Os serviços online funcionam a partir de qualquer lugar. Considere desativar o filtro de distância."
+    "online_hint": "Os serviços online funcionam a partir de qualquer lugar. Considere desativar o filtro de distância.",
+    "any_distance": "Qualquer distância"
   },
   "services": {
-    "on_site": "No local do cliente",
+    "on_site": "No local",
     "on_line": "Online"
+  },
+  "work_type": {
+    "manual": "Manual",
+    "consulting": "Consultoria",
+    "digital": "Digital"
   },
   "sort": {
     "distance": "Distância",
@@ -45,7 +55,8 @@
     "home_radar_body": "Não foi possível carregar os prestadores. Ajuste os filtros ou tente novamente."
   },
   "auth": {
-    "distance_tooltip": "Inicie sessão para determinar a sua localização para funcionalidades de distância."
+    "distance_tooltip": "Inicie sessão para determinar a sua localização para funcionalidades de distância.",
+    "distance_location_required": "Adicione a sua localização no perfil para usar o filtro de distância."
   },
   "categories": {
     "sidebar_title": "Categorias",
