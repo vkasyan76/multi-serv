@@ -11,9 +11,12 @@ interface Props {
   children: React.ReactNode;
 }
 
-const CategoryLayout = ({ children }: Props) => {
+const CategoryLayout = async ({ children }: Props) => {
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(trpc.categories.getMany.queryOptions());
+  // Wait for the category query before dehydrating. Kicking off the prefetch
+  // without awaiting it can make the server render the Suspense fallback while
+  // the client immediately hydrates the resolved filter strip instead.
+  await queryClient.prefetchQuery(trpc.categories.getMany.queryOptions());
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

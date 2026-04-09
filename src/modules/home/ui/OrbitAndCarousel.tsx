@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useTRPC } from "@/trpc/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { TenantWithRelations } from "@/modules/tenants/types";
 import {
   formatMonthYearForLocale,
@@ -36,6 +37,45 @@ const clamp = (n: number, min: number, max: number) =>
 
 const orbitShellClassName =
   "relative w-full max-w-[720px] aspect-square min-h-[280px]";
+
+function OrbitViewportSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Loading providers"
+      className="relative h-full w-full"
+    >
+      <div className="absolute inset-0 rounded-full border border-border/70 shadow-sm shimmer" />
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        aria-hidden
+      >
+        <span className="relative block h-5 w-5">
+          <span className="absolute inset-0 rounded-full bg-zinc-300/60 animate-ping" />
+          <span className="absolute inset-1 rounded-full bg-zinc-400" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CarouselViewportSkeleton() {
+  return (
+    <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
+      <div className="w-full">
+        <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+          <Skeleton className="w-full aspect-[4/3] lg:aspect-square" />
+          <div className="space-y-3 p-4">
+            <Skeleton className="h-5 w-48 rounded-md" />
+            <Skeleton className="h-4 w-32 rounded-md" />
+            <Skeleton className="h-4 w-28 rounded-md" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function OrbitAndCarousel({
   queryInput,
@@ -224,6 +264,15 @@ export function OrbitAndCarousel({
     return () => resizeObserver.disconnect();
   }, []);
 
+  const showError = tenantsQ.isError && !data;
+  const showPending = tenantsQ.isPending && !data;
+  const showEmpty = !showPending && !showError && tenants.length === 0;
+  // Startup hydration can deliver tenant data before the client has measured
+  // the orbit shell, so keep a section skeleton visible until size is ready.
+  const showViewportSkeleton =
+    showPending || (!showError && !showEmpty && size === null);
+  const showContent = !showError && !showEmpty && size !== null;
+
   return (
     <>
       <div
@@ -236,31 +285,15 @@ export function OrbitAndCarousel({
             isRefreshing && "opacity-80 transition-opacity"
           )}
         >
-          {isRefreshing && size !== null && tenants.length > 0 && (
+          {isRefreshing && showContent && tenants.length > 0 && (
             <div className="absolute right-2 top-2 z-10 rounded-full bg-background/85 p-1 shadow-sm">
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
             </div>
           )}
 
-          {tenantsQ.isPending && !data ? (
-            <div
-              role="status"
-              aria-busy="true"
-              aria-label="Loading providers"
-              className="relative h-full w-full"
-            >
-              <div className="absolute inset-0 rounded-full border border-border/70 shadow-sm shimmer" />
-              <div
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                aria-hidden
-              >
-                <span className="relative block h-5 w-5">
-                  <span className="absolute inset-0 rounded-full bg-zinc-300/60 animate-ping" />
-                  <span className="absolute inset-1 rounded-full bg-zinc-400" />
-                </span>
-              </div>
-            </div>
-          ) : tenantsQ.isError && !data ? (
+          {showViewportSkeleton ? (
+            <OrbitViewportSkeleton />
+          ) : showError ? (
             <div className="flex h-full w-full items-center justify-center rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
               <div>
                 {tMarketplace("error.home_radar_body")}
@@ -275,11 +308,11 @@ export function OrbitAndCarousel({
                 </div>
               </div>
             </div>
-          ) : tenants.length === 0 ? (
+          ) : showEmpty ? (
             <div className="flex h-full w-full items-center justify-center rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
               {tMarketplace("list.empty_body")}
             </div>
-          ) : size !== null ? (
+          ) : showContent ? (
             <TenantOrbit
               size={size}
               maxDistanceKm={80}
@@ -303,25 +336,25 @@ export function OrbitAndCarousel({
       <div
         className={cn(
           "w-full lg:h-full flex justify-end transition-opacity",
-          isRefreshing && "opacity-80"
+          isRefreshing && showContent && "opacity-80"
         )}
-        style={{
-          visibility:
-            size !== null && tenants.length > 0 && !(tenantsQ.isError && !data)
-              ? "visible"
-              : "hidden",
-        }}
-        aria-hidden={
-          size === null || tenants.length === 0 || (tenantsQ.isError && !data)
-        }
+        aria-hidden={showError || showEmpty}
       >
-        <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
-          <TenantsCarousel
-            items={items}
-            activeSlug={activeSlug}
-            onActiveChange={onCarouselChange}
-          />
-        </div>
+        {showViewportSkeleton ? (
+          // Keep the billboard occupied during startup so refreshed pages do
+          // not flash a blank right column before orbit sizing finishes.
+          <CarouselViewportSkeleton />
+        ) : showContent ? (
+          <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
+            <TenantsCarousel
+              items={items}
+              activeSlug={activeSlug}
+              onActiveChange={onCarouselChange}
+            />
+          </div>
+        ) : (
+          <div className="w-full lg:w-[min(32vw,600px)] h-full" />
+        )}
       </div>
     </>
   );

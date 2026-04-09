@@ -40,6 +40,7 @@ export function HomeMarketplaceSearchBlock({
   const trpc = useTRPC();
   const tCommon = useTranslations("common");
   const tMarketplace = useTranslations("marketplace");
+  const [isHydrated, setIsHydrated] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
 
@@ -67,6 +68,7 @@ export function HomeMarketplaceSearchBlock({
         : categoryOptions,
     [categoryOptions, filters.workType]
   );
+  const categoriesUiLoading = !isHydrated || categoriesQ.isLoading;
 
   const updateFilters = (patch: Partial<HomeMarketplaceFilters>) =>
     onFiltersChange((prev) => ({ ...prev, ...patch }));
@@ -84,6 +86,10 @@ export function HomeMarketplaceSearchBlock({
       maxDistance: enabled ? (filters.maxDistance ?? 50) : null,
     });
   };
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (!filters.category || categoriesQ.isLoading) return;
@@ -105,7 +111,7 @@ export function HomeMarketplaceSearchBlock({
   ]);
 
   const selectedCategoryLabel =
-    categoriesQ.isLoading
+    categoriesUiLoading
       ? tMarketplace("home_search.category_loading")
       : filteredCategoryOptions.find((option) => option.value === filters.category)
           ?.label ??
@@ -137,7 +143,7 @@ export function HomeMarketplaceSearchBlock({
                 type="button"
                 className="flex h-12 items-center justify-between gap-3 rounded-full border border-black/10 bg-white px-4 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => setIsCategoryPickerOpen(true)}
-                disabled={categoriesQ.isLoading}
+                disabled={categoriesUiLoading}
               >
                 <span className="truncate">{selectedCategoryLabel}</span>
                 <ChevronDownIcon className="size-4 text-muted-foreground" />
@@ -186,7 +192,7 @@ export function HomeMarketplaceSearchBlock({
               type="button"
               className="flex h-14 items-center justify-between gap-3 border-b border-black/10 px-4 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => setIsCategoryPickerOpen(true)}
-              disabled={categoriesQ.isLoading}
+              disabled={categoriesUiLoading}
             >
               <span className="truncate font-medium">{selectedCategoryLabel}</span>
               <ChevronDownIcon className="size-4 text-muted-foreground" />
@@ -263,7 +269,7 @@ export function HomeMarketplaceSearchBlock({
         value={filters.category}
         onValueChange={(category) => updateFilters({ category })}
         options={filteredCategoryOptions}
-        loading={categoriesQ.isLoading}
+        loading={categoriesUiLoading}
       />
     </>
   );
