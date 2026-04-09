@@ -8,6 +8,7 @@ import { useTRPC } from "@/trpc/client";
 
 import Headline from "@/modules/home/ui/billboard/headline";
 import CallToAction from "@/modules/home/ui/cta/call-to-action";
+import type { HomepageCategoriesOutput } from "@/modules/categories/types";
 
 import { Poppins } from "next/font/google";
 import { OrbitAndCarousel } from "./OrbitAndCarousel";
@@ -24,7 +25,11 @@ import { useDebouncedValue } from "./use-debounced-value";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
 
-export default function HomeView() {
+type Props = {
+  homepageCategories: HomepageCategoriesOutput;
+};
+
+export default function HomeView({ homepageCategories }: Props) {
   const router = useRouter();
   const trpc = useTRPC();
   const tCommon = useTranslations("common");
@@ -90,7 +95,7 @@ export default function HomeView() {
         <div className="container mx-auto px-4 py-3">
           {/* Restore the desktop browse rail as its own opaque header layer so
           sticky behavior matches the old homepage navigation more closely. */}
-          <HomeBrowseCategories />
+          <HomeBrowseCategories data={homepageCategories} />
         </div>
       </div>
 
@@ -105,6 +110,7 @@ export default function HomeView() {
           />
 
           <HomeMarketplaceSearchBlock
+            categories={homepageCategories}
             isSignedIn={isAuthed}
             hasViewerCoords={hasViewerCoords}
             filters={filters}

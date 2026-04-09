@@ -7,22 +7,22 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { ChevronDownIcon, SearchIcon, SlidersHorizontalIcon } from "lucide-react";
 
-import { useTRPC } from "@/trpc/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PriceFilter } from "@/modules/tenants/ui/components/price-filter";
 import { DistanceFilter } from "@/modules/tenants/ui/components/distance-filter";
 import { HomeCategoryPickerDialog } from "./home-category-picker-dialog";
+import type { HomepageCategoriesOutput } from "@/modules/categories/types";
 import type { HomeMarketplaceFilters } from "../home-marketplace-filters";
 import { HomeDistanceSelect } from "./home-distance-select";
 import { HomePriceInput } from "./home-price-input";
 import { HomeWorkTypeSelect } from "./home-work-type-select";
 
 type Props = {
+  categories: HomepageCategoriesOutput;
   isSignedIn: boolean;
   hasViewerCoords: boolean;
   filters: HomeMarketplaceFilters;
@@ -31,33 +31,26 @@ type Props = {
 };
 
 export function HomeMarketplaceSearchBlock({
+  categories,
   isSignedIn,
   hasViewerCoords,
   filters,
   onFiltersChange,
   onViewResultsAction,
 }: Props) {
-  const trpc = useTRPC();
   const tCommon = useTranslations("common");
   const tMarketplace = useTranslations("marketplace");
-  const [isHydrated, setIsHydrated] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
 
-  const categoriesQ = useQuery({
-    ...trpc.categories.getAvailableForHomepage.queryOptions(),
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-  });
-
   const categoryOptions = useMemo(
     () =>
-      (categoriesQ.data ?? []).map((category) => ({
+      categories.map((category) => ({
         label: category.name,
         value: category.slug,
         workType: category.workType ?? null,
       })),
-    [categoriesQ.data]
+    [categories]
   );
   const filteredCategoryOptions = useMemo(
     () =>
@@ -68,7 +61,6 @@ export function HomeMarketplaceSearchBlock({
         : categoryOptions,
     [categoryOptions, filters.workType]
   );
-  const categoriesUiLoading = !isHydrated || categoriesQ.isLoading;
 
   const updateFilters = (patch: Partial<HomeMarketplaceFilters>) =>
     onFiltersChange((prev) => ({ ...prev, ...patch }));
@@ -88,11 +80,7 @@ export function HomeMarketplaceSearchBlock({
   };
 
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!filters.category || categoriesQ.isLoading) return;
+    if (!filters.category) return;
 
     const selectedStillValid = filteredCategoryOptions.some(
       (option) => option.value === filters.category
@@ -104,18 +92,14 @@ export function HomeMarketplaceSearchBlock({
       updateFilters({ category: "" });
     }
   }, [
-    categoriesQ.isLoading,
     filteredCategoryOptions,
     filters.category,
     onFiltersChange,
   ]);
 
   const selectedCategoryLabel =
-    categoriesUiLoading
-      ? tMarketplace("home_search.category_loading")
-      : filteredCategoryOptions.find((option) => option.value === filters.category)
-          ?.label ??
-        tMarketplace("filters.all_categories");
+    filteredCategoryOptions.find((option) => option.value === filters.category)
+      ?.label ?? tMarketplace("filters.all_categories");
 
   return (
     <>
@@ -143,7 +127,6 @@ export function HomeMarketplaceSearchBlock({
                 type="button"
                 className="flex h-12 items-center justify-between gap-3 rounded-full border border-black/10 bg-white px-4 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => setIsCategoryPickerOpen(true)}
-                disabled={categoriesUiLoading}
               >
                 <span className="truncate">{selectedCategoryLabel}</span>
                 <ChevronDownIcon className="size-4 text-muted-foreground" />
@@ -192,7 +175,6 @@ export function HomeMarketplaceSearchBlock({
               type="button"
               className="flex h-14 items-center justify-between gap-3 border-b border-black/10 px-4 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => setIsCategoryPickerOpen(true)}
-              disabled={categoriesUiLoading}
             >
               <span className="truncate font-medium">{selectedCategoryLabel}</span>
               <ChevronDownIcon className="size-4 text-muted-foreground" />
@@ -269,7 +251,7 @@ export function HomeMarketplaceSearchBlock({
         value={filters.category}
         onValueChange={(category) => updateFilters({ category })}
         options={filteredCategoryOptions}
-        loading={categoriesUiLoading}
+        loading={false}
       />
     </>
   );
