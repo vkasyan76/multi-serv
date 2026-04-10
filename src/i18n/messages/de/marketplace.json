@@ -9,6 +9,7 @@
     "category": "Kategorie",
     "all_categories": "Alle Kategorien",
     "max_hourly_rate_placeholder": "Max. Preis/Std.",
+    "max_hourly_rate_summary": "Bis {amount}/Std.",
     "any_type_of_work": "Alle Arbeitsarten",
     "service_delivery_all": "Alle Leistungsarten"
   },

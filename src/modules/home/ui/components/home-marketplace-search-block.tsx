@@ -103,13 +103,16 @@ export function HomeMarketplaceSearchBlock({
 
   return (
     <>
-      <section className="mt-6 rounded-[28px] border border-black/10 bg-white p-3 shadow-[0_18px_40px_rgba(0,0,0,0.06)] md:p-4">
-        <div className="space-y-3">
-          <div className="hidden rounded-[24px] border border-black/10 bg-[#F4F4F0] p-2 lg:block">
+      <section className="mt-5 rounded-[28px] border border-black/10 bg-white p-2.5 shadow-[0_18px_40px_rgba(0,0,0,0.06)] md:p-3">
+        <div className="space-y-2.5">
+          <div className="hidden rounded-[22px] border border-black/10 bg-[#F4F4F0] p-1.5 lg:block">
             {/* Desktop homepage controls stay compact and local-state driven so
             the orbit preview gets more space without changing listing behavior.
-            Keep this shell tight and avoid a second action row underneath. */}
-            <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_240px_170px_210px_190px] lg:grid-cols-[minmax(0,1fr)_220px_160px_200px_180px]">
+            Keep the four non-search controls equal-width, but leave enough room
+            for longer locale labels so the row stays readable across languages.
+            This intentionally rolls back the last over-tight compaction pass:
+            equal widths stay, but the columns are widened back to readable sizes. */}
+            <div className="grid gap-2.5 xl:grid-cols-[minmax(0,1.12fr)_215px_215px_215px_215px] lg:grid-cols-[minmax(0,1fr)_205px_205px_205px_205px]">
               <div className="relative">
                 <SearchIcon className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-neutral-500" />
                 <Input
@@ -125,7 +128,7 @@ export function HomeMarketplaceSearchBlock({
 
               <button
                 type="button"
-                className="flex h-12 items-center justify-between gap-3 rounded-full border border-black/10 bg-white px-4 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-full border border-black/10 bg-white px-4 py-0 text-left text-sm leading-none font-medium shadow-none disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => setIsCategoryPickerOpen(true)}
               >
                 <span className="truncate">{selectedCategoryLabel}</span>

@@ -9,6 +9,7 @@
     "category": "Categorie",
     "all_categories": "Toate categoriile",
     "max_hourly_rate_placeholder": "Preț max/oră",
+    "max_hourly_rate_summary": "Până la {amount}/h",
     "any_type_of_work": "Orice tip de muncă",
     "service_delivery_all": "Toate modurile"
   },

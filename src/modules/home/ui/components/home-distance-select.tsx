@@ -66,12 +66,12 @@ export function HomeDistanceSelect({
           <TooltipTrigger asChild>
             <button
               type="button"
-              className={cn("min-w-[190px]", className)}
+              className={cn("w-full min-w-0", className)}
               aria-disabled="true"
             >
               {/* Keep this as a real button so keyboard users can still focus
               the gated state and read why distance isn't available yet. */}
-              <span className="flex h-12 items-center justify-between rounded-full border border-black/10 bg-white px-4 text-sm font-medium opacity-60">
+              <span className="flex h-12 w-full min-w-0 items-center justify-between rounded-full border border-black/10 bg-white px-4 py-0 text-sm leading-none font-medium shadow-none opacity-60">
                 <span>{tMarketplace("filters.location_distance")}</span>
                 <ChevronDownIcon className="size-4 text-muted-foreground" />
               </span>
@@ -86,9 +86,11 @@ export function HomeDistanceSelect({
   }
 
   return (
-    <div className={cn("min-w-[210px]", className)}>
+    <div className={cn("w-full min-w-0", className)}>
       <Select value={value} onValueChange={handleValueChange}>
-        <SelectTrigger className="h-12 w-full rounded-full border-black/10 bg-white px-4 text-sm font-medium">
+        {/* Match the homepage pill buttons: the shared select trigger keeps its
+        behavior, but the trigger chrome must use the same box model here. */}
+        <SelectTrigger className="h-12 w-full min-w-0 rounded-full border-black/10 bg-white px-4 py-0 text-sm leading-none font-medium shadow-none">
           <SelectValue />
         </SelectTrigger>
         <SelectContent align="end">
