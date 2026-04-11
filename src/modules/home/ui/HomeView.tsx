@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
@@ -30,7 +29,6 @@ type Props = {
 };
 
 export default function HomeView({ homepageCategories }: Props) {
-  const router = useRouter();
   const trpc = useTRPC();
   const tCommon = useTranslations("common");
   const appLang: AppLang = normalizeToSupported(useLocale());
@@ -79,16 +77,6 @@ export default function HomeView({ homepageCategories }: Props) {
   const hasTenant = !!session?.user?.tenants?.length;
   const ctaLoading = sessionLoading || profileQ.isLoading;
 
-  const handleViewResults = useCallback(() => {
-    router.push(
-      buildHomeMarketplaceHref({
-        lang: appLang,
-        filters,
-        isSignedIn: !!session?.user,
-      })
-    );
-  }, [appLang, filters, router, session?.user]);
-
   return (
     <>
       <div className="sticky top-16 z-40 hidden border-b border-black/10 bg-[#F4F4F0] lg:block">
@@ -115,7 +103,6 @@ export default function HomeView({ homepageCategories }: Props) {
             hasViewerCoords={hasViewerCoords}
             filters={filters}
             onFiltersChange={setFilters}
-            onViewResultsAction={handleViewResults}
           />
 
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_minmax(360px,520px)] gap-10 items-start">

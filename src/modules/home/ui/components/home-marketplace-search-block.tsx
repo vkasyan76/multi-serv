@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PriceFilter } from "@/modules/tenants/ui/components/price-filter";
 import { DistanceFilter } from "@/modules/tenants/ui/components/distance-filter";
+import { DEFAULT_DISTANCE_OPTION } from "@/modules/tenants/distance-options";
 import { HomeCategoryPickerDialog } from "./home-category-picker-dialog";
 import type { HomepageCategoriesOutput } from "@/modules/categories/types";
 import type { HomeMarketplaceFilters } from "../home-marketplace-filters";
@@ -28,7 +29,6 @@ type Props = {
   hasViewerCoords: boolean;
   filters: HomeMarketplaceFilters;
   onFiltersChange: Dispatch<SetStateAction<HomeMarketplaceFilters>>;
-  onViewResultsAction?: () => void;
 };
 
 export function HomeMarketplaceSearchBlock({
@@ -37,9 +37,7 @@ export function HomeMarketplaceSearchBlock({
   hasViewerCoords,
   filters,
   onFiltersChange,
-  onViewResultsAction,
 }: Props) {
-  const tCommon = useTranslations("common");
   const tMarketplace = useTranslations("marketplace");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
@@ -76,7 +74,7 @@ export function HomeMarketplaceSearchBlock({
   const handleDistanceToggle = (enabled: boolean) => {
     updateFilters({
       distanceFilterEnabled: enabled,
-      maxDistance: enabled ? (filters.maxDistance ?? 50) : null,
+      maxDistance: enabled ? (filters.maxDistance ?? DEFAULT_DISTANCE_OPTION) : null,
     });
   };
 
@@ -177,19 +175,31 @@ export function HomeMarketplaceSearchBlock({
               />
             </div>
 
-            <button
-              type="button"
-              className="flex h-14 items-center justify-between gap-3 border-b border-black/10 px-4 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60"
-              onClick={() => setIsCategoryPickerOpen(true)}
-            >
-              <span className="truncate font-medium">{selectedCategoryLabel}</span>
-              <ChevronDownIcon className="size-4 text-muted-foreground" />
-            </button>
+            {/* Mobile keeps the two compact taxonomy filters together so we do
+            not duplicate work type lower in the expanded filter stack. */}
+            <div className="grid grid-cols-2 gap-2 border-b border-black/10 px-4 py-3">
+              <button
+                type="button"
+                className="flex h-11 min-w-0 items-center justify-between gap-2 rounded-full border border-black/10 bg-white px-4 text-left text-sm font-medium shadow-none disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => setIsCategoryPickerOpen(true)}
+              >
+                <span className="truncate">{selectedCategoryLabel}</span>
+                <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+              </button>
+
+              <HomeWorkTypeSelect
+                value={filters.workType}
+                onChange={(workType) => updateFilters({ workType })}
+                className="min-w-0"
+                triggerClassName="h-11 min-w-0"
+                compactLabel
+              />
+            </div>
 
             <Button
               type="button"
               variant="ghost"
-              className="h-14 rounded-none px-5 lg:hidden"
+              className="h-14 w-full justify-center rounded-none px-5 lg:hidden"
               onClick={() => setShowAdvanced((current) => !current)}
             >
               <SlidersHorizontalIcon className="size-4" />
@@ -222,30 +232,6 @@ export function HomeMarketplaceSearchBlock({
                   isSignedIn={isSignedIn}
                 />
               </div>
-
-              <div className="space-y-3">
-                <p className="text-sm font-medium">
-                  {tMarketplace("filters.type_of_work")}
-                </p>
-                <HomeWorkTypeSelect
-                  value={filters.workType}
-                  onChange={(workType) => updateFilters({ workType })}
-                  className="min-w-0"
-                />
-              </div>
-
-              {onViewResultsAction && (
-                <div className="pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full rounded-full"
-                    onClick={onViewResultsAction}
-                  >
-                    {tCommon("buttons.view_all")}
-                  </Button>
-                </div>
-              )}
             </div>
           )}
         </div>

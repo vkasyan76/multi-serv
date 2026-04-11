@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getCategoryIcon } from "@/modules/categories/ui/category-icons";
 import { cn } from "@/lib/utils";
 
 type CategoryOption = {
@@ -118,22 +119,31 @@ export function HomeCategoryPickerDialog({
                 <CommandSeparator />
 
                 <CommandGroup>
-                  {orderedOptions.map((option) => (
-                    <CommandItem
-                      key={option.value}
-                      value={`${option.label} ${option.workType ?? ""}`}
-                      onSelect={() => handleSelect(option.value)}
-                      className="flex items-center justify-between rounded-xl px-4 py-3"
-                    >
-                      <span>{option.label}</span>
-                      <CheckIcon
-                        className={cn(
-                          "size-4 text-primary",
-                          value === option.value ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
+                  {orderedOptions.map((option) => {
+                    const Icon = getCategoryIcon(option.value);
+
+                    return (
+                      <CommandItem
+                        key={option.value}
+                        value={`${option.label} ${option.workType ?? ""}`}
+                        onSelect={() => handleSelect(option.value)}
+                        className="flex items-center justify-between rounded-xl px-4 py-3"
+                      >
+                        <span className="flex min-w-0 items-center gap-3">
+                          {Icon ? (
+                            <Icon className="size-4 shrink-0 text-muted-foreground" />
+                          ) : null}
+                          <span className="min-w-0 truncate">{option.label}</span>
+                        </span>
+                        <CheckIcon
+                          className={cn(
+                            "size-4 text-primary",
+                            value === option.value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                    );
+                  })}
                 </CommandGroup>
               </>
             )}

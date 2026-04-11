@@ -17,10 +17,28 @@ type Props = {
   value: WorkType;
   onChange: (value: WorkType) => void;
   className?: string;
+  triggerClassName?: string;
+  compactLabel?: boolean;
 };
 
-export function HomeWorkTypeSelect({ value, onChange, className }: Props) {
+export function HomeWorkTypeSelect({
+  value,
+  onChange,
+  className,
+  triggerClassName,
+  compactLabel = false,
+}: Props) {
   const tMarketplace = useTranslations("marketplace");
+  const selectedLabel =
+    value === "manual"
+      ? tMarketplace("work_type.manual")
+      : value === "consulting"
+        ? tMarketplace("work_type.consulting")
+        : value === "digital"
+          ? tMarketplace("work_type.digital")
+          : compactLabel
+            ? tMarketplace("filters.type_of_work_compact")
+            : tMarketplace("filters.any_type_of_work");
 
   return (
     <div className={cn("w-full min-w-0", className)}>
@@ -31,8 +49,8 @@ export function HomeWorkTypeSelect({ value, onChange, className }: Props) {
         }
       >
         {/* Use the shared homepage pill shell while keeping real Select semantics. */}
-        <SelectTrigger size="pill">
-          <SelectValue />
+        <SelectTrigger size="pill" className={triggerClassName}>
+          <SelectValue>{selectedLabel}</SelectValue>
         </SelectTrigger>
         <SelectContent align="end">
           <SelectItem value="any">

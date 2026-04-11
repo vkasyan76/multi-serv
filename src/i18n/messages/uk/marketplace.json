@@ -6,6 +6,7 @@
     "max_hourly_rate_compact": "Макс. годинна ставка",
     "location_distance": "Локація та відстань",
     "type_of_work": "Тип роботи",
+    "type_of_work_compact": "Тип роботи",
     "service_delivery": "Спосіб надання послуги",
     "category": "Категорія",
     "all_categories": "Усі категорії",

@@ -81,7 +81,9 @@ export const Footer = () => {
         {/* Legal / Preferences */}
         <nav className="flex items-center gap-4 text-gray-600 text-sm">
           <Link href={href("/legal/terms-of-use")} className="hover:text-black transition-colors">
-            {t("footer.terms")}
+            {/* Match navbar wording on desktop, keep the shorter footer label on mobile. */}
+            <span className="sm:hidden">{t("footer.terms")}</span>
+            <span className="hidden sm:inline">{t("nav.terms_of_use")}</span>
           </Link>
 
           <Link href={href("/legal/impressum")} className="hover:text-black transition-colors">

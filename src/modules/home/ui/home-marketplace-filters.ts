@@ -1,3 +1,5 @@
+import { normalizeDistanceOption } from "@/modules/tenants/distance-options";
+
 export type HomeMarketplaceFilters = {
   search: string;
   category: string;
@@ -33,6 +35,7 @@ export function buildHomeMarketplaceQueryInput({
     typeof viewer?.lat === "number" && typeof viewer?.lng === "number";
   const canApplyDistanceFilter =
     isSignedIn && hasViewerCoords && filters.distanceFilterEnabled;
+  const normalizedDistance = normalizeDistanceOption(filters.maxDistance);
 
   // Match the tenants.getMany schema bounds here so future callers cannot
   // accidentally build an out-of-range homepage preview query.
@@ -49,7 +52,9 @@ export function buildHomeMarketplaceQueryInput({
     categories: null,
     subcategory: null,
     distanceFilterEnabled: canApplyDistanceFilter,
-    maxDistance: canApplyDistanceFilter ? filters.maxDistance : null,
+    // Normalize legacy non-preset values before querying so old URLs cannot
+    // show one distance in the UI and apply a different one in the preview.
+    maxDistance: canApplyDistanceFilter ? normalizedDistance : null,
     userLat: viewer?.lat ?? null,
     userLng: viewer?.lng ?? null,
     limit: safeLimit,

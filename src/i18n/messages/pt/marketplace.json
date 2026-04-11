@@ -6,6 +6,7 @@
     "max_hourly_rate_compact": "Preço máximo por hora",
     "location_distance": "Localização e distância",
     "type_of_work": "Tipo de trabalho",
+    "type_of_work_compact": "Tipo de trabalho",
     "service_delivery": "Forma de prestação",
     "category": "Categoria",
     "all_categories": "Todas as categorias",

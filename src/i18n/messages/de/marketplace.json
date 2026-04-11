@@ -6,6 +6,7 @@
     "max_hourly_rate_compact": "Maximaler Stundensatz",
     "location_distance": "Standort & Entfernung",
     "type_of_work": "Arbeitsart",
+    "type_of_work_compact": "Arbeitsart",
     "service_delivery": "Art der Leistungserbringung",
     "category": "Kategorie",
     "all_categories": "Alle Kategorien",

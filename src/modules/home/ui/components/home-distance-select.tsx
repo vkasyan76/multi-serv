@@ -16,6 +16,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DISTANCE_OPTIONS,
+  normalizeDistanceOption,
+} from "@/modules/tenants/distance-options";
 import { HOME_FILTER_PILL_CLASSNAME } from "./home-filter-pill";
 import { cn } from "@/lib/utils";
 
@@ -28,8 +32,6 @@ type Props = {
   className?: string;
 };
 
-const DISTANCE_OPTIONS = [5, 10, 25, 50, 100, 150, 200, 300] as const;
-
 export function HomeDistanceSelect({
   isSignedIn,
   hasViewerCoords,
@@ -39,10 +41,11 @@ export function HomeDistanceSelect({
   className,
 }: Props) {
   const tMarketplace = useTranslations("marketplace");
+  const normalizedDistance = normalizeDistanceOption(maxDistance);
 
   const value =
-    distanceFilterEnabled && typeof maxDistance === "number" && maxDistance > 0
-      ? String(maxDistance)
+    distanceFilterEnabled && normalizedDistance !== null
+      ? String(normalizedDistance)
       : "any";
 
   const handleValueChange = (nextValue: string) => {
