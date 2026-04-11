@@ -3,6 +3,7 @@
     "title": "Filtros",
     "clear": "Restablecer",
     "max_hourly_rate": "Tarifa máxima por hora",
+    "max_hourly_rate_compact": "Tarifa máxima por hora",
     "location_distance": "Ubicación y distancia",
     "type_of_work": "Tipo de trabajo",
     "service_delivery": "Modalidad del servicio",

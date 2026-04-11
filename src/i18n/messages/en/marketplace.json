@@ -3,6 +3,7 @@
     "title": "Filters",
     "clear": "Clear",
     "max_hourly_rate": "Max Hourly Rate",
+    "max_hourly_rate_compact": "Max Hourly Rate",
     "location_distance": "Location & Distance",
     "type_of_work": "Type of work",
     "service_delivery": "Service Delivery",

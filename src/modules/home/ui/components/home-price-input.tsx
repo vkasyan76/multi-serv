@@ -13,6 +13,7 @@ import {
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { formatCurrency } from "@/lib/i18n/locale";
 import { PriceFilter } from "@/modules/tenants/ui/components/price-filter";
+import { HOME_FILTER_PILL_CLASSNAME } from "./home-filter-pill";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -31,7 +32,9 @@ export function HomePriceInput({ value, onChange, className }: Props) {
 
   const triggerLabel = useMemo(() => {
     if (!hasValidValue) {
-      return tMarketplace("filters.max_hourly_rate");
+      // The collapsed homepage pill needs a shorter locale-specific label than
+      // the full field title so narrow locales do not get truncated.
+      return tMarketplace("filters.max_hourly_rate_compact");
     }
 
     return tMarketplace("filters.max_hourly_rate_summary", {
@@ -44,15 +47,12 @@ export function HomePriceInput({ value, onChange, className }: Props) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={cn(
-            "flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-full border border-black/10 bg-white px-4 py-0 text-left text-sm leading-none font-medium shadow-none",
-            className
-          )}
+          className={cn(HOME_FILTER_PILL_CLASSNAME, className)}
           aria-label={tMarketplace("filters.max_hourly_rate")}
         >
           {/* Match the other homepage filters: show the filter name when empty,
           then switch the collapsed pill to a localized selected-value summary. */}
-          <span className="truncate">{triggerLabel}</span>
+          <span className="truncate leading-tight">{triggerLabel}</span>
           <ChevronDownIcon className="size-4 text-muted-foreground" />
         </button>
       </PopoverTrigger>

@@ -3,6 +3,7 @@
     "title": "Фільтри",
     "clear": "Очистити",
     "max_hourly_rate": "Максимальна погодинна ставка",
+    "max_hourly_rate_compact": "Макс. годинна ставка",
     "location_distance": "Локація та відстань",
     "type_of_work": "Тип роботи",
     "service_delivery": "Спосіб надання послуги",

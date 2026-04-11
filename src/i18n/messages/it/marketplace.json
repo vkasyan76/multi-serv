@@ -3,6 +3,7 @@
     "title": "Filtri",
     "clear": "Reimposta",
     "max_hourly_rate": "Tariffa oraria massima",
+    "max_hourly_rate_compact": "Tariffa oraria massima",
     "location_distance": "Posizione e distanza",
     "type_of_work": "Tipo di lavoro",
     "service_delivery": "Modalità del servizio",

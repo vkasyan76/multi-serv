@@ -3,6 +3,7 @@
     "title": "Filtros",
     "clear": "Limpar",
     "max_hourly_rate": "Preço máximo por hora",
+    "max_hourly_rate_compact": "Preço máximo por hora",
     "location_distance": "Localização e distância",
     "type_of_work": "Tipo de trabalho",
     "service_delivery": "Forma de prestação",

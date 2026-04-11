@@ -3,6 +3,7 @@
     "title": "Filtre",
     "clear": "Resetează",
     "max_hourly_rate": "Tarif orar maxim",
+    "max_hourly_rate_compact": "Tarif orar maxim",
     "location_distance": "Locație și distanță",
     "type_of_work": "Tip de muncă",
     "service_delivery": "Mod de prestare",

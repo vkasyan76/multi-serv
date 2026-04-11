@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { HOME_FILTER_PILL_CLASSNAME } from "./home-filter-pill";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -71,8 +72,10 @@ export function HomeDistanceSelect({
             >
               {/* Keep this as a real button so keyboard users can still focus
               the gated state and read why distance isn't available yet. */}
-              <span className="flex h-12 w-full min-w-0 items-center justify-between rounded-full border border-black/10 bg-white px-4 py-0 text-sm leading-none font-medium shadow-none opacity-60">
-                <span>{tMarketplace("filters.location_distance")}</span>
+              <span className={cn(HOME_FILTER_PILL_CLASSNAME, "opacity-60")}>
+                <span className="leading-tight">
+                  {tMarketplace("filters.location_distance")}
+                </span>
                 <ChevronDownIcon className="size-4 text-muted-foreground" />
               </span>
             </button>
@@ -90,7 +93,8 @@ export function HomeDistanceSelect({
       <Select value={value} onValueChange={handleValueChange}>
         {/* Match the homepage pill buttons: the shared select trigger keeps its
         behavior, but the trigger chrome must use the same box model here. */}
-        <SelectTrigger className="h-12 w-full min-w-0 rounded-full border-black/10 bg-white px-4 py-0 text-sm leading-none font-medium shadow-none">
+        {/* Use the shared homepage pill shell while keeping real Select semantics. */}
+        <SelectTrigger size="pill">
           <SelectValue />
         </SelectTrigger>
         <SelectContent align="end">

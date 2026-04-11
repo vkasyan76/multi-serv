@@ -30,9 +30,8 @@ export function HomeWorkTypeSelect({ value, onChange, className }: Props) {
           onChange(nextValue === "any" ? "" : (nextValue as WorkType))
         }
       >
-        {/* Match the homepage filter-row pills so the select-based control no
-        longer looks shorter than the custom button-based triggers beside it. */}
-        <SelectTrigger className="h-12 w-full min-w-0 rounded-full border-black/10 bg-white px-4 py-0 text-sm leading-none font-medium shadow-none">
+        {/* Use the shared homepage pill shell while keeping real Select semantics. */}
+        <SelectTrigger size="pill">
           <SelectValue />
         </SelectTrigger>
         <SelectContent align="end">

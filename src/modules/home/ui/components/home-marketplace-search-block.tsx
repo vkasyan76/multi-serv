@@ -17,6 +17,7 @@ import { DistanceFilter } from "@/modules/tenants/ui/components/distance-filter"
 import { HomeCategoryPickerDialog } from "./home-category-picker-dialog";
 import type { HomepageCategoriesOutput } from "@/modules/categories/types";
 import type { HomeMarketplaceFilters } from "../home-marketplace-filters";
+import { HOME_FILTER_PILL_CLASSNAME } from "./home-filter-pill";
 import { HomeDistanceSelect } from "./home-distance-select";
 import { HomePriceInput } from "./home-price-input";
 import { HomeWorkTypeSelect } from "./home-work-type-select";
@@ -128,10 +129,12 @@ export function HomeMarketplaceSearchBlock({
 
               <button
                 type="button"
-                className="flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-full border border-black/10 bg-white px-4 py-0 text-left text-sm leading-none font-medium shadow-none disabled:cursor-not-allowed disabled:opacity-60"
+                className={`${HOME_FILTER_PILL_CLASSNAME} disabled:cursor-not-allowed disabled:opacity-60`}
                 onClick={() => setIsCategoryPickerOpen(true)}
               >
-                <span className="truncate">{selectedCategoryLabel}</span>
+                {/* Keep the shell compact; only relax the label line-height so
+                descenders like g/p/y do not get clipped. */}
+                <span className="truncate leading-tight">{selectedCategoryLabel}</span>
                 <ChevronDownIcon className="size-4 text-muted-foreground" />
               </button>
 

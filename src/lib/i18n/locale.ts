@@ -62,12 +62,16 @@ export function getCurrencyInputConfig(
     maximumFractionDigits: 2,
   });
 
-  // Use a grouped sample so locale-specific group and decimal parts are both emitted.
-  const parts = formatter.formatToParts(1000.1);
+  // Some locales (for example Polish) do not group 4-digit numbers, so use a
+  // larger sample and never invent a grouping character that the locale did not emit.
+  const parts = formatter.formatToParts(1000000.1);
   const decimalSeparator =
     parts.find((part) => part.type === "decimal")?.value ?? ".";
+  const emittedGroupSeparator = parts.find((part) => part.type === "group")?.value;
   const thousandSeparator =
-    parts.find((part) => part.type === "group")?.value ?? ",";
+    emittedGroupSeparator && emittedGroupSeparator !== decimalSeparator
+      ? emittedGroupSeparator
+      : undefined;
 
   const numericTypes = new Set([
     "integer",
