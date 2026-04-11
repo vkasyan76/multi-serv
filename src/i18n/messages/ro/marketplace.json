@@ -46,6 +46,7 @@
     "empty_title": "Nu au fost găsiți furnizori.",
     "empty_body": "Încearcă să ajustezi filtrele sau revino mai târziu.",
     "load_more": "Încarcă mai mult",
+    "loading_providers": "Se încarcă furnizorii",
     "loading_more": "Se încarcă...",
     "results_summary": "Se afișează {shown} furnizori din {total}"
   },

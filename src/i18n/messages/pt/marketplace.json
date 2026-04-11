@@ -46,6 +46,7 @@
     "empty_title": "Nenhum prestador encontrado.",
     "empty_body": "Tente ajustar os filtros ou volte mais tarde.",
     "load_more": "Carregar mais",
+    "loading_providers": "A carregar prestadores",
     "loading_more": "A carregar...",
     "results_summary": "A mostrar {shown} prestadores de {total}"
   },

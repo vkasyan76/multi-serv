@@ -46,6 +46,7 @@
     "empty_title": "Nessun professionista trovato.",
     "empty_body": "Prova a modificare i filtri o torna più tardi.",
     "load_more": "Carica altro",
+    "loading_providers": "Caricamento dei professionisti",
     "loading_more": "Caricamento...",
     "results_summary": "Mostrati {shown} professionisti su {total}"
   },

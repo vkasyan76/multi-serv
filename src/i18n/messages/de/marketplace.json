@@ -46,6 +46,7 @@
     "empty_title": "Keine Anbieter gefunden.",
     "empty_body": "Passen Sie Ihre Filter an oder versuchen Sie es später erneut.",
     "load_more": "Mehr laden",
+    "loading_providers": "Anbieter werden geladen",
     "loading_more": "Wird geladen...",
     "results_summary": "{shown} von {total} Anbietern werden angezeigt"
   },

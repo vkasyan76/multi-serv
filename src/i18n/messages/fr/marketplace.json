@@ -11,7 +11,7 @@
     "category": "Catégorie",
     "all_categories": "Toutes les catégories",
     "max_hourly_rate_placeholder": "Prix max/h",
-    "max_hourly_rate_summary": "Jusqu'a {amount}/h",
+    "max_hourly_rate_summary": "Jusqu'à {amount}/h",
     "any_type_of_work": "Tout type de travail",
     "service_delivery_all": "Tous les modes"
   },
@@ -46,6 +46,7 @@
     "empty_title": "Aucun prestataire trouvé.",
     "empty_body": "Essayez d'ajuster vos filtres ou revenez plus tard.",
     "load_more": "Charger plus",
+    "loading_providers": "Chargement des prestataires",
     "loading_more": "Chargement...",
     "results_summary": "{shown} prestataires affichés sur {total}"
   },

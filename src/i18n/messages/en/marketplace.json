@@ -46,6 +46,7 @@
     "empty_title": "No providers found.",
     "empty_body": "Try adjusting your filters or check back later.",
     "load_more": "Load More",
+    "loading_providers": "Loading providers",
     "loading_more": "Loading...",
     "results_summary": "Showing {shown} providers out of {total}"
   },

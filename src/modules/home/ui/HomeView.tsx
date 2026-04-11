@@ -15,7 +15,6 @@ import { HomeMarketplaceSearchBlock } from "./components/home-marketplace-search
 import { HomeBrowseCategories } from "./components/home-browse-categories";
 
 import { type AppLang, normalizeToSupported } from "@/lib/i18n/app-lang";
-import { buildHomeMarketplaceHref } from "./build-home-marketplace-href";
 import {
   DEFAULT_HOME_MARKETPLACE_FILTERS,
   buildHomeMarketplaceQueryInput,
@@ -41,8 +40,10 @@ export default function HomeView({ homepageCategories }: Props) {
     ...trpc.auth.getUserProfile.queryOptions(),
     enabled: !!session?.user,
   });
+  const isAuthed = !!session?.user;
 
   const viewer =
+    isAuthed &&
     typeof profileQ.data?.coordinates?.lat === "number" &&
     typeof profileQ.data?.coordinates?.lng === "number"
       ? {
@@ -72,8 +73,7 @@ export default function HomeView({ homepageCategories }: Props) {
     [previewFilters, session?.user, viewer]
   );
 
-  const isAuthed = !!session?.user;
-  const isOnboarded = profileQ.data?.onboardingCompleted === true;
+  const isOnboarded = isAuthed && profileQ.data?.onboardingCompleted === true;
   const hasTenant = !!session?.user?.tenants?.length;
   const ctaLoading = sessionLoading || profileQ.isLoading;
 

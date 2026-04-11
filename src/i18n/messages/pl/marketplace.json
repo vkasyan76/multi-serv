@@ -46,6 +46,7 @@
     "empty_title": "Nie znaleziono usługodawców.",
     "empty_body": "Spróbuj dostosować filtry lub wróć później.",
     "load_more": "Załaduj więcej",
+    "loading_providers": "Ładowanie usługodawców",
     "loading_more": "Ładowanie...",
     "results_summary": "Wyświetlanie {shown} usługodawców z {total}"
   },

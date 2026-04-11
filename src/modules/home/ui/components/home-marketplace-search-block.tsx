@@ -64,6 +64,31 @@ export function HomeMarketplaceSearchBlock({
   const updateFilters = (patch: Partial<HomeMarketplaceFilters>) =>
     onFiltersChange((prev) => ({ ...prev, ...patch }));
 
+  const keepCategoryForWorkType = (
+    nextWorkType: HomeMarketplaceFilters["workType"],
+    currentCategory: string
+  ) =>
+    !currentCategory ||
+    categoryOptions.some(
+      (option) =>
+        option.value === currentCategory &&
+        (!nextWorkType || option.workType === nextWorkType)
+    );
+
+  const handleWorkTypeChange = (
+    workType: HomeMarketplaceFilters["workType"]
+  ) => {
+    // Derive from prev so a workType change cannot reuse an older category from
+    // the render closure if state shifts before this update commits.
+    onFiltersChange((prev) => ({
+      ...prev,
+      workType,
+      category: keepCategoryForWorkType(workType, prev.category)
+        ? prev.category
+        : "",
+    }));
+  };
+
   const handleDistanceChange = (value: number | null) => {
     updateFilters({
       distanceFilterEnabled: value != null && value > 0,
@@ -156,7 +181,7 @@ export function HomeMarketplaceSearchBlock({
 
               <HomeWorkTypeSelect
                 value={filters.workType}
-                onChange={(workType) => updateFilters({ workType })}
+                onChange={handleWorkTypeChange}
               />
             </div>
           </div>
@@ -189,7 +214,7 @@ export function HomeMarketplaceSearchBlock({
 
               <HomeWorkTypeSelect
                 value={filters.workType}
-                onChange={(workType) => updateFilters({ workType })}
+                onChange={handleWorkTypeChange}
                 className="min-w-0"
                 triggerClassName="h-11 min-w-0"
                 compactLabel

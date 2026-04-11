@@ -58,6 +58,17 @@ Required env groups are defined in `README.md`:
 - Most domain logic is feature-first under `src/modules/<domain>/{server,ui}`.
 - Payload collections are admin-restricted by default; app logic often uses server-side `overrideAccess: true` with explicit guards.
 - Tenant isolation is enforced in server procedures through tenant membership checks.
+- Homepage first-render hydration currently relies on the same auth/profile-aware
+  inputs on both server and client.
+  - `src/app/(app)/[lang]/(home)/page.tsx` intentionally fetches
+    `auth.session` + `auth.getUserProfile` before homepage prefetch so the
+    server can build the same signed-in/coords-aware homepage tenants query that
+    `src/modules/home/ui/HomeView.tsx` builds on first client render.
+  - Do not remove those auth/profile queries from the dehydrated homepage cache
+    as a "privacy/payload cleanup" unless you also replace their first-render
+    role with minimal explicit server-derived props.
+  - Blind removal can reintroduce homepage server/client mismatch, orbit preview
+    divergence, CTA flicker, and temporary anonymous/no-coords client renders.
 
 ## Categories and Filter Logic
 

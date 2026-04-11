@@ -38,12 +38,12 @@ const clamp = (n: number, min: number, max: number) =>
 const orbitShellClassName =
   "relative w-full max-w-[720px] aspect-square min-h-[280px]";
 
-function OrbitViewportSkeleton() {
+function OrbitViewportSkeleton({ loadingLabel }: { loadingLabel: string }) {
   return (
     <div
       role="status"
       aria-busy="true"
-      aria-label="Loading providers"
+      aria-label={loadingLabel}
       className="relative h-full w-full"
     >
       <div className="absolute inset-0 rounded-full border border-border/70 shadow-sm shimmer" />
@@ -292,7 +292,9 @@ export function OrbitAndCarousel({
           )}
 
           {showViewportSkeleton ? (
-            <OrbitViewportSkeleton />
+            <OrbitViewportSkeleton
+              loadingLabel={tMarketplace("list.loading_providers")}
+            />
           ) : showError ? (
             <div className="flex h-full w-full items-center justify-center rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
               <div>

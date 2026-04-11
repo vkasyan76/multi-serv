@@ -46,6 +46,7 @@
     "empty_title": "No se encontraron proveedores.",
     "empty_body": "Prueba a ajustar los filtros o vuelve más tarde.",
     "load_more": "Cargar más",
+    "loading_providers": "Cargando proveedores",
     "loading_more": "Cargando...",
     "results_summary": "Mostrando {shown} proveedores de {total}"
   },
