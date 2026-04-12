@@ -14,7 +14,12 @@ import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 
 import { NavbarSidebar } from "./navbar-sidebar";
-import { LayoutGridIcon, MenuIcon } from "lucide-react";
+import {
+  LayoutGridIcon,
+  MenuIcon,
+  MessageCircleIcon,
+  SearchIcon,
+} from "lucide-react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { CategoriesSidebar } from "./search-filters/categories-sidebar";
@@ -97,12 +102,6 @@ export const Navbar = () => {
     { href: href("/legal/impressum"), children: t("nav.impressum") },
   ];
 
-  const desktopNavbarItems = [
-    { href: href("/"), children: t("nav.home") },
-    { href: href("/legal/terms-of-use"), children: t("nav.terms_of_use") },
-    { href: href("/legal/impressum"), children: t("nav.impressum") },
-  ];
-
   // Clerk decides whether auth chrome renders at all; session data only picks
   // the role/tenant-specific CTA once the signed-in user is known to the app.
   const user = isLoaded && isSignedIn ? session.data?.user : undefined;
@@ -126,9 +125,22 @@ export const Navbar = () => {
   const dashboardLabel = hasTenant
     ? t("nav.dashboard_cta")
     : t("nav.start_business_cta");
+  const ordersHref = withLocalePrefix("/orders", lang);
 
   // Only disable when session says user has a tenant but getMine hasn't returned it yet.
   const isDashLoading = hasTenant && !myTenant && isMineLoading;
+
+  // Keep the old Orders CTA rule intact while moving it into the desktop
+  // navbar, so it still appears only for users who actually have orders.
+  const hasOrdersQ = useQuery({
+    ...trpc.orders.hasAnyMineSlotLifecycle.queryOptions(),
+    enabled: isSignedIn && !!session.data?.user?.id,
+    staleTime: 30_000,
+    gcTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const showOrders = isSignedIn && !!hasOrdersQ.data?.hasAny;
 
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -163,20 +175,41 @@ export const Navbar = () => {
         fallbackToFullTaxonomy={false}
       />
 
-      <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center gap-2 overflow-hidden px-4">
-        {desktopNavbarItems.map((item) => (
-          <NavbarItem
-            key={item.href}
-            href={item.href}
-            isActive={pathname === item.href}
-          >
-            {item.children}
-          </NavbarItem>
-        ))}
+      <div className="hidden lg:flex flex-1 min-w-0 items-center px-4">
+        {/* Keep the desktop search centered on tighter widths, then shift it
+        slightly left on wider screens so the utility cluster has more air. */}
+        <div className="w-full min-w-0 max-w-[520px] lg:mx-auto xl:mx-0 xl:ml-4 2xl:ml-6">
+          <div className="flex h-11 w-full min-w-0 items-center gap-3 rounded-full border border-black/10 bg-[#F4F4F0] px-4 text-base text-neutral-500">
+            <SearchIcon className="size-4 shrink-0" />
+            <span className="truncate">
+              {t("nav.global_search_placeholder")}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Right Section - Clerk Auth Buttons */}
       <div className="hidden lg:flex gap-2 items-center pr-6 shrink-0">
+        <NavbarItem
+          href={href("/legal/terms-of-use")}
+          isActive={pathname === href("/legal/terms-of-use")}
+        >
+          {t("nav.terms_of_use")}
+        </NavbarItem>
+        {showOrders ? (
+          <NavbarItem href={ordersHref} isActive={pathname === ordersHref}>
+            {t("nav.my_orders")}
+          </NavbarItem>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          disabled
+          className="bg-transparent rounded-full border-transparent px-3.5 text-lg opacity-100"
+        >
+          <MessageCircleIcon className="size-4" />
+          <span>{t("nav.chat")}</span>
+        </Button>
         {/* Phase 6: keep switcher near auth/profile actions (desktop only). */}
         <LanguageSwitcher
           className="w-auto min-w-0 rounded-full px-3.5 text-lg"

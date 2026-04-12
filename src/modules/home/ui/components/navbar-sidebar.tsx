@@ -78,8 +78,23 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
     href("/features"),
     href("/pricing"),
     href("/contact"),
+    // Footer already carries Impressum, so keep the mobile drawer focused on
+    // primary actions and the remaining legal entry point.
+    href("/legal/impressum"),
   ]);
   const mobileItems = items.filter((item) => !hiddenMobileHrefs.has(item.href));
+
+  // Keep the mobile Orders link behind the same backend-confirmed rule used
+  // elsewhere, so signed-in users only see it when they actually have orders.
+  const hasOrdersQ = useQuery({
+    ...trpc.orders.hasAnyMineSlotLifecycle.queryOptions(),
+    enabled: isSignedIn && !!session.data?.user?.id,
+    staleTime: 30_000,
+    gcTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const showOrders = isSignedIn && !!hasOrdersQ.data?.hasAny;
 
   // Get info for user's tenant:
   const { data: myTenant, isLoading: isMineLoading } = useQuery({
@@ -127,6 +142,22 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
               {item.children}
             </Link>
           ))}
+          {showOrders ? (
+            <Link
+              href={href("/orders")}
+              className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+              onClick={() => onOpenChange(false)}
+            >
+              {t("nav.my_orders")}
+            </Link>
+          ) : null}
+          <button
+            className="w-full text-left p-4 flex items-center text-base font-medium text-neutral-400"
+            type="button"
+            disabled
+          >
+            {t("nav.chat")}
+          </button>
           {/* Clerk Auth Buttons and User Profile / Dashboard Links */}
           <div className="border-t">
             {!isLoaded ? (

@@ -36,6 +36,7 @@ export function HomeMarketplaceDesktopFilterRow({
   onFiltersChange,
   compact = false,
 }: Props) {
+  const tCommon = useTranslations("common");
   const tMarketplace = useTranslations("marketplace");
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
 
@@ -90,7 +91,9 @@ export function HomeMarketplaceDesktopFilterRow({
             type="search"
             value={filters.search}
             onChange={(event) => updateFilters({ search: event.target.value })}
-            placeholder={tMarketplace("home_search.placeholder")}
+            // Desktop orbit search now mirrors the category-page provider search
+            // wording; mobile keeps the broader homepage copy for now.
+            placeholder={tCommon("home.search.placeholder")}
             className={cn(
               "rounded-full border-black/10 bg-white pl-11 shadow-none",
               searchHeight
