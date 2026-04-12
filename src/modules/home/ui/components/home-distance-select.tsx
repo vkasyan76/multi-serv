@@ -30,6 +30,7 @@ type Props = {
   maxDistance: number | null;
   onChange: (next: { enabled: boolean; maxDistance: number | null }) => void;
   className?: string;
+  triggerClassName?: string;
 };
 
 export function HomeDistanceSelect({
@@ -39,6 +40,7 @@ export function HomeDistanceSelect({
   maxDistance,
   onChange,
   className,
+  triggerClassName,
 }: Props) {
   const tMarketplace = useTranslations("marketplace");
   const normalizedDistance = normalizeDistanceOption(maxDistance);
@@ -75,7 +77,13 @@ export function HomeDistanceSelect({
             >
               {/* Keep this as a real button so keyboard users can still focus
               the gated state and read why distance isn't available yet. */}
-              <span className={cn(HOME_FILTER_PILL_CLASSNAME, "opacity-60")}>
+              <span
+                className={cn(
+                  HOME_FILTER_PILL_CLASSNAME,
+                  triggerClassName,
+                  "opacity-60"
+                )}
+              >
                 <span className="leading-tight">
                   {tMarketplace("filters.location_distance")}
                 </span>
@@ -97,7 +105,7 @@ export function HomeDistanceSelect({
         {/* Match the homepage pill buttons: the shared select trigger keeps its
         behavior, but the trigger chrome must use the same box model here. */}
         {/* Use the shared homepage pill shell while keeping real Select semantics. */}
-        <SelectTrigger size="pill">
+        <SelectTrigger size="pill" className={triggerClassName}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent align="end">

@@ -4,13 +4,17 @@ import {
   useEffect,
   useMemo,
   useState,
+  type Ref,
   type Dispatch,
   type SetStateAction,
 } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronDownIcon, SearchIcon, SlidersHorizontalIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  SearchIcon,
+  SlidersHorizontalIcon,
+} from "lucide-react";
 
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PriceFilter } from "@/modules/tenants/ui/components/price-filter";
 import { DistanceFilter } from "@/modules/tenants/ui/components/distance-filter";
@@ -18,10 +22,14 @@ import { DEFAULT_DISTANCE_OPTION } from "@/modules/tenants/distance-options";
 import { HomeCategoryPickerDialog } from "./home-category-picker-dialog";
 import type { HomepageCategoriesOutput } from "@/modules/categories/types";
 import type { HomeMarketplaceFilters } from "../home-marketplace-filters";
-import { HOME_FILTER_PILL_CLASSNAME } from "./home-filter-pill";
-import { HomeDistanceSelect } from "./home-distance-select";
-import { HomePriceInput } from "./home-price-input";
 import { HomeWorkTypeSelect } from "./home-work-type-select";
+import { HomeMarketplaceDesktopFilterRow } from "./home-marketplace-desktop-filter-row";
+import { Input } from "@/components/ui/input";
+import {
+  buildHomeCategoryOptions,
+  filterHomeCategoryOptions,
+  keepCategoryForWorkType as keepCategoryForWorkTypeOption,
+} from "./home-marketplace-filter-helpers";
 
 type Props = {
   categories: HomepageCategoriesOutput;
@@ -29,6 +37,7 @@ type Props = {
   hasViewerCoords: boolean;
   filters: HomeMarketplaceFilters;
   onFiltersChange: Dispatch<SetStateAction<HomeMarketplaceFilters>>;
+  desktopRowRef?: Ref<HTMLDivElement>;
 };
 
 export function HomeMarketplaceSearchBlock({
@@ -37,27 +46,18 @@ export function HomeMarketplaceSearchBlock({
   hasViewerCoords,
   filters,
   onFiltersChange,
+  desktopRowRef,
 }: Props) {
   const tMarketplace = useTranslations("marketplace");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
 
   const categoryOptions = useMemo(
-    () =>
-      categories.map((category) => ({
-        label: category.name,
-        value: category.slug,
-        workType: category.workType ?? null,
-      })),
+    () => buildHomeCategoryOptions(categories),
     [categories]
   );
   const filteredCategoryOptions = useMemo(
-    () =>
-      filters.workType
-        ? categoryOptions.filter(
-            (option) => option.workType === filters.workType
-          )
-        : categoryOptions,
+    () => filterHomeCategoryOptions(categoryOptions, filters.workType),
     [categoryOptions, filters.workType]
   );
 
@@ -68,11 +68,10 @@ export function HomeMarketplaceSearchBlock({
     nextWorkType: HomeMarketplaceFilters["workType"],
     currentCategory: string
   ) =>
-    !currentCategory ||
-    categoryOptions.some(
-      (option) =>
-        option.value === currentCategory &&
-        (!nextWorkType || option.workType === nextWorkType)
+    keepCategoryForWorkTypeOption(
+      categoryOptions,
+      nextWorkType,
+      currentCategory
     );
 
   const handleWorkTypeChange = (
@@ -130,58 +129,16 @@ export function HomeMarketplaceSearchBlock({
       <section className="mt-5 rounded-[28px] border border-black/10 bg-white p-2.5 shadow-[0_18px_40px_rgba(0,0,0,0.06)] md:p-3">
         <div className="space-y-2.5">
           <div className="hidden rounded-[22px] border border-black/10 bg-[#F4F4F0] p-1.5 lg:block">
-            {/* Desktop homepage controls stay compact and local-state driven so
-            the orbit preview gets more space without changing listing behavior.
-            Keep the four non-search controls equal-width, but leave enough room
-            for longer locale labels so the row stays readable across languages.
-            This intentionally rolls back the last over-tight compaction pass:
-            equal widths stay, but the columns are widened back to readable sizes. */}
-            <div className="grid gap-2.5 xl:grid-cols-[minmax(0,1.12fr)_215px_215px_215px_215px] lg:grid-cols-[minmax(0,1fr)_205px_205px_205px_205px]">
-              <div className="relative">
-                <SearchIcon className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-neutral-500" />
-                <Input
-                  type="search"
-                  value={filters.search}
-                  onChange={(event) =>
-                    updateFilters({ search: event.target.value })
-                  }
-                  placeholder={tMarketplace("home_search.placeholder")}
-                  className="h-12 rounded-full border-black/10 bg-white pl-11 shadow-none"
-                />
-              </div>
-
-              <button
-                type="button"
-                className={`${HOME_FILTER_PILL_CLASSNAME} disabled:cursor-not-allowed disabled:opacity-60`}
-                onClick={() => setIsCategoryPickerOpen(true)}
-              >
-                {/* Keep the shell compact; only relax the label line-height so
-                descenders like g/p/y do not get clipped. */}
-                <span className="truncate leading-tight">{selectedCategoryLabel}</span>
-                <ChevronDownIcon className="size-4 text-muted-foreground" />
-              </button>
-
-              <HomePriceInput
-                value={filters.maxPrice}
-                onChange={(maxPrice) => updateFilters({ maxPrice })}
-              />
-
-              <HomeDistanceSelect
+            <div ref={desktopRowRef}>
+              {/* Use the large desktop row as the only measurement anchor. The
+              compact dock is rendered outside this subtree so toggling it
+              cannot push the source block down. */}
+              <HomeMarketplaceDesktopFilterRow
+                categories={categories}
                 isSignedIn={isSignedIn}
                 hasViewerCoords={hasViewerCoords}
-                distanceFilterEnabled={filters.distanceFilterEnabled}
-                maxDistance={filters.maxDistance}
-                onChange={({ enabled, maxDistance }) =>
-                  updateFilters({
-                    distanceFilterEnabled: enabled,
-                    maxDistance,
-                  })
-                }
-              />
-
-              <HomeWorkTypeSelect
-                value={filters.workType}
-                onChange={handleWorkTypeChange}
+                filters={filters}
+                onFiltersChange={onFiltersChange}
               />
             </div>
           </div>

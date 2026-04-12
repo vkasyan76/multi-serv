@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
@@ -13,6 +13,7 @@ import { Poppins } from "next/font/google";
 import { OrbitAndCarousel } from "./OrbitAndCarousel";
 import { HomeMarketplaceSearchBlock } from "./components/home-marketplace-search-block";
 import { HomeBrowseCategories } from "./components/home-browse-categories";
+import { HomeMarketplaceDesktopFilterRow } from "./components/home-marketplace-desktop-filter-row";
 
 import { type AppLang, normalizeToSupported } from "@/lib/i18n/app-lang";
 import {
@@ -22,6 +23,10 @@ import {
 import { useDebouncedValue } from "./use-debounced-value";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
+const DESKTOP_DISCOVERY_DOCK_TOP = 116;
+const DESKTOP_DISCOVERY_DOCK_GAP = 10;
+const DESKTOP_DISCOVERY_DOCK_OFFSET =
+  DESKTOP_DISCOVERY_DOCK_TOP + DESKTOP_DISCOVERY_DOCK_GAP;
 
 type Props = {
   homepageCategories: HomepageCategoriesOutput;
@@ -32,6 +37,9 @@ export default function HomeView({ homepageCategories }: Props) {
   const tCommon = useTranslations("common");
   const appLang: AppLang = normalizeToSupported(useLocale());
   const [filters, setFilters] = useState(DEFAULT_HOME_MARKETPLACE_FILTERS);
+  const discoverySectionRef = useRef<HTMLElement | null>(null);
+  const filterAnchorRef = useRef<HTMLDivElement | null>(null);
+  const [showDesktopFilterDock, setShowDesktopFilterDock] = useState(false);
 
   const { data: session, isLoading: sessionLoading } = useQuery(
     trpc.auth.session.queryOptions()
@@ -77,6 +85,38 @@ export default function HomeView({ homepageCategories }: Props) {
   const hasTenant = !!session?.user?.tenants?.length;
   const ctaLoading = sessionLoading || profileQ.isLoading;
 
+  useEffect(() => {
+    const sectionEl = discoverySectionRef.current;
+    const anchorEl = filterAnchorRef.current;
+    if (!sectionEl || !anchorEl) return;
+
+    const updateDock = () => {
+      if (window.innerWidth < 1024) {
+        setShowDesktopFilterDock(false);
+        return;
+      }
+
+      const sectionRect = sectionEl.getBoundingClientRect();
+      const anchorRect = anchorEl.getBoundingClientRect();
+      const hasScrolledPastFilters =
+        anchorRect.top <= DESKTOP_DISCOVERY_DOCK_OFFSET;
+      const sectionStillActive =
+        sectionRect.bottom > DESKTOP_DISCOVERY_DOCK_OFFSET + 120;
+
+      setShowDesktopFilterDock(
+        hasScrolledPastFilters && sectionStillActive
+      );
+    };
+
+    updateDock();
+    window.addEventListener("scroll", updateDock, { passive: true });
+    window.addEventListener("resize", updateDock);
+    return () => {
+      window.removeEventListener("scroll", updateDock);
+      window.removeEventListener("resize", updateDock);
+    };
+  }, []);
+
   return (
     <>
       <div className="sticky top-16 z-40 hidden border-b border-black/10 bg-[#F4F4F0] lg:block">
@@ -86,6 +126,27 @@ export default function HomeView({ homepageCategories }: Props) {
           <HomeBrowseCategories data={homepageCategories} />
         </div>
       </div>
+
+      {showDesktopFilterDock ? (
+        <div
+          className="fixed left-0 right-0 z-30 hidden border-b border-black/10 bg-[#F4F4F0]/95 backdrop-blur lg:block"
+          style={{ top: DESKTOP_DISCOVERY_DOCK_OFFSET }}
+        >
+          <div className="container mx-auto px-4 pt-3 pb-2">
+            {/* Keep the dock out of normal flow so it appears without pushing
+            the discovery section. A small top gap keeps the compact pills from
+            feeling clipped against the sticky browse rail above. */}
+            <HomeMarketplaceDesktopFilterRow
+              compact
+              categories={homepageCategories}
+              isSignedIn={isAuthed}
+              hasViewerCoords={hasViewerCoords}
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <div className="overflow-x-hidden">
         <div className="container mx-auto px-4 pt-6 pb-4">
@@ -97,21 +158,29 @@ export default function HomeView({ homepageCategories }: Props) {
             line2FontClass={poppins.className}
           />
 
-          <HomeMarketplaceSearchBlock
-            categories={homepageCategories}
-            isSignedIn={isAuthed}
-            hasViewerCoords={hasViewerCoords}
-            filters={filters}
-            onFiltersChange={setFilters}
-          />
+          {/* Keep the homepage filters attached to the orbit/billboard block so
+          desktop browsing does not lose the controls as soon as the hero
+          scrolls out of view. */}
+          <section ref={discoverySectionRef} className="mt-6 space-y-6">
+            <div className="lg:rounded-[32px] lg:border lg:border-black/5 lg:bg-[#F4F4F0]/55 lg:p-4">
+              <HomeMarketplaceSearchBlock
+                categories={homepageCategories}
+                isSignedIn={isAuthed}
+                hasViewerCoords={hasViewerCoords}
+                filters={filters}
+                onFiltersChange={setFilters}
+                desktopRowRef={filterAnchorRef}
+              />
 
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_minmax(360px,520px)] gap-10 items-start">
-            <OrbitAndCarousel
-              queryInput={queryInput}
-              viewer={viewer}
-              appLang={appLang}
-            />
-          </div>
+              <div className="mt-6 grid grid-cols-1 gap-10 items-start lg:grid-cols-[1fr_minmax(360px,520px)]">
+                <OrbitAndCarousel
+                  queryInput={queryInput}
+                  viewer={viewer}
+                  appLang={appLang}
+                />
+              </div>
+            </div>
+          </section>
 
           <div id="cta-sentinel" className="h-px w-full" aria-hidden="true" />
           <CallToAction
