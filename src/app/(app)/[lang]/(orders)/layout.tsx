@@ -1,5 +1,5 @@
 import { Navbar } from "@/modules/home/ui/components/navbar";
-import { caller, getQueryClient, trpc } from "@/trpc/server";
+import { getQueryClient, trpc } from "@/trpc/server";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
 export const dynamic = "force-dynamic";
@@ -10,11 +10,13 @@ export default async function OrdersLayout({
   children: React.ReactNode;
 }) {
   const queryClient = getQueryClient();
-  const session = await caller.auth.session();
 
   // Orders should share the main site navbar so the My Orders entry feels like
   // part of the same shell, but stay task-focused by omitting the footer.
-  await queryClient.prefetchQuery(trpc.auth.session.queryOptions());
+  // Fetch session once here and hydrate that exact result into the navbar cache.
+  const session = await queryClient.fetchQuery(
+    trpc.auth.session.queryOptions(),
+  );
 
   if (session.user) {
     await Promise.all([

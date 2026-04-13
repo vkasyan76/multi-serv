@@ -49,6 +49,8 @@ export default function HomeView({ homepageCategories }: Props) {
     enabled: !!session?.user,
   });
   const isAuthed = !!session?.user;
+  const isProfileResolved =
+    !isAuthed || profileQ.isSuccess || profileQ.isError;
 
   const viewer =
     isAuthed &&
@@ -61,6 +63,28 @@ export default function HomeView({ homepageCategories }: Props) {
         }
       : undefined;
   const hasViewerCoords = !!viewer;
+
+  useEffect(() => {
+    if (!isProfileResolved) return;
+
+    const shouldClearDistance =
+      !isAuthed || (profileQ.isSuccess && !hasViewerCoords);
+
+    if (!shouldClearDistance) return;
+
+    // Keep homepage filter state aligned with auth/profile availability so an
+    // old distance choice cannot silently reactivate after logout or after a
+    // successful profile load that confirms no saved coordinates.
+    setFilters((prev) =>
+      prev.distanceFilterEnabled || prev.maxDistance !== null
+        ? {
+            ...prev,
+            distanceFilterEnabled: false,
+            maxDistance: null,
+          }
+        : prev
+    );
+  }, [hasViewerCoords, isAuthed, isProfileResolved, profileQ.isSuccess]);
 
   const debouncedSearch = useDebouncedValue(filters.search, 400);
   const previewFilters = useMemo(
