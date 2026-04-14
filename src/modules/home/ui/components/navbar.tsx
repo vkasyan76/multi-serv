@@ -125,7 +125,7 @@ export const Navbar = () => {
   const dashboardLabel = hasTenant
     ? t("nav.dashboard_cta")
     : t("nav.start_business_cta");
-  const ordersHref = withLocalePrefix("/orders", lang);
+  const ordersHref = href("/orders");
 
   // Only disable when session says user has a tenant but getMine hasn't returned it yet.
   const isDashLoading = hasTenant && !myTenant && isMineLoading;

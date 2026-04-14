@@ -31,6 +31,9 @@ export function resolveGlobalSearchHref(
       return query ? `${href}?${query}` : href;
     }
   }
+
+  const _exhaustive: never = input;
+  throw new Error(`Unhandled search kind: ${String(_exhaustive)}`);
 }
 
 // Stage 1 anchors the later navigation split here:

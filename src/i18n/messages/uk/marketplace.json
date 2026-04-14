@@ -10,7 +10,7 @@
     "service_delivery": "Спосіб надання послуги",
     "category": "Категорія",
     "all_categories": "Усі категорії",
-    "max_hourly_rate_placeholder": "Ціна макс/год",
+    "max_hourly_rate_placeholder": "Макс. ціна/год",
     "max_hourly_rate_summary": "До {amount}/год",
     "any_type_of_work": "Будь-який тип роботи",
     "service_delivery_all": "Усі режими"

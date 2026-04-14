@@ -15,8 +15,8 @@ export type SearchPublicKind =
 type SearchInternalBase = {
   label: string;
   normalizedLabel: string;
-  // Stage 1 keeps the scorer contract explicit: anything compared here should
-  // already be normalized before it reaches the ranking helper.
+  // Anything compared by the scorer must already be normalized before it
+  // reaches the ranking helper.
   normalizedKeywords?: string[];
   parentLabel?: string;
 };
@@ -51,8 +51,8 @@ export type SearchInternalSubcategoryItem = SearchInternalBase & {
 
 export type SearchInternalAliasItem = SearchInternalBase & {
   kind: "alias";
-  // Alias rows never leave the server as visible result types; they only carry
-  // canonical targets that later resolve into category/subcategory suggestions.
+  // Alias rows are internal only. They carry canonical targets that later
+  // resolve into visible category/subcategory suggestions.
   target: SearchSynonymTarget;
 };
 
@@ -62,6 +62,8 @@ export type SearchInternalItem =
   | SearchInternalSubcategoryItem
   | SearchInternalAliasItem;
 
+// Public suggestions are built in the active request locale and already carry
+// a final href for the navbar UI to navigate to.
 export type SearchSuggestion = {
   kind: SearchPublicKind;
   label: string;
