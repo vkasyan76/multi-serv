@@ -12,13 +12,13 @@ import { LanguageSwitcher } from "@/i18n/ui/language-switcher";
 
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
+import { NavbarGlobalSearch } from "@/modules/search/ui/navbar-global-search";
 
 import { NavbarSidebar } from "./navbar-sidebar";
 import {
   LayoutGridIcon,
   MenuIcon,
   MessageCircleIcon,
-  SearchIcon,
 } from "lucide-react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
@@ -179,12 +179,9 @@ export const Navbar = () => {
         {/* Keep the desktop search centered on tighter widths, then shift it
         slightly left on wider screens so the utility cluster has more air. */}
         <div className="w-full min-w-0 max-w-[520px] lg:mx-auto xl:mx-0 xl:ml-4 2xl:ml-6">
-          <div className="flex h-11 w-full min-w-0 items-center gap-3 rounded-full border border-black/10 bg-[#F4F4F0] px-4 text-base text-neutral-500">
-            <SearchIcon className="size-4 shrink-0" />
-            <span className="truncate">
-              {t("nav.global_search_placeholder")}
-            </span>
-          </div>
+          {/* Stage 1: swap the inline placeholder for a dedicated component so
+          later search behavior stays isolated from the navbar chrome. */}
+          <NavbarGlobalSearch />
         </div>
       </div>
 
