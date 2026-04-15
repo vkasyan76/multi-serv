@@ -163,7 +163,7 @@ export function TenantSubnav({
         <TabsList
           className="
             inline-flex max-w-full whitespace-nowrap overflow-x-auto scrollbar-hide
-            items-center justify-center gap-2 sm:gap-3
+            items-center justify-center gap-1 sm:gap-3
             rounded-full border bg-white/80 shadow-sm px-2 py-1
           "
         >
@@ -172,7 +172,7 @@ export function TenantSubnav({
               key={s.id}
               value={s.id}
               className="
-                rounded-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base
+                rounded-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-base leading-none
                 data-[state=active]:bg-black data-[state=active]:text-white
                 data-[state=inactive]:text-gray-900
                 transition-colors duration-200

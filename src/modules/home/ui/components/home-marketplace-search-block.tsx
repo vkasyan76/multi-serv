@@ -103,7 +103,10 @@ export function HomeMarketplaceSearchBlock({
   };
 
   useEffect(() => {
-    if (!filters.category) return;
+    // Skip invalidation while taxonomy options are absent; an empty list here
+    // can mean initial load or fetch failure, not that the chosen category is
+    // truly invalid.
+    if (!filters.category || categoryOptions.length === 0) return;
 
     const selectedStillValid = filteredCategoryOptions.some(
       (option) => option.value === filters.category
@@ -112,9 +115,10 @@ export function HomeMarketplaceSearchBlock({
     if (!selectedStillValid) {
       // workType owns category availability in this compact homepage flow, so
       // clear stale category picks when the chosen work type excludes them.
-      updateFilters({ category: "" });
+      onFiltersChange((prev) => ({ ...prev, category: "" }));
     }
   }, [
+    categoryOptions.length,
     filteredCategoryOptions,
     filters.category,
     onFiltersChange,
