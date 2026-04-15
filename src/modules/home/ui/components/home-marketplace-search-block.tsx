@@ -11,7 +11,6 @@ import {
 import { useTranslations } from "next-intl";
 import {
   ChevronDownIcon,
-  SearchIcon,
   SlidersHorizontalIcon,
 } from "lucide-react";
 
@@ -24,7 +23,7 @@ import type { HomepageCategoriesOutput } from "@/modules/categories/types";
 import type { HomeMarketplaceFilters } from "../home-marketplace-filters";
 import { HomeWorkTypeSelect } from "./home-work-type-select";
 import { HomeMarketplaceDesktopFilterRow } from "./home-marketplace-desktop-filter-row";
-import { Input } from "@/components/ui/input";
+import { MobileGlobalSearch } from "@/modules/search/ui/mobile-global-search";
 import {
   buildHomeCategoryOptions,
   filterHomeCategoryOptions,
@@ -51,6 +50,7 @@ export function HomeMarketplaceSearchBlock({
   const tMarketplace = useTranslations("marketplace");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+  const [isMobileSearchActive, setIsMobileSearchActive] = useState(false);
 
   const categoryOptions = useMemo(
     () => buildHomeCategoryOptions(categories),
@@ -144,52 +144,45 @@ export function HomeMarketplaceSearchBlock({
           </div>
 
           <div className="overflow-hidden rounded-[24px] border border-black/10 bg-white lg:hidden">
-            <div className="relative border-b border-black/10">
-              <SearchIcon className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-neutral-500" />
-              <Input
-                type="search"
-                value={filters.search}
-                onChange={(event) =>
-                  updateFilters({ search: event.target.value })
-                }
-                placeholder={tMarketplace("home_search.placeholder")}
-                className="h-14 rounded-none border-0 pl-11 shadow-none focus-visible:ring-0"
-              />
-            </div>
+            <MobileGlobalSearch onActiveChange={setIsMobileSearchActive} />
 
-            {/* Mobile keeps the two compact taxonomy filters together so we do
-            not duplicate work type lower in the expanded filter stack. */}
-            <div className="grid grid-cols-2 gap-2 border-b border-black/10 px-4 py-3">
-              <button
-                type="button"
-                className="flex h-11 min-w-0 items-center justify-between gap-2 rounded-full border border-black/10 bg-white px-4 text-left text-sm font-medium shadow-none disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={() => setIsCategoryPickerOpen(true)}
-              >
-                <span className="truncate">{selectedCategoryLabel}</span>
-                <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
-              </button>
+            {!isMobileSearchActive ? (
+              <>
+                {/* Mobile keeps the two compact taxonomy filters together so we do
+                not duplicate work type lower in the expanded filter stack. */}
+                <div className="grid grid-cols-2 gap-2 border-b border-black/10 px-4 py-3">
+                  <button
+                    type="button"
+                    className="flex h-11 min-w-0 items-center justify-between gap-2 rounded-full border border-black/10 bg-white px-4 text-left text-sm font-medium shadow-none disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => setIsCategoryPickerOpen(true)}
+                  >
+                    <span className="truncate">{selectedCategoryLabel}</span>
+                    <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+                  </button>
 
-              <HomeWorkTypeSelect
-                value={filters.workType}
-                onChange={handleWorkTypeChange}
-                className="min-w-0"
-                triggerClassName="h-11 min-w-0"
-                compactLabel
-              />
-            </div>
+                  <HomeWorkTypeSelect
+                    value={filters.workType}
+                    onChange={handleWorkTypeChange}
+                    className="min-w-0"
+                    triggerClassName="h-11 min-w-0"
+                    compactLabel
+                  />
+                </div>
 
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-14 w-full justify-center rounded-none px-5 lg:hidden"
-              onClick={() => setShowAdvanced((current) => !current)}
-            >
-              <SlidersHorizontalIcon className="size-4" />
-              <span>{tMarketplace("filters.title")}</span>
-            </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-14 w-full justify-center rounded-none px-5 lg:hidden"
+                  onClick={() => setShowAdvanced((current) => !current)}
+                >
+                  <SlidersHorizontalIcon className="size-4" />
+                  <span>{tMarketplace("filters.title")}</span>
+                </Button>
+              </>
+            ) : null}
           </div>
 
-          {showAdvanced && (
+          {showAdvanced && !isMobileSearchActive ? (
             <div className="grid gap-4 rounded-[24px] border border-black/10 bg-[#F4F4F0] p-4 lg:hidden">
               <div className="space-y-3">
                 <p className="text-sm font-medium">
@@ -215,7 +208,7 @@ export function HomeMarketplaceSearchBlock({
                 />
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </section>
 
