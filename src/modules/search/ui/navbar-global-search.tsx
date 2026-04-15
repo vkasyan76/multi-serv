@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { SearchIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import {
@@ -27,40 +27,57 @@ export function NavbarGlobalSearch() {
   const t = useTranslations("common");
   const trpc = useTRPC();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
 
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
-  const debouncedQuery = useDebouncedValue(query, 200);
-  const trimmedDebouncedQuery = debouncedQuery.trim();
-  const canSearch = trimmedDebouncedQuery.length >= 2;
+  const trimmedQuery = query.trim();
+  const debouncedQuery = useDebouncedValue(trimmedQuery, 200);
+  const canSearchLive = trimmedQuery.length >= 2;
+  const canSearchDebounced = debouncedQuery.length >= 2;
+  const isDebouncePending = trimmedQuery !== debouncedQuery;
 
   const suggestionsQ = useQuery({
     ...trpc.search.suggest.queryOptions({
-      query: trimmedDebouncedQuery,
+      query: debouncedQuery,
       limit: 6,
     }),
-    enabled: canSearch,
+    enabled: canSearchDebounced,
     staleTime: 15_000,
     gcTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
-  const suggestions = suggestionsQ.data ?? [];
+  const suggestions =
+    !canSearchLive || isDebouncePending ? [] : (suggestionsQ.data ?? []);
   const topSuggestion = suggestions[0] ?? null;
   const activeSuggestion =
     activeIndex >= 0 ? suggestions[activeIndex] ?? null : null;
 
   useEffect(() => {
     setActiveIndex(-1);
-  }, [trimmedDebouncedQuery]);
+  }, [trimmedQuery]);
 
-  const shouldShowPopover = open && (canSearch || suggestionsQ.isFetching);
+  useEffect(() => {
+    setQuery("");
+    setOpen(false);
+    setActiveIndex(-1);
+  }, [pathname, searchParamsKey]);
+
+  const shouldShowPopover =
+    open &&
+    canSearchLive &&
+    (isDebouncePending || suggestionsQ.isFetching || suggestions.length > 0);
 
   const handleNavigate = (suggestion: SearchSuggestion) => {
     setOpen(false);
-    setQuery("");
+    setQuery(
+      suggestion.kind === "marketplace" ? trimmedQuery : suggestion.label
+    );
     setActiveIndex(-1);
     navigateSearchResult(router, suggestion.href);
   };
@@ -164,7 +181,8 @@ export function NavbarGlobalSearch() {
       >
         <Command shouldFilter={false} className="bg-transparent">
           <CommandList id="navbar-global-search-list" className="max-h-[360px]">
-            {suggestionsQ.isFetching && suggestions.length === 0 ? (
+            {(isDebouncePending || suggestionsQ.isFetching) &&
+            suggestions.length === 0 ? (
               <div className="px-3 py-3 text-sm text-neutral-500">
                 {t("nav.global_search_searching")}
               </div>

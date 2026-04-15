@@ -103,6 +103,20 @@ Required env groups are defined in `README.md`:
   - typing debounces URL/server updates by 400ms; clearing applies immediately; pressing Enter flushes the current value immediately
   - current backend search behavior in `src/modules/tenants/server/procedures.ts` is free-text `OR` over tenant `name` and `bio`, then `AND`ed with all other active filters (category, subcategory, services, price, distance, sort)
   - do not treat the current search input as a generic marketplace search across categories/subcategories unless a task explicitly changes that product behavior
+- Global desktop navbar search (deterministic MVP) now exists as a separate system from the homepage/provider search:
+  - entry UI lives in `src/modules/search/ui/navbar-global-search.tsx` and is mounted only in the desktop navbar (`src/modules/home/ui/components/navbar.tsx`)
+  - the search module boundary is `src/modules/search/*` and intentionally stays isolated from homepage filters and tenant listing search
+  - server suggestions come from `search.suggest` in `src/modules/search/server/procedures.ts`
+  - taxonomy inputs reuse shared live category-tree reads (`src/modules/categories/server/category-tree.ts`); do not import `src/scripts/categories.ts` at runtime
+  - result kinds exposed to the UI are intentionally narrow: `tenant`, `category`, `subcategory`, and explicit marketplace fallback
+  - alias/synonym matching is internal only (`src/modules/search/search-synonyms.ts`) and must resolve to canonical category/subcategory slugs before returning suggestions
+  - fallback behavior is explicit: the backend appends `/[lang]/all?search=...` as the final row; it must never participate in auto-select
+  - client navigation is split on href type in `src/modules/search/lib/navigate-search-result.ts`:
+    relative app routes use `router.push(...)`, absolute tenant URLs use `window.location.assign(...)`
+  - current navbar UX is desktop-only, debounced, and deterministic:
+    typing 2+ characters calls `search.suggest`, the popover opens from the input, arrow keys move a local highlighted row, and Enter only navigates to the highlighted row or an `autoSelect` top hit
+  - keep this separate from the homepage provider search unless a task explicitly merges those product behaviors
+  - follow-up hardening still expected: logic tests around search scoring/href resolution/procedure output, plus manual QA for popover focus, Enter behavior, and cross-origin tenant navigation
 
 ## Checkout UI Note
 
