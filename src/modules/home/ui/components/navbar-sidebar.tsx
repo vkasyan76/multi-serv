@@ -151,13 +151,13 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
               {t("nav.my_orders")}
             </Link>
           ) : null}
-          <button
-            className="w-full text-left p-4 flex items-center text-base font-medium text-neutral-400"
-            type="button"
-            disabled
+          <Link
+            href={href("/support")}
+            className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
+            onClick={() => onOpenChange(false)}
           >
-            {t("nav.chat")}
-          </button>
+            {t("nav.support")}
+          </Link>
           {/* Clerk Auth Buttons and User Profile / Dashboard Links */}
           <div className="border-t">
             {!isLoaded ? (

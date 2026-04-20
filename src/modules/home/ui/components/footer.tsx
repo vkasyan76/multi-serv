@@ -80,6 +80,15 @@ export const Footer = () => {
 
         {/* Legal / Preferences */}
         <nav className="flex items-center gap-4 text-gray-600 text-sm">
+          {/* Mirror the navbar entry in the footer so support stays reachable
+          even before the actual chat UI lands. */}
+          <Link
+            href={href("/support")}
+            className="hover:text-black transition-colors"
+          >
+            {t("nav.support")}
+          </Link>
+
           <Link href={href("/legal/terms-of-use")} className="hover:text-black transition-colors">
             {/* Match navbar wording on desktop, keep the shorter footer label on mobile. */}
             <span className="sm:hidden">{t("footer.terms")}</span>

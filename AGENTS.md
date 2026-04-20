@@ -118,6 +118,17 @@ Required env groups are defined in `README.md`:
   - keep this separate from the homepage provider search unless a task explicitly merges those product behaviors
   - follow-up hardening still expected: logic tests around search scoring/href resolution/procedure output, plus manual QA for popover focus, Enter behavior, and cross-origin tenant navigation
 
+## Support Chat
+
+- AI support chat is a separate product/domain boundary from human messaging.
+- Module boundary lives under `src/modules/support-chat/{server,ui,lib}`.
+- tRPC entry is `supportChat` in `src/trpc/routers/_app.ts`.
+- Public route is `src/app/(app)/[lang]/support/page.tsx`.
+- Navbar/mobile/footer entry points intentionally use a distinct `support` label instead of the older generic `chat` wording.
+- Anonymous and signed-in users share the same public support entry point; signed-in state alone must not be treated as permission for live account/order/payment answers.
+- Keep AI support chat separate from `src/modules/conversations/*` and `src/modules/messages/*`; those remain human-to-human messaging domains.
+- When extending support chat, prefer documenting stable boundaries here: entry points, ownership, access model, source-of-truth locations, storage shape, and safety constraints.
+
 ## Checkout UI Note
 
 - The active slot-order customer drawer is `src/modules/checkout/ui/slots-cart-drawer.tsx`.

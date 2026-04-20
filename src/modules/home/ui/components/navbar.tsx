@@ -199,13 +199,17 @@ export const Navbar = () => {
           </NavbarItem>
         ) : null}
         <Button
+          asChild
           type="button"
           variant="outline"
-          disabled
-          className="bg-transparent rounded-full border-transparent px-3.5 text-lg opacity-100"
+          className="bg-transparent rounded-full border-transparent px-3.5 text-lg"
         >
-          <MessageCircleIcon className="size-4" />
-          <span>{t("nav.chat")}</span>
+          <Link href={href("/support")}>
+            <MessageCircleIcon className="size-4" />
+            {/* Use a distinct support label so this entry does not read like
+            the human customer/vendor conversation surface. */}
+            <span>{t("nav.support")}</span>
+          </Link>
         </Button>
         {/* Phase 6: keep switcher near auth/profile actions (desktop only). */}
         <LanguageSwitcher
