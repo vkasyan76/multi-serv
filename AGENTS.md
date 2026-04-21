@@ -135,6 +135,11 @@ Required env groups are defined in `README.md`:
 - Internal scope constants live in `src/modules/support-chat/lib/scope.ts`; the human-readable scope note lives in `src/modules/support-chat/server/scope.md`.
 - Repo-managed support knowledge lives in `src/modules/support-chat/server/knowledge/*.en.md` and should use stable file IDs, version labels, and section IDs for later retrieval/logging.
 - Knowledge-pack priority is operational FAQ/help content first, policy summaries second, Terms reference third, and unsupported/fallback guidance when the source material is not enough.
+- Simple support retrieval lives in `src/modules/support-chat/server/knowledge-loader.ts` and `src/modules/support-chat/server/retrieve-knowledge.ts`.
+- Retrieval is deterministic keyword/heading matching over repo-managed markdown chunks; do not replace it with hosted/vector retrieval unless the knowledge base outgrows this approach.
+- Retrieval results must expose chunk IDs, document IDs, section IDs, source type, score, and matched terms so prompt/debug/logging work can inspect what context was used.
+- Markdown `## ...` headings in knowledge files are stable section IDs; do not rewrite, slugify, or derive alternate IDs during loading.
+- Use a minimum relevance threshold; do not force irrelevant chunks into model context.
 - Input precheck helpers must stay minimal and must not become homemade semantic intent classification.
 - OpenAI usage for support chat must stay server-only.
 - Use `src/lib/openai.ts` as the single OpenAI client helper.
