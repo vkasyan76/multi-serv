@@ -1,0 +1,6 @@
+{
+  "title": "Assistance",
+  "lead": "Obtenez une aide générale sur l'inscription, les réservations, les paiements, les annulations, les litiges et l'utilisation de la place de marché.",
+  "phaseCopy": "La phase {phase} fournit uniquement des conseils d'assistance généraux. Elle n'accède pas aux données en direct des commandes, des paiements ou du compte.",
+  "accountAwareNotice": "Le chat d'assistance est disponible pour les invités et les utilisateurs connectés depuis le même point d'entrée. Les réponses liées au compte ne sont pas encore disponibles."
+}

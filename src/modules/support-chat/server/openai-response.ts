@@ -43,9 +43,9 @@ export async function createSupportChatModelResponse(
       input: request.input,
       max_output_tokens: SUPPORT_CHAT_OPENAI_MAX_OUTPUT_TOKENS,
       metadata: {
+        ...(request.metadata ?? {}),
         feature: "support-chat",
         modelVersion: SUPPORT_CHAT_OPENAI_MODEL_VERSION,
-        ...(request.metadata ?? {}),
       },
     });
 

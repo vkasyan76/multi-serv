@@ -8,6 +8,11 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: ["pdfkit"],
+  outputFileTracingIncludes: {
+    // Support chat reads markdown knowledge files with fs at runtime, so include
+    // them explicitly in standalone/serverless production output.
+    "/": ["src/modules/support-chat/server/knowledge/**/*.md"],
+  },
   images: {
     domains: [
       "img.clerk.com",

@@ -20,6 +20,7 @@ export const REQUIRED_NAMESPACES = [
   "orders",
   "reviews",
   "legalTerms",
+  "supportChat",
 ] as const;
 
 export type RequiredNamespace = (typeof REQUIRED_NAMESPACES)[number];

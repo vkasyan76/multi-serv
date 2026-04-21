@@ -1,0 +1,6 @@
+{
+  "title": "Asistență",
+  "lead": "Primește ajutor general pentru înregistrare, rezervări, plăți, anulări, dispute și utilizarea marketplace-ului.",
+  "phaseCopy": "Faza {phase} oferă doar îndrumare generală de asistență. Nu accesează date live despre comenzi, plăți sau cont.",
+  "accountAwareNotice": "Chatul de asistență este disponibil pentru vizitatori și utilizatori autentificați prin același punct de acces. Răspunsurile legate de cont nu sunt încă disponibile."
+}

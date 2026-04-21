@@ -114,10 +114,16 @@ export async function retrieveSupportKnowledge(
   if (!queryTerms.length) return [];
 
   const chunks = await loadSupportKnowledgeChunks();
-  const locale = input.locale ?? "en";
+  const requestedLocale = input.locale ?? "en";
+  const localizedChunks = chunks.filter(
+    (chunk) => chunk.locale === requestedLocale
+  );
+  const chunksForLocale =
+    localizedChunks.length > 0
+      ? localizedChunks
+      : chunks.filter((chunk) => chunk.locale === "en");
 
-  return chunks
-    .filter((chunk) => chunk.locale === locale)
+  return chunksForLocale
     .map((chunk) => {
       const result = scoreChunk(chunk, queryTerms);
       return {

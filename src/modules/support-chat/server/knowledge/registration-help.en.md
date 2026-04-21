@@ -33,7 +33,7 @@ The app may require a full street address with a house number. If the address is
 
 ## registration-username-rules
 
-Usernames must follow the app's validation rules. They must be at least 3 characters and less than 63 characters.
+Usernames must follow the app's validation rules. They must be at least 3 characters and at most 63 characters.
 
 They may contain letters, numbers, dots, underscores, and hyphens. They must start and end with a letter or number, and they cannot contain consecutive separators.
 

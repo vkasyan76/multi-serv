@@ -1,0 +1,6 @@
+{
+  "title": "Soporte",
+  "lead": "Obtén ayuda general sobre registro, reservas, pagos, cancelaciones, disputas y uso del marketplace.",
+  "phaseCopy": "La fase {phase} solo ofrece orientación general de soporte. No accede a datos en vivo de pedidos, pagos o cuentas.",
+  "accountAwareNotice": "El chat de soporte está disponible para invitados y usuarios con sesión iniciada desde el mismo punto de entrada. Las respuestas relacionadas con la cuenta aún no están disponibles."
+}

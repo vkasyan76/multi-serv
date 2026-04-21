@@ -138,13 +138,16 @@ Required env groups are defined in `README.md`:
 - Simple support retrieval lives in `src/modules/support-chat/server/knowledge-loader.ts` and `src/modules/support-chat/server/retrieve-knowledge.ts`.
 - Retrieval is deterministic keyword/heading matching over repo-managed markdown chunks; do not replace it with hosted/vector retrieval unless the knowledge base outgrows this approach.
 - Retrieval results must expose chunk IDs, document IDs, section IDs, source type, score, and matched terms so prompt/debug/logging work can inspect what context was used.
+- Support-chat knowledge markdown is read from disk at runtime; `next.config.ts` must include `src/modules/support-chat/server/knowledge/**/*.md` in `outputFileTracingIncludes` so production builds bundle the knowledge pack.
+- Support-chat retrieval should fall back to English knowledge files when a localized knowledge pack is not available; do not return empty results only because the route locale has no matching markdown files yet.
 - Markdown `## ...` headings in knowledge files are stable section IDs; do not rewrite, slugify, or derive alternate IDs during loading.
 - Use a minimum relevance threshold; do not force irrelevant chunks into model context.
+- Support-chat UI copy belongs in the `supportChat` i18n namespace, while the repo-managed knowledge pack may remain English-only until localized source material is approved.
 - Input precheck helpers must stay minimal and must not become homemade semantic intent classification.
 - OpenAI usage for support chat must stay server-only.
 - Use `src/lib/openai.ts` as the single OpenAI client helper.
 - Support-chat model calls should go through `src/modules/support-chat/server/openai-response.ts`; do not call OpenAI directly from UI or unrelated modules.
-- The support-chat model is configured in `src/modules/support-chat/server/openai-config.ts`; `OPENAI_SUPPORT_CHAT_MODEL` must be set explicitly and model changes should also update `OPENAI_SUPPORT_CHAT_MODEL_VERSION` so future logs can distinguish behavior.
+- The support-chat model is configured in `src/modules/support-chat/server/openai-config.ts`; `OPENAI_SUPPORT_CHAT_MODEL` and `OPENAI_SUPPORT_CHAT_MODEL_VERSION` must both be set explicitly so future logs can distinguish model behavior.
 - OpenAI outages or empty model output should return a user-safe fallback message, not raw SDK/API errors.
 - `src/modules/support-chat/server/rate-limit.ts` is only an in-memory first-layer guard; do not treat it as durable multi-instance rate limiting.
 - When extending support chat, prefer documenting stable boundaries here: entry points, ownership, access model, source-of-truth locations, storage shape, and safety constraints.
