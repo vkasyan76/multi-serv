@@ -144,6 +144,10 @@ Required env groups are defined in `README.md`:
 - Use a minimum relevance threshold; do not force irrelevant chunks into model context.
 - Support-chat UI copy belongs in the `supportChat` i18n namespace, while the repo-managed knowledge pack may remain English-only until localized source material is approved.
 - Input precheck helpers must stay minimal and must not become homemade semantic intent classification.
+- `supportChat.sendMessage` is the public server contract for support chat; use `threadId`, not `conversationId`, to avoid confusion with human messaging.
+- Until support-chat storage is added, `threadId` is an opaque continuity id only and must not imply persisted chat history.
+- Support-chat disposition is server-owned; the model may draft normal answers, but server code decides `answered`, `uncertain`, `escalate`, or `unsupported_account_question`.
+- Support-chat prompt builders should format selected context only; disposition, unsupported-account handling, and weak-source decisions belong in server orchestration.
 - OpenAI usage for support chat must stay server-only.
 - Use `src/lib/openai.ts` as the single OpenAI client helper.
 - Support-chat model calls should go through `src/modules/support-chat/server/openai-response.ts`; do not call OpenAI directly from UI or unrelated modules.

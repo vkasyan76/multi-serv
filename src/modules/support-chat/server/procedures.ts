@@ -1,10 +1,13 @@
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
+import { SUPPORTED_APP_LANGS } from "@/lib/i18n/app-lang";
 import {
   SUPPORT_CHAT_ACCOUNT_AWARE,
   SUPPORT_CHAT_PHASE,
   SUPPORT_CHAT_PUBLIC_ACCESS,
 } from "@/modules/support-chat/lib/boundaries";
 import { SUPPORT_CHAT_CAPABILITIES } from "@/modules/support-chat/lib/scope";
+import { generateSupportResponse } from "@/modules/support-chat/server/generate-support-response";
+import { z } from "zod";
 
 export const supportChatRouter = createTRPCRouter({
   getBootstrap: baseProcedure.query(async () => {
@@ -15,4 +18,19 @@ export const supportChatRouter = createTRPCRouter({
       capabilities: SUPPORT_CHAT_CAPABILITIES,
     };
   }),
+  sendMessage: baseProcedure
+    .input(
+      z.object({
+        message: z.string().max(2000),
+        threadId: z.string().uuid().optional(),
+        locale: z.enum(SUPPORTED_APP_LANGS).optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return generateSupportResponse({
+        message: input.message,
+        threadId: input.threadId,
+        locale: input.locale ?? ctx.appLang,
+      });
+    }),
 });
