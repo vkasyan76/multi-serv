@@ -134,6 +134,12 @@ Required env groups are defined in `README.md`:
 - Empty, abusive, or nonsensical prompts should receive a brief boundary response plus human support/contact handoff where appropriate.
 - Internal scope constants live in `src/modules/support-chat/lib/scope.ts`; the human-readable scope note lives in `src/modules/support-chat/server/scope.md`.
 - Input precheck helpers must stay minimal and must not become homemade semantic intent classification.
+- OpenAI usage for support chat must stay server-only.
+- Use `src/lib/openai.ts` as the single OpenAI client helper.
+- Support-chat model calls should go through `src/modules/support-chat/server/openai-response.ts`; do not call OpenAI directly from UI or unrelated modules.
+- The support-chat model is configured in `src/modules/support-chat/server/openai-config.ts`; `OPENAI_SUPPORT_CHAT_MODEL` must be set explicitly and model changes should also update `OPENAI_SUPPORT_CHAT_MODEL_VERSION` so future logs can distinguish behavior.
+- OpenAI outages or empty model output should return a user-safe fallback message, not raw SDK/API errors.
+- `src/modules/support-chat/server/rate-limit.ts` is only an in-memory first-layer guard; do not treat it as durable multi-instance rate limiting.
 - When extending support chat, prefer documenting stable boundaries here: entry points, ownership, access model, source-of-truth locations, storage shape, and safety constraints.
 
 ## Checkout UI Note
