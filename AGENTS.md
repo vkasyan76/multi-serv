@@ -133,6 +133,8 @@ Required env groups are defined in `README.md`:
 - Policy summaries/paraphrases must stay conservative and must not imply meanings unsupported by approved source material.
 - Empty, abusive, or nonsensical prompts should receive a brief boundary response plus human support/contact handoff where appropriate.
 - Internal scope constants live in `src/modules/support-chat/lib/scope.ts`; the human-readable scope note lives in `src/modules/support-chat/server/scope.md`.
+- Repo-managed support knowledge lives in `src/modules/support-chat/server/knowledge/*.en.md` and should use stable file IDs, version labels, and section IDs for later retrieval/logging.
+- Knowledge-pack priority is operational FAQ/help content first, policy summaries second, Terms reference third, and unsupported/fallback guidance when the source material is not enough.
 - Input precheck helpers must stay minimal and must not become homemade semantic intent classification.
 - OpenAI usage for support chat must stay server-only.
 - Use `src/lib/openai.ts` as the single OpenAI client helper.
