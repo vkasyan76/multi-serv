@@ -127,6 +127,13 @@ Required env groups are defined in `README.md`:
 - Navbar/mobile/footer entry points intentionally use a distinct `support` label instead of the older generic `chat` wording.
 - Anonymous and signed-in users share the same public support entry point; signed-in state alone must not be treated as permission for live account/order/payment answers.
 - Keep AI support chat separate from `src/modules/conversations/*` and `src/modules/messages/*`; those remain human-to-human messaging domains.
+- Support chat scope is grounded general support only: terms/policy, registration/onboarding, booking/payment/cancellation/dispute rules at policy level, failure next steps, and basic marketplace usage.
+- Support chat must not claim live order/payment/account lookup, make cancellation decisions for a specific order, perform vendor/admin actions, run broad DB reads, or access Stripe/Payload/Mongo/backend systems directly.
+- The assistant may explain platform policy in plain language, but must not present legal, financial, medical, tax, or other professional advice beyond platform rules.
+- Policy summaries/paraphrases must stay conservative and must not imply meanings unsupported by approved source material.
+- Empty, abusive, or nonsensical prompts should receive a brief boundary response plus human support/contact handoff where appropriate.
+- Internal scope constants live in `src/modules/support-chat/lib/scope.ts`; the human-readable scope note lives in `src/modules/support-chat/server/scope.md`.
+- Input precheck helpers must stay minimal and must not become homemade semantic intent classification.
 - When extending support chat, prefer documenting stable boundaries here: entry points, ownership, access model, source-of-truth locations, storage shape, and safety constraints.
 
 ## Checkout UI Note
