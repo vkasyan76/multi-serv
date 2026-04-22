@@ -43,6 +43,12 @@ export type GenerateSupportResponseResult = {
   sources: SupportChatSource[];
   disposition: SupportChatDisposition;
   needsHumanSupport: boolean;
+  responseOrigin: "server" | "model";
+  modelMetadata?: {
+    model?: string;
+    modelVersion?: string;
+    requestId?: string | null;
+  };
 };
 
 const MIN_STRONG_SOURCE_SCORE = 4;
@@ -153,6 +159,7 @@ export async function generateSupportResponse(
       assistantMessage: invalidInputMessage(precheck),
       sources: [],
       disposition: "escalate",
+      responseOrigin: "server",
     });
   }
 
@@ -162,6 +169,7 @@ export async function generateSupportResponse(
       assistantMessage: SUPPORT_CHAT_SERVER_MESSAGES.clarify,
       sources: [],
       disposition: "uncertain",
+      responseOrigin: "server",
     });
   }
 
@@ -178,6 +186,7 @@ export async function generateSupportResponse(
       assistantMessage: SUPPORT_CHAT_SERVER_MESSAGES.unsupportedAccount,
       sources,
       disposition: "unsupported_account_question",
+      responseOrigin: "server",
     });
   }
 
@@ -187,6 +196,7 @@ export async function generateSupportResponse(
       assistantMessage: SUPPORT_CHAT_SERVER_MESSAGES.uncertain,
       sources,
       disposition: "uncertain",
+      responseOrigin: "server",
     });
   }
 
@@ -210,6 +220,7 @@ export async function generateSupportResponse(
       assistantMessage: modelResult.fallbackMessage,
       sources,
       disposition: "escalate",
+      responseOrigin: "server",
     });
   }
 
@@ -219,5 +230,11 @@ export async function generateSupportResponse(
     sources,
     disposition: "answered",
     needsHumanSupport: false,
+    responseOrigin: "model",
+    modelMetadata: {
+      model: modelResult.model,
+      modelVersion: modelResult.modelVersion,
+      requestId: modelResult.requestId,
+    },
   });
 }

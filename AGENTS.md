@@ -152,6 +152,12 @@ Required env groups are defined in `README.md`:
 - Ambiguous support-chat requests should receive one short clarifying question instead of a guessed answer.
 - Unsupported or escalated support-chat responses should still say what the assistant can help with and what the user should do next.
 - The model should only draft normal answers after server-side checks pass; invalid, ambiguous, unsupported-account, weak-source, and outage paths should remain deterministic server-authored responses.
+- Support-chat storage must use `support_chat_threads` and `support_chat_messages`; do not reuse human `conversations` or `messages`.
+- `threadId` is the public support-chat continuity id and must not be confused with the Payload document id.
+- Support-chat logs are admin-only by default and must not be exposed to vendors or regular users.
+- Redaction is best-effort for persisted logs only; do not mutate model input unless explicitly approved.
+- Persisted assistant messages should include prompt, guardrail, retrieval, knowledge-pack, model, disposition, and source metadata.
+- `retentionUntil` represents support-chat retention policy; cleanup enforcement can be added separately.
 - OpenAI usage for support chat must stay server-only.
 - Use `src/lib/openai.ts` as the single OpenAI client helper.
 - Support-chat model calls should go through `src/modules/support-chat/server/openai-response.ts`; do not call OpenAI directly from UI or unrelated modules.

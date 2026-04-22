@@ -7,6 +7,7 @@ import {
 } from "@/modules/support-chat/lib/boundaries";
 import { SUPPORT_CHAT_CAPABILITIES } from "@/modules/support-chat/lib/scope";
 import { generateSupportResponse } from "@/modules/support-chat/server/generate-support-response";
+import { persistSupportInteraction } from "@/modules/support-chat/server/persist-support-interaction";
 import { z } from "zod";
 
 export const supportChatRouter = createTRPCRouter({
@@ -27,10 +28,26 @@ export const supportChatRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return generateSupportResponse({
+      const locale = input.locale ?? ctx.appLang;
+      const response = await generateSupportResponse({
         message: input.message,
         threadId: input.threadId,
-        locale: input.locale ?? ctx.appLang,
+        locale,
       });
+
+      try {
+        await persistSupportInteraction({
+          db: ctx.db,
+          userId: ctx.userId,
+          locale,
+          message: input.message,
+          response,
+        });
+      } catch (error) {
+        // Logging must not make a support answer unavailable.
+        console.warn("[support-chat] Failed to persist interaction", error);
+      }
+
+      return response;
     }),
 });
