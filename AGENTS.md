@@ -145,7 +145,7 @@ Required env groups are defined in `README.md`:
 - Support-chat UI copy belongs in the `supportChat` i18n namespace, while the repo-managed knowledge pack may remain English-only until localized source material is approved.
 - Input precheck helpers must stay minimal and must not become homemade semantic intent classification.
 - `supportChat.sendMessage` is the public server contract for support chat; use `threadId`, not `conversationId`, to avoid confusion with human messaging.
-- Until support-chat storage is added, `threadId` is an opaque continuity id only and must not imply persisted chat history.
+- `threadId` is an opaque support-chat continuity id for server/admin logs only and must not be treated as user-visible persisted chat history.
 - Support-chat disposition is server-owned; the model may draft normal answers, but server code decides `answered`, `uncertain`, `escalate`, or `unsupported_account_question`.
 - Support-chat prompt builders should format selected context only; disposition, unsupported-account handling, and weak-source decisions belong in server orchestration.
 - Support-chat guardrails must prevent "common practice" answers from being treated as Infinisimo policy; answers must be grounded in retrieved support context.

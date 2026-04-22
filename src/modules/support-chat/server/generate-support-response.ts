@@ -160,6 +160,7 @@ export async function generateSupportResponse(
       sources: [],
       disposition: "escalate",
       responseOrigin: "server",
+      needsHumanSupport: false,
     });
   }
 
@@ -170,6 +171,7 @@ export async function generateSupportResponse(
       sources: [],
       disposition: "uncertain",
       responseOrigin: "server",
+      needsHumanSupport: false,
     });
   }
 

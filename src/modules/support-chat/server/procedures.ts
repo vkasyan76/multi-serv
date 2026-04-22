@@ -1,3 +1,6 @@
+import "server-only";
+
+import crypto from "node:crypto";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { SUPPORTED_APP_LANGS } from "@/lib/i18n/app-lang";
 import {
@@ -8,7 +11,21 @@ import {
 import { SUPPORT_CHAT_CAPABILITIES } from "@/modules/support-chat/lib/scope";
 import { generateSupportResponse } from "@/modules/support-chat/server/generate-support-response";
 import { persistSupportInteraction } from "@/modules/support-chat/server/persist-support-interaction";
+import { checkSupportChatRateLimit } from "@/modules/support-chat/server/rate-limit";
 import { z } from "zod";
+
+function supportChatRateLimitKey(input: {
+  userId?: string | null;
+  threadId?: string;
+  headers: Record<string, string>;
+}) {
+  if (input.userId) return `user:${input.userId}`;
+  if (input.threadId) return `thread:${input.threadId}`;
+
+  const forwardedFor = input.headers["x-forwarded-for"]?.split(",")[0]?.trim();
+  const ip = forwardedFor || input.headers["x-real-ip"] || "anonymous";
+  return `ip:${ip}`;
+}
 
 export const supportChatRouter = createTRPCRouter({
   getBootstrap: baseProcedure.query(async () => {
@@ -29,9 +46,30 @@ export const supportChatRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const locale = input.locale ?? ctx.appLang;
+      const threadId = input.threadId ?? crypto.randomUUID();
+      const rateLimit = checkSupportChatRateLimit(
+        supportChatRateLimitKey({
+          userId: ctx.userId,
+          threadId: input.threadId,
+          headers: ctx.headers,
+        })
+      );
+
+      if (!rateLimit.allowed) {
+        return {
+          threadId,
+          assistantMessage:
+            "Too many support chat requests. Please wait a moment and try again.",
+          sources: [],
+          disposition: "escalate" as const,
+          needsHumanSupport: false,
+          responseOrigin: "server" as const,
+        };
+      }
+
       const response = await generateSupportResponse({
         message: input.message,
-        threadId: input.threadId,
+        threadId,
         locale,
       });
 

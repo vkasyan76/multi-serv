@@ -82,6 +82,44 @@ async function findThread(db: Payload, threadId: string) {
   return existing.docs[0];
 }
 
+function relationshipId(value: unknown) {
+  return typeof value === "string"
+    ? value
+    : ((value as { id?: string } | null)?.id ?? null);
+}
+
+function canAppendToThread(thread: unknown, payloadUserId?: string) {
+  const ownerId = relationshipId(
+    (thread as { user?: unknown } | null | undefined)?.user
+  );
+
+  if (!ownerId) return true;
+  return Boolean(payloadUserId && ownerId === payloadUserId);
+}
+
+function nextThreadStatus(
+  currentStatus: unknown,
+  needsHumanSupport: boolean
+) {
+  if (needsHumanSupport) return "escalated";
+  if (currentStatus === "escalated" || currentStatus === "closed") {
+    return currentStatus;
+  }
+  return "open";
+}
+
+async function countThreadMessages(db: Payload, threadId: string) {
+  const messages = await db.find({
+    collection: "support_chat_messages",
+    where: { thread: { equals: threadId } },
+    limit: 0,
+    depth: 0,
+    overrideAccess: true,
+  });
+
+  return messages.totalDocs;
+}
+
 async function findOrCreateThread(input: {
   db: Payload;
   threadId: string;
@@ -89,10 +127,15 @@ async function findOrCreateThread(input: {
   payloadUserId?: string;
 }) {
   const existing = await findThread(input.db, input.threadId);
-  if (existing) return existing;
+  if (existing) {
+    if (!canAppendToThread(existing, input.payloadUserId)) {
+      throw new Error("Support chat thread ownership mismatch.");
+    }
+    return { thread: existing, created: false };
+  }
 
   try {
-    return await input.db.create({
+    const created = await input.db.create({
       collection: "support_chat_threads",
       data: {
         threadId: input.threadId,
@@ -108,9 +151,15 @@ async function findOrCreateThread(input: {
       depth: 0,
       overrideAccess: true,
     });
+    return { thread: created, created: true };
   } catch (error) {
     const raced = await findThread(input.db, input.threadId);
-    if (raced) return raced;
+    if (raced) {
+      if (!canAppendToThread(raced, input.payloadUserId)) {
+        throw new Error("Support chat thread ownership mismatch.");
+      }
+      return { thread: raced, created: false };
+    }
     throw error;
   }
 }
@@ -120,7 +169,7 @@ export async function persistSupportInteraction(
 ) {
   const now = new Date();
   const payloadUserId = await resolvePayloadUserId(input.db, input.userId);
-  const thread = await findOrCreateThread({
+  const { thread, created } = await findOrCreateThread({
     db: input.db,
     threadId: input.response.threadId,
     locale: input.locale,
@@ -135,7 +184,7 @@ export async function persistSupportInteraction(
     data: {
       thread: thread.id,
       role: "user",
-      text: input.message,
+      text: userText.redactedText,
       redactedText: userText.redactedText,
       redactionApplied: userText.redactionApplied,
       redactionTypes: redactionTypeRows(userText.redactionTypes),
@@ -152,7 +201,7 @@ export async function persistSupportInteraction(
     data: {
       thread: thread.id,
       role: "assistant",
-      text: input.response.assistantMessage,
+      text: assistantText.redactedText,
       redactedText: assistantText.redactedText,
       redactionApplied: assistantText.redactionApplied,
       redactionTypes: redactionTypeRows(assistantText.redactionTypes),
@@ -182,17 +231,22 @@ export async function persistSupportInteraction(
     overrideAccess: true,
   });
 
+  const messageCount = await countThreadMessages(input.db, thread.id);
+
   await input.db.update({
     collection: "support_chat_threads",
     id: thread.id,
     data: {
-      user: payloadUserId ?? undefined,
+      ...(created && payloadUserId ? { user: payloadUserId } : {}),
       locale: input.locale,
-      status: input.response.needsHumanSupport ? "escalated" : "open",
+      status: nextThreadStatus(
+        thread.status,
+        input.response.needsHumanSupport
+      ),
       lastMessageAt: now.toISOString(),
       lastDisposition: input.response.disposition,
       lastNeedsHumanSupport: input.response.needsHumanSupport,
-      messageCount: Number(thread.messageCount ?? 0) + 2,
+      messageCount,
       retentionUntil: addDays(now, SUPPORT_CHAT_RETENTION_DAYS).toISOString(),
     },
     depth: 0,
