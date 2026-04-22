@@ -148,6 +148,10 @@ Required env groups are defined in `README.md`:
 - Until support-chat storage is added, `threadId` is an opaque continuity id only and must not imply persisted chat history.
 - Support-chat disposition is server-owned; the model may draft normal answers, but server code decides `answered`, `uncertain`, `escalate`, or `unsupported_account_question`.
 - Support-chat prompt builders should format selected context only; disposition, unsupported-account handling, and weak-source decisions belong in server orchestration.
+- Support-chat guardrails must prevent "common practice" answers from being treated as Infinisimo policy; answers must be grounded in retrieved support context.
+- Ambiguous support-chat requests should receive one short clarifying question instead of a guessed answer.
+- Unsupported or escalated support-chat responses should still say what the assistant can help with and what the user should do next.
+- The model should only draft normal answers after server-side checks pass; invalid, ambiguous, unsupported-account, weak-source, and outage paths should remain deterministic server-authored responses.
 - OpenAI usage for support chat must stay server-only.
 - Use `src/lib/openai.ts` as the single OpenAI client helper.
 - Support-chat model calls should go through `src/modules/support-chat/server/openai-response.ts`; do not call OpenAI directly from UI or unrelated modules.
