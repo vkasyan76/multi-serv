@@ -1,16 +1,29 @@
 {
   "title": "Support",
-  "lead": "Erhalten Sie allgemeine Hilfe zu Registrierung, Buchungen, Zahlungen, Stornierungen, Streitfällen und zur Nutzung des Marktplatzes.",
-  "phaseCopy": "Phase {phase} bietet nur allgemeine Support-Hinweise. Sie greift nicht auf Live-Bestell-, Zahlungs- oder kontospezifische Daten zu.",
-  "accountAwareNotice": "Der Support-Chat ist für Gäste und angemeldete Nutzer über denselben Einstieg verfügbar. Kontobezogene Antworten sind noch nicht verfügbar.",
-  "threadLabel": "Support-Chat-Verlauf",
-  "emptyThread": "Stellen Sie eine Support-Frage, um zu beginnen.",
+  "lead": "Öffnen Sie den Support-Assistenten, um Hilfe zu erhalten, ohne diese Seite zu verlassen.",
+  "panelTitle": "Infinisimo Support",
+  "panelSubtitle": "Antwortet normalerweise sofort",
+  "emptyTitle": "Wie können wir helfen?",
+  "emptySubtitle": "Stellen Sie eine Frage oder starten Sie mit einem dieser Themen.",
+  "close": "Support-Chat schließen",
+  "launcher": "Support",
+  "composerPlaceholder": "Stellen Sie eine Frage...",
+  "suggestions": {
+    "booking": "Hilfe zur Buchung",
+    "payment": "Zahlungsfrage",
+    "cancel": "Buchung stornieren",
+    "provider": "Anbieter werden"
+  },
+  "suggestionPrompts": {
+    "booking": "Ich brauche Hilfe mit einer Buchung.",
+    "payment": "Ich habe eine Zahlungsfrage.",
+    "cancel": "Ich brauche Hilfe beim Stornieren einer Buchung.",
+    "provider": "Ich möchte Anbieter werden."
+  },
   "disclaimer": "KI-Support kann Fehler machen. Er kann nicht auf Live-Bestell-, Zahlungs- oder Kontodaten zugreifen.",
   "contactSupport": "Support kontaktieren",
-  "inputPlaceholder": "Stellen Sie eine Support-Frage...",
   "send": "Senden",
   "sending": "Der Support antwortet...",
-  "sendingButton": "Wird gesendet...",
   "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.",
   "handoffAccount": "Für kontospezifische Hilfe kontaktieren Sie den Support mit Ihren Bestell-, Rechnungs- oder Kontodaten.",
   "handoffGeneral": "Wenn dies Ihre Frage nicht beantwortet, kontaktieren Sie den Support."

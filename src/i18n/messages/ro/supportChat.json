@@ -1,16 +1,29 @@
 {
   "title": "Asistență",
-  "lead": "Primește ajutor general pentru înregistrare, rezervări, plăți, anulări, dispute și utilizarea marketplace-ului.",
-  "phaseCopy": "Faza {phase} oferă doar îndrumare generală de asistență. Nu accesează date live despre comenzi, plăți sau cont.",
-  "accountAwareNotice": "Chatul de asistență este disponibil pentru vizitatori și utilizatori autentificați prin același punct de acces. Răspunsurile legate de cont nu sunt încă disponibile.",
-  "threadLabel": "Firul chatului de asistență",
-  "emptyThread": "Pune o întrebare de asistență pentru a începe.",
+  "lead": "Deschide asistentul de suport pentru a primi ajutor fără a părăsi această pagină.",
+  "panelTitle": "Asistență Infinisimo",
+  "panelSubtitle": "De obicei răspunde instant",
+  "emptyTitle": "Cum te putem ajuta?",
+  "emptySubtitle": "Pune o întrebare sau începe cu unul dintre aceste subiecte.",
+  "close": "Închide chatul de asistență",
+  "launcher": "Asistență",
+  "composerPlaceholder": "Pune o întrebare...",
+  "suggestions": {
+    "booking": "Ajutor rezervare",
+    "payment": "Întrebare despre plată",
+    "cancel": "Anulează o rezervare",
+    "provider": "Devino furnizor"
+  },
+  "suggestionPrompts": {
+    "booking": "Am nevoie de ajutor cu o rezervare.",
+    "payment": "Am o întrebare despre o plată.",
+    "cancel": "Am nevoie de ajutor pentru anularea unei rezervări.",
+    "provider": "Vreau să devin furnizor."
+  },
   "disclaimer": "Asistența AI poate face greșeli. Nu poate accesa date live despre comenzi, plăți sau cont.",
   "contactSupport": "Contactează asistența",
-  "inputPlaceholder": "Pune o întrebare de asistență...",
   "send": "Trimite",
   "sending": "Asistența răspunde...",
-  "sendingButton": "Se trimite...",
   "error": "Ceva nu a mers bine. Încearcă din nou sau contactează asistența.",
   "handoffAccount": "Pentru ajutor specific contului, contactează asistența cu detaliile comenzii, facturii sau contului.",
   "handoffGeneral": "Dacă acest răspuns nu îți rezolvă întrebarea, contactează asistența."

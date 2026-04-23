@@ -1,16 +1,29 @@
 {
   "title": "Supporto",
-  "lead": "Ricevi aiuto generale su registrazione, prenotazioni, pagamenti, cancellazioni, controversie e uso del marketplace.",
-  "phaseCopy": "La fase {phase} fornisce solo indicazioni generali di supporto. Non accede a dati live di ordini, pagamenti o account.",
-  "accountAwareNotice": "La chat di supporto è disponibile per ospiti e utenti registrati dallo stesso punto di accesso. Le risposte legate all'account non sono ancora disponibili.",
-  "threadLabel": "Conversazione di supporto",
-  "emptyThread": "Fai una domanda al supporto per iniziare.",
+  "lead": "Apri l'assistente di supporto per ricevere aiuto senza lasciare questa pagina.",
+  "panelTitle": "Supporto Infinisimo",
+  "panelSubtitle": "Di solito risponde subito",
+  "emptyTitle": "Come possiamo aiutarti?",
+  "emptySubtitle": "Fai una domanda o inizia con uno di questi argomenti.",
+  "close": "Chiudi la chat di supporto",
+  "launcher": "Supporto",
+  "composerPlaceholder": "Fai una domanda...",
+  "suggestions": {
+    "booking": "Aiuto prenotazioni",
+    "payment": "Domanda sul pagamento",
+    "cancel": "Annulla una prenotazione",
+    "provider": "Diventa fornitore"
+  },
+  "suggestionPrompts": {
+    "booking": "Ho bisogno di aiuto con una prenotazione.",
+    "payment": "Ho una domanda su un pagamento.",
+    "cancel": "Ho bisogno di aiuto per annullare una prenotazione.",
+    "provider": "Voglio diventare fornitore."
+  },
   "disclaimer": "Il supporto IA può commettere errori. Non può accedere ai dati live di ordini, pagamenti o account.",
   "contactSupport": "Contatta il supporto",
-  "inputPlaceholder": "Fai una domanda al supporto...",
   "send": "Invia",
   "sending": "Il supporto sta rispondendo...",
-  "sendingButton": "Invio...",
   "error": "Qualcosa è andato storto. Riprova o contatta il supporto.",
   "handoffAccount": "Per assistenza specifica sull'account, contatta il supporto con i dettagli di ordine, fattura o account.",
   "handoffGeneral": "Se questo non risponde alla tua domanda, contatta il supporto."

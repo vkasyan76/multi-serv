@@ -1,16 +1,29 @@
 {
   "title": "Soporte",
-  "lead": "Obtén ayuda general sobre registro, reservas, pagos, cancelaciones, disputas y uso del marketplace.",
-  "phaseCopy": "La fase {phase} solo ofrece orientación general de soporte. No accede a datos en vivo de pedidos, pagos o cuentas.",
-  "accountAwareNotice": "El chat de soporte está disponible para invitados y usuarios con sesión iniciada desde el mismo punto de entrada. Las respuestas relacionadas con la cuenta aún no están disponibles.",
-  "threadLabel": "Hilo del chat de soporte",
-  "emptyThread": "Haz una pregunta de soporte para empezar.",
+  "lead": "Abre el asistente de soporte para recibir ayuda sin salir de esta página.",
+  "panelTitle": "Soporte de Infinisimo",
+  "panelSubtitle": "Normalmente responde al instante",
+  "emptyTitle": "¿Cómo podemos ayudarte?",
+  "emptySubtitle": "Haz una pregunta o empieza con uno de estos temas.",
+  "close": "Cerrar chat de soporte",
+  "launcher": "Soporte",
+  "composerPlaceholder": "Haz una pregunta...",
+  "suggestions": {
+    "booking": "Ayuda con reservas",
+    "payment": "Pregunta de pago",
+    "cancel": "Cancelar una reserva",
+    "provider": "Convertirse en proveedor"
+  },
+  "suggestionPrompts": {
+    "booking": "Necesito ayuda con una reserva.",
+    "payment": "Tengo una pregunta sobre un pago.",
+    "cancel": "Necesito ayuda para cancelar una reserva.",
+    "provider": "Quiero convertirme en proveedor."
+  },
   "disclaimer": "El soporte con IA puede cometer errores. No puede acceder a datos en vivo de pedidos, pagos o cuentas.",
   "contactSupport": "Contactar soporte",
-  "inputPlaceholder": "Haz una pregunta de soporte...",
   "send": "Enviar",
   "sending": "El soporte está respondiendo...",
-  "sendingButton": "Enviando...",
   "error": "Algo salió mal. Inténtalo de nuevo o contacta con soporte.",
   "handoffAccount": "Para ayuda específica de tu cuenta, contacta con soporte e incluye los datos de tu pedido, factura o cuenta.",
   "handoffGeneral": "Si esto no responde a tu pregunta, contacta con soporte para recibir ayuda."

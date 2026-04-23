@@ -1,16 +1,29 @@
 {
   "title": "Support",
-  "lead": "Get general help with registration, bookings, payments, cancellations, disputes, and marketplace usage.",
-  "phaseCopy": "Phase {phase} provides general support guidance only. It does not access live order, payment, or account-specific data.",
-  "accountAwareNotice": "Support chat is available to guests and signed-in users through the same entry point. Account-aware answers are not available yet.",
-  "threadLabel": "Support chat thread",
-  "emptyThread": "Ask a support question to start.",
+  "lead": "Open the support assistant to get help without leaving this page.",
+  "panelTitle": "Infinisimo Support",
+  "panelSubtitle": "Usually replies instantly",
+  "emptyTitle": "How can we help?",
+  "emptySubtitle": "Ask a question or start with one of these topics.",
+  "close": "Close support chat",
+  "launcher": "Support",
+  "composerPlaceholder": "Ask a question...",
+  "suggestions": {
+    "booking": "Booking help",
+    "payment": "Payment question",
+    "cancel": "Cancel a booking",
+    "provider": "Become a provider"
+  },
+  "suggestionPrompts": {
+    "booking": "I need help with a booking.",
+    "payment": "I have a payment question.",
+    "cancel": "I need help canceling a booking.",
+    "provider": "I want to become a provider."
+  },
   "disclaimer": "AI support may make mistakes. It cannot access live order, payment, or account data.",
   "contactSupport": "Contact support",
-  "inputPlaceholder": "Ask a support question...",
   "send": "Send",
   "sending": "Support is replying...",
-  "sendingButton": "Sending...",
   "error": "Something went wrong. Please try again or contact support.",
   "handoffAccount": "For account-specific help, contact support with your order, invoice, or account details.",
   "handoffGeneral": "If this does not answer your question, contact support for help."
