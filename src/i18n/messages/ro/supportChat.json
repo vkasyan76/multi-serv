@@ -1,6 +1,7 @@
 {
   "title": "Asistență",
   "lead": "Deschide asistentul de suport pentru a primi ajutor fără a părăsi această pagină.",
+  "fallbackLead": "Asistentul de suport ar trebui să se deschidă automat. Îl poți deschide și aici.",
   "panelTitle": "Asistență Infinisimo",
   "panelSubtitle": "De obicei răspunde instant",
   "emptyTitle": "Cum te putem ajuta?",

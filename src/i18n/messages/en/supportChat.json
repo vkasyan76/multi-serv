@@ -1,6 +1,7 @@
 {
   "title": "Support",
   "lead": "Open the support assistant to get help without leaving this page.",
+  "fallbackLead": "The support assistant should open automatically. You can also open it here.",
   "panelTitle": "Infinisimo Support",
   "panelSubtitle": "Usually replies instantly",
   "emptyTitle": "How can we help?",

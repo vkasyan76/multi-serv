@@ -13,14 +13,14 @@ export function SupportChatThread({
   getHandoffText: (message: SupportChatMessage) => string | null;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {messages.map((message) => {
         const handoffText =
           message.role === "assistant" ? getHandoffText(message) : null;
         const isUser = message.role === "user";
 
         return (
-          <div key={message.id} className="space-y-2">
+          <div key={message.id} className="space-y-1.5">
             <div
               className={cn(
                 "max-w-[82%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-6 shadow-sm",
@@ -33,7 +33,7 @@ export function SupportChatThread({
             </div>
 
             {handoffText ? (
-              <p className="mr-auto max-w-[82%] rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">
+              <p className="mr-auto max-w-[82%] rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs leading-5 text-neutral-700 shadow-sm">
                 {handoffText}
               </p>
             ) : null}

@@ -45,7 +45,7 @@ export function SupportChatComposer({
         disabled={disabled}
         placeholder={placeholder}
         rows={1}
-        className="min-h-11 max-h-28 resize-none rounded-2xl bg-white px-4 py-3 text-sm shadow-sm"
+        className="min-h-11 max-h-24 resize-none rounded-2xl bg-white px-4 py-3 text-sm shadow-sm"
       />
 
       <Button

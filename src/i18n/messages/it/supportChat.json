@@ -1,6 +1,7 @@
 {
   "title": "Supporto",
   "lead": "Apri l'assistente di supporto per ricevere aiuto senza lasciare questa pagina.",
+  "fallbackLead": "L'assistente di supporto dovrebbe aprirsi automaticamente. Puoi aprirlo anche qui.",
   "panelTitle": "Supporto Infinisimo",
   "panelSubtitle": "Di solito risponde subito",
   "emptyTitle": "Come possiamo aiutarti?",

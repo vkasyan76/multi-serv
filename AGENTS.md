@@ -125,6 +125,9 @@ Required env groups are defined in `README.md`:
 - tRPC entry is `supportChat` in `src/trpc/routers/_app.ts`.
 - Public route is `src/app/(app)/[lang]/support/page.tsx`.
 - Navbar/mobile/footer entry points intentionally use a distinct `support` label instead of the older generic `chat` wording.
+- Support chat UI is a global overlayless assistant panel mounted from the locale app layout; `/[lang]/support` is only a fallback/deep-link host.
+- Support chat launchers in navbar/mobile/footer should open the panel rather than navigate away.
+- Do not use the modal `Sheet` component for the support assistant panel unless product requirements change; the page behind should remain visible and usable.
 - Anonymous and signed-in users share the same public support entry point; signed-in state alone must not be treated as permission for live account/order/payment answers.
 - Keep AI support chat separate from `src/modules/conversations/*` and `src/modules/messages/*`; those remain human-to-human messaging domains.
 - Support chat scope is grounded general support only: terms/policy, registration/onboarding, booking/payment/cancellation/dispute rules at policy level, failure next steps, and basic marketplace usage.

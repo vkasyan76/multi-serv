@@ -1,6 +1,7 @@
 {
   "title": "Wsparcie",
   "lead": "Otwórz asystenta wsparcia, aby uzyskać pomoc bez opuszczania tej strony.",
+  "fallbackLead": "Asystent wsparcia powinien otworzyć się automatycznie. Możesz też otworzyć go tutaj.",
   "panelTitle": "Wsparcie Infinisimo",
   "panelSubtitle": "Zwykle odpowiada natychmiast",
   "emptyTitle": "Jak możemy pomóc?",

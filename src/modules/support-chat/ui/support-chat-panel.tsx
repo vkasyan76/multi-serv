@@ -79,8 +79,8 @@ export function SupportChatPanel({ className }: { className?: string }) {
     <aside
       aria-label={t("panelTitle")}
       className={cn(
-        "fixed inset-x-3 bottom-3 z-50 flex h-[80vh] flex-col overflow-hidden rounded-2xl border bg-white shadow-2xl",
-        "sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-20 sm:h-auto sm:w-[440px]",
+        "fixed inset-x-3 bottom-3 z-50 flex h-[78vh] flex-col overflow-hidden rounded-2xl border bg-white shadow-2xl",
+        "sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-20 sm:h-auto sm:w-[450px]",
         className
       )}
     >
@@ -107,11 +107,11 @@ export function SupportChatPanel({ className }: { className?: string }) {
       </header>
 
       <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-4 px-4 py-4">
+        <div className="space-y-3 px-4 py-4">
           {!hasUserMessage ? (
-            <div className="space-y-4 py-8 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                <MessageCircle className="h-7 w-7" />
+            <div className="space-y-3 py-5 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                <MessageCircle className="h-6 w-6" />
               </div>
               <div className="space-y-1">
                 <h3 className="text-lg font-semibold">{t("emptyTitle")}</h3>
@@ -141,7 +141,7 @@ export function SupportChatPanel({ className }: { className?: string }) {
         </div>
       </ScrollArea>
 
-      <footer className="space-y-3 border-t bg-white px-4 py-3">
+      <footer className="space-y-2.5 border-t bg-white px-4 py-3">
         {error ? (
           <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {error}
@@ -158,11 +158,11 @@ export function SupportChatPanel({ className }: { className?: string }) {
           sendLabel={t("send")}
         />
 
-        <div className="flex flex-col gap-1 text-[11px] leading-5 text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>{t("disclaimer")}</p>
+        <div className="flex flex-col gap-1 text-[11px] leading-4 text-muted-foreground sm:flex-row sm:items-start sm:justify-between">
+          <p className="max-w-[280px]">{t("disclaimer")}</p>
           <Link
             href={contactHref}
-            className="font-medium text-foreground underline underline-offset-4"
+            className="shrink-0 font-medium text-foreground underline underline-offset-4"
           >
             {t("contactSupport")}
           </Link>

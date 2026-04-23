@@ -23,8 +23,8 @@ export function SupportChatSuggestions({
         <Button
           key={suggestion.id}
           type="button"
-          variant="outline"
-          className="h-auto justify-start whitespace-normal rounded-xl px-3 py-2 text-left text-sm"
+          variant="ghost"
+          className="h-auto justify-start whitespace-normal rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-left text-sm font-medium hover:bg-neutral-100"
           disabled={disabled}
           onClick={() => onSelect(suggestion)}
         >

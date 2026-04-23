@@ -1,6 +1,7 @@
 {
   "title": "Assistance",
   "lead": "Ouvrez l'assistant d'assistance pour obtenir de l'aide sans quitter cette page.",
+  "fallbackLead": "L'assistant d'assistance devrait s'ouvrir automatiquement. Vous pouvez aussi l'ouvrir ici.",
   "panelTitle": "Assistance Infinisimo",
   "panelSubtitle": "Répond généralement instantanément",
   "emptyTitle": "Comment pouvons-nous aider ?",
