@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { withLocalePrefix } from "@/i18n/routing";
 import { LanguageSwitcher } from "@/i18n/ui/language-switcher";
+import { SupportChatLauncher } from "@/modules/support-chat/ui/support-chat-launcher";
 import {
   SignInButton,
   useAuth,
@@ -151,13 +152,14 @@ export const NavbarSidebar = ({ items, open, onOpenChange }: Props) => {
               {t("nav.my_orders")}
             </Link>
           ) : null}
-          <Link
-            href={href("/support")}
-            className="w-full text-left p-4 hover:bg-black hover:text-white flex items-center text-base font-medium"
-            onClick={() => onOpenChange(false)}
+          <SupportChatLauncher
+            variant="ghost"
+            showIcon={false}
+            className="h-auto w-full justify-start rounded-none border-0 p-4 text-left text-base font-medium hover:bg-black hover:text-white"
+            onOpen={() => onOpenChange(false)}
           >
             {t("nav.support")}
-          </Link>
+          </SupportChatLauncher>
           {/* Clerk Auth Buttons and User Profile / Dashboard Links */}
           <div className="border-t">
             {!isLoaded ? (

@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { withLocalePrefix } from "@/i18n/routing";
+import { SupportChatLauncher } from "@/modules/support-chat/ui/support-chat-launcher";
 
 export const Footer = () => {
   const t = useTranslations("common");
@@ -80,14 +81,13 @@ export const Footer = () => {
 
         {/* Legal / Preferences */}
         <nav className="flex items-center gap-4 text-gray-600 text-sm">
-          {/* Mirror the navbar entry in the footer so support stays reachable
-          even before the actual chat UI lands. */}
-          <Link
-            href={href("/support")}
-            className="hover:text-black transition-colors"
+          <SupportChatLauncher
+            variant="ghost"
+            showIcon={false}
+            className="h-auto rounded-none p-0 text-gray-600 hover:bg-transparent hover:text-black"
           >
             {t("nav.support")}
-          </Link>
+          </SupportChatLauncher>
 
           <Link href={href("/legal/terms-of-use")} className="hover:text-black transition-colors">
             {/* Match navbar wording on desktop, keep the shorter footer label on mobile. */}

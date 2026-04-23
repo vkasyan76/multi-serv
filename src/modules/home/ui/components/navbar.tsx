@@ -13,12 +13,12 @@ import { LanguageSwitcher } from "@/i18n/ui/language-switcher";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
 import { NavbarGlobalSearch } from "@/modules/search/ui/navbar-global-search";
+import { SupportChatLauncher } from "@/modules/support-chat/ui/support-chat-launcher";
 
 import { NavbarSidebar } from "./navbar-sidebar";
 import {
   LayoutGridIcon,
   MenuIcon,
-  MessageCircleIcon,
 } from "lucide-react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
@@ -198,19 +198,12 @@ export const Navbar = () => {
             {t("nav.my_orders")}
           </NavbarItem>
         ) : null}
-        <Button
-          asChild
-          type="button"
+        <SupportChatLauncher
           variant="outline"
           className="bg-transparent rounded-full border-transparent px-3.5 text-lg"
         >
-          <Link href={href("/support")}>
-            <MessageCircleIcon className="size-4" />
-            {/* Use a distinct support label so this entry does not read like
-            the human customer/vendor conversation surface. */}
-            <span>{t("nav.support")}</span>
-          </Link>
-        </Button>
+          {t("nav.support")}
+        </SupportChatLauncher>
         {/* Phase 6: keep switcher near auth/profile actions (desktop only). */}
         <LanguageSwitcher
           className="w-auto min-w-0 rounded-full px-3.5 text-lg"
