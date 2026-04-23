@@ -2,5 +2,16 @@
   "title": "Asistență",
   "lead": "Primește ajutor general pentru înregistrare, rezervări, plăți, anulări, dispute și utilizarea marketplace-ului.",
   "phaseCopy": "Faza {phase} oferă doar îndrumare generală de asistență. Nu accesează date live despre comenzi, plăți sau cont.",
-  "accountAwareNotice": "Chatul de asistență este disponibil pentru vizitatori și utilizatori autentificați prin același punct de acces. Răspunsurile legate de cont nu sunt încă disponibile."
+  "accountAwareNotice": "Chatul de asistență este disponibil pentru vizitatori și utilizatori autentificați prin același punct de acces. Răspunsurile legate de cont nu sunt încă disponibile.",
+  "threadLabel": "Firul chatului de asistență",
+  "emptyThread": "Pune o întrebare de asistență pentru a începe.",
+  "disclaimer": "Asistența AI poate face greșeli. Nu poate accesa date live despre comenzi, plăți sau cont.",
+  "contactSupport": "Contactează asistența",
+  "inputPlaceholder": "Pune o întrebare de asistență...",
+  "send": "Trimite",
+  "sending": "Asistența răspunde...",
+  "sendingButton": "Se trimite...",
+  "error": "Ceva nu a mers bine. Încearcă din nou sau contactează asistența.",
+  "handoffAccount": "Pentru ajutor specific contului, contactează asistența cu detaliile comenzii, facturii sau contului.",
+  "handoffGeneral": "Dacă acest răspuns nu îți rezolvă întrebarea, contactează asistența."
 }

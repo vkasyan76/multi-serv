@@ -2,5 +2,16 @@
   "title": "Support",
   "lead": "Get general help with registration, bookings, payments, cancellations, disputes, and marketplace usage.",
   "phaseCopy": "Phase {phase} provides general support guidance only. It does not access live order, payment, or account-specific data.",
-  "accountAwareNotice": "Support chat is available to guests and signed-in users through the same entry point. Account-aware answers are not available yet."
+  "accountAwareNotice": "Support chat is available to guests and signed-in users through the same entry point. Account-aware answers are not available yet.",
+  "threadLabel": "Support chat thread",
+  "emptyThread": "Ask a support question to start.",
+  "disclaimer": "AI support may make mistakes. It cannot access live order, payment, or account data.",
+  "contactSupport": "Contact support",
+  "inputPlaceholder": "Ask a support question...",
+  "send": "Send",
+  "sending": "Support is replying...",
+  "sendingButton": "Sending...",
+  "error": "Something went wrong. Please try again or contact support.",
+  "handoffAccount": "For account-specific help, contact support with your order, invoice, or account details.",
+  "handoffGeneral": "If this does not answer your question, contact support for help."
 }

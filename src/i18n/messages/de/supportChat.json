@@ -2,5 +2,16 @@
   "title": "Support",
   "lead": "Erhalten Sie allgemeine Hilfe zu Registrierung, Buchungen, Zahlungen, Stornierungen, Streitfällen und zur Nutzung des Marktplatzes.",
   "phaseCopy": "Phase {phase} bietet nur allgemeine Support-Hinweise. Sie greift nicht auf Live-Bestell-, Zahlungs- oder kontospezifische Daten zu.",
-  "accountAwareNotice": "Der Support-Chat ist für Gäste und angemeldete Nutzer über denselben Einstieg verfügbar. Kontobezogene Antworten sind noch nicht verfügbar."
+  "accountAwareNotice": "Der Support-Chat ist für Gäste und angemeldete Nutzer über denselben Einstieg verfügbar. Kontobezogene Antworten sind noch nicht verfügbar.",
+  "threadLabel": "Support-Chat-Verlauf",
+  "emptyThread": "Stellen Sie eine Support-Frage, um zu beginnen.",
+  "disclaimer": "KI-Support kann Fehler machen. Er kann nicht auf Live-Bestell-, Zahlungs- oder Kontodaten zugreifen.",
+  "contactSupport": "Support kontaktieren",
+  "inputPlaceholder": "Stellen Sie eine Support-Frage...",
+  "send": "Senden",
+  "sending": "Der Support antwortet...",
+  "sendingButton": "Wird gesendet...",
+  "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.",
+  "handoffAccount": "Für kontospezifische Hilfe kontaktieren Sie den Support mit Ihren Bestell-, Rechnungs- oder Kontodaten.",
+  "handoffGeneral": "Wenn dies Ihre Frage nicht beantwortet, kontaktieren Sie den Support."
 }

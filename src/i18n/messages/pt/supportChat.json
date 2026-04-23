@@ -2,5 +2,16 @@
   "title": "Suporte",
   "lead": "Obtenha ajuda geral sobre registo, reservas, pagamentos, cancelamentos, disputas e utilização do marketplace.",
   "phaseCopy": "A fase {phase} fornece apenas orientação geral de suporte. Não acede a dados em tempo real de encomendas, pagamentos ou contas.",
-  "accountAwareNotice": "O chat de suporte está disponível para visitantes e utilizadores com sessão iniciada pelo mesmo ponto de entrada. Respostas relacionadas com a conta ainda não estão disponíveis."
+  "accountAwareNotice": "O chat de suporte está disponível para visitantes e utilizadores com sessão iniciada pelo mesmo ponto de entrada. Respostas relacionadas com a conta ainda não estão disponíveis.",
+  "threadLabel": "Conversa de suporte",
+  "emptyThread": "Faça uma pergunta ao suporte para começar.",
+  "disclaimer": "O suporte com IA pode cometer erros. Não pode aceder a dados em tempo real de encomendas, pagamentos ou contas.",
+  "contactSupport": "Contactar suporte",
+  "inputPlaceholder": "Faça uma pergunta ao suporte...",
+  "send": "Enviar",
+  "sending": "O suporte está a responder...",
+  "sendingButton": "A enviar...",
+  "error": "Algo correu mal. Tente novamente ou contacte o suporte.",
+  "handoffAccount": "Para ajuda específica da conta, contacte o suporte com os dados da sua encomenda, fatura ou conta.",
+  "handoffGeneral": "Se isto não responder à sua pergunta, contacte o suporte."
 }

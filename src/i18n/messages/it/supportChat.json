@@ -2,5 +2,16 @@
   "title": "Supporto",
   "lead": "Ricevi aiuto generale su registrazione, prenotazioni, pagamenti, cancellazioni, controversie e uso del marketplace.",
   "phaseCopy": "La fase {phase} fornisce solo indicazioni generali di supporto. Non accede a dati live di ordini, pagamenti o account.",
-  "accountAwareNotice": "La chat di supporto è disponibile per ospiti e utenti registrati dallo stesso punto di accesso. Le risposte legate all'account non sono ancora disponibili."
+  "accountAwareNotice": "La chat di supporto è disponibile per ospiti e utenti registrati dallo stesso punto di accesso. Le risposte legate all'account non sono ancora disponibili.",
+  "threadLabel": "Conversazione di supporto",
+  "emptyThread": "Fai una domanda al supporto per iniziare.",
+  "disclaimer": "Il supporto IA può commettere errori. Non può accedere ai dati live di ordini, pagamenti o account.",
+  "contactSupport": "Contatta il supporto",
+  "inputPlaceholder": "Fai una domanda al supporto...",
+  "send": "Invia",
+  "sending": "Il supporto sta rispondendo...",
+  "sendingButton": "Invio...",
+  "error": "Qualcosa è andato storto. Riprova o contatta il supporto.",
+  "handoffAccount": "Per assistenza specifica sull'account, contatta il supporto con i dettagli di ordine, fattura o account.",
+  "handoffGeneral": "Se questo non risponde alla tua domanda, contatta il supporto."
 }

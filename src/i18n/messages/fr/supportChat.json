@@ -2,5 +2,16 @@
   "title": "Assistance",
   "lead": "Obtenez une aide générale sur l'inscription, les réservations, les paiements, les annulations, les litiges et l'utilisation de la place de marché.",
   "phaseCopy": "La phase {phase} fournit uniquement des conseils d'assistance généraux. Elle n'accède pas aux données en direct des commandes, des paiements ou du compte.",
-  "accountAwareNotice": "Le chat d'assistance est disponible pour les invités et les utilisateurs connectés depuis le même point d'entrée. Les réponses liées au compte ne sont pas encore disponibles."
+  "accountAwareNotice": "Le chat d'assistance est disponible pour les invités et les utilisateurs connectés depuis le même point d'entrée. Les réponses liées au compte ne sont pas encore disponibles.",
+  "threadLabel": "Fil du chat d'assistance",
+  "emptyThread": "Posez une question d'assistance pour commencer.",
+  "disclaimer": "L'assistance IA peut faire des erreurs. Elle ne peut pas accéder aux données en direct des commandes, paiements ou comptes.",
+  "contactSupport": "Contacter l'assistance",
+  "inputPlaceholder": "Posez une question d'assistance...",
+  "send": "Envoyer",
+  "sending": "L'assistance répond...",
+  "sendingButton": "Envoi...",
+  "error": "Une erreur s'est produite. Veuillez réessayer ou contacter l'assistance.",
+  "handoffAccount": "Pour une aide propre à votre compte, contactez l'assistance avec les détails de votre commande, facture ou compte.",
+  "handoffGeneral": "Si cela ne répond pas à votre question, contactez l'assistance."
 }

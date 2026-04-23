@@ -2,5 +2,16 @@
   "title": "Wsparcie",
   "lead": "Uzyskaj ogólną pomoc dotyczącą rejestracji, rezerwacji, płatności, anulowania, sporów i korzystania z marketplace.",
   "phaseCopy": "Faza {phase} zapewnia wyłącznie ogólne wskazówki pomocy. Nie ma dostępu do bieżących danych zamówień, płatności ani konta.",
-  "accountAwareNotice": "Czat wsparcia jest dostępny dla gości i zalogowanych użytkowników z tego samego miejsca. Odpowiedzi dotyczące konta nie są jeszcze dostępne."
+  "accountAwareNotice": "Czat wsparcia jest dostępny dla gości i zalogowanych użytkowników z tego samego miejsca. Odpowiedzi dotyczące konta nie są jeszcze dostępne.",
+  "threadLabel": "Wątek czatu wsparcia",
+  "emptyThread": "Zadaj pytanie do wsparcia, aby rozpocząć.",
+  "disclaimer": "Wsparcie AI może popełniać błędy. Nie ma dostępu do bieżących danych zamówień, płatności ani kont.",
+  "contactSupport": "Skontaktuj się ze wsparciem",
+  "inputPlaceholder": "Zadaj pytanie do wsparcia...",
+  "send": "Wyślij",
+  "sending": "Wsparcie odpowiada...",
+  "sendingButton": "Wysyłanie...",
+  "error": "Coś poszło nie tak. Spróbuj ponownie lub skontaktuj się ze wsparciem.",
+  "handoffAccount": "Aby uzyskać pomoc dotyczącą konta, skontaktuj się ze wsparciem i podaj dane zamówienia, faktury lub konta.",
+  "handoffGeneral": "Jeśli to nie odpowiada na Twoje pytanie, skontaktuj się ze wsparciem."
 }

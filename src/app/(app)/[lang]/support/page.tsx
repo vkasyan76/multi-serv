@@ -1,6 +1,6 @@
 import { isLocaleSegment } from "@/i18n/routing";
 import { type AppLang } from "@/lib/i18n/app-lang";
-import { SupportChatEntryPlaceholder } from "@/modules/support-chat/ui/support-chat-entry-placeholder";
+import { SupportChatView } from "@/modules/support-chat/ui/support-chat-view";
 import { notFound } from "next/navigation";
 
 export default async function SupportPage({
@@ -15,5 +15,5 @@ export default async function SupportPage({
     notFound();
   }
 
-  return <SupportChatEntryPlaceholder lang={rawLang as AppLang} />;
+  return <SupportChatView lang={rawLang as AppLang} />;
 }
