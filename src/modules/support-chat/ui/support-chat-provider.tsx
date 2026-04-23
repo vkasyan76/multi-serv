@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -58,6 +59,7 @@ export function SupportChatProvider({
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pendingSendRef = useRef(false);
 
   const openChat = useCallback(() => setOpen(true), []);
   const closeChat = useCallback(() => setOpen(false), []);
@@ -67,7 +69,10 @@ export function SupportChatProvider({
       const draft = messageOverride ?? input;
       const message = draft.trim();
 
-      if (!message || isSending) return;
+      // React state is async; keep a ref guard so same-tick submits cannot fork
+      // duplicate requests before isSending flips on the next render.
+      if (!message || pendingSendRef.current) return;
+      pendingSendRef.current = true;
 
       const userMessage: SupportChatMessage = {
         id: createMessageId(),
@@ -101,23 +106,20 @@ export function SupportChatProvider({
             sources: response.sources,
           },
         ]);
-      } catch (sendError) {
+      } catch {
         setMessages((current) =>
           current.filter((item) => item.id !== userMessage.id)
         );
         if (messageOverride == null) {
           setInput(draft);
         }
-        setError(
-          sendError instanceof Error && sendError.message
-            ? sendError.message
-            : t("error")
-        );
+        setError(t("error"));
       } finally {
+        pendingSendRef.current = false;
         setIsSending(false);
       }
     },
-    [input, isSending, lang, sendSupportMessage, t, threadId]
+    [input, lang, sendSupportMessage, t, threadId]
   );
 
   const value = useMemo<SupportChatContextValue>(

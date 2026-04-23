@@ -110,15 +110,13 @@ function nextThreadStatus(
 }
 
 async function countThreadMessages(db: Payload, threadId: string) {
-  const messages = await db.find({
+  const { totalDocs } = await db.count({
     collection: "support_chat_messages",
     where: { thread: { equals: threadId } },
-    limit: 0,
-    depth: 0,
     overrideAccess: true,
   });
 
-  return messages.totalDocs;
+  return totalDocs;
 }
 
 async function findOrCreateThread(input: {

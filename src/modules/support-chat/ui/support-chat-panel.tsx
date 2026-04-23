@@ -27,7 +27,7 @@ function getHandoffText(
     return labels.account;
   }
 
-  if (message.needsHumanSupport) {
+  if (message.disposition === "escalate" || message.needsHumanSupport) {
     return labels.general;
   }
 

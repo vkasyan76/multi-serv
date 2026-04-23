@@ -43,6 +43,7 @@ export function SupportChatComposer({
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
+        aria-label={placeholder || "Message"}
         placeholder={placeholder}
         rows={1}
         className="min-h-11 max-h-24 resize-none rounded-2xl bg-white px-4 py-3 text-sm shadow-sm"

@@ -43,7 +43,7 @@ export const SupportChatThreads: CollectionConfig = {
       index: true,
       admin: {
         description:
-          "Public support-chat continuity id; distinct from the Payload document id.",
+          "Opaque support-chat continuity id for server/admin correlation; distinct from the Payload document id.",
       },
     },
     {
@@ -123,6 +123,7 @@ export const SupportChatThreads: CollectionConfig = {
     {
       name: "retentionUntil",
       type: "date",
+      required: true,
       index: true,
       admin: { position: "sidebar" },
     },

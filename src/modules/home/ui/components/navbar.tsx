@@ -94,10 +94,6 @@ export const Navbar = () => {
 
   const navbarItems = [
     { href: href("/"), children: t("nav.home") },
-    { href: href("/about"), children: t("nav.about") },
-    { href: href("/features"), children: t("nav.features") },
-    { href: href("/pricing"), children: t("nav.pricing") },
-    { href: href("/contact"), children: t("nav.contact") },
     { href: href("/legal/terms-of-use"), children: t("nav.terms_of_use") },
     { href: href("/legal/impressum"), children: t("nav.impressum") },
   ];

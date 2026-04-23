@@ -17,11 +17,9 @@ import { z } from "zod";
 
 function supportChatRateLimitKey(input: {
   userId?: string | null;
-  threadId?: string;
   headers: Record<string, string>;
 }) {
   if (input.userId) return `user:${input.userId}`;
-  if (input.threadId) return `thread:${input.threadId}`;
 
   const forwardedFor = input.headers["x-forwarded-for"]?.split(",")[0]?.trim();
   const ip = forwardedFor || input.headers["x-real-ip"] || "anonymous";
@@ -40,7 +38,7 @@ export const supportChatRouter = createTRPCRouter({
   sendMessage: baseProcedure
     .input(
       z.object({
-        message: z.string().max(2000),
+        message: z.string().trim().min(1).max(2000),
         threadId: z.string().uuid().optional(),
         locale: z.enum(SUPPORTED_APP_LANGS).optional(),
       })
@@ -52,7 +50,6 @@ export const supportChatRouter = createTRPCRouter({
       const rateLimit = checkSupportChatRateLimit(
         supportChatRateLimitKey({
           userId: ctx.userId,
-          threadId: input.threadId,
           headers: ctx.headers,
         })
       );

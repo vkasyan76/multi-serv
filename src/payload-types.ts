@@ -927,7 +927,7 @@ export interface PromotionCounter {
 export interface SupportChatThread {
   id: string;
   /**
-   * Public support-chat continuity id; distinct from the Payload document id.
+   * Opaque support-chat continuity id for server/admin correlation; distinct from the Payload document id.
    */
   threadId: string;
   user?: (string | null) | User;
@@ -944,7 +944,7 @@ export interface SupportChatThread {
    * Total stored messages in this support thread. Each completed exchange adds two.
    */
   messageCount: number;
-  retentionUntil?: string | null;
+  retentionUntil: string;
   updatedAt: string;
   createdAt: string;
 }
