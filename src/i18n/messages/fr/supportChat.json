@@ -26,6 +26,16 @@
   "send": "Envoyer",
   "sending": "L'assistance répond...",
   "error": "Une erreur s'est produite. Veuillez réessayer ou contacter l'assistance.",
+  "serverMessages": {
+    "rateLimit": "Trop de demandes d'assistance par chat. Veuillez attendre un instant et réessayer.",
+    "outage": "Le chat d'assistance est temporairement indisponible. Veuillez réessayer plus tard ou contacter l'assistance.",
+    "empty": "Veuillez saisir une question d'assistance pour que je puisse vous aider.",
+    "abusive": "Je peux aider pour les questions d'assistance, mais je ne peux pas répondre aux messages abusifs. Veuillez contacter l'assistance si vous avez besoin d'aide.",
+    "nonsense": "Je n'ai pas compris cette demande. Veuillez reformuler votre question d'assistance ou contacter l'assistance.",
+    "clarify": "Que cherchez-vous à faire : vous inscrire, réserver un service, gérer un profil prestataire, payer une commande, annuler ou contester quelque chose ?",
+    "unsupportedAccount": "Je ne peux pas encore vérifier dans ce chat les détails en direct d'une commande, d'un paiement, d'une facture, d'un remboursement ou d'un compte. Je peux expliquer la politique générale ou les étapes habituelles à partir du support Infinisimo. Pour votre commande ou votre compte précis, veuillez utiliser vos pages de compte ou contacter l'assistance.",
+    "uncertain": "Je n'ai pas assez d'informations d'assistance pour répondre de manière fiable. Je peux aider sur les questions générales d'inscription, de configuration prestataire, de réservation, de paiement, d'annulation, de litige et d'utilisation de la marketplace. Pour ce problème précis, veuillez contacter l'assistance."
+  },
   "handoffAccount": "Pour une aide propre à votre compte, contactez l'assistance avec les détails de votre commande, facture ou compte.",
   "handoffGeneral": "Si cela ne répond pas à votre question, contactez l'assistance."
 }

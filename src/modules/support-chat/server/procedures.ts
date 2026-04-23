@@ -12,6 +12,7 @@ import { SUPPORT_CHAT_CAPABILITIES } from "@/modules/support-chat/lib/scope";
 import { generateSupportResponse } from "@/modules/support-chat/server/generate-support-response";
 import { persistSupportInteraction } from "@/modules/support-chat/server/persist-support-interaction";
 import { checkSupportChatRateLimit } from "@/modules/support-chat/server/rate-limit";
+import { getSupportChatCopy } from "@/modules/support-chat/server/support-chat-copy";
 import { z } from "zod";
 
 function supportChatRateLimitKey(input: {
@@ -46,6 +47,7 @@ export const supportChatRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const locale = input.locale ?? ctx.appLang;
+      const copy = getSupportChatCopy(locale).serverMessages;
       const threadId = input.threadId ?? crypto.randomUUID();
       const rateLimit = checkSupportChatRateLimit(
         supportChatRateLimitKey({
@@ -58,8 +60,7 @@ export const supportChatRouter = createTRPCRouter({
       if (!rateLimit.allowed) {
         return {
           threadId,
-          assistantMessage:
-            "Too many support chat requests. Please wait a moment and try again.",
+          assistantMessage: copy.rateLimit,
           sources: [],
           disposition: "escalate" as const,
           needsHumanSupport: false,

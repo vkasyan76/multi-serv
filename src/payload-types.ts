@@ -984,6 +984,7 @@ export interface SupportChatMessage {
         sectionId: string;
         sectionTitle?: string | null;
         sourceType: 'operational-guidance' | 'policy-summary' | 'terms-reference' | 'fallback-guidance';
+        sourceLocale: 'en' | 'de' | 'fr' | 'it' | 'es' | 'pt' | 'pl' | 'ro' | 'uk';
         score: number;
         matchedTerms?:
           | {
@@ -1634,6 +1635,7 @@ export interface SupportChatMessagesSelect<T extends boolean = true> {
         sectionId?: T;
         sectionTitle?: T;
         sourceType?: T;
+        sourceLocale?: T;
         score?: T;
         matchedTerms?:
           | T

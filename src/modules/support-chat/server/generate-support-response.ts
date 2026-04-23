@@ -13,6 +13,7 @@ import {
   retrieveSupportKnowledge,
   type SupportKnowledgeMatch,
 } from "@/modules/support-chat/server/retrieve-knowledge";
+import { getSupportChatCopy } from "@/modules/support-chat/server/support-chat-copy";
 
 export type SupportChatDisposition =
   | "answered"
@@ -27,6 +28,7 @@ export type SupportChatSource = {
   sectionId: string;
   sectionTitle: string;
   sourceType: SupportKnowledgeSourceType;
+  sourceLocale: AppLang;
   score: number;
   matchedTerms: string[];
 };
@@ -52,20 +54,6 @@ export type GenerateSupportResponseResult = {
 };
 
 const MIN_STRONG_SOURCE_SCORE = 4;
-
-const SUPPORT_CHAT_SERVER_MESSAGES = {
-  empty: "Please enter a support question so I can help.",
-  abusive:
-    "I can help with support questions, but I cannot respond to abusive messages. Please contact support if you need help.",
-  nonsense:
-    "I could not understand that request. Please rephrase your support question or contact support.",
-  clarify:
-    "What are you trying to do: register, book a service, manage a provider profile, pay for an order, cancel, or dispute something?",
-  unsupportedAccount:
-    "I cannot check live order, payment, invoice, refund, or account details in this chat yet. I can explain the general policy or usual next steps from Infinisimo support material. For your specific account or order, please use your account pages or contact support.",
-  uncertain:
-    "I do not have enough support information to answer that reliably. I can help with general registration, provider setup, booking, payment, cancellation, dispute, and marketplace usage questions. For this specific issue, please contact support.",
-} as const;
 
 const AMBIGUOUS_SUPPORT_PHRASES = new Set([
   "help",
@@ -123,15 +111,21 @@ function toSupportChatSource(match: SupportKnowledgeMatch): SupportChatSource {
     sectionId: match.sectionId,
     sectionTitle: match.sectionTitle,
     sourceType: match.sourceType,
+    sourceLocale: match.locale,
     score: match.score,
     matchedTerms: match.matchedTerms,
   };
 }
 
-function invalidInputMessage(disposition: SupportChatInputPrecheckDisposition) {
-  if (disposition === "empty") return SUPPORT_CHAT_SERVER_MESSAGES.empty;
-  if (disposition === "abusive") return SUPPORT_CHAT_SERVER_MESSAGES.abusive;
-  return SUPPORT_CHAT_SERVER_MESSAGES.nonsense;
+function invalidInputMessage(
+  disposition: SupportChatInputPrecheckDisposition,
+  locale: AppLang
+) {
+  const copy = getSupportChatCopy(locale).serverMessages;
+
+  if (disposition === "empty") return copy.empty;
+  if (disposition === "abusive") return copy.abusive;
+  return copy.nonsense;
 }
 
 function supportResponse(
@@ -152,11 +146,12 @@ export async function generateSupportResponse(
   const threadId = input.threadId ?? crypto.randomUUID();
   const message = input.message.trim();
   const precheck = classifySupportChatInputPrecheck(message);
+  const copy = getSupportChatCopy(input.locale).serverMessages;
 
   if (precheck !== "in_scope") {
     return supportResponse({
       threadId,
-      assistantMessage: invalidInputMessage(precheck),
+      assistantMessage: invalidInputMessage(precheck, input.locale),
       sources: [],
       disposition: "escalate",
       responseOrigin: "server",
@@ -167,7 +162,7 @@ export async function generateSupportResponse(
   if (isAmbiguousSupportRequest(message)) {
     return supportResponse({
       threadId,
-      assistantMessage: SUPPORT_CHAT_SERVER_MESSAGES.clarify,
+      assistantMessage: copy.clarify,
       sources: [],
       disposition: "uncertain",
       responseOrigin: "server",
@@ -185,7 +180,7 @@ export async function generateSupportResponse(
   if (hasUnsupportedAccountRequest) {
     return supportResponse({
       threadId,
-      assistantMessage: SUPPORT_CHAT_SERVER_MESSAGES.unsupportedAccount,
+      assistantMessage: copy.unsupportedAccount,
       sources,
       disposition: "unsupported_account_question",
       responseOrigin: "server",
@@ -195,7 +190,7 @@ export async function generateSupportResponse(
   if (!matches.length || !hasStrongSource(matches)) {
     return supportResponse({
       threadId,
-      assistantMessage: SUPPORT_CHAT_SERVER_MESSAGES.uncertain,
+      assistantMessage: copy.uncertain,
       sources,
       disposition: "uncertain",
       responseOrigin: "server",
@@ -210,6 +205,7 @@ export async function generateSupportResponse(
   const modelResult = await createSupportChatModelResponse({
     instructions: prompt.instructions,
     input: prompt.input,
+    locale: input.locale,
     metadata: {
       threadId,
       locale: input.locale,

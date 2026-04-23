@@ -26,6 +26,16 @@
   "send": "Invia",
   "sending": "Il supporto sta rispondendo...",
   "error": "Qualcosa è andato storto. Riprova o contatta il supporto.",
+  "serverMessages": {
+    "rateLimit": "Troppe richieste alla chat di supporto. Attendi un momento e riprova.",
+    "outage": "La chat di supporto è temporaneamente non disponibile. Riprova più tardi o contatta il supporto.",
+    "empty": "Inserisci una domanda di supporto così posso aiutarti.",
+    "abusive": "Posso aiutare con domande di supporto, ma non posso rispondere a messaggi offensivi. Contatta il supporto se hai bisogno di aiuto.",
+    "nonsense": "Non sono riuscito a capire questa richiesta. Riformula la tua domanda di supporto oppure contatta il supporto.",
+    "clarify": "Che cosa stai cercando di fare: registrarti, prenotare un servizio, gestire un profilo fornitore, pagare un ordine, annullare o contestare qualcosa?",
+    "unsupportedAccount": "In questa chat non posso ancora controllare dettagli live di ordini, pagamenti, fatture, rimborsi o account. Posso spiegare la policy generale o i passaggi abituali usando il materiale di supporto Infinisimo. Per il tuo account o ordine specifico, usa le pagine del tuo account oppure contatta il supporto.",
+    "uncertain": "Non ho abbastanza informazioni di supporto per rispondere in modo affidabile. Posso aiutare con domande generali su registrazione, configurazione fornitore, prenotazione, pagamento, cancellazione, contestazioni e uso del marketplace. Per questo problema specifico, contatta il supporto."
+  },
   "handoffAccount": "Per assistenza specifica sull'account, contatta il supporto con i dettagli di ordine, fattura o account.",
   "handoffGeneral": "Se questo non risponde alla tua domanda, contatta il supporto."
 }

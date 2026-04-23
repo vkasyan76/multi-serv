@@ -26,6 +26,16 @@
   "send": "Enviar",
   "sending": "El soporte está respondiendo...",
   "error": "Algo salió mal. Inténtalo de nuevo o contacta con soporte.",
+  "serverMessages": {
+    "rateLimit": "Demasiadas solicitudes al chat de soporte. Espera un momento e inténtalo de nuevo.",
+    "outage": "El chat de soporte no está disponible temporalmente. Inténtalo más tarde o contacta con soporte.",
+    "empty": "Escribe una pregunta de soporte para que pueda ayudarte.",
+    "abusive": "Puedo ayudar con preguntas de soporte, pero no puedo responder a mensajes abusivos. Contacta con soporte si necesitas ayuda.",
+    "nonsense": "No he podido entender esa solicitud. Reformula tu pregunta de soporte o contacta con soporte.",
+    "clarify": "¿Qué intentas hacer: registrarte, reservar un servicio, gestionar un perfil de proveedor, pagar un pedido, cancelar o disputar algo?",
+    "unsupportedAccount": "Todavía no puedo comprobar en este chat datos en vivo de pedidos, pagos, facturas, reembolsos o cuentas. Puedo explicar la política general o los pasos habituales a partir del material de soporte de Infinisimo. Para tu cuenta o pedido concreto, utiliza las páginas de tu cuenta o contacta con soporte.",
+    "uncertain": "No tengo suficiente información de soporte para responder con fiabilidad. Puedo ayudar con preguntas generales sobre registro, configuración de proveedor, reservas, pagos, cancelaciones, disputas y uso del marketplace. Para este problema concreto, contacta con soporte."
+  },
   "handoffAccount": "Para ayuda específica de tu cuenta, contacta con soporte e incluye los datos de tu pedido, factura o cuenta.",
   "handoffGeneral": "Si esto no responde a tu pregunta, contacta con soporte para recibir ayuda."
 }

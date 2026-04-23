@@ -146,6 +146,8 @@ Required env groups are defined in `README.md`:
 - Markdown `## ...` headings in knowledge files are stable section IDs; do not rewrite, slugify, or derive alternate IDs during loading.
 - Use a minimum relevance threshold; do not force irrelevant chunks into model context.
 - Support-chat UI copy belongs in the `supportChat` i18n namespace, while the repo-managed knowledge pack may remain English-only until localized source material is approved.
+- Deterministic server-authored support-chat responses should use `supportChat.serverMessages` by route/app locale instead of hardcoded English strings.
+- Persisted support-chat source locale metadata must reflect the actual matched knowledge chunk locale so English fallback remains inspectable in logs.
 - Input precheck helpers must stay minimal and must not become homemade semantic intent classification.
 - `supportChat.sendMessage` is the public server contract for support chat; use `threadId`, not `conversationId`, to avoid confusion with human messaging.
 - `threadId` is an opaque support-chat continuity id for server/admin logs only and must not be treated as user-visible persisted chat history.

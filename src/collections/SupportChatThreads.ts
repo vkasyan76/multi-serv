@@ -12,7 +12,6 @@ const SUPPORT_CHAT_DISPOSITIONS = [
 export const SupportChatThreads: CollectionConfig = {
   slug: "support_chat_threads",
   indexes: [
-    { fields: ["threadId"], unique: true },
     { fields: ["user", "lastMessageAt"] },
     { fields: ["status", "lastMessageAt"] },
     { fields: ["retentionUntil"] },

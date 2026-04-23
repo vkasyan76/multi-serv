@@ -1,15 +1,18 @@
 import "server-only";
 
 import { getOpenAIClient } from "@/lib/openai";
+import { type AppLang } from "@/lib/i18n/app-lang";
 import {
   SUPPORT_CHAT_OPENAI_MAX_OUTPUT_TOKENS,
   SUPPORT_CHAT_OPENAI_MODEL,
   SUPPORT_CHAT_OPENAI_MODEL_VERSION,
 } from "@/modules/support-chat/server/openai-config";
+import { getSupportChatCopy } from "@/modules/support-chat/server/support-chat-copy";
 
 export type SupportChatModelRequest = {
   instructions: string;
   input: string;
+  locale: AppLang;
   metadata?: Record<string, string>;
 };
 
@@ -30,12 +33,12 @@ export type SupportChatModelResult =
       requestId: string | null;
     };
 
-const SUPPORT_CHAT_OPENAI_FALLBACK_MESSAGE =
-  "Support chat is temporarily unavailable. Please try again later or contact support.";
-
 export async function createSupportChatModelResponse(
   request: SupportChatModelRequest
 ): Promise<SupportChatModelResult> {
+  const fallbackMessage =
+    getSupportChatCopy(request.locale).serverMessages.outage;
+
   try {
     const response = await getOpenAIClient().responses.create({
       model: SUPPORT_CHAT_OPENAI_MODEL,
@@ -56,7 +59,7 @@ export async function createSupportChatModelResponse(
       return {
         ok: false,
         reason: "empty_output",
-        fallbackMessage: SUPPORT_CHAT_OPENAI_FALLBACK_MESSAGE,
+        fallbackMessage,
         model: SUPPORT_CHAT_OPENAI_MODEL,
         modelVersion: SUPPORT_CHAT_OPENAI_MODEL_VERSION,
         requestId,
@@ -76,7 +79,7 @@ export async function createSupportChatModelResponse(
     return {
       ok: false,
       reason: "openai_unavailable",
-      fallbackMessage: SUPPORT_CHAT_OPENAI_FALLBACK_MESSAGE,
+      fallbackMessage,
       model: SUPPORT_CHAT_OPENAI_MODEL,
       modelVersion: SUPPORT_CHAT_OPENAI_MODEL_VERSION,
       requestId: null,

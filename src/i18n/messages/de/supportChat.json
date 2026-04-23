@@ -26,6 +26,16 @@
   "send": "Senden",
   "sending": "Der Support antwortet...",
   "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.",
+  "serverMessages": {
+    "rateLimit": "Zu viele Support-Chat-Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
+    "outage": "Der Support-Chat ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut oder kontaktieren Sie den Support.",
+    "empty": "Bitte geben Sie eine Supportfrage ein, damit ich helfen kann.",
+    "abusive": "Ich kann bei Supportfragen helfen, aber nicht auf beleidigende Nachrichten reagieren. Bitte kontaktieren Sie den Support, wenn Sie Hilfe benötigen.",
+    "nonsense": "Ich konnte diese Anfrage nicht verstehen. Bitte formulieren Sie Ihre Supportfrage neu oder kontaktieren Sie den Support.",
+    "clarify": "Worum geht es: Registrierung, eine Buchung, ein Anbieterprofil, eine Zahlung, eine Stornierung oder einen Streitfall?",
+    "unsupportedAccount": "Ich kann in diesem Chat noch keine Live-Daten zu Bestellungen, Zahlungen, Rechnungen, Rückerstattungen oder Konten prüfen. Ich kann aber die allgemeinen Richtlinien oder üblichen nächsten Schritte aus dem Infinisimo-Supportmaterial erklären. Für Ihren konkreten Account oder Ihre konkrete Bestellung nutzen Sie bitte Ihre Kontoseiten oder kontaktieren Sie den Support.",
+    "uncertain": "Ich habe nicht genug Supportinformationen, um das zuverlässig zu beantworten. Ich kann bei allgemeinen Fragen zu Registrierung, Anbieter-Setup, Buchung, Zahlung, Stornierung, Streitfällen und der Nutzung des Marktplatzes helfen. Für dieses konkrete Problem kontaktieren Sie bitte den Support."
+  },
   "handoffAccount": "Für kontospezifische Hilfe kontaktieren Sie den Support mit Ihren Bestell-, Rechnungs- oder Kontodaten.",
   "handoffGeneral": "Wenn dies Ihre Frage nicht beantwortet, kontaktieren Sie den Support."
 }

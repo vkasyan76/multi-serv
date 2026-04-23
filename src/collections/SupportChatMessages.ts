@@ -145,6 +145,15 @@ export const SupportChatMessages: CollectionConfig = {
             value,
           })),
         },
+        {
+          name: "sourceLocale",
+          type: "select",
+          required: true,
+          options: SUPPORTED_LANGUAGES.map(({ code, label }) => ({
+            label,
+            value: code,
+          })),
+        },
         { name: "score", type: "number", required: true },
         {
           name: "matchedTerms",

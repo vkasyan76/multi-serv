@@ -26,6 +26,16 @@
   "send": "Wyślij",
   "sending": "Wsparcie odpowiada...",
   "error": "Coś poszło nie tak. Spróbuj ponownie lub skontaktuj się ze wsparciem.",
+  "serverMessages": {
+    "rateLimit": "Zbyt wiele próśb do czatu wsparcia. Poczekaj chwilę i spróbuj ponownie.",
+    "outage": "Czat wsparcia jest tymczasowo niedostępny. Spróbuj ponownie później lub skontaktuj się ze wsparciem.",
+    "empty": "Wpisz pytanie do wsparcia, żebym mógł pomóc.",
+    "abusive": "Mogę pomóc w pytaniach dotyczących wsparcia, ale nie mogę odpowiadać na obraźliwe wiadomości. Skontaktuj się ze wsparciem, jeśli potrzebujesz pomocy.",
+    "nonsense": "Nie udało mi się zrozumieć tej prośby. Przeformułuj pytanie do wsparcia albo skontaktuj się ze wsparciem.",
+    "clarify": "Co próbujesz zrobić: zarejestrować się, zarezerwować usługę, zarządzać profilem usługodawcy, opłacić zamówienie, anulować coś czy zgłosić spór?",
+    "unsupportedAccount": "Nie mogę jeszcze w tym czacie sprawdzać danych na żywo dotyczących zamówień, płatności, faktur, zwrotów ani kont. Mogę wyjaśnić ogólne zasady lub typowe kolejne kroki na podstawie materiałów wsparcia Infinisimo. W sprawie konkretnego konta lub zamówienia skorzystaj ze stron swojego konta albo skontaktuj się ze wsparciem.",
+    "uncertain": "Nie mam wystarczających informacji wsparcia, aby odpowiedzieć wiarygodnie. Mogę pomóc w ogólnych pytaniach dotyczących rejestracji, konfiguracji usługodawcy, rezerwacji, płatności, anulowania, sporów i korzystania z marketplace. W sprawie tego konkretnego problemu skontaktuj się ze wsparciem."
+  },
   "handoffAccount": "Aby uzyskać pomoc dotyczącą konta, skontaktuj się ze wsparciem i podaj dane zamówienia, faktury lub konta.",
   "handoffGeneral": "Jeśli to nie odpowiada na Twoje pytanie, skontaktuj się ze wsparciem."
 }

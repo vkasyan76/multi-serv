@@ -61,6 +61,7 @@ function sourceRows(sources: SupportChatSource[]) {
     sectionId: source.sectionId,
     sectionTitle: source.sectionTitle,
     sourceType: source.sourceType,
+    sourceLocale: source.sourceLocale,
     score: source.score,
     matchedTerms: source.matchedTerms.map((term) => ({ term })),
   }));

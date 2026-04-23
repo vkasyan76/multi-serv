@@ -2,6 +2,10 @@ import "server-only";
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import {
+  SUPPORTED_APP_LANGS,
+  type AppLang,
+} from "@/lib/i18n/app-lang";
 
 export type SupportKnowledgeSourceType =
   | "operational-guidance"
@@ -12,7 +16,7 @@ export type SupportKnowledgeSourceType =
 export type SupportKnowledgeDocument = {
   id: string;
   version: string;
-  locale: string;
+  locale: AppLang;
   sourceType: SupportKnowledgeSourceType;
   filename: string;
   title: string;
@@ -23,7 +27,7 @@ export type SupportKnowledgeChunk = {
   id: string;
   documentId: string;
   documentVersion: string;
-  locale: string;
+  locale: AppLang;
   sourceType: SupportKnowledgeSourceType;
   filename: string;
   title: string;
@@ -94,6 +98,14 @@ function assertSourceType(value: string): SupportKnowledgeSourceType {
   return value as SupportKnowledgeSourceType;
 }
 
+function assertKnowledgeLocale(value: string): AppLang {
+  if (!(SUPPORTED_APP_LANGS as readonly string[]).includes(value)) {
+    throw new Error(`Unsupported knowledge locale: ${value}`);
+  }
+
+  return value as AppLang;
+}
+
 function firstContentLine(text: string) {
   return (
     text
@@ -159,7 +171,7 @@ async function loadKnowledgeDocument(
   return {
     id,
     version,
-    locale,
+    locale: assertKnowledgeLocale(locale),
     sourceType: assertSourceType(sourceType),
     filename,
     title: titleMatch?.[1]?.trim() ?? id,
