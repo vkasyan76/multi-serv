@@ -15,6 +15,10 @@ import { listSupportMessages } from "@/modules/support-chat/server/list-support-
 import { listSupportThreads } from "@/modules/support-chat/server/list-support-threads";
 import { getSupportChatReviewSummary } from "@/modules/support-chat/server/support-chat-review-summary";
 
+function isPayloadObjectId(value: string) {
+  return /^[a-f0-9]{24}$/i.test(value);
+}
+
 async function resolvePayloadUserId(ctx: TRPCContext, userId: string) {
   const byClerk = await ctx.db.find({
     collection: "users",
@@ -26,6 +30,8 @@ async function resolvePayloadUserId(ctx: TRPCContext, userId: string) {
 
   if (byClerk.docs[0]?.id) return byClerk.docs[0].id;
 
+  if (!isPayloadObjectId(userId)) return null;
+
   const byPayloadId = await ctx.db.find({
     collection: "users",
     limit: 1,
@@ -34,7 +40,7 @@ async function resolvePayloadUserId(ctx: TRPCContext, userId: string) {
     overrideAccess: true,
   });
 
-  return byPayloadId.docs[0]?.id;
+  return byPayloadId.docs[0]?.id ?? null;
 }
 
 async function requireSuperAdmin(ctx: TRPCContext) {

@@ -132,10 +132,12 @@ export function SupportChatAdminView() {
             }}
           >
             <option value="all">{t("filters.all")}</option>
-            <option value="answered">answered</option>
-            <option value="uncertain">uncertain</option>
-            <option value="escalate">escalate</option>
-            <option value="unsupported_account_question">unsupported_account_question</option>
+            <option value="answered">{t("disposition.answered")}</option>
+            <option value="uncertain">{t("disposition.uncertain")}</option>
+            <option value="escalate">{t("disposition.escalate")}</option>
+            <option value="unsupported_account_question">
+              {t("disposition.unsupported_account_question")}
+            </option>
           </select>
         </div>
 

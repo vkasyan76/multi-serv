@@ -22,6 +22,7 @@ export async function listSupportMessages(db: Payload, id: string) {
     collection: "support_chat_threads",
     id,
     depth: 0,
+    disableErrors: true,
     overrideAccess: true,
   })) as SupportChatThread | null;
 

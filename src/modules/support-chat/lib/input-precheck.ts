@@ -5,7 +5,7 @@ export type SupportChatInputPrecheckDisposition =
   | "nonsense";
 
 const ABUSIVE_PATTERN =
-  /\b(fuck|shit|bitch|idiot|moron|kill yourself|kys)\b/i;
+  /\b(fuck|shit|bitch|idiot|moron|stupid|dumb|useless|kill yourself|kys)\b/i;
 
 // Minimal precheck helper for obviously unusable inputs.
 // This is not semantic scope classification and does not detect account,

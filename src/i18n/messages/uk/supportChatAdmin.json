@@ -23,6 +23,12 @@
     "escalated": "Escalated",
     "closed": "Closed"
   },
+  "disposition": {
+    "answered": "Answered",
+    "uncertain": "Uncertain",
+    "escalate": "Escalate",
+    "unsupported_account_question": "Unsupported account question"
+  },
   "common": {
     "yes": "Yes",
     "no": "No"

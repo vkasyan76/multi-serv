@@ -45,6 +45,7 @@ export default function AdminDashboardNavbar({
               <Link
                 href={backHref}
                 className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm hover:bg-muted"
+                aria-label={backLabel}
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">{backLabel}</span>

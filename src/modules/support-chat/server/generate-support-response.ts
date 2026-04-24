@@ -55,6 +55,10 @@ export type GenerateSupportResponseResult = {
 
 const MIN_STRONG_SOURCE_SCORE = 4;
 
+// These tiny phrase/pattern checks are intentionally English-first for Phase 1.
+// They are a minimal shortcut for obvious ambiguous/account-specific requests,
+// not semantic classification. Non-English prompts that do not match them
+// intentionally fall through to retrieval-driven uncertain/escalate handling.
 const AMBIGUOUS_SUPPORT_PHRASES = new Set([
   "help",
   "problem",
