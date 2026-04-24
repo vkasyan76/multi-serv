@@ -160,6 +160,7 @@ Required env groups are defined in `README.md`:
 - Support-chat storage must use `support_chat_threads` and `support_chat_messages`; do not reuse human `conversations` or `messages`.
 - `threadId` is the public support-chat continuity id and must not be confused with the Payload document id.
 - Support-chat logs are admin-only by default and must not be exposed to vendors or regular users.
+- Support-chat admin review lives at `/[lang]/dashboard/admin/support-chat`; it is a separate admin child page, while the admin dashboard subnav remains section-based and the dashboard `Support Chat` section card is the entry point to the review page.
 - Redaction is best-effort for persisted logs only; do not mutate model input unless explicitly approved.
 - Persisted assistant messages should include prompt, guardrail, retrieval, knowledge-pack, model, disposition, and source metadata.
 - `retentionUntil` represents support-chat retention policy; cleanup enforcement can be added separately.
@@ -169,6 +170,8 @@ Required env groups are defined in `README.md`:
 - The support-chat model is configured in `src/modules/support-chat/server/openai-config.ts`; `OPENAI_SUPPORT_CHAT_MODEL` and `OPENAI_SUPPORT_CHAT_MODEL_VERSION` must both be set explicitly so future logs can distinguish model behavior.
 - OpenAI outages or empty model output should return a user-safe fallback message, not raw SDK/API errors.
 - `src/modules/support-chat/server/rate-limit.ts` is only an in-memory first-layer guard; do not treat it as durable multi-instance rate limiting.
+- Phase 1 support-chat regression cases live in `src/modules/support-chat/testing/phase1-test-cases.ts`, the runner lives in `src/scripts/run-support-chat-phase1-tests.ts`, and the review guide lives in `docs/support-chat-phase1-test-sheet.md`.
+- Rerun `npm run test:support-chat:phase1` after meaningful support-chat changes to prompt, model, retrieval, knowledge pack, or guardrail behavior; use `--json` and `--out <path>` when you want a saved artifact for review.
 - When extending support chat, prefer documenting stable boundaries here: entry points, ownership, access model, source-of-truth locations, storage shape, and safety constraints.
 
 ## Checkout UI Note

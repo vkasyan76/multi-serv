@@ -28,7 +28,8 @@
     "test:email:vendor-created": "node --import tsx --test --test-concurrency=1 src/modules/email/templates/vendor-created-tenant.test.ts",
     "test:commissions:wallet": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/commissions/tests/wallet-filter-utils.test.ts",
     "test:orders:cancel-race": "node --conditions=react-server --import tsx --test --test-timeout=60000 --test-concurrency=1 src/modules/orders/tests/cancel-slot-order-race.test.ts",
-    "test:i18n:messages": "node --import tsx ./src/scripts/i18n-check.ts"
+    "test:i18n:messages": "node --import tsx ./src/scripts/i18n-check.ts",
+    "test:support-chat:phase1": "node --conditions=react-server --import tsx ./src/scripts/run-support-chat-phase1-tests.ts"
   },
   "dependencies": {
     "@clerk/backend": "^2.4.2",
