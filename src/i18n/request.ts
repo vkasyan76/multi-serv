@@ -190,6 +190,18 @@ const SUPPORT_CHAT_LOADERS = withLaunchedLangCoverage("supportChat", {
   uk: async () => (await import("./messages/uk/supportChat.json")).default,
 });
 
+const SUPPORT_CHAT_ADMIN_LOADERS = withLaunchedLangCoverage("supportChatAdmin", {
+  en: async () => (await import("./messages/en/supportChatAdmin.json")).default,
+  de: async () => (await import("./messages/de/supportChatAdmin.json")).default,
+  fr: async () => (await import("./messages/fr/supportChatAdmin.json")).default,
+  it: async () => (await import("./messages/it/supportChatAdmin.json")).default,
+  es: async () => (await import("./messages/es/supportChatAdmin.json")).default,
+  pt: async () => (await import("./messages/pt/supportChatAdmin.json")).default,
+  pl: async () => (await import("./messages/pl/supportChatAdmin.json")).default,
+  ro: async () => (await import("./messages/ro/supportChatAdmin.json")).default,
+  uk: async () => (await import("./messages/uk/supportChatAdmin.json")).default,
+});
+
 function isPlainObject(value: unknown): value is MessageTree {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -269,6 +281,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     reviews,
     legalTerms,
     supportChat,
+    supportChatAdmin,
   ] = await Promise.all([
     loadNamespace("common", appLang, COMMON_LOADERS),
     loadNamespace("marketplace", appLang, MARKETPLACE_LOADERS),
@@ -282,6 +295,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     loadNamespace("reviews", appLang, REVIEWS_LOADERS),
     loadNamespace("legalTerms", appLang, LEGAL_TERMS_LOADERS),
     loadNamespace("supportChat", appLang, SUPPORT_CHAT_LOADERS),
+    loadNamespace("supportChatAdmin", appLang, SUPPORT_CHAT_ADMIN_LOADERS),
   ]);
 
   return {
@@ -300,6 +314,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       reviews,
       legalTerms,
       supportChat,
+      supportChatAdmin,
     },
   };
 });

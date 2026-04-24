@@ -14,7 +14,6 @@ export const SupportChatThreads: CollectionConfig = {
   indexes: [
     { fields: ["user", "lastMessageAt"] },
     { fields: ["status", "lastMessageAt"] },
-    { fields: ["retentionUntil"] },
   ],
   admin: {
     useAsTitle: "threadId",

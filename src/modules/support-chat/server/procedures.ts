@@ -9,6 +9,7 @@ import {
   SUPPORT_CHAT_PUBLIC_ACCESS,
 } from "@/modules/support-chat/lib/boundaries";
 import { SUPPORT_CHAT_CAPABILITIES } from "@/modules/support-chat/lib/scope";
+import { supportChatAdminProcedures } from "@/modules/support-chat/server/admin-procedures";
 import { generateSupportResponse } from "@/modules/support-chat/server/generate-support-response";
 import { persistSupportInteraction } from "@/modules/support-chat/server/persist-support-interaction";
 import { checkSupportChatRateLimit } from "@/modules/support-chat/server/rate-limit";
@@ -27,6 +28,7 @@ function supportChatRateLimitKey(input: {
 }
 
 export const supportChatRouter = createTRPCRouter({
+  ...supportChatAdminProcedures,
   getBootstrap: baseProcedure.query(async () => {
     return {
       phase: SUPPORT_CHAT_PHASE,
