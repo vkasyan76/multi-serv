@@ -1,9 +1,13 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 type Props = { size?: number };
 
 /** Single, final-look skeleton from first paint (no white flash) */
 export function HomeRadarSkeleton({ size = 560 }: Props) {
+  const tMarketplace = useTranslations("marketplace");
+
   return (
     <>
       {/* Orbit (middle column) */}
@@ -11,7 +15,7 @@ export function HomeRadarSkeleton({ size = 560 }: Props) {
         <div
           role="status"
           aria-busy="true"
-          aria-label="Loading providers"
+          aria-label={tMarketplace("list.loading_providers")}
           className="relative"
           style={{ width: size, height: size }}
         >

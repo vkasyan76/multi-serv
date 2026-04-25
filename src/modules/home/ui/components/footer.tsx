@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { withLocalePrefix } from "@/i18n/routing";
+import { SupportChatLauncher } from "@/modules/support-chat/ui/support-chat-launcher";
 
 export const Footer = () => {
   const t = useTranslations("common");
@@ -80,8 +81,18 @@ export const Footer = () => {
 
         {/* Legal / Preferences */}
         <nav className="flex items-center gap-4 text-gray-600 text-sm">
+          <SupportChatLauncher
+            variant="ghost"
+            showIcon={false}
+            className="h-auto rounded-none p-0 text-gray-600 hover:bg-transparent hover:text-black"
+          >
+            {t("nav.support")}
+          </SupportChatLauncher>
+
           <Link href={href("/legal/terms-of-use")} className="hover:text-black transition-colors">
-            {t("footer.terms")}
+            {/* Match navbar wording on desktop, keep the shorter footer label on mobile. */}
+            <span className="sm:hidden">{t("footer.terms")}</span>
+            <span className="hidden sm:inline">{t("nav.terms_of_use")}</span>
           </Link>
 
           <Link href={href("/legal/impressum")} className="hover:text-black transition-colors">

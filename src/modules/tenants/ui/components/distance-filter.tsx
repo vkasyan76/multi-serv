@@ -7,6 +7,13 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MapPin, Globe } from "lucide-react";
 import { AuthTooltip } from "@/modules/tenants/ui/components/auth-tooltip";
+import {
+  DEFAULT_DISTANCE_OPTION,
+  DISTANCE_OPTIONS,
+  distanceIndexToOption,
+  distanceOptionToIndex,
+  normalizeDistanceOption,
+} from "@/modules/tenants/distance-options";
 
 interface Props {
   maxDistance?: number | null;
@@ -27,20 +34,20 @@ export function DistanceFilter({
 }: Props) {
   const tMarketplace = useTranslations("marketplace");
 
-  // local preview only (does not own truth):
-  const [preview, setPreview] = useState<number[]>([maxDistance ?? 50]);
+  // Drive the slider by preset indices so mobile/category can reach 300 km
+  // without a huge, overly sensitive raw-kilometer slider.
+  const [previewIndex, setPreviewIndex] = useState<number[]>([
+    distanceOptionToIndex(maxDistance),
+  ]);
 
   const enabled = !!isEnabled;
   const current =
-    maxDistance !== null && maxDistance !== undefined && maxDistance > 0
-      ? maxDistance
-      : 50;
+    normalizeDistanceOption(maxDistance) ?? DEFAULT_DISTANCE_OPTION;
+  const previewDistance = distanceIndexToOption(previewIndex[0] ?? 0);
 
   // Update preview when maxDistance changes
   useEffect(() => {
-    if (maxDistance !== null && maxDistance !== undefined && maxDistance > 0) {
-      setPreview([maxDistance]);
-    }
+    setPreviewIndex([distanceOptionToIndex(maxDistance)]);
   }, [maxDistance]);
 
   const getSmartSuggestion = () => {
@@ -88,26 +95,29 @@ export function DistanceFilter({
             <span className="text-sm text-muted-foreground">
               {tMarketplace("distance.max_distance")}
             </span>
-            <span className="text-sm font-medium">{current} km</span>
+            {/* Show the mapped preset live while dragging so the label never
+            leaks internal slider indices or stale legacy values. */}
+            <span className="text-sm font-medium">
+              {(enabled ? previewDistance : current)} km
+            </span>
           </div>
 
           <Slider
-            min={5}
-            max={100}
-            step={5}
-            // Keep UI smooth while dragging:
-            value={preview}
-            onValueChange={(val) => setPreview(val)}
-            // Commit to parent (URL) only on release:
+            min={0}
+            max={DISTANCE_OPTIONS.length - 1}
+            step={1}
+            value={previewIndex}
+            onValueChange={(val) => setPreviewIndex(val)}
+            // Commit the shared preset value to parent state/URL on release.
             onValueCommit={([val]) =>
-              onMaxDistanceChangeAction(val && val > 0 ? val : null)
+              onMaxDistanceChangeAction(distanceIndexToOption(val ?? 0))
             }
             className="w-full"
           />
 
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>5 km</span>
-            <span>100 km</span>
+            <span>{DISTANCE_OPTIONS[0]} km</span>
+            <span>{DISTANCE_OPTIONS[DISTANCE_OPTIONS.length - 1]} km</span>
           </div>
         </div>
       )}

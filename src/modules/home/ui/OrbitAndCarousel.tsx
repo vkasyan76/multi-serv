@@ -3,13 +3,17 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
-  useLayoutEffect,
 } from "react";
-import { useSuspenseQuery, useQuery, skipToken } from "@tanstack/react-query";
+import { keepPreviousData, skipToken, useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
+
 import { useTRPC } from "@/trpc/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { TenantWithRelations } from "@/modules/tenants/types";
 import {
   formatMonthYearForLocale,
@@ -17,13 +21,12 @@ import {
   formatCurrency,
   getLocaleAndCurrency,
 } from "@/modules/profile/location-utils";
-
 import TenantOrbit from "@/modules/tenants/ui/components/visuals/TenantOrbit";
 import TenantsCarousel from "@/modules/tenants/ui/components/visuals/TenantsCarousel";
 import { Category } from "@/payload-types";
+import { cn } from "@/lib/utils";
 
 type Viewer = { lat: number; lng: number; city?: string | null } | undefined;
-// Derive the EXACT input type from the TRPC client:
 type TRPCClient = ReturnType<typeof useTRPC>;
 type GetManyInput = Parameters<
   TRPCClient["tenants"]["getMany"]["queryOptions"]
@@ -32,50 +35,95 @@ type GetManyInput = Parameters<
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
 
+const orbitShellClassName =
+  "relative w-full max-w-[720px] aspect-square min-h-[280px]";
+
+function OrbitViewportSkeleton({ loadingLabel }: { loadingLabel: string }) {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label={loadingLabel}
+      className="relative h-full w-full"
+    >
+      <div className="absolute inset-0 rounded-full border border-border/70 shadow-sm shimmer" />
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        aria-hidden
+      >
+        <span className="relative block h-5 w-5">
+          <span className="absolute inset-0 rounded-full bg-zinc-300/60 animate-ping" />
+          <span className="absolute inset-1 rounded-full bg-zinc-400" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CarouselViewportSkeleton() {
+  return (
+    <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
+      <div className="w-full">
+        <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+          <Skeleton className="w-full aspect-[4/3] lg:aspect-square" />
+          <div className="space-y-3 p-4">
+            <Skeleton className="h-5 w-48 rounded-md" />
+            <Skeleton className="h-4 w-32 rounded-md" />
+            <Skeleton className="h-4 w-28 rounded-md" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function OrbitAndCarousel({
   queryInput,
   viewer,
   appLang,
 }: {
-  queryInput: GetManyInput; // <-- router-true input type
+  queryInput: GetManyInput;
   viewer: Viewer;
   appLang: AppLang;
 }) {
   const trpc = useTRPC();
+  const tMarketplace = useTranslations("marketplace");
 
   const base = trpc.tenants.getMany.queryOptions(queryInput);
-  // `tenants.getMany` returns locale-sensitive fields from Payload, so the cache
-  // must be split by active route locale to avoid reusing stale docs after a language switch.
+  // Locale-sensitive tenant docs need locale-scoped cache keys or a language
+  // switch can reuse stale category names from a previous route locale.
   const queryKey = [
     base.queryKey[0],
     { ...(base.queryKey[1] ?? {}), locale: appLang },
   ] as unknown as typeof base.queryKey;
 
-  // ✅ Narrow away the `skipToken` branch so TS knows queryFn is a real function
   if (base.queryFn === skipToken) {
-    // With your inputs this shouldn't happen; if it does, throw so we notice in dev
     throw new Error(
       "tenants.getMany query was unexpectedly skipped (skipToken)."
     );
   }
 
-  // Suspense fetch; keep previous data on filter changes (no flicker)
-  const { data } = useSuspenseQuery({
+  // Keep previous data during live homepage filter changes so the orbit and
+  // carousel do not blank out on every local-state update.
+  const tenantsQ = useQuery({
     queryKey,
-    queryFn: base.queryFn!, // assert non-skip (we know we’re not skipping)
+    queryFn: base.queryFn!,
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
+
+  const data = tenantsQ.data;
   const tenants = useMemo(
     () => (data?.docs ?? []) as TenantWithRelations[],
     [data?.docs]
   );
+  const isRefreshing = tenantsQ.isFetching && !!data;
 
-  // collect IDs/slugs for rating + order aggregations
   const tenantSlugs = useMemo(
     () =>
       tenants
-        .map((t) => t.slug)
+        .map((tenant) => tenant.slug)
         .filter((slug): slug is string => typeof slug === "string"),
     [tenants]
   );
@@ -83,24 +131,23 @@ export function OrbitAndCarousel({
   const tenantIds = useMemo(
     () =>
       tenants
-        .map((t) => t.id)
+        .map((tenant) => tenant.id)
         .filter((id): id is string => typeof id === "string"),
     [tenants]
   );
 
-  // reviews: aggregated avgRating + totalReviews per tenant slug
   const { data: reviewSummaries } = useQuery({
     ...trpc.reviews.summariesForTenants.queryOptions({ slugs: tenantSlugs }),
     enabled: tenantSlugs.length > 0,
+    placeholderData: keepPreviousData,
   });
 
-  // orders: aggregated ordersCount per tenant id
   const { data: orderStats } = useQuery({
     ...trpc.orders.statsForTenants.queryOptions({ tenantIds }),
     enabled: tenantIds.length > 0,
+    placeholderData: keepPreviousData,
   });
 
-  // ✅ memoize these maps so they’re stable for useMemo deps
   const reviewMap = useMemo(
     () =>
       reviewSummaries ??
@@ -113,36 +160,26 @@ export function OrbitAndCarousel({
     [orderStats]
   );
 
-  // small helper: strip HTML and collapse whitespace: for tenant blurbs (descriptions)
-  const toPlain = (s: string | null | undefined): string =>
-    typeof s === "string"
-      ? s
+  const toPlain = (value: string | null | undefined): string =>
+    typeof value === "string"
+      ? value
           .replace(/<[^>]*>/g, " ")
           .replace(/\s+/g, " ")
           .trim()
       : "";
 
-  // Currency for the current appLang
   const { currency } = useMemo(() => getLocaleAndCurrency(appLang), [appLang]);
 
-  // Map to carousel items
-  // The non-null assertion assumes all tenants have an id, but if the type allows undefined this will cause a runtime error.
   const items = useMemo(
     () =>
       tenants
-        .filter((t) => Boolean(t.id) && Boolean(t.slug))
-        .map((t) => {
-          const summary = reviewMap[t.slug];
-          const ordersSummary = t.id ? ordersMap[t.id] : undefined;
-
-          const rating = summary?.avgRating ?? 0;
-          const ratingCount = summary?.totalReviews ?? 0;
-          const orders = ordersSummary?.ordersCount ?? 0;
+        .filter((tenant) => Boolean(tenant.id) && Boolean(tenant.slug))
+        .map((tenant) => {
+          const summary = reviewMap[tenant.slug];
+          const ordersSummary = tenant.id ? ordersMap[tenant.id] : undefined;
           const pricePerHour =
-            typeof t.hourlyRate === "number" ? t.hourlyRate : 0;
-
-          // pick the primary category (first one)
-          const primaryCategory = t.categories?.[0];
+            typeof tenant.hourlyRate === "number" ? tenant.hourlyRate : 0;
+          const primaryCategory = tenant.categories?.[0];
 
           const categoryIcon =
             primaryCategory &&
@@ -152,26 +189,24 @@ export function OrbitAndCarousel({
               : null;
 
           return {
-            id: t.id!,
-            slug: t.slug,
-            name: t.name,
-            city: t.user?.coordinates?.city ?? "",
-            country: t.user?.coordinates?.countryISO ?? undefined,
-            imageSrc: t.image?.url ?? t.user?.clerkImageUrl ?? undefined,
-            // preformatted price label, including currency and /h
+            id: tenant.id!,
+            slug: tenant.slug,
+            name: tenant.name,
+            city: tenant.user?.coordinates?.city ?? "",
+            country: tenant.user?.coordinates?.countryISO ?? undefined,
+            imageSrc: tenant.image?.url ?? tenant.user?.clerkImageUrl ?? undefined,
             pricePerHourLabel: `${formatCurrency(
               pricePerHour,
               currency,
               appLang
             )}/h`,
-            rating,
-            ratingCount,
-            since: t.createdAt
-              ? formatMonthYearForLocale(t.createdAt, "short", appLang)
+            rating: summary?.avgRating ?? 0,
+            ratingCount: summary?.totalReviews ?? 0,
+            since: tenant.createdAt
+              ? formatMonthYearForLocale(tenant.createdAt, "short", appLang)
               : "",
-            orders,
-            blurb: toPlain(t.bio) || "Professional services.",
-            // category info for billboard
+            orders: ordersSummary?.ordersCount ?? 0,
+            blurb: toPlain(tenant.bio) || tMarketplace("tenant.fallback_bio"),
             categoryName: primaryCategory?.name,
             categoryColor:
               typeof primaryCategory?.color === "string"
@@ -181,12 +216,11 @@ export function OrbitAndCarousel({
               typeof categoryIcon === "string" ? categoryIcon : null,
           };
         }),
-    [tenants, reviewMap, ordersMap, appLang, currency]
+    [appLang, currency, ordersMap, reviewMap, tMarketplace, tenants]
   );
-  // Sync selection
+
   const [activeSlug, setActiveSlug] = useState<string | undefined>(undefined);
 
-  // fall back to the first available tenant (or clear the selection) whenever the dataset changes and the current slug disappears:
   useEffect(() => {
     if (tenants.length === 0) {
       if (activeSlug !== undefined) {
@@ -212,73 +246,117 @@ export function OrbitAndCarousel({
     []
   );
 
-  // Measure orbit size (mount + resize)
   const radarRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState<number | null>(null);
+
   useLayoutEffect(() => {
-    const el = radarRef.current;
-    if (!el) return;
+    const element = radarRef.current;
+    if (!element) return;
 
     const measure = () => {
-      const w = el.getBoundingClientRect().width || 0;
-      setSize(clamp(Math.round(w - 24), 280, 720));
+      const width = element.getBoundingClientRect().width || 0;
+      setSize(clamp(Math.round(width - 24), 280, 720));
     };
 
     measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(element);
+    return () => resizeObserver.disconnect();
   }, []);
 
-  // Empty state (not skeleton)
-  if (tenants.length === 0) {
-    return (
-      <>
-        <div className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]">
-          <div className="rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-            No providers match your filters.
-          </div>
-        </div>
-        <div className="w-full lg:h-full flex justify-end lg:px-12" />
-      </>
-    );
-  }
+  const showError = tenantsQ.isError && !data;
+  const showPending = tenantsQ.isPending && !data;
+  const showEmpty = !showPending && !showError && tenants.length === 0;
+  // Startup hydration can deliver tenant data before the client has measured
+  // the orbit shell, so keep a section skeleton visible until size is ready.
+  const showViewportSkeleton =
+    showPending || (!showError && !showEmpty && size === null);
+  const showContent = !showError && !showEmpty && size !== null;
 
   return (
     <>
-      {/* Orbit (middle column) */}
       <div
-        ref={radarRef}
-        className="flex w-full min-w-0 justify-center lg:justify-start pr-6 min-h-[280px]"
+        className="flex w-full min-w-0 justify-center lg:justify-start pr-6"
       >
-        {size !== null && (
-          <TenantOrbit
-            size={size}
-            maxDistanceKm={80}
-            baseSeconds={16}
-            parallax={18}
-            tenants={tenants}
-            selectedSlug={activeSlug}
-            onSelect={onOrbitSelect}
-            {...(viewer ? { viewer } : {})} // Omit the prop entirely when viewer is undefined to avoid type error.
-            appLang={appLang}
-          />
-        )}
+        <div
+          ref={radarRef}
+          className={cn(
+            orbitShellClassName,
+            isRefreshing && "opacity-80 transition-opacity"
+          )}
+        >
+          {isRefreshing && showContent && tenants.length > 0 && (
+            <div className="absolute right-2 top-2 z-10 rounded-full bg-background/85 p-1 shadow-sm">
+              <Loader2 className="size-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {showViewportSkeleton ? (
+            <OrbitViewportSkeleton
+              loadingLabel={tMarketplace("list.loading_providers")}
+            />
+          ) : showError ? (
+            <div className="flex h-full w-full items-center justify-center rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+              <div>
+                {tMarketplace("error.home_radar_body")}
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => tenantsQ.refetch()}
+                    className="rounded-md border px-3 py-1 text-xs"
+                  >
+                    {tMarketplace("error.retry")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : showEmpty ? (
+            <div className="flex h-full w-full items-center justify-center rounded-xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+              {tMarketplace("list.empty_body")}
+            </div>
+          ) : showContent ? (
+            <TenantOrbit
+              size={size}
+              maxDistanceKm={80}
+              baseSeconds={16}
+              parallax={18}
+              tenants={tenants}
+              // Homepage is a discovery surface, so keep the visible result set
+              // spread across the radar after any local filter reduces results.
+              radiusMode="relative_spread"
+              selectedSlug={activeSlug}
+              onSelect={onOrbitSelect}
+              {...(viewer ? { viewer } : {})}
+              appLang={appLang}
+            />
+          ) : (
+            <div className="h-full w-full" />
+          )}
+        </div>
       </div>
 
-      {/* Carousel (right column) */}
       <div
-        className="w-full lg:h-full flex justify-end"
-        style={{ visibility: size !== null ? "visible" : "hidden" }} // prevents showing carrousel before orbit measures
-        aria-hidden={size === null}
+        className={cn(
+          "w-full lg:h-full flex justify-end transition-opacity",
+          isRefreshing && showContent && "opacity-80"
+        )}
+        aria-hidden={showError || showEmpty}
       >
-        <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
-          <TenantsCarousel
-            items={items}
-            activeSlug={activeSlug}
-            onActiveChange={onCarouselChange}
-          />
-        </div>
+        {showViewportSkeleton ? (
+          // Keep the billboard occupied during startup so refreshed pages do
+          // not flash a blank right column before orbit sizing finishes.
+          <CarouselViewportSkeleton />
+        ) : showContent ? (
+          <div className="w-full lg:w-[min(32vw,600px)] h-full flex items-center lg:px-12">
+            <TenantsCarousel
+              items={items}
+              activeSlug={activeSlug}
+              onActiveChange={onCarouselChange}
+            />
+          </div>
+        ) : (
+          <div className="w-full lg:w-[min(32vw,600px)] h-full" />
+        )}
       </div>
     </>
   );

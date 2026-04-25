@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Home, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -72,28 +71,9 @@ export function CustomerSlotOrdersView() {
   ]);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Top bar */}
-      <nav className="bg-white w-full border-b">
-        <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 h-14 sm:h-16 flex items-center justify-end gap-3">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href={withLocalePrefix("/", appLang)}
-                  className="p-2 rounded-full hover:bg-muted"
-                  aria-label={tOrders("page.home")}
-                >
-                  <Home className="h-7 w-7" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>{tOrders("page.home")}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </nav>
-
-      {/* Header */}
+    <div className="bg-white">
+      {/* The shared site navbar now comes from the route-group layout; keep
+      the orders view focused on its task header and content. */}
       <header className="bg-[#F4F4F0] py-8 border-b">
         <div className="max-w-(--breakpoint-xl) mx-auto px-4 lg:px-12 flex flex-col gap-y-2">
           <div className="flex items-center gap-2">

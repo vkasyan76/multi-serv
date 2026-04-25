@@ -85,6 +85,8 @@ export interface Config {
     promotions: Promotion;
     promotion_counters: PromotionCounter;
     promotion_allocations: PromotionAllocation;
+    support_chat_threads: SupportChatThread;
+    support_chat_messages: SupportChatMessage;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -113,6 +115,8 @@ export interface Config {
     promotions: PromotionsSelect<false> | PromotionsSelect<true>;
     promotion_counters: PromotionCountersSelect<false> | PromotionCountersSelect<true>;
     promotion_allocations: PromotionAllocationsSelect<false> | PromotionAllocationsSelect<true>;
+    support_chat_threads: SupportChatThreadsSelect<false> | SupportChatThreadsSelect<true>;
+    support_chat_messages: SupportChatMessagesSelect<false> | SupportChatMessagesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -918,6 +922,84 @@ export interface PromotionCounter {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "support_chat_threads".
+ */
+export interface SupportChatThread {
+  id: string;
+  /**
+   * Opaque support-chat continuity id for server/admin correlation; distinct from the Payload document id.
+   */
+  threadId: string;
+  user?: (string | null) | User;
+  /**
+   * Reserved for future anonymous continuity; not wired by the chat flow yet.
+   */
+  sessionKey?: string | null;
+  locale: 'en' | 'de' | 'fr' | 'it' | 'es' | 'pt' | 'pl' | 'ro' | 'uk';
+  status: 'open' | 'escalated' | 'closed';
+  lastMessageAt?: string | null;
+  lastDisposition?: ('answered' | 'uncertain' | 'escalate' | 'unsupported_account_question') | null;
+  lastNeedsHumanSupport?: boolean | null;
+  /**
+   * Total stored messages in this support thread. Each completed exchange adds two.
+   */
+  messageCount: number;
+  retentionUntil: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "support_chat_messages".
+ */
+export interface SupportChatMessage {
+  id: string;
+  thread: string | SupportChatThread;
+  role: 'user' | 'assistant';
+  text: string;
+  redactedText?: string | null;
+  redactionApplied?: boolean | null;
+  redactionTypes?:
+    | {
+        type: string;
+        id?: string | null;
+      }[]
+    | null;
+  locale: 'en' | 'de' | 'fr' | 'it' | 'es' | 'pt' | 'pl' | 'ro' | 'uk';
+  responseOrigin: 'server' | 'model';
+  disposition?: ('answered' | 'uncertain' | 'escalate' | 'unsupported_account_question') | null;
+  needsHumanSupport?: boolean | null;
+  model?: string | null;
+  modelVersion?: string | null;
+  promptVersion?: string | null;
+  guardrailVersion?: string | null;
+  retrievalVersion?: string | null;
+  knowledgePackVersion?: string | null;
+  openAIRequestId?: string | null;
+  sources?:
+    | {
+        documentId: string;
+        documentVersion: string;
+        chunkId: string;
+        sectionId: string;
+        sectionTitle?: string | null;
+        sourceType: 'operational-guidance' | 'policy-summary' | 'terms-reference' | 'fallback-guidance';
+        sourceLocale: 'en' | 'de' | 'fr' | 'it' | 'es' | 'pt' | 'pl' | 'ro' | 'uk';
+        score: number;
+        matchedTerms?:
+          | {
+              term: string;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -994,6 +1076,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'promotion_allocations';
         value: string | PromotionAllocation;
+      } | null)
+    | ({
+        relationTo: 'support_chat_threads';
+        value: string | SupportChatThread;
+      } | null)
+    | ({
+        relationTo: 'support_chat_messages';
+        value: string | SupportChatMessage;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1488,6 +1578,73 @@ export interface PromotionAllocationsSelect<T extends boolean = true> {
   appliedRateBps?: T;
   appliedRuleId?: T;
   notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "support_chat_threads_select".
+ */
+export interface SupportChatThreadsSelect<T extends boolean = true> {
+  threadId?: T;
+  user?: T;
+  sessionKey?: T;
+  locale?: T;
+  status?: T;
+  lastMessageAt?: T;
+  lastDisposition?: T;
+  lastNeedsHumanSupport?: T;
+  messageCount?: T;
+  retentionUntil?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "support_chat_messages_select".
+ */
+export interface SupportChatMessagesSelect<T extends boolean = true> {
+  thread?: T;
+  role?: T;
+  text?: T;
+  redactedText?: T;
+  redactionApplied?: T;
+  redactionTypes?:
+    | T
+    | {
+        type?: T;
+        id?: T;
+      };
+  locale?: T;
+  responseOrigin?: T;
+  disposition?: T;
+  needsHumanSupport?: T;
+  model?: T;
+  modelVersion?: T;
+  promptVersion?: T;
+  guardrailVersion?: T;
+  retrievalVersion?: T;
+  knowledgePackVersion?: T;
+  openAIRequestId?: T;
+  sources?:
+    | T
+    | {
+        documentId?: T;
+        documentVersion?: T;
+        chunkId?: T;
+        sectionId?: T;
+        sectionTitle?: T;
+        sourceType?: T;
+        sourceLocale?: T;
+        score?: T;
+        matchedTerms?:
+          | T
+          | {
+              term?: T;
+              id?: T;
+            };
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

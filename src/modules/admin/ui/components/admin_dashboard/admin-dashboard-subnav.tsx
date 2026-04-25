@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const SECTIONS = [
   { id: "transactions", label: "Transactions" },
   { id: "orders", label: "Orders" },
+  { id: "support-chat", label: "Support Chat" },
   { id: "payload", label: "Payload" },
 ] as const;
 
@@ -28,9 +29,10 @@ export default function AdminDashboardSubnav() {
 
   useEffect(() => {
     const hashId = normalizeHash(window.location.hash);
-    if (!hashId || hashId === activeRef.current) return;
-    activeRef.current = hashId;
-    setActive(hashId);
+    const nextActive = hashId ?? "transactions";
+    if (nextActive === activeRef.current) return;
+    activeRef.current = nextActive;
+    setActive(nextActive);
   }, []);
 
   useEffect(() => {

@@ -3,52 +3,77 @@
     "title": "Filtri",
     "clear": "Reimposta",
     "max_hourly_rate": "Tariffa oraria massima",
+    "max_hourly_rate_compact": "Tariffa oraria massima",
     "location_distance": "Posizione e distanza",
+    "type_of_work": "Tipo di lavoro",
+    "type_of_work_compact": "Tipo di lavoro",
     "service_delivery": "Modalità del servizio",
     "category": "Categoria",
-    "all_categories": "Tutte le categorie"
+    "all_categories": "Tutte le categorie",
+    "max_hourly_rate_placeholder": "Prezzo max/h",
+    "max_hourly_rate_summary": "Fino a {amount}/h",
+    "any_type_of_work": "Qualsiasi tipo di lavoro",
+    "service_delivery_all": "Tutte le modalità"
   },
   "distance": {
     "search_nearby": "Cerca nelle vicinanze",
     "max_distance": "Distanza massima",
-    "online_hint": "I servizi online funzionano ovunque. Valuta di disattivare il filtro distanza."
+    "online_hint": "I servizi online funzionano ovunque. Valuta di disattivare il filtro distanza.",
+    "any_distance": "Qualsiasi distanza"
   },
   "services": {
-    "on_site": "Presso il cliente",
+    "on_site": "In loco",
     "on_line": "Online"
+  },
+  "work_type": {
+    "manual": "Manuale",
+    "consulting": "Consulenza",
+    "digital": "Digitale"
   },
   "sort": {
     "distance": "Distanza",
     "price": "Prezzo",
-    "market_tenure": "Anzianità sul mercato",
+    "market_tenure": "Anzianità",
     "distance_aria": "Ordina per distanza",
     "distance_auth_required": "Accedi per ordinare per distanza",
     "sorted_by_price_low_to_high": "Ordinato per prezzo (dal più basso al più alto)",
     "sorted_by_price_high_to_low": "Ordinato per prezzo (dal più alto al più basso)",
-    "sorted_by_tenure_newest": "Ordinato per anzianità sul mercato (più recenti prima)",
-    "sorted_by_tenure_oldest": "Ordinato per anzianità sul mercato (più vecchi prima)",
+    "sorted_by_tenure_newest": "Ordinato per anzianità (più recenti prima)",
+    "sorted_by_tenure_oldest": "Ordinato per anzianità (più vecchi prima)",
     "sorted_by_distance": "Ordinato per distanza (più vicini prima)"
   },
   "list": {
     "empty_title": "Nessun professionista trovato.",
     "empty_body": "Prova a modificare i filtri o torna più tardi.",
     "load_more": "Carica altro",
+    "loading_providers": "Caricamento dei professionisti",
     "loading_more": "Caricamento...",
-    "results_summary": "Visualizzazione di {shown} professionisti su {total}"
+    "results_summary": "Mostrati {shown} professionisti su {total}"
   },
   "error": {
-    "title": "Si è verificato un problema",
-    "body": "Non è stato possibile caricare i professionisti. Aggiorna la pagina.",
-    "refresh": "Aggiorna pagina",
-    "refresh_aria": "Aggiorna la pagina per ricaricare i professionisti",
+    "title": "Qualcosa è andato storto",
+    "body": "Non siamo riusciti a caricare i professionisti. Ricarica la pagina.",
+    "refresh": "Ricarica pagina",
+    "refresh_aria": "Ricarica la pagina per ricaricare i professionisti",
     "retry": "Riprova",
     "home_radar_body": "Impossibile caricare i professionisti. Modifica i filtri o riprova."
   },
   "auth": {
-    "distance_tooltip": "Accedi per determinare la tua posizione per le funzionalità di distanza."
+    "distance_tooltip": "Accedi per determinare la tua posizione per le funzionalità di distanza.",
+    "distance_location_required": "Aggiungi la tua posizione nel profilo per usare il filtro distanza."
   },
   "categories": {
     "sidebar_title": "Categorie",
     "back": "Indietro"
+  },
+  "tenant": {
+    "fallback_bio": "Servizi professionali."
+  },
+  "home_search": {
+    "placeholder": "Che cosa stai cercando?",
+    "submit": "Cerca",
+    "category_search_placeholder": "Cerca una categoria...",
+    "category_loading": "Caricamento categorie...",
+    "category_empty": "Nessuna categoria trovata."
   }
 }

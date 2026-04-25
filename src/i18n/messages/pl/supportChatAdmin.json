@@ -1,0 +1,81 @@
+{
+  "title": "Support Chat Review",
+  "subtitle": "Review persisted support-chat exchanges and assistant metadata.",
+  "backToDashboard": "Back to Admin Dashboard",
+  "loadingSummary": "Loading review summary...",
+  "loadSummaryError": "Failed to load the support-chat review summary.",
+  "loadingThreads": "Loading support-chat threads...",
+  "loadThreadsError": "Failed to load support-chat threads.",
+  "loadingThread": "Loading thread detail...",
+  "loadThreadError": "Failed to load support-chat thread detail.",
+  "emptySummary": "No review data is available yet.",
+  "emptyThreads": "No support-chat threads match the current filters.",
+  "selectThread": "Select a support-chat thread to inspect its persisted exchange and assistant metadata.",
+  "filters": {
+    "all": "All",
+    "locale": "Locale",
+    "status": "Status",
+    "lastDisposition": "Last disposition",
+    "needsHumanSupport": "Needs human support"
+  },
+  "status": {
+    "open": "Open",
+    "escalated": "Escalated",
+    "closed": "Closed"
+  },
+  "disposition": {
+    "answered": "Answered",
+    "uncertain": "Uncertain",
+    "escalate": "Escalate",
+    "unsupported_account_question": "Unsupported account question"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "summary": {
+    "threads": "Threads",
+    "assistantMessages": "Assistant replies",
+    "uncertain": "Uncertain",
+    "escalate": "Escalate",
+    "unsupportedAccount": "Unsupported account",
+    "needsHumanSupport": "Needs human support",
+    "localeBreakdown": "Locale breakdown",
+    "topSourceDocuments": "Top source documents"
+  },
+  "table": {
+    "threadId": "Thread ID",
+    "locale": "Locale",
+    "status": "Status",
+    "lastDisposition": "Last disposition",
+    "needsHumanSupport": "Needs human",
+    "messageCount": "Messages",
+    "lastMessageAt": "Last message",
+    "retentionUntil": "Retention until"
+  },
+  "detail": {
+    "thread": "Thread",
+    "userId": "User ID",
+    "responseOrigin": "Response origin",
+    "redactionApplied": "Redaction applied",
+    "redactionTypes": "Redaction types",
+    "model": "Model",
+    "modelVersion": "Model version",
+    "promptVersion": "Prompt version",
+    "guardrailVersion": "Guardrail version",
+    "retrievalVersion": "Retrieval version",
+    "knowledgePackVersion": "Knowledge pack version",
+    "sources": "Sources",
+    "documentId": "Document ID",
+    "sectionId": "Section ID",
+    "sourceType": "Source type",
+    "sourceLocale": "Source locale",
+    "score": "Score",
+    "matchedTerms": "Matched terms"
+  },
+  "pagination": {
+    "pageOf": "Page {page} of {totalPages}",
+    "previous": "Previous",
+    "next": "Next"
+  }
+}

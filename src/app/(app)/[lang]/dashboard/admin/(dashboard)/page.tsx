@@ -1,12 +1,21 @@
 import "server-only";
 import Link from "next/link";
-import { ClipboardList, Settings, Wallet } from "lucide-react";
+import { ClipboardList, MessageCircle, Settings, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import { withLocalePrefix } from "@/i18n/routing";
 import { AdminFinanceSection } from "@/modules/admin/ui/components/admin_dashboard/admin-finance-section";
 import { AdminOrdersLifecycleView } from "@/modules/admin/ui/components/admin_dashboard/admin-orders-lifecycle-view";
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = await params;
+  const appLang = normalizeToSupported(lang);
+
   return (
     <div className="space-y-10">
       <section
@@ -29,6 +38,24 @@ export default async function AdminDashboardPage() {
           Orders
         </h2>
         <AdminOrdersLifecycleView />
+      </section>
+
+      <section
+        id="support-chat"
+        className="scroll-mt-28 sm:scroll-mt-32 rounded-lg border bg-white p-5 space-y-3"
+      >
+        <h2 className="text-lg font-semibold inline-flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 opacity-80" />
+          Support Chat
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Review support-chat threads, dispositions, and assistant metadata.
+        </p>
+        <Button asChild variant="outline">
+          <Link href={withLocalePrefix("/dashboard/admin/support-chat", appLang)}>
+            Open Support Chat Review
+          </Link>
+        </Button>
       </section>
 
       <section

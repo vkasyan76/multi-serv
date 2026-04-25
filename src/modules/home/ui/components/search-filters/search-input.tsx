@@ -107,7 +107,7 @@ export const SearchInput = ({ disabled }: Props) => {
           <Button
             asChild
             variant="elevated"
-            className="h-12 shrink-0 px-3 sm:px-4"
+            className="h-12 shrink-0 px-3 sm:px-4 lg:hidden"
           >
             <Link
               href={withLocalePrefix("/orders", currentLang)}

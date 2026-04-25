@@ -18,6 +18,7 @@ import {
   type AppLang,
   normalizeToSupported,
 } from "@/modules/profile/location-utils";
+import { normalizeDistanceOption } from "@/modules/tenants/distance-options";
 
 interface Props {
   category?: string;
@@ -30,39 +31,38 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   const tMarketplace = useTranslations("marketplace");
   const [filters] = useTenantFilters();
   const params = useParams<{ lang?: string }>();
+  const normalizedMaxDistance = normalizeDistanceOption(filters.maxDistance);
+  const canApplyDistanceFilter =
+    isSignedIn && filters.distanceFilterEnabled && normalizedMaxDistance !== null;
 
-  // Prefer route params; strip them out of filters to avoid duplicate keys:
-  // You were sending duplicate keys for category (and sometimes subcategory) in your query: once from route params and once from filters. Depending on spread order, the filter value ("") could overwrite the route slug, leading to no category filtering. The TenantList merge below removes the duplication and prefers the route param.
-  // strip out to avoid duplicates in spread
-  const { categories: _cats = [], subcategory: _s, ...rest } = filters;
+  // Prefer route params; strip them out of filters so route slugs stay authoritative.
+  const { categories: selectedCategories = [], subcategory: filterSubcategory, ...rest } =
+    filters;
 
-  // route-based category (except "all")
   const normalizedCategory = category && category !== "all" ? category : null;
-
-  // final OR-list (route param + chips)
   const categories = Array.from(
-    new Set([...(normalizedCategory ? [normalizedCategory] : []), ..._cats])
+    new Set([
+      ...(normalizedCategory ? [normalizedCategory] : []),
+      ...selectedCategories,
+    ])
   );
 
-  // Use conditional query for user profile - only fetch if authenticated
   const { data: userProfile } = useQuery({
     ...trpc.auth.getUserProfile.queryOptions(),
-    enabled: isSignedIn, // Only fetch if user is signed in
+    enabled: isSignedIn,
   });
 
   const appLang: AppLang = normalizeToSupported(params?.lang);
 
-  // Use infinite query for tenants with Load More functionality
   const base = trpc.tenants.getMany.infiniteQueryOptions(
     {
       ...rest,
-      // category: normalizedCategory ?? (_c || null),
-      // ⬇️ send array instead of single
       categories: categories.length ? categories : null,
-      subcategory: subcategory ?? (_s || null),
-      ...(isSignedIn
-        ? {}
-        : { distanceFilterEnabled: false, maxDistance: null }),
+      subcategory: subcategory ?? (filterSubcategory || null),
+      // Normalize old raw-slider URL values only when distance filtering is
+      // actually active so stale maxDistance values do not leak into queries.
+      distanceFilterEnabled: canApplyDistanceFilter,
+      maxDistance: canApplyDistanceFilter ? normalizedMaxDistance : null,
       userLat: userProfile?.coordinates?.lat ?? null,
       userLng: userProfile?.coordinates?.lng ?? null,
       limit: DEFAULT_LIMIT,
@@ -73,13 +73,13 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
       },
     }
   );
+
   // Keep list pages on a locale-scoped cache entry for localized tenant fields.
   const queryKey = [
     base.queryKey[0],
     { ...(base.queryKey[1] ?? {}), locale: appLang },
   ] as unknown as typeof base.queryKey;
 
-  // Add cache controls (mirror tenant detail page)
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useSuspenseInfiniteQuery({
       ...base,
@@ -91,22 +91,15 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
       refetchOnWindowFocus: false,
     });
 
-  // Flatten all pages into a single array
   const allTenants = data.pages.flatMap((page) => page.docs);
-
-  // Get total count from the first page (all pages have the same totalDocs)
   const totalTenants = data.pages[0]?.totalDocs || 0;
 
-  // Reviews
-
-  // ➊ collect slugs
   const slugs = allTenants.map((t: TenantWithRelations) => t.slug);
 
   const tenantIds = allTenants
     .map((t: TenantWithRelations) => t.id)
     .filter((id): id is string => Boolean(id));
 
-  // ➋ one query for all ratings on this page
   const { data: summaries } = useQuery({
     ...trpc.reviews.summariesForTenants.queryOptions({ slugs }),
     enabled: slugs.length > 0,
@@ -116,7 +109,6 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
     summaries ??
     ({} as Record<string, { avgRating: number; totalReviews: number }>);
 
-  // ➍ one query for all order counts on this page
   const { data: orderStats } = useQuery({
     ...trpc.orders.statsForTenants.queryOptions({ tenantIds }),
     enabled: tenantIds.length > 0,
@@ -125,7 +117,6 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   const ordersMap =
     orderStats ?? ({} as Record<string, { ordersCount: number }>);
 
-  // Show empty state if no tenants
   if (allTenants.length === 0) {
     return (
       <div className="text-center py-12">
@@ -141,12 +132,11 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
 
   return (
     <div className="space-y-4">
-      {/* Tenant Cards Container */}
       <div className="flex flex-wrap gap-4 justify-start pt-2">
         {allTenants.map((tenant: TenantWithRelations) => {
           const ratingSummary = summaryMap[tenant.slug];
           const orderSummary = ordersMap[tenant.id];
-          // As soon as you add { ... } after the arrow, the body becomes a block (not returned automatically), not a single expression.
+
           return (
             <Link
               key={tenant.id}
@@ -167,7 +157,6 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
         })}
       </div>
 
-      {/* Load More Button */}
       {hasNextPage && (
         <div className="flex justify-center pt-6">
           <Button
@@ -177,8 +166,6 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
             size="lg"
             className="min-w-[140px]"
           >
-            {/* Step 8 keeps pagination behavior unchanged and only localizes the
-                visible list states around it. */}
             {isFetchingNextPage ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -191,10 +178,8 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
         </div>
       )}
 
-      {/* Loading Skeletons for New Items */}
       {isFetchingNextPage && <ListSkeleton count={DEFAULT_LIMIT} />}
 
-      {/* Results Summary */}
       <div className="text-center text-sm text-gray-500">
         {tMarketplace("list.results_summary", {
           shown: allTenants.length,
@@ -205,7 +190,6 @@ export const TenantList = ({ category, subcategory, isSignedIn }: Props) => {
   );
 };
 
-// Export the skeleton for external use
 export const TenantListSkeleton = () => {
   return <ListSkeleton count={6} />;
 };

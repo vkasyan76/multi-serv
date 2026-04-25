@@ -58,6 +58,17 @@ Required env groups are defined in `README.md`:
 - Most domain logic is feature-first under `src/modules/<domain>/{server,ui}`.
 - Payload collections are admin-restricted by default; app logic often uses server-side `overrideAccess: true` with explicit guards.
 - Tenant isolation is enforced in server procedures through tenant membership checks.
+- Homepage first-render hydration currently relies on the same auth/profile-aware
+  inputs on both server and client.
+  - `src/app/(app)/[lang]/(home)/page.tsx` intentionally fetches
+    `auth.session` + `auth.getUserProfile` before homepage prefetch so the
+    server can build the same signed-in/coords-aware homepage tenants query that
+    `src/modules/home/ui/HomeView.tsx` builds on first client render.
+  - Do not remove those auth/profile queries from the dehydrated homepage cache
+    as a "privacy/payload cleanup" unless you also replace their first-render
+    role with minimal explicit server-derived props.
+  - Blind removal can reintroduce homepage server/client mismatch, orbit preview
+    divergence, CTA flicker, and temporary anonymous/no-coords client renders.
 
 ## Categories and Filter Logic
 
@@ -92,6 +103,76 @@ Required env groups are defined in `README.md`:
   - typing debounces URL/server updates by 400ms; clearing applies immediately; pressing Enter flushes the current value immediately
   - current backend search behavior in `src/modules/tenants/server/procedures.ts` is free-text `OR` over tenant `name` and `bio`, then `AND`ed with all other active filters (category, subcategory, services, price, distance, sort)
   - do not treat the current search input as a generic marketplace search across categories/subcategories unless a task explicitly changes that product behavior
+- Global desktop navbar search (deterministic MVP) now exists as a separate system from the homepage/provider search:
+  - entry UI lives in `src/modules/search/ui/navbar-global-search.tsx` and is mounted only in the desktop navbar (`src/modules/home/ui/components/navbar.tsx`)
+  - the search module boundary is `src/modules/search/*` and intentionally stays isolated from homepage filters and tenant listing search
+  - server suggestions come from `search.suggest` in `src/modules/search/server/procedures.ts`
+  - taxonomy inputs reuse shared live category-tree reads (`src/modules/categories/server/category-tree.ts`); do not import `src/scripts/categories.ts` at runtime
+  - result kinds exposed to the UI are intentionally narrow: `tenant`, `category`, `subcategory`, and explicit marketplace fallback
+  - alias/synonym matching is internal only (`src/modules/search/search-synonyms.ts`) and must resolve to canonical category/subcategory slugs before returning suggestions
+  - fallback behavior is explicit: the backend appends `/[lang]/all?search=...` as the final row; it must never participate in auto-select
+  - client navigation is split on href type in `src/modules/search/lib/navigate-search-result.ts`:
+    relative app routes use `router.push(...)`, absolute tenant URLs use `window.location.assign(...)`
+  - current navbar UX is desktop-only, debounced, and deterministic:
+    typing 2+ characters calls `search.suggest`, the popover opens from the input, arrow keys move a local highlighted row, and Enter only navigates to the highlighted row or an `autoSelect` top hit
+  - keep this separate from the homepage provider search unless a task explicitly merges those product behaviors
+  - follow-up hardening still expected: logic tests around search scoring/href resolution/procedure output, plus manual QA for popover focus, Enter behavior, and cross-origin tenant navigation
+
+## Support Chat
+
+- AI support chat is a separate product/domain boundary from human messaging.
+- Module boundary lives under `src/modules/support-chat/{server,ui,lib}`.
+- tRPC entry is `supportChat` in `src/trpc/routers/_app.ts`.
+- Public route is `src/app/(app)/[lang]/support/page.tsx`.
+- Navbar/mobile/footer entry points intentionally use a distinct `support` label instead of the older generic `chat` wording.
+- Support chat UI is a global overlayless assistant panel mounted from the locale app layout; `/[lang]/support` is only a fallback/deep-link host.
+- Support chat launchers in navbar/mobile/footer should open the panel rather than navigate away.
+- Do not use the modal `Sheet` component for the support assistant panel unless product requirements change; the page behind should remain visible and usable.
+- Anonymous and signed-in users share the same public support entry point; signed-in state alone must not be treated as permission for live account/order/payment answers.
+- Keep AI support chat separate from `src/modules/conversations/*` and `src/modules/messages/*`; those remain human-to-human messaging domains.
+- Support chat scope is grounded general support only: terms/policy, registration/onboarding, booking/payment/cancellation/dispute rules at policy level, failure next steps, and basic marketplace usage.
+- Support chat must not claim live order/payment/account lookup, make cancellation decisions for a specific order, perform vendor/admin actions, run broad DB reads, or access Stripe/Payload/Mongo/backend systems directly.
+- The assistant may explain platform policy in plain language, but must not present legal, financial, medical, tax, or other professional advice beyond platform rules.
+- Policy summaries/paraphrases must stay conservative and must not imply meanings unsupported by approved source material.
+- Empty, abusive, or nonsensical prompts should receive a brief boundary response plus human support/contact handoff where appropriate.
+- Internal scope constants live in `src/modules/support-chat/lib/scope.ts`; the human-readable scope note lives in `src/modules/support-chat/server/scope.md`.
+- Repo-managed support knowledge lives in `src/modules/support-chat/server/knowledge/*.en.md` and should use stable file IDs, version labels, and section IDs for later retrieval/logging.
+- Knowledge-pack priority is operational FAQ/help content first, policy summaries second, Terms reference third, and unsupported/fallback guidance when the source material is not enough.
+- Simple support retrieval lives in `src/modules/support-chat/server/knowledge-loader.ts` and `src/modules/support-chat/server/retrieve-knowledge.ts`.
+- Retrieval is deterministic keyword/heading matching over repo-managed markdown chunks; do not replace it with hosted/vector retrieval unless the knowledge base outgrows this approach.
+- Retrieval results must expose chunk IDs, document IDs, section IDs, source type, score, and matched terms so prompt/debug/logging work can inspect what context was used.
+- Support-chat knowledge markdown is read from disk at runtime; `next.config.ts` must include `src/modules/support-chat/server/knowledge/**/*.md` in `outputFileTracingIncludes` so production builds bundle the knowledge pack.
+- Support-chat retrieval should fall back to English knowledge files when a localized knowledge pack is not available; do not return empty results only because the route locale has no matching markdown files yet.
+- Markdown `## ...` headings in knowledge files are stable section IDs; do not rewrite, slugify, or derive alternate IDs during loading.
+- Use a minimum relevance threshold; do not force irrelevant chunks into model context.
+- Support-chat UI copy belongs in the `supportChat` i18n namespace, while the repo-managed knowledge pack may remain English-only until localized source material is approved.
+- Deterministic server-authored support-chat responses should use `supportChat.serverMessages` by route/app locale instead of hardcoded English strings.
+- Persisted support-chat source locale metadata must reflect the actual matched knowledge chunk locale so English fallback remains inspectable in logs.
+- Input precheck helpers must stay minimal and must not become homemade semantic intent classification.
+- `supportChat.sendMessage` is the public server contract for support chat; use `threadId`, not `conversationId`, to avoid confusion with human messaging.
+- `threadId` is an opaque support-chat continuity id for server/admin logs only and must not be treated as user-visible persisted chat history.
+- Support-chat disposition is server-owned; the model may draft normal answers, but server code decides `answered`, `uncertain`, `escalate`, or `unsupported_account_question`.
+- Support-chat prompt builders should format selected context only; disposition, unsupported-account handling, and weak-source decisions belong in server orchestration.
+- Support-chat guardrails must prevent "common practice" answers from being treated as Infinisimo policy; answers must be grounded in retrieved support context.
+- Ambiguous support-chat requests should receive one short clarifying question instead of a guessed answer.
+- Unsupported or escalated support-chat responses should still say what the assistant can help with and what the user should do next.
+- The model should only draft normal answers after server-side checks pass; invalid, ambiguous, unsupported-account, weak-source, and outage paths should remain deterministic server-authored responses.
+- Support-chat storage must use `support_chat_threads` and `support_chat_messages`; do not reuse human `conversations` or `messages`.
+- `threadId` is the public support-chat continuity id and must not be confused with the Payload document id.
+- Support-chat logs are admin-only by default and must not be exposed to vendors or regular users.
+- Support-chat admin review lives at `/[lang]/dashboard/admin/support-chat`; it is a separate admin child page, while the admin dashboard subnav remains section-based and the dashboard `Support Chat` section card is the entry point to the review page.
+- Redaction is best-effort for persisted logs only; do not mutate model input unless explicitly approved.
+- Persisted assistant messages should include prompt, guardrail, retrieval, knowledge-pack, model, disposition, and source metadata.
+- `retentionUntil` represents support-chat retention policy; cleanup enforcement can be added separately.
+- OpenAI usage for support chat must stay server-only.
+- Use `src/lib/openai.ts` as the single OpenAI client helper.
+- Support-chat model calls should go through `src/modules/support-chat/server/openai-response.ts`; do not call OpenAI directly from UI or unrelated modules.
+- The support-chat model is configured in `src/modules/support-chat/server/openai-config.ts`; `OPENAI_SUPPORT_CHAT_MODEL` and `OPENAI_SUPPORT_CHAT_MODEL_VERSION` must both be set explicitly so future logs can distinguish model behavior.
+- OpenAI outages or empty model output should return a user-safe fallback message, not raw SDK/API errors.
+- `src/modules/support-chat/server/rate-limit.ts` is only an in-memory first-layer guard; do not treat it as durable multi-instance rate limiting.
+- Phase 1 support-chat regression cases live in `src/modules/support-chat/testing/phase1-test-cases.ts`, the runner lives in `src/scripts/run-support-chat-phase1-tests.ts`, and the review guide lives in `docs/support-chat-phase1-test-sheet.md`.
+- Rerun `npm run test:support-chat:phase1` after meaningful support-chat changes to prompt, model, retrieval, knowledge pack, or guardrail behavior; use `--json` and `--out <path>` when you want a saved artifact for review.
+- When extending support chat, prefer documenting stable boundaries here: entry points, ownership, access model, source-of-truth locations, storage shape, and safety constraints.
 
 ## Checkout UI Note
 

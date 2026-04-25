@@ -1,0 +1,41 @@
+{
+  "title": "Asistență",
+  "lead": "Deschide asistentul de suport pentru a primi ajutor fără a părăsi această pagină.",
+  "fallbackLead": "Asistentul de suport ar trebui să se deschidă automat. Îl poți deschide și aici.",
+  "panelTitle": "Asistență Infinisimo",
+  "panelSubtitle": "De obicei răspunde instant",
+  "emptyTitle": "Cum te putem ajuta?",
+  "emptySubtitle": "Pune o întrebare sau începe cu unul dintre aceste subiecte.",
+  "close": "Închide chatul de asistență",
+  "launcher": "Asistență",
+  "composerPlaceholder": "Pune o întrebare...",
+  "suggestions": {
+    "booking": "Ajutor rezervare",
+    "payment": "Întrebare despre plată",
+    "cancel": "Anulează o rezervare",
+    "provider": "Devino furnizor"
+  },
+  "suggestionPrompts": {
+    "booking": "Am nevoie de ajutor cu o rezervare.",
+    "payment": "Am o întrebare despre o plată.",
+    "cancel": "Am nevoie de ajutor pentru anularea unei rezervări.",
+    "provider": "Vreau să devin furnizor."
+  },
+  "disclaimer": "Asistența AI poate face greșeli. Nu poate accesa date live despre comenzi, plăți sau cont.",
+  "contactSupport": "Contactează asistența",
+  "send": "Trimite",
+  "sending": "Asistența răspunde...",
+  "error": "Ceva nu a mers bine. Încearcă din nou sau contactează asistența.",
+  "serverMessages": {
+    "rateLimit": "Prea multe cereri către chatul de asistență. Așteaptă puțin și încearcă din nou.",
+    "outage": "Chatul de asistență este temporar indisponibil. Încearcă din nou mai târziu sau contactează asistența.",
+    "empty": "Introdu o întrebare de asistență ca să te pot ajuta.",
+    "abusive": "Pot ajuta cu întrebări de asistență, dar nu pot răspunde la mesaje abuzive. Contactează asistența dacă ai nevoie de ajutor.",
+    "nonsense": "Nu am putut înțelege această cerere. Reformulează întrebarea de asistență sau contactează asistența.",
+    "clarify": "Ce încerci să faci: să te înregistrezi, să rezervi un serviciu, să gestionezi un profil de furnizor, să plătești o comandă, să anulezi sau să contești ceva?",
+    "unsupportedAccount": "Încă nu pot verifica în acest chat detalii live despre comenzi, plăți, facturi, rambursări sau conturi. Pot explica politica generală sau pașii obișnuiți următori pe baza materialului de suport Infinisimo. Pentru contul sau comanda ta concretă, folosește paginile contului tău sau contactează asistența.",
+    "uncertain": "Nu am suficiente informații de suport pentru a răspunde în mod fiabil. Pot ajuta cu întrebări generale despre înregistrare, configurarea furnizorului, rezervări, plăți, anulări, dispute și folosirea marketplace-ului. Pentru această problemă concretă, contactează asistența."
+  },
+  "handoffAccount": "Pentru ajutor specific contului, contactează asistența cu detaliile comenzii, facturii sau contului.",
+  "handoffGeneral": "Dacă acest răspuns nu îți rezolvă întrebarea, contactează asistența."
+}

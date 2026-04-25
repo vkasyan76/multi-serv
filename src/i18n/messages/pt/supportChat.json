@@ -1,0 +1,41 @@
+{
+  "title": "Suporte",
+  "lead": "Abra o assistente de suporte para obter ajuda sem sair desta página.",
+  "fallbackLead": "O assistente de suporte deve abrir automaticamente. Também pode abri-lo aqui.",
+  "panelTitle": "Suporte Infinisimo",
+  "panelSubtitle": "Normalmente responde de imediato",
+  "emptyTitle": "Como podemos ajudar?",
+  "emptySubtitle": "Faça uma pergunta ou comece com um destes tópicos.",
+  "close": "Fechar chat de suporte",
+  "launcher": "Suporte",
+  "composerPlaceholder": "Faça uma pergunta...",
+  "suggestions": {
+    "booking": "Ajuda com reservas",
+    "payment": "Pergunta de pagamento",
+    "cancel": "Cancelar uma reserva",
+    "provider": "Tornar-se fornecedor"
+  },
+  "suggestionPrompts": {
+    "booking": "Preciso de ajuda com uma reserva.",
+    "payment": "Tenho uma pergunta sobre um pagamento.",
+    "cancel": "Preciso de ajuda para cancelar uma reserva.",
+    "provider": "Quero tornar-me fornecedor."
+  },
+  "disclaimer": "O suporte com IA pode cometer erros. Não pode aceder a dados em tempo real de encomendas, pagamentos ou contas.",
+  "contactSupport": "Contactar suporte",
+  "send": "Enviar",
+  "sending": "O suporte está a responder...",
+  "error": "Algo correu mal. Tente novamente ou contacte o suporte.",
+  "serverMessages": {
+    "rateLimit": "Demasiados pedidos no chat de suporte. Aguarde um momento e tente novamente.",
+    "outage": "O chat de suporte está temporariamente indisponível. Tente novamente mais tarde ou contacte o suporte.",
+    "empty": "Introduza uma pergunta de suporte para que eu possa ajudar.",
+    "abusive": "Posso ajudar com questões de suporte, mas não posso responder a mensagens abusivas. Contacte o suporte se precisar de ajuda.",
+    "nonsense": "Não consegui entender esse pedido. Reformule a sua pergunta de suporte ou contacte o suporte.",
+    "clarify": "O que está a tentar fazer: registar-se, reservar um serviço, gerir um perfil de prestador, pagar uma encomenda, cancelar ou contestar alguma coisa?",
+    "unsupportedAccount": "Ainda não posso verificar neste chat detalhes em tempo real de encomendas, pagamentos, faturas, reembolsos ou contas. Posso explicar a política geral ou os passos habituais com base no material de suporte da Infinisimo. Para a sua conta ou encomenda específica, utilize as páginas da sua conta ou contacte o suporte.",
+    "uncertain": "Não tenho informação de suporte suficiente para responder com confiança. Posso ajudar com questões gerais sobre registo, configuração de prestador, reservas, pagamentos, cancelamentos, disputas e utilização do marketplace. Para este problema específico, contacte o suporte."
+  },
+  "handoffAccount": "Para ajuda específica da conta, contacte o suporte com os dados da sua encomenda, fatura ou conta.",
+  "handoffGeneral": "Se isto não responder à sua pergunta, contacte o suporte."
+}

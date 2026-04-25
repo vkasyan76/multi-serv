@@ -1,0 +1,41 @@
+{
+  "title": "Supporto",
+  "lead": "Apri l'assistente di supporto per ricevere aiuto senza lasciare questa pagina.",
+  "fallbackLead": "L'assistente di supporto dovrebbe aprirsi automaticamente. Puoi aprirlo anche qui.",
+  "panelTitle": "Supporto Infinisimo",
+  "panelSubtitle": "Di solito risponde subito",
+  "emptyTitle": "Come possiamo aiutarti?",
+  "emptySubtitle": "Fai una domanda o inizia con uno di questi argomenti.",
+  "close": "Chiudi la chat di supporto",
+  "launcher": "Supporto",
+  "composerPlaceholder": "Fai una domanda...",
+  "suggestions": {
+    "booking": "Aiuto prenotazioni",
+    "payment": "Domanda sul pagamento",
+    "cancel": "Annulla una prenotazione",
+    "provider": "Diventa fornitore"
+  },
+  "suggestionPrompts": {
+    "booking": "Ho bisogno di aiuto con una prenotazione.",
+    "payment": "Ho una domanda su un pagamento.",
+    "cancel": "Ho bisogno di aiuto per annullare una prenotazione.",
+    "provider": "Voglio diventare fornitore."
+  },
+  "disclaimer": "Il supporto IA può commettere errori. Non può accedere ai dati live di ordini, pagamenti o account.",
+  "contactSupport": "Contatta il supporto",
+  "send": "Invia",
+  "sending": "Il supporto sta rispondendo...",
+  "error": "Qualcosa è andato storto. Riprova o contatta il supporto.",
+  "serverMessages": {
+    "rateLimit": "Troppe richieste alla chat di supporto. Attendi un momento e riprova.",
+    "outage": "La chat di supporto è temporaneamente non disponibile. Riprova più tardi o contatta il supporto.",
+    "empty": "Inserisci una domanda di supporto così posso aiutarti.",
+    "abusive": "Posso aiutare con domande di supporto, ma non posso rispondere a messaggi offensivi. Contatta il supporto se hai bisogno di aiuto.",
+    "nonsense": "Non sono riuscito a capire questa richiesta. Riformula la tua domanda di supporto oppure contatta il supporto.",
+    "clarify": "Che cosa stai cercando di fare: registrarti, prenotare un servizio, gestire un profilo fornitore, pagare un ordine, annullare o contestare qualcosa?",
+    "unsupportedAccount": "In questa chat non posso ancora controllare dettagli live di ordini, pagamenti, fatture, rimborsi o account. Posso spiegare la policy generale o i passaggi abituali usando il materiale di supporto Infinisimo. Per il tuo account o ordine specifico, usa le pagine del tuo account oppure contatta il supporto.",
+    "uncertain": "Non ho abbastanza informazioni di supporto per rispondere in modo affidabile. Posso aiutare con domande generali su registrazione, configurazione fornitore, prenotazione, pagamento, cancellazione, contestazioni e uso del marketplace. Per questo problema specifico, contatta il supporto."
+  },
+  "handoffAccount": "Per assistenza specifica sull'account, contatta il supporto con i dettagli di ordine, fattura o account.",
+  "handoffGeneral": "Se questo non risponde alla tua domanda, contatta il supporto."
+}

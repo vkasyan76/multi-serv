@@ -164,7 +164,7 @@ export const Navbar = ({ slug }: Props) => {
 
           {/* Row 2: Centered tabs with reduced gaps and extra padding */}
           <div className="border-t bg-white/90 backdrop-blur">
-            <div className="h-12 sm:h-14 flex items-center justify-center px-3">
+            <div className="h-12 sm:h-14 flex items-center justify-center px-2 sm:px-3">
               <TenantSubnav headerOffsetPx={{ base: 104, sm: 120 }} />
             </div>
           </div>

@@ -1,0 +1,41 @@
+{
+  "title": "Support",
+  "lead": "Open the support assistant to get help without leaving this page.",
+  "fallbackLead": "The support assistant should open automatically. You can also open it here.",
+  "panelTitle": "Infinisimo Support",
+  "panelSubtitle": "Usually replies instantly",
+  "emptyTitle": "How can we help?",
+  "emptySubtitle": "Ask a question or start with one of these topics.",
+  "close": "Close support chat",
+  "launcher": "Support",
+  "composerPlaceholder": "Ask a question...",
+  "suggestions": {
+    "booking": "Booking help",
+    "payment": "Payment question",
+    "cancel": "Cancel a booking",
+    "provider": "Become a provider"
+  },
+  "suggestionPrompts": {
+    "booking": "I need help with a booking.",
+    "payment": "I have a payment question.",
+    "cancel": "I need help canceling a booking.",
+    "provider": "I want to become a provider."
+  },
+  "disclaimer": "AI support may make mistakes. It cannot access live order, payment, or account data.",
+  "contactSupport": "Contact support",
+  "send": "Send",
+  "sending": "Support is replying...",
+  "error": "Something went wrong. Please try again or contact support.",
+  "serverMessages": {
+    "rateLimit": "Too many support chat requests. Please wait a moment and try again.",
+    "outage": "Support chat is temporarily unavailable. Please try again later or contact support.",
+    "empty": "Please enter a support question so I can help.",
+    "abusive": "I can help with support questions, but I cannot respond to abusive messages. Please contact support if you need help.",
+    "nonsense": "I could not understand that request. Please rephrase your support question or contact support.",
+    "clarify": "What are you trying to do: register, book a service, manage a provider profile, pay for an order, cancel, or dispute something?",
+    "unsupportedAccount": "I cannot check live order, payment, invoice, refund, or account details in this chat yet. I can explain the general policy or usual next steps from Infinisimo support material. For your specific account or order, please use your account pages or contact support.",
+    "uncertain": "I do not have enough support information to answer that reliably. I can help with general registration, provider setup, booking, payment, cancellation, dispute, and marketplace usage questions. For this specific issue, please contact support."
+  },
+  "handoffAccount": "For account-specific help, contact support with your order, invoice, or account details.",
+  "handoffGeneral": "If this does not answer your question, contact support for help."
+}

@@ -48,6 +48,74 @@ export function getLocaleAndCurrency(appLang: AppLang = DEFAULT_APP_LANG) {
   return { locale, currency: WALLET_CURRENCY.toUpperCase() };
 }
 
+export function getCurrencyInputConfig(
+  appLang: AppLang = DEFAULT_APP_LANG,
+  currencyCode?: string
+) {
+  const { locale, currency: defaultCurrency } = getLocaleAndCurrency(appLang);
+  const currency = (currencyCode ?? defaultCurrency).toUpperCase();
+
+  const formatter = new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  // Some locales (for example Polish) do not group 4-digit numbers, so use a
+  // larger sample and never invent a grouping character that the locale did not emit.
+  const parts = formatter.formatToParts(1000000.1);
+  const decimalSeparator =
+    parts.find((part) => part.type === "decimal")?.value ?? ".";
+  const emittedGroupSeparator = parts.find((part) => part.type === "group")?.value;
+  const thousandSeparator =
+    emittedGroupSeparator && emittedGroupSeparator !== decimalSeparator
+      ? emittedGroupSeparator
+      : undefined;
+
+  const numericTypes = new Set([
+    "integer",
+    "group",
+    "decimal",
+    "fraction",
+    "minusSign",
+    "plusSign",
+  ]);
+
+  const firstNumericIndex = parts.findIndex((part) =>
+    numericTypes.has(part.type)
+  );
+  const lastNumericIndex =
+    parts.length -
+    1 -
+    [...parts].reverse().findIndex((part) => numericTypes.has(part.type));
+
+  const prefix =
+    firstNumericIndex > 0
+      ? parts
+          .slice(0, firstNumericIndex)
+          .map((part) => part.value)
+          .join("")
+      : "";
+  const suffix =
+    lastNumericIndex >= 0 && lastNumericIndex < parts.length - 1
+      ? parts
+          .slice(lastNumericIndex + 1)
+          .map((part) => part.value)
+          .join("")
+      : "";
+
+  return {
+    locale,
+    currency,
+    decimalSeparator,
+    thousandSeparator,
+    prefix,
+    suffix,
+    placeholder: formatter.format(0),
+  };
+}
+
 export function countryNameFromCode(code?: string, locale = "en"): string {
   if (!code) return "";
   try {

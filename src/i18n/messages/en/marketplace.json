@@ -3,19 +3,32 @@
     "title": "Filters",
     "clear": "Clear",
     "max_hourly_rate": "Max Hourly Rate",
+    "max_hourly_rate_compact": "Max Hourly Rate",
     "location_distance": "Location & Distance",
+    "type_of_work": "Type of work",
+    "type_of_work_compact": "Type of work",
     "service_delivery": "Service Delivery",
     "category": "Category",
-    "all_categories": "All categories"
+    "all_categories": "All categories",
+    "max_hourly_rate_placeholder": "Max price/h",
+    "max_hourly_rate_summary": "Up to {amount}/h",
+    "any_type_of_work": "Any type of work",
+    "service_delivery_all": "All delivery modes"
   },
   "distance": {
     "search_nearby": "Search Nearby",
     "max_distance": "Max distance",
-    "online_hint": "Online services work from anywhere. Consider disabling distance filter."
+    "online_hint": "Online services work from anywhere. Consider disabling distance filter.",
+    "any_distance": "Any distance"
   },
   "services": {
     "on_site": "On-site",
     "on_line": "Online"
+  },
+  "work_type": {
+    "manual": "Manual",
+    "consulting": "Consulting",
+    "digital": "Digital"
   },
   "sort": {
     "distance": "Distance",
@@ -33,6 +46,7 @@
     "empty_title": "No providers found.",
     "empty_body": "Try adjusting your filters or check back later.",
     "load_more": "Load More",
+    "loading_providers": "Loading providers",
     "loading_more": "Loading...",
     "results_summary": "Showing {shown} providers out of {total}"
   },
@@ -45,10 +59,21 @@
     "home_radar_body": "Couldn't load providers. Please adjust filters or retry."
   },
   "auth": {
-    "distance_tooltip": "Log in to determine your location for distance features."
+    "distance_tooltip": "Log in to determine your location for distance features.",
+    "distance_location_required": "Add your location in your profile to use distance filtering."
   },
   "categories": {
     "sidebar_title": "Categories",
     "back": "Back"
+  },
+  "tenant": {
+    "fallback_bio": "Professional services."
+  },
+  "home_search": {
+    "placeholder": "What are you looking for?",
+    "submit": "Search",
+    "category_search_placeholder": "Search a category...",
+    "category_loading": "Loading categories...",
+    "category_empty": "No categories found."
   }
 }

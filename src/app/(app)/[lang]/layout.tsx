@@ -7,6 +7,8 @@ import { getMessages } from "next-intl/server";
 import { IntlProvider } from "@/i18n/intl-provider";
 import { CookieConsentRoot } from "@/modules/legal/cookies/ui/cookie-consent-root";
 import { VercelAnalyticsConsent } from "@/modules/legal/cookies/ui/consents/vercel-analytics-consent";
+import { SupportChatPanel } from "@/modules/support-chat/ui/support-chat-panel";
+import { SupportChatProvider } from "@/modules/support-chat/ui/support-chat-provider";
 
 export default async function LocaleSegmentLayout({
   children,
@@ -32,10 +34,13 @@ export default async function LocaleSegmentLayout({
   const messages = await getMessages();
   return (
     <IntlProvider locale={appLang} messages={messages}>
-      {children}
-      {/* Keep cookie UI inside locale-scoped intl context. */}
-      <CookieConsentRoot />
-      <VercelAnalyticsConsent />
+      <SupportChatProvider lang={appLang}>
+        {children}
+        <SupportChatPanel />
+        {/* Keep cookie UI inside locale-scoped intl context. */}
+        <CookieConsentRoot />
+        <VercelAnalyticsConsent />
+      </SupportChatProvider>
     </IntlProvider>
   );
 }

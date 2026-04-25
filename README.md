@@ -119,6 +119,11 @@ A modern multi-tenant service marketplace built with Next.js, Payload CMS, and C
    STRIPE_SECRET_KEY=your_stripe_secret_key
    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
+   # OpenAI support chat
+   OPENAI_API_KEY=your_openai_api_key
+   OPENAI_SUPPORT_CHAT_MODEL=your_confirmed_model
+   OPENAI_SUPPORT_CHAT_MODEL_VERSION=support-chat-model-YYYY-MM-DD
+
    # Vercel Blob
    BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
    ```

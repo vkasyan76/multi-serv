@@ -3,19 +3,32 @@
     "title": "Filtre",
     "clear": "Resetează",
     "max_hourly_rate": "Tarif orar maxim",
+    "max_hourly_rate_compact": "Tarif orar maxim",
     "location_distance": "Locație și distanță",
-    "service_delivery": "Modalitatea serviciului",
+    "type_of_work": "Tip de muncă",
+    "type_of_work_compact": "Tip de muncă",
+    "service_delivery": "Mod de prestare",
     "category": "Categorie",
-    "all_categories": "Toate categoriile"
+    "all_categories": "Toate categoriile",
+    "max_hourly_rate_placeholder": "Preț max/oră",
+    "max_hourly_rate_summary": "Până la {amount}/h",
+    "any_type_of_work": "Orice tip de muncă",
+    "service_delivery_all": "Toate modurile"
   },
   "distance": {
     "search_nearby": "Caută în apropiere",
     "max_distance": "Distanța maximă",
-    "online_hint": "Serviciile online funcționează de oriunde. Ia în considerare dezactivarea filtrului de distanță."
+    "online_hint": "Serviciile online funcționează de oriunde. Ia în considerare dezactivarea filtrului de distanță.",
+    "any_distance": "Orice distanță"
   },
   "services": {
-    "on_site": "La client",
+    "on_site": "La locație",
     "on_line": "Online"
+  },
+  "work_type": {
+    "manual": "Manual",
+    "consulting": "Consultanță",
+    "digital": "Digital"
   },
   "sort": {
     "distance": "Distanță",
@@ -25,30 +38,42 @@
     "distance_auth_required": "Autentifică-te pentru a sorta după distanță",
     "sorted_by_price_low_to_high": "Sortat după preț (de la mic la mare)",
     "sorted_by_price_high_to_low": "Sortat după preț (de la mare la mic)",
-    "sorted_by_tenure_newest": "Sortat după vechime pe piață (cei mai noi primii)",
-    "sorted_by_tenure_oldest": "Sortat după vechime pe piață (cei mai vechi primii)",
-    "sorted_by_distance": "Sortat după distanță (cei mai apropiați primii)"
+    "sorted_by_tenure_newest": "Sortat după vechime pe piață (cei mai noi mai întâi)",
+    "sorted_by_tenure_oldest": "Sortat după vechime pe piață (cei mai vechi mai întâi)",
+    "sorted_by_distance": "Sortat după distanță (cei mai apropiați mai întâi)"
   },
   "list": {
-    "empty_title": "Nu au fost găsiți prestatori.",
+    "empty_title": "Nu au fost găsiți furnizori.",
     "empty_body": "Încearcă să ajustezi filtrele sau revino mai târziu.",
     "load_more": "Încarcă mai mult",
+    "loading_providers": "Se încarcă furnizorii",
     "loading_more": "Se încarcă...",
-    "results_summary": "Se afișează {shown} din {total} prestatori"
+    "results_summary": "Se afișează {shown} furnizori din {total}"
   },
   "error": {
-    "title": "Ceva nu a funcționat",
-    "body": "Nu am putut încărca prestatorii. Reîmprospătează pagina.",
+    "title": "Ceva nu a mers bine",
+    "body": "Nu am putut încărca furnizorii. Reîmprospătează pagina.",
     "refresh": "Reîmprospătează pagina",
-    "refresh_aria": "Reîmprospătează pagina pentru a reîncărca prestatorii",
-    "retry": "Încearcă din nou",
-    "home_radar_body": "Nu s-au putut încărca prestatorii. Ajustează filtrele sau încearcă din nou."
+    "refresh_aria": "Reîmprospătează pagina pentru a reîncărca furnizorii",
+    "retry": "Reîncearcă",
+    "home_radar_body": "Nu am putut încărca furnizorii. Ajustează filtrele sau încearcă din nou."
   },
   "auth": {
-    "distance_tooltip": "Autentifică-te pentru a determina locația ta pentru funcțiile de distanță."
+    "distance_tooltip": "Autentifică-te pentru a determina locația ta pentru funcțiile de distanță.",
+    "distance_location_required": "Adaugă locația ta în profil pentru a folosi filtrul de distanță."
   },
   "categories": {
     "sidebar_title": "Categorii",
     "back": "Înapoi"
+  },
+  "tenant": {
+    "fallback_bio": "Servicii profesionale."
+  },
+  "home_search": {
+    "placeholder": "Ce cauți?",
+    "submit": "Caută",
+    "category_search_placeholder": "Caută o categorie...",
+    "category_loading": "Se încarcă categoriile...",
+    "category_empty": "Nu au fost găsite categorii."
   }
 }

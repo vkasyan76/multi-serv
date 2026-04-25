@@ -35,6 +35,10 @@ export const tenantsRouter = createTRPCRouter({
         // NEW: multi from the MultiSelect
         categories: z.array(z.string()).nullable().optional(),
         subcategory: z.string().nullable().optional(),
+        workType: z
+          .enum(["manual", "consulting", "digital"])
+          .nullable()
+          .optional(),
         maxPrice: z.string().nullable().optional(),
         services: z.array(z.string()).nullable().optional(),
         sort: z.enum(SORT_VALUES).nullable().optional(),
@@ -50,7 +54,7 @@ export const tenantsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       // prepare a "where" object (by default empty):
-      type WhereWithOr = Where & { or?: Where[] };
+      type WhereWithOr = Where & { or?: Where[]; and?: Where[] };
 
       const where: WhereWithOr = {};
 
@@ -119,6 +123,20 @@ export const tenantsRouter = createTRPCRouter({
             less_than_equal: maxPriceValue,
           };
         }
+      }
+
+      if (input.workType) {
+        // workType is taxonomy-owned on categories/subcategories, not tenant-
+        // owned, so filter through the linked category documents.
+        where.and = [
+          ...(where.and ?? []),
+          {
+            or: [
+              { "categories.workType": { equals: input.workType } },
+              { "subcategories.workType": { equals: input.workType } },
+            ],
+          },
+        ];
       }
 
       // Unify single route category + multi-select categories

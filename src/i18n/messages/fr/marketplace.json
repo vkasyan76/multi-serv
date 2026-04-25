@@ -3,52 +3,77 @@
     "title": "Filtres",
     "clear": "Réinitialiser",
     "max_hourly_rate": "Tarif horaire maximal",
+    "max_hourly_rate_compact": "Tarif horaire maximal",
     "location_distance": "Emplacement et distance",
+    "type_of_work": "Type de travail",
+    "type_of_work_compact": "Type de travail",
     "service_delivery": "Mode de prestation",
     "category": "Catégorie",
-    "all_categories": "Toutes les catégories"
+    "all_categories": "Toutes les catégories",
+    "max_hourly_rate_placeholder": "Prix max/h",
+    "max_hourly_rate_summary": "Jusqu'à {amount}/h",
+    "any_type_of_work": "Tout type de travail",
+    "service_delivery_all": "Tous les modes"
   },
   "distance": {
     "search_nearby": "Rechercher à proximité",
     "max_distance": "Distance maximale",
-    "online_hint": "Les services en ligne fonctionnent de partout. Pensez à désactiver le filtre de distance."
+    "online_hint": "Les services en ligne fonctionnent de partout. Pensez à désactiver le filtre de distance.",
+    "any_distance": "Toute distance"
   },
   "services": {
     "on_site": "Chez le client",
     "on_line": "En ligne"
   },
+  "work_type": {
+    "manual": "Manuel",
+    "consulting": "Conseil",
+    "digital": "Digital"
+  },
   "sort": {
     "distance": "Distance",
     "price": "Prix",
-    "market_tenure": "Ancienneté sur le marché",
+    "market_tenure": "Ancienneté",
     "distance_aria": "Trier par distance",
     "distance_auth_required": "Connectez-vous pour trier par distance",
     "sorted_by_price_low_to_high": "Trié par prix (du plus bas au plus élevé)",
     "sorted_by_price_high_to_low": "Trié par prix (du plus élevé au plus bas)",
-    "sorted_by_tenure_newest": "Trié par ancienneté sur le marché (plus récents d'abord)",
-    "sorted_by_tenure_oldest": "Trié par ancienneté sur le marché (plus anciens d'abord)",
+    "sorted_by_tenure_newest": "Trié par ancienneté (les plus récents d'abord)",
+    "sorted_by_tenure_oldest": "Trié par ancienneté (les plus anciens d'abord)",
     "sorted_by_distance": "Trié par distance (les plus proches d'abord)"
   },
   "list": {
     "empty_title": "Aucun prestataire trouvé.",
     "empty_body": "Essayez d'ajuster vos filtres ou revenez plus tard.",
     "load_more": "Charger plus",
+    "loading_providers": "Chargement des prestataires",
     "loading_more": "Chargement...",
-    "results_summary": "Affichage de {shown} prestataires sur {total}"
+    "results_summary": "{shown} prestataires affichés sur {total}"
   },
   "error": {
     "title": "Une erreur s'est produite",
-    "body": "Nous n'avons pas pu charger les prestataires. Veuillez actualiser la page.",
+    "body": "Impossible de charger les prestataires. Veuillez actualiser la page.",
     "refresh": "Actualiser la page",
     "refresh_aria": "Actualiser la page pour recharger les prestataires",
     "retry": "Réessayer",
     "home_radar_body": "Impossible de charger les prestataires. Ajustez les filtres ou réessayez."
   },
   "auth": {
-    "distance_tooltip": "Connectez-vous pour déterminer votre position pour les fonctionnalités de distance."
+    "distance_tooltip": "Connectez-vous pour déterminer votre position pour les fonctionnalités de distance.",
+    "distance_location_required": "Ajoutez votre position dans votre profil pour utiliser le filtre de distance."
   },
   "categories": {
     "sidebar_title": "Catégories",
     "back": "Retour"
+  },
+  "tenant": {
+    "fallback_bio": "Services professionnels."
+  },
+  "home_search": {
+    "placeholder": "Que recherchez-vous ?",
+    "submit": "Rechercher",
+    "category_search_placeholder": "Rechercher une catégorie...",
+    "category_loading": "Chargement des catégories...",
+    "category_empty": "Aucune catégorie trouvée."
   }
 }

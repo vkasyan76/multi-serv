@@ -3,19 +3,32 @@
     "title": "Filter",
     "clear": "Zurücksetzen",
     "max_hourly_rate": "Maximaler Stundensatz",
+    "max_hourly_rate_compact": "Maximaler Stundensatz",
     "location_distance": "Standort & Entfernung",
+    "type_of_work": "Arbeitsart",
+    "type_of_work_compact": "Arbeitsart",
     "service_delivery": "Art der Leistungserbringung",
     "category": "Kategorie",
-    "all_categories": "Alle Kategorien"
+    "all_categories": "Alle Kategorien",
+    "max_hourly_rate_placeholder": "Max. Preis/Std.",
+    "max_hourly_rate_summary": "Bis {amount}/Std.",
+    "any_type_of_work": "Alle Arbeitsarten",
+    "service_delivery_all": "Alle Leistungsarten"
   },
   "distance": {
     "search_nearby": "In der Nähe suchen",
     "max_distance": "Maximale Entfernung",
-    "online_hint": "Online-Dienstleistungen funktionieren von überall. Erwägen Sie, den Entfernungsfilter zu deaktivieren."
+    "online_hint": "Online-Dienstleistungen funktionieren von überall. Erwägen Sie, den Entfernungsfilter zu deaktivieren.",
+    "any_distance": "Beliebige Entfernung"
   },
   "services": {
     "on_site": "Beim Kunden",
     "on_line": "Online"
+  },
+  "work_type": {
+    "manual": "Manuell",
+    "consulting": "Beratung",
+    "digital": "Digital"
   },
   "sort": {
     "distance": "Entfernung",
@@ -33,6 +46,7 @@
     "empty_title": "Keine Anbieter gefunden.",
     "empty_body": "Passen Sie Ihre Filter an oder versuchen Sie es später erneut.",
     "load_more": "Mehr laden",
+    "loading_providers": "Anbieter werden geladen",
     "loading_more": "Wird geladen...",
     "results_summary": "{shown} von {total} Anbietern werden angezeigt"
   },
@@ -45,10 +59,21 @@
     "home_radar_body": "Anbieter konnten nicht geladen werden. Passen Sie die Filter an oder versuchen Sie es erneut."
   },
   "auth": {
-    "distance_tooltip": "Melden Sie sich an, um Ihren Standort für Entfernungsfunktionen zu bestimmen."
+    "distance_tooltip": "Melden Sie sich an, um Ihren Standort für Entfernungsfunktionen zu bestimmen.",
+    "distance_location_required": "Fügen Sie Ihrem Profil einen Standort hinzu, um die Entfernungsfilterung zu nutzen."
   },
   "categories": {
     "sidebar_title": "Kategorien",
     "back": "Zurück"
+  },
+  "tenant": {
+    "fallback_bio": "Professionelle Dienstleistungen."
+  },
+  "home_search": {
+    "placeholder": "Wonach suchen Sie?",
+    "submit": "Suchen",
+    "category_search_placeholder": "Kategorie suchen...",
+    "category_loading": "Kategorien werden geladen...",
+    "category_empty": "Keine Kategorien gefunden."
   }
 }

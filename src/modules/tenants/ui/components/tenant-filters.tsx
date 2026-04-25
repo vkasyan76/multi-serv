@@ -13,6 +13,7 @@ import { useTenantFilters } from "../../hooks/use-tenant-filters";
 import { ServicesFilter } from "./services-filter";
 import { DistanceFilter } from "./distance-filter";
 import { CategoryFilter } from "./category-filter";
+import { DEFAULT_DISTANCE_OPTION } from "@/modules/tenants/distance-options";
 
 interface TenantFilterProps {
   title: string;
@@ -80,7 +81,7 @@ export const TenantFilters = ({
     setFilters((prev) => ({
       ...prev,
       distanceFilterEnabled: enabled,
-      maxDistance: enabled ? (prev.maxDistance ?? 50) : null,
+      maxDistance: enabled ? (prev.maxDistance ?? DEFAULT_DISTANCE_OPTION) : null,
     }));
   };
 

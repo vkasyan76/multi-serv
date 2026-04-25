@@ -12,11 +12,17 @@ import { LanguageSwitcher } from "@/i18n/ui/language-switcher";
 
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/modules/home/ui/components/loading-button";
+import { NavbarGlobalSearch } from "@/modules/search/ui/navbar-global-search";
+import { SupportChatLauncher } from "@/modules/support-chat/ui/support-chat-launcher";
 
 import { NavbarSidebar } from "./navbar-sidebar";
-import { MenuIcon } from "lucide-react";
+import {
+  LayoutGridIcon,
+  MenuIcon,
+} from "lucide-react";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { CategoriesSidebar } from "./search-filters/categories-sidebar";
 
 import {
   SignInButton,
@@ -53,6 +59,7 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
 
 export const Navbar = () => {
   const t = useTranslations("common");
+  const tMarketplace = useTranslations("marketplace");
   const trpc = useTRPC();
   const { isLoaded, isSignedIn } = useAuth();
   const session = useQuery({
@@ -87,16 +94,6 @@ export const Navbar = () => {
 
   const navbarItems = [
     { href: href("/"), children: t("nav.home") },
-    { href: href("/about"), children: t("nav.about") },
-    { href: href("/features"), children: t("nav.features") },
-    { href: href("/pricing"), children: t("nav.pricing") },
-    { href: href("/contact"), children: t("nav.contact") },
-    { href: href("/legal/terms-of-use"), children: t("nav.terms_of_use") },
-    { href: href("/legal/impressum"), children: t("nav.impressum") },
-  ];
-
-  const desktopNavbarItems = [
-    { href: href("/"), children: t("nav.home") },
     { href: href("/legal/terms-of-use"), children: t("nav.terms_of_use") },
     { href: href("/legal/impressum"), children: t("nav.impressum") },
   ];
@@ -124,12 +121,34 @@ export const Navbar = () => {
   const dashboardLabel = hasTenant
     ? t("nav.dashboard_cta")
     : t("nav.start_business_cta");
+  const ordersHref = href("/orders");
 
   // Only disable when session says user has a tenant but getMine hasn't returned it yet.
   const isDashLoading = hasTenant && !myTenant && isMineLoading;
 
+  // Keep the old Orders CTA rule intact while moving it into the desktop
+  // navbar, so it still appears only for users who actually have orders.
+  const hasOrdersQ = useQuery({
+    ...trpc.orders.hasAnyMineSlotLifecycle.queryOptions(),
+    enabled: isSignedIn && !!session.data?.user?.id,
+    staleTime: 30_000,
+    gcTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const showOrders = isSignedIn && !!hasOrdersQ.data?.hasAny;
+
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const isHomeRoute = pathname === href("/");
+
+  const homepageCategoriesQ = useQuery({
+    ...trpc.categories.getAvailableForHomepage.queryOptions(),
+    enabled: isHomeRoute,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
 
   return (
     //  <na className="h-16 flex border-b justify-between font-medium bg-white">
@@ -145,21 +164,42 @@ export const Navbar = () => {
         onOpenChange={setIsSidebarOpen}
         items={navbarItems}
       />
+      <CategoriesSidebar
+        open={isCategoriesOpen}
+        onOpenChange={setIsCategoriesOpen}
+        data={homepageCategoriesQ.data}
+        fallbackToFullTaxonomy={false}
+      />
 
-      <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center gap-2 overflow-hidden px-4">
-        {desktopNavbarItems.map((item) => (
-          <NavbarItem
-            key={item.href}
-            href={item.href}
-            isActive={pathname === item.href}
-          >
-            {item.children}
-          </NavbarItem>
-        ))}
+      <div className="hidden lg:flex flex-1 min-w-0 items-center px-4">
+        {/* Keep the desktop search centered on tighter widths, then shift it
+        slightly left on wider screens so the utility cluster has more air. */}
+        <div className="w-full min-w-0 max-w-[520px] lg:mx-auto xl:mx-0 xl:ml-4 2xl:ml-6">
+          {/* Stage 1: swap the inline placeholder for a dedicated component so
+          later search behavior stays isolated from the navbar chrome. */}
+          <NavbarGlobalSearch />
+        </div>
       </div>
 
       {/* Right Section - Clerk Auth Buttons */}
       <div className="hidden lg:flex gap-2 items-center pr-6 shrink-0">
+        <NavbarItem
+          href={href("/legal/terms-of-use")}
+          isActive={pathname === href("/legal/terms-of-use")}
+        >
+          {t("nav.terms_of_use")}
+        </NavbarItem>
+        {showOrders ? (
+          <NavbarItem href={ordersHref} isActive={pathname === ordersHref}>
+            {t("nav.my_orders")}
+          </NavbarItem>
+        ) : null}
+        <SupportChatLauncher
+          variant="outline"
+          className="bg-transparent rounded-full border-transparent px-3.5 text-lg"
+        >
+          {t("nav.support")}
+        </SupportChatLauncher>
         {/* Phase 6: keep switcher near auth/profile actions (desktop only). */}
         <LanguageSwitcher
           className="w-auto min-w-0 rounded-full px-3.5 text-lg"
@@ -250,11 +290,26 @@ export const Navbar = () => {
 
       {/* oposite of large screens */}
 
-      <div className="flex lg:hidden items-center justify-center">
+      <div className="flex lg:hidden items-center justify-center gap-1 pr-2">
+        {isHomeRoute && (
+          <Button
+            variant="ghost"
+            className="size-12 border-transparent bg-white"
+            onClick={() => setIsCategoriesOpen(true)}
+            aria-label={tMarketplace("filters.all_categories")}
+            title={tMarketplace("filters.all_categories")}
+            disabled={homepageCategoriesQ.isLoading}
+          >
+            {/* Keep taxonomy browsing separate from orbit filters while moving
+            the mobile opener into the navbar to save page space. */}
+            <LayoutGridIcon />
+          </Button>
+        )}
         <Button
           variant="ghost"
           className="size-12 border-transparent bg-white"
           onClick={() => setIsSidebarOpen(true)}
+          aria-label={t("nav.menu")}
         >
           <MenuIcon />
         </Button>

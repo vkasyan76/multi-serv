@@ -2,14 +2,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Home } from "lucide-react";
+import { ClipboardListIcon, Home } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, generateTenantUrl } from "@/lib/utils";
+import { cn, generateTenantUrl, localizedPlatformHref } from "@/lib/utils";
 import { Poppins } from "next/font/google";
 import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import { withLocalePrefix } from "@/i18n/routing";
@@ -22,6 +22,7 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["700"] });
 
 export default function NewReviewView({ slug }: { slug: string }) {
   const trpc = useTRPC();
+  const tCommon = useTranslations("common");
   const tReviews = useTranslations("reviews");
   const params = useParams<{ lang?: string }>();
   const appLang = normalizeToSupported(params?.lang);
@@ -32,6 +33,7 @@ export default function NewReviewView({ slug }: { slug: string }) {
   const hasExistingReview = !!mine.data;
   const tenantSlug = ctxQ.data?.tenant?.slug ?? slug;
   const tenantName = ctxQ.data?.tenant?.name ?? tenantSlug;
+  const ordersHref = localizedPlatformHref("/orders", appLang);
   const pageTitle = hasExistingReview
     ? tReviews("page.update_title", { tenantName })
     : tReviews("page.write_title", { tenantName });
@@ -58,20 +60,36 @@ export default function NewReviewView({ slug }: { slug: string }) {
                 {tReviews("page.go_to_provider_page")}
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href={withLocalePrefix("/", appLang)}
-                  className="p-2 rounded-full hover:bg-muted"
-                  aria-label={tReviews("page.home")}
-                >
-                  <Home className="h-7 w-7" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>{tReviews("page.home")}</TooltipContent>
-            </Tooltip>
+
+            <div className="flex items-center gap-1 shrink-0 sm:gap-2">
+              {/* Review pages belong to the orders journey, so keep a direct
+              path back to the customer's localized Orders area here too. */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={ordersHref}
+                    className="p-2 rounded-full hover:bg-muted"
+                    aria-label={tCommon("nav.my_orders")}
+                  >
+                    <ClipboardListIcon className="h-7 w-7" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>{tCommon("nav.my_orders")}</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={withLocalePrefix("/", appLang)}
+                    className="p-2 rounded-full hover:bg-muted"
+                    aria-label={tReviews("page.home")}
+                  >
+                    <Home className="h-7 w-7" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>{tReviews("page.home")}</TooltipContent>
+              </Tooltip>
+            </div>
           </TooltipProvider>
         </div>
       </nav>

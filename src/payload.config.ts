@@ -30,6 +30,8 @@ import { CommissionStatements } from "./collections/CommissionStatements.ts";
 import { Promotions } from "./collections/Promotions.ts";
 import { PromotionCounters } from "./collections/PromotionCounters.ts";
 import { PromotionAllocations } from "./collections/PromotionAllocations.ts";
+import { SupportChatThreads } from "./collections/SupportChatThreads.ts";
+import { SupportChatMessages } from "./collections/SupportChatMessages.ts";
 import { DEFAULT_APP_LANG, SUPPORTED_LANGUAGES } from "./lib/i18n/app-lang.ts";
 
 const filename = fileURLToPath(import.meta.url);
@@ -105,6 +107,8 @@ export default buildConfig({
     Promotions,
     PromotionCounters,
     PromotionAllocations,
+    SupportChatThreads,
+    SupportChatMessages,
   ],
   // cookiePrefix: "funroad",  // optional: if we want to change the cookie prefix
   editor: lexicalEditor(),
