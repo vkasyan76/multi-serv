@@ -71,6 +71,7 @@ export type AdminOrderCustomerOption = {
 };
 
 function normalizeServiceStatus(ss: unknown): ServiceStatus {
+  if (ss === "requested") return ss;
   if (ss === "completed" || ss === "accepted" || ss === "disputed") return ss;
   return "scheduled";
 }

@@ -20,6 +20,7 @@
     "open_menu": "Відкрити меню"
   },
   "status": {
+    "requested": "Запитано",
     "scheduled": "Заплановано",
     "accepted": "Прийнято",
     "completed": "Завершено",

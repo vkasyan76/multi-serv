@@ -64,6 +64,9 @@ export type OrdersLifecycleSortDir = "asc" | "desc";
 function normalizeDisplayServiceStatus(
   value: OrderServiceStatus | SlotServiceStatus | null | undefined,
 ): NormalizedServiceStatus {
+  if (value === "requested") {
+    return value;
+  }
   if (value === "completed" || value === "accepted" || value === "disputed") {
     return value;
   }
@@ -278,6 +281,8 @@ export function canShowSelfCancelAction(
 
 function statusWeight(s: ServiceStatus) {
   switch (s) {
+    case "requested":
+      return 0;
     case "scheduled":
       return 1;
     case "completed":

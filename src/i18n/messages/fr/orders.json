@@ -20,6 +20,7 @@
     "open_menu": "Ouvrir le menu"
   },
   "status": {
+    "requested": "Demandée",
     "scheduled": "Planifiée",
     "accepted": "Acceptée",
     "completed": "Terminée",

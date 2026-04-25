@@ -54,7 +54,7 @@ export const Orders: CollectionConfig = {
       index: true,
       admin: {
         description:
-          "Order-level service lifecycle: scheduled → completed → accepted (or disputed).",
+          "Order-level service lifecycle: requested → scheduled → completed → accepted (or disputed).",
       },
     },
 

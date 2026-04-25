@@ -3,6 +3,7 @@
 import type { Booking } from "@/payload-types";
 
 export type NormalizedServiceStatus =
+  | "requested"
   | "scheduled"
   | "completed"
   | "accepted"
@@ -10,6 +11,7 @@ export type NormalizedServiceStatus =
 
 export type BookingLegendKey =
   | "available"
+  | "requested"
   | "scheduled"
   | "completed"
   | "accepted"
@@ -23,6 +25,7 @@ export const AVAILABLE_STATUS_META = {
 } as const;
 
 export const SERVICE_STATUS_ORDER: NormalizedServiceStatus[] = [
+  "requested",
   "scheduled",
   "completed",
   "accepted",
@@ -33,6 +36,7 @@ export const SERVICE_STATUS_KEYS: Record<
   NormalizedServiceStatus,
   Exclude<BookingLegendKey, "available">
 > = {
+  requested: "requested",
   scheduled: "scheduled",
   completed: "completed",
   accepted: "accepted",
@@ -41,6 +45,7 @@ export const SERVICE_STATUS_KEYS: Record<
 
 // Keep legacy labels for order tables until that wave migrates to translated UI keys.
 export const SERVICE_STATUS_LABELS: Record<NormalizedServiceStatus, string> = {
+  requested: "Requested",
   scheduled: "Scheduled",
   completed: "Completed",
   accepted: "Accepted",
@@ -51,6 +56,7 @@ export const SERVICE_STATUS_COLORS: Record<
   NormalizedServiceStatus,
   { className: string; hex: string }
 > = {
+  requested: { className: "bg-slate-300", hex: "#cbd5e1" },
   scheduled: { className: "bg-amber-400", hex: "#fbbf24" },
   completed: { className: "bg-sky-400", hex: "#38bdf8" },
   accepted: { className: "bg-teal-600", hex: "#0d9488" },
@@ -60,6 +66,7 @@ export const SERVICE_STATUS_COLORS: Record<
 export function normalizeServiceStatus(
   ss: Booking["serviceStatus"] | null | undefined,
 ): NormalizedServiceStatus {
+  if (ss === "requested") return ss;
   if (ss === "completed" || ss === "accepted" || ss === "disputed") return ss;
   return "scheduled";
 }

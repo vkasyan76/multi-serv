@@ -138,6 +138,8 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
       | undefined,
   ) => {
     switch (normalizeServiceStatus(value)) {
+      case "requested":
+        return tOrders("status.requested");
       case "completed":
         return tOrders("status.completed");
       case "accepted":

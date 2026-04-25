@@ -49,7 +49,7 @@ export const Bookings: CollectionConfig = {
       index: true,
       admin: {
         description:
-          "System status: scheduled → completed → accepted | disputed.",
+          "System status: requested → scheduled → completed → accepted | disputed.",
         condition: (_, siblingData) => siblingData?.status !== "available",
         readOnly: true, // <-- reduces human error: prevents admins manually flipping these and causing roll-up inconsistencies.
       },

@@ -76,6 +76,7 @@ export const WALLET_TRANSACTIONS_LIMIT_MAX = 100;
 
 // --- Service lifecycle statuses (shared) ---
 export const SERVICE_STATUSES = [
+  "requested",
   "scheduled",
   "completed",
   "accepted",
