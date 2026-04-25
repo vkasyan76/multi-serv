@@ -74,13 +74,50 @@ const ACCOUNT_SPECIFIC_PATTERNS = [
   /\bwhere\s+is\s+my\s+order\b/i,
   /\bwhat\s+is\s+my\s+order\s+status\b/i,
   /\bcheck\s+my\s+order\s+status\b/i,
+  /\bcheck\s+my\s+order\b/i,
+  /\bchecked\s+my\s+order\b/i,
+  /\bpretend\s+you\s+checked\s+(my\s+)?(order|booking|payment|refund|invoice|account)\b/i,
+  /\b(my|this|the)\s+(order|booking)\s+status\b/i,
+  /\bstatus\s+of\s+(my|this|the)\s+(order|booking)\b/i,
+  /\bprovider\s+confirmed\s+(the\s+)?(booking|order)\b/i,
   /\bdid\s+my\s+payment\s+go\s+through\b/i,
   /\bcheck\s+my\s+payment\b/i,
+  /\b(my|this|the)\s+payment\s+status\b/i,
   /\bwhy\s+was\s+i\s+charged\b/i,
   /\bwhy\s+was\s+my\s+card\s+charged\b/i,
+  /\bcharged\s+twice\b/i,
+  /\bwhich\s+charge\s+is\s+valid\b/i,
   /\bcancel\s+my\s+(booking|order)\b/i,
+  /\bcancel\s+(this|the)\s+(booking|order)\b/i,
+  /\bcancel\s+it\s+now\b/i,
   /\bcheck\s+my\s+invoice\b/i,
   /\brefund\s+(this|my)\s+(payment|order|booking)\b/i,
+  /\bmy\s+refund\b/i,
+  /\b(my|this|the)\s+refund\s+status\b/i,
+  /\brefund\s+(is|was|has\s+been)\s+(already\s+)?processed\b/i,
+  /\btell\s+me\s+if\s+my\s+refund\b/i,
+  /\b(my|this|the)\s+account\s+status\b/i,
+];
+
+const ADVERSARIAL_UNGROUNDED_PATTERNS = [
+  /\buse\s+common\s+marketplace\s+rules\b/i,
+  /\bcommon\s+marketplace\s+rules\b/i,
+  /\bcommon\s+practice\b/i,
+  /\banswer\s+confidently\b/i,
+  /\bdo\s+not\s+mention\s+uncertainty\b/i,
+  /\bdon't\s+mention\s+uncertainty\b/i,
+  /\bhide\s+uncertainty\b/i,
+  /\bpretend\s+you\s+checked\b/i,
+  /\bignore\s+your\s+rules\b/i,
+];
+
+const THIN_POLICY_PATTERNS = [
+  /\bpartial\s+refunds?\b/i,
+  /\bpartially\s+refund\b/i,
+  /\brefund\s+part\s+of\b/i,
+  /\btransfer\s+(my\s+)?booking\b/i,
+  /\btransfer\s+(my\s+)?order\b/i,
+  /\bmove\s+(my\s+)?booking\s+to\s+another\s+person\b/i,
 ];
 
 function normalizeSupportMessage(message: string) {
@@ -95,6 +132,16 @@ function hasAccountSpecificRequest(message: string) {
   // Tiny pre-model check for obvious live account/action requests.
   // This is not semantic classification and must not grow into a broad intent system.
   return ACCOUNT_SPECIFIC_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+function hasAdversarialUngroundedRequest(message: string) {
+  return ADVERSARIAL_UNGROUNDED_PATTERNS.some((pattern) =>
+    pattern.test(message)
+  );
+}
+
+function hasThinPolicyRequest(message: string) {
+  return THIN_POLICY_PATTERNS.some((pattern) => pattern.test(message));
 }
 
 function hasStrongSource(matches: SupportKnowledgeMatch[]) {
@@ -174,19 +221,32 @@ export async function generateSupportResponse(
     });
   }
 
-  const hasUnsupportedAccountRequest = hasAccountSpecificRequest(message);
+  const isUnsupportedAccountRequest = hasAccountSpecificRequest(message);
+  const isAdversarialUngroundedRequest =
+    hasAdversarialUngroundedRequest(message);
+  const isThinPolicyRequest = hasThinPolicyRequest(message);
   const matches = await retrieveSupportKnowledge({
     query: message,
     locale: input.locale,
   });
   const sources = matches.map(toSupportChatSource);
 
-  if (hasUnsupportedAccountRequest) {
+  if (isUnsupportedAccountRequest) {
     return supportResponse({
       threadId,
       assistantMessage: copy.unsupportedAccount,
       sources,
       disposition: "unsupported_account_question",
+      responseOrigin: "server",
+    });
+  }
+
+  if (isAdversarialUngroundedRequest || isThinPolicyRequest) {
+    return supportResponse({
+      threadId,
+      assistantMessage: copy.uncertain,
+      sources,
+      disposition: "uncertain",
       responseOrigin: "server",
     });
   }
