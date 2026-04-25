@@ -288,8 +288,8 @@ export const slotCheckoutRouter = createTRPCRouter({
           // Keep your existing status enum; "pending" is fine for now.
           status: "pending",
 
-          // service lifecycle starts scheduled
-          serviceStatus: "scheduled",
+          // Provider confirmation starts as a request; tenant confirmation moves it to scheduled.
+          serviceStatus: "requested",
           invoiceStatus: "none",
 
           user: payloadUserId,
@@ -321,9 +321,8 @@ export const slotCheckoutRouter = createTRPCRouter({
         depth: 0,
       });
 
-      // IMPORTANT: since there is NO payment, bookings must become confirmed now.
-      // Also set serviceStatus/paymentStatus for Stage-1 tracking.
-      // (You already planned: confirmed + serviceStatus=scheduled + paymentStatus=unpaid)
+      // IMPORTANT: since there is NO payment, bookings must become confirmed now
+      // so they remain blocked, while serviceStatus tracks provider confirmation.
       let updatedCount: number | null = null;
 
       try {
@@ -338,7 +337,7 @@ export const slotCheckoutRouter = createTRPCRouter({
           },
           data: {
             status: "confirmed",
-            serviceStatus: "scheduled",
+            serviceStatus: "requested",
             paymentStatus: "unpaid",
           },
           overrideAccess: true,

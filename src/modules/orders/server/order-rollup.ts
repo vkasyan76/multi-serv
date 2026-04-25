@@ -668,6 +668,7 @@ export async function recomputeOrdersForBookingId(
     const allCompleted = statuses.every(
       (s) => s === "completed" || s === "accepted",
     );
+    const anyRequested = statuses.includes("requested");
 
     const next = anyDisputed
       ? "disputed"
@@ -675,7 +676,9 @@ export async function recomputeOrdersForBookingId(
         ? "accepted"
         : allCompleted
           ? "completed"
-          : "scheduled";
+          : anyRequested
+            ? "requested"
+            : "scheduled";
 
     const nowIso = new Date().toISOString();
 
