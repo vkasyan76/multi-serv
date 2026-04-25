@@ -89,5 +89,12 @@
     "cancel_already_canceled": "Diese Bestellung wurde bereits storniert.",
     "cancel_invalid_slots": "Diese Bestellung kann nicht storniert werden, weil ihre Zeitfenster nicht mehr gültig sind.",
     "cancel_release_failed": "Die Bestellung wurde storniert, aber die Freigabe der Zeitfenster konnte nicht vollständig verifiziert werden."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "Diese Bestellung verwendet nicht den Terminbuchungsablauf.",
+    "already_canceled": "Diese Bestellung wurde bereits storniert.",
+    "not_awaiting_tenant_confirmation": "Diese Bestellung wartet nicht auf die Bestätigung des Anbieters.",
+    "slots_not_awaiting_confirmation": "Die ausgewählten Zeitfenster warten nicht auf die Bestätigung des Anbieters.",
+    "confirm_all_requested_failed": "Nicht alle angefragten Zeitfenster konnten bestätigt werden. Bitte versuchen Sie es erneut."
   }
 }

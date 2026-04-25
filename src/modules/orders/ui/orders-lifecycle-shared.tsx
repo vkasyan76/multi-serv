@@ -292,7 +292,7 @@ function statusWeight(s: ServiceStatus) {
     case "disputed":
       return 4;
     default:
-      return 0;
+      return -1;
   }
 }
 

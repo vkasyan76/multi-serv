@@ -89,5 +89,12 @@
     "cancel_already_canceled": "Este pedido ya estaba cancelado.",
     "cancel_invalid_slots": "Este pedido no se puede cancelar porque sus franjas horarias ya no son válidas.",
     "cancel_release_failed": "El pedido fue cancelado, pero no se pudo verificar completamente la liberación de las franjas."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "Este pedido no usa el ciclo de reservas por franjas.",
+    "already_canceled": "Este pedido ya estaba cancelado.",
+    "not_awaiting_tenant_confirmation": "Este pedido no está esperando la confirmación del proveedor.",
+    "slots_not_awaiting_confirmation": "Las franjas seleccionadas no están esperando la confirmación del proveedor.",
+    "confirm_all_requested_failed": "No se pudieron confirmar todas las franjas solicitadas. Inténtelo de nuevo."
   }
 }

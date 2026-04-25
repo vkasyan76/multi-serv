@@ -89,5 +89,12 @@
     "cancel_already_canceled": "Cette commande a déjà été annulée.",
     "cancel_invalid_slots": "Cette commande ne peut pas être annulée car ses créneaux ne sont plus valides.",
     "cancel_release_failed": "La commande a été annulée, mais la remise à disposition des créneaux n'a pas pu être entièrement vérifiée."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "Cette commande n'utilise pas le cycle de réservation par créneau.",
+    "already_canceled": "Cette commande a déjà été annulée.",
+    "not_awaiting_tenant_confirmation": "Cette commande n'attend pas la confirmation du prestataire.",
+    "slots_not_awaiting_confirmation": "Les créneaux sélectionnés n'attendent pas la confirmation du prestataire.",
+    "confirm_all_requested_failed": "Impossible de confirmer tous les créneaux demandés. Veuillez réessayer."
   }
 }

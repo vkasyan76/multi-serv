@@ -89,5 +89,12 @@
     "cancel_already_canceled": "To zamówienie zostało już anulowane.",
     "cancel_invalid_slots": "Tego zamówienia nie można anulować, ponieważ jego terminy nie są już prawidłowe.",
     "cancel_release_failed": "Zamówienie zostało anulowane, ale nie udało się w pełni zweryfikować zwolnienia terminów."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "To zamówienie nie korzysta z cyklu rezerwacji terminów.",
+    "already_canceled": "To zamówienie zostało już anulowane.",
+    "not_awaiting_tenant_confirmation": "To zamówienie nie oczekuje na potwierdzenie wykonawcy.",
+    "slots_not_awaiting_confirmation": "Wybrane terminy nie oczekują na potwierdzenie wykonawcy.",
+    "confirm_all_requested_failed": "Nie udało się potwierdzić wszystkich zgłoszonych terminów. Spróbuj ponownie."
   }
 }

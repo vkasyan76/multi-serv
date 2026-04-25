@@ -175,14 +175,14 @@ function toOrderSlotIds(order: Pick<Order, "slots">): string[] {
 
 function requestedTenantDecisionConflictMessage(order: CancelableSlotOrder) {
   if (order.lifecycleMode !== "slot") {
-    return "Order is not a slot-lifecycle order";
+    return "orders.errors.not_slot_lifecycle_order";
   }
 
   if (order.status === "canceled") {
-    return "Order is already canceled";
+    return "orders.errors.already_canceled";
   }
 
-  return "Order is not awaiting tenant confirmation";
+  return "orders.errors.not_awaiting_tenant_confirmation";
 }
 
 function assertRequestedTenantDecisionAllowed(order: CancelableSlotOrder) {
@@ -205,7 +205,7 @@ function assertRequestedDecisionSlots(
   if (slots.length !== expectedCount) {
     throw new TRPCError({
       code: "CONFLICT",
-      message: "Order slots are not awaiting tenant confirmation",
+      message: "orders.errors.slots_not_awaiting_confirmation",
     });
   }
 
@@ -216,7 +216,7 @@ function assertRequestedDecisionSlots(
   if (!allRequested) {
     throw new TRPCError({
       code: "CONFLICT",
-      message: "Order slots are not awaiting tenant confirmation",
+      message: "orders.errors.slots_not_awaiting_confirmation",
     });
   }
 }
@@ -616,7 +616,7 @@ async function updateRequestedOrderSlotsToScheduled(
   if (updatedCount !== slotIds.length) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to confirm all requested order slots",
+      message: "orders.errors.confirm_all_requested_failed",
     });
   }
 }
@@ -654,20 +654,17 @@ async function rollbackRequestedOrderConfirmation(
     }),
   );
 
-  const allBookingsStillScheduled = currentBookings.every(
-    ({ current }) =>
+  const toRestore = currentBookings.filter(
+    ({ snapshot, current }) =>
       !!current &&
       current.status === "confirmed" &&
       relId(current.customer) === relId(order.user) &&
-      current.serviceStatus === "scheduled",
+      current.serviceStatus === "scheduled" &&
+      snapshot.serviceStatus === "requested",
   );
 
-  if (!allBookingsStillScheduled) {
-    return;
-  }
-
   await Promise.all(
-    currentBookings.map(({ snapshot }) =>
+    toRestore.map(({ snapshot }) =>
       ctx.db.update({
         collection: "bookings",
         id: snapshot.id,
@@ -948,7 +945,13 @@ export const ordersRouter = createTRPCRouter({
 
       await assertTenantOwnsOrder(ctx, payloadUserId, order);
 
-      return declineRequestedSlotOrder(ctx, order, input.reason);
+      const result = await declineRequestedSlotOrder(ctx, order, input.reason);
+      await sendCanceledOrderEmails({
+        ctx,
+        orderId: result.orderId,
+        canceledByRole: "tenant",
+      });
+      return result;
     }),
 
   // Optional list for an Orders page

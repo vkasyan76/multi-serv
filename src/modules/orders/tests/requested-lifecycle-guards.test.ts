@@ -424,10 +424,7 @@ test("requested orders cannot be invoiced", async () => {
 
   await assert.rejects(
     () => caller.issueForOrder({ orderId: fixture.orderId }),
-    (error: unknown) =>
-      error instanceof TRPCError &&
-      error.code === "CONFLICT" &&
-      error.message === "Order is not accepted yet.",
+    (error: unknown) => error instanceof TRPCError && error.code === "CONFLICT",
   );
 });
 

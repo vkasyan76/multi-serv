@@ -89,5 +89,12 @@
     "cancel_already_canceled": "Esta encomenda já foi cancelada.",
     "cancel_invalid_slots": "Esta encomenda não pode ser cancelada porque os horários já não são válidos.",
     "cancel_release_failed": "A encomenda foi cancelada, mas a libertação dos horários não pôde ser totalmente verificada."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "Esta encomenda não usa o ciclo de reserva por horários.",
+    "already_canceled": "Esta encomenda já foi cancelada.",
+    "not_awaiting_tenant_confirmation": "Esta encomenda não está a aguardar confirmação do prestador.",
+    "slots_not_awaiting_confirmation": "Os horários selecionados não estão a aguardar confirmação do prestador.",
+    "confirm_all_requested_failed": "Não foi possível confirmar todos os horários solicitados. Tente novamente."
   }
 }

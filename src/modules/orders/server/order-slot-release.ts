@@ -153,6 +153,17 @@ export async function releaseOrderSlotsToAvailable(
   let releasedCount = Array.isArray(updateRes?.docs)
     ? updateRes.docs.length
     : null;
+  let releasedIds = new Set<string>();
+
+  if (Array.isArray(updateRes?.docs)) {
+    releasedIds = new Set(
+      updateRes.docs
+        .filter((booking) =>
+          isReleasedOrderSlot(booking as OrderSlotReleaseSnapshot, mode),
+        )
+        .map((booking) => String((booking as { id?: unknown }).id ?? "")),
+    );
+  }
 
   if (releasedCount === null) {
     const verify = await ctx.db.find({
@@ -163,12 +174,26 @@ export async function releaseOrderSlotsToAvailable(
       overrideAccess: true,
     });
 
-    releasedCount = (verify.docs ?? []).filter((booking) =>
+    const released = (verify.docs ?? []).filter((booking) =>
       isReleasedOrderSlot(booking as OrderSlotReleaseSnapshot, mode),
-    ).length;
+    );
+    releasedCount = released.length;
+    releasedIds = new Set(
+      released.map((booking) => String((booking as { id?: unknown }).id ?? "")),
+    );
   }
 
   if (releasedCount !== slotIds.length) {
+    if (process.env.NODE_ENV !== "production") {
+      const failedIds = slotIds.filter((id) => !releasedIds.has(id));
+      console.error("[orders] release verification mismatch", {
+        failedIds,
+        releasedCount,
+        expected: slotIds.length,
+        mode,
+      });
+    }
+
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: "orders.errors.cancel_release_failed",

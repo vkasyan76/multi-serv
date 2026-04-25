@@ -101,6 +101,28 @@ async function createFixture(payload: TestPayload) {
   });
   createdUserIds.add(String(customer.id));
 
+  const tenantOwner = await payload.create({
+    collection: "users",
+    overrideAccess: true,
+    depth: 0,
+    data: {
+      username: `checkout_tenant_owner_${suffix}`,
+      clerkUserId: `clerk-checkout-tenant-${suffix}`,
+      email: `checkouttenantowner${suffix}@example.com`,
+      roles: ["user"],
+      firstName: "Checkout",
+      lastName: "Tenant",
+      location: "Berlin",
+      country: "DE",
+      language: "en",
+      emailDeliverabilityStatus: "hard_suppressed",
+      emailDeliverabilityReason: "manual",
+      policyAcceptedVersion: TERMS_VERSION,
+      policyAcceptedAt: new Date().toISOString(),
+    },
+  });
+  createdUserIds.add(String(tenantOwner.id));
+
   const tenant = await payload.create({
     collection: "tenants",
     overrideAccess: true,
@@ -116,7 +138,7 @@ async function createFixture(payload: TestPayload) {
       bio: "Checkout lifecycle tenant",
       hourlyRate: 100,
       country: "DE",
-      user: customer.id,
+      user: tenantOwner.id,
     },
   });
   createdTenantIds.add(String(tenant.id));

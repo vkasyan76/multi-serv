@@ -89,5 +89,12 @@
     "cancel_already_canceled": "This order was already canceled.",
     "cancel_invalid_slots": "This order cannot be canceled because its booking slots are no longer valid.",
     "cancel_release_failed": "The order was canceled, but slot release could not be fully verified."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "This order does not use the slot booking lifecycle.",
+    "already_canceled": "This order was already canceled.",
+    "not_awaiting_tenant_confirmation": "This order is not awaiting provider confirmation.",
+    "slots_not_awaiting_confirmation": "The selected slots are not awaiting provider confirmation.",
+    "confirm_all_requested_failed": "Could not confirm all requested slots. Please try again."
   }
 }

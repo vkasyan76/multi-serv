@@ -89,5 +89,12 @@
     "cancel_already_canceled": "Această comandă a fost deja anulată.",
     "cancel_invalid_slots": "Această comandă nu poate fi anulată deoarece intervalele ei nu mai sunt valabile.",
     "cancel_release_failed": "Comanda a fost anulată, dar eliberarea intervalelor nu a putut fi verificată complet."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "Această comandă nu folosește ciclul de rezervare pe intervale.",
+    "already_canceled": "Această comandă a fost deja anulată.",
+    "not_awaiting_tenant_confirmation": "Această comandă nu așteaptă confirmarea prestatorului.",
+    "slots_not_awaiting_confirmation": "Intervalele selectate nu așteaptă confirmarea prestatorului.",
+    "confirm_all_requested_failed": "Nu s-au putut confirma toate intervalele solicitate. Încearcă din nou."
   }
 }

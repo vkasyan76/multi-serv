@@ -20,7 +20,7 @@
     "open_menu": "Apri menu"
   },
   "status": {
-    "requested": "Richiesta",
+    "requested": "Richiesto",
     "scheduled": "Programmato",
     "accepted": "Accettato",
     "completed": "Completato",
@@ -89,5 +89,12 @@
     "cancel_already_canceled": "Questo ordine è già stato annullato.",
     "cancel_invalid_slots": "Questo ordine non può essere annullato perché i suoi slot non sono più validi.",
     "cancel_release_failed": "L'ordine è stato annullato, ma il rilascio degli slot non ha potuto essere verificato completamente."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "Questo ordine non usa il flusso di prenotazione a fasce orarie.",
+    "already_canceled": "Questo ordine è già stato annullato.",
+    "not_awaiting_tenant_confirmation": "Questo ordine non è in attesa della conferma del professionista.",
+    "slots_not_awaiting_confirmation": "Le fasce selezionate non sono in attesa della conferma del professionista.",
+    "confirm_all_requested_failed": "Non è stato possibile confermare tutte le fasce richieste. Riprova."
   }
 }
