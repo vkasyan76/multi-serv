@@ -800,6 +800,28 @@ async function sendCanceledOrderEmails(params: {
   await sendCanceledOrderEmailsBestEffort(params);
 }
 
+async function sendOrderRequestConfirmedEmail(params: {
+  ctx: TRPCContext;
+  orderId: string;
+}) {
+  if (process.env.SKIP_ORDER_EMAILS === "1") return;
+  const { sendOrderRequestConfirmedEmailBestEffort } = await import(
+    "./order-request-decision-emails"
+  );
+  await sendOrderRequestConfirmedEmailBestEffort(params);
+}
+
+async function sendOrderRequestDeclinedEmail(params: {
+  ctx: TRPCContext;
+  orderId: string;
+}) {
+  if (process.env.SKIP_ORDER_EMAILS === "1") return;
+  const { sendOrderRequestDeclinedEmailBestEffort } = await import(
+    "./order-request-decision-emails"
+  );
+  await sendOrderRequestDeclinedEmailBestEffort(params);
+}
+
 export const ordersRouter = createTRPCRouter({
   customerCancelSlotOrder: baseProcedure
     .input(
@@ -922,6 +944,11 @@ export const ordersRouter = createTRPCRouter({
         throw error;
       }
 
+      await sendOrderRequestConfirmedEmail({
+        ctx,
+        orderId: order.id,
+      });
+
       return {
         ok: true,
         orderId: order.id,
@@ -946,10 +973,9 @@ export const ordersRouter = createTRPCRouter({
       await assertTenantOwnsOrder(ctx, payloadUserId, order);
 
       const result = await declineRequestedSlotOrder(ctx, order, input.reason);
-      await sendCanceledOrderEmails({
+      await sendOrderRequestDeclinedEmail({
         ctx,
         orderId: result.orderId,
-        canceledByRole: "tenant",
       });
       return result;
     }),

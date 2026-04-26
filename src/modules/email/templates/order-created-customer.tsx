@@ -16,7 +16,6 @@ import {
   formatOrderEmailDateRangeUtc,
   formatOrderEmailTenantLabel,
   getOrderCreatedCustomerCopy,
-  isWithinOrderCancellationCutoff,
 } from "./order-email-copy";
 
 type OrderCreatedCustomerTemplateProps = {
@@ -37,11 +36,7 @@ function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
     props.tenantName,
   );
   const copy = getOrderCreatedCustomerCopy(props.locale);
-  const cancellationNote = isWithinOrderCancellationCutoff(
-    props.dateRangeStart,
-  )
-    ? copy.cancellationNoteClosed
-    : copy.cancellationNoteOpen;
+  const requestStatusNote = copy.cancellationNoteOpen;
   const greeting = copy.greeting(props.customerName);
   const dateRange = formatOrderEmailDateRangeUtc(
     props.dateRangeStart,
@@ -80,7 +75,7 @@ function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
               </ul>
             </Section>
           ) : null}
-          <Text style={{ margin: "0 0 12px" }}>{cancellationNote}</Text>
+          <Text style={{ margin: "0 0 12px" }}>{requestStatusNote}</Text>
           <Text style={{ margin: "0 0 12px" }}>{copy.responsibilityNote}</Text>
           <Text style={{ margin: "0 0 12px" }}>{copy.nextStepsNote}</Text>
           <Text style={{ margin: "0 0 20px" }}>
@@ -128,9 +123,7 @@ export async function renderOrderCreatedCustomerTemplate(
   const locale = data.locale == null ? undefined : String(data.locale);
   const tenantLabel = formatOrderEmailTenantLabel(tenantSlug, tenantName);
   const copy = getOrderCreatedCustomerCopy(locale);
-  const cancellationNote = isWithinOrderCancellationCutoff(dateRangeStart)
-    ? copy.cancellationNoteClosed
-    : copy.cancellationNoteOpen;
+  const requestStatusNote = copy.cancellationNoteOpen;
 
   const subject = copy.subject(tenantLabel);
   const html = await render(
@@ -157,7 +150,7 @@ export async function renderOrderCreatedCustomerTemplate(
     copy.intro(tenantLabel, dateRange),
     "",
     ...services.map((service) => `- ${service}`),
-    cancellationNote,
+    requestStatusNote,
     "",
     copy.responsibilityNote,
     "",

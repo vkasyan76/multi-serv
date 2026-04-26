@@ -33,6 +33,18 @@ type OrderCreatedTenantCopy = {
   orderLabel: string;
 };
 
+type OrderRequestDecisionCustomerCopy = {
+  heading: string;
+  subject: (tenantLabel: string) => string;
+  preview: (tenantLabel: string) => string;
+  greeting: (customerName?: string) => string;
+  intro: (tenantLabel: string, dateRange?: string | null) => string;
+  statusNote: string;
+  providerReasonLabel?: string;
+  ctaLabel: string;
+  orderLabel: string;
+};
+
 export type OrderCanceledByRole = "customer" | "tenant";
 
 type OrderCanceledCustomerCopy = {
@@ -522,6 +534,553 @@ const ORDER_EMAIL_COPY: Record<AppLang, OrderEmailCopy> = {
   },
 };
 
+const ORDER_REQUEST_EMAIL_COPY: Record<
+  AppLang,
+  {
+    createdCustomer: Partial<OrderCreatedCustomerCopy>;
+    createdTenant: Partial<OrderCreatedTenantCopy>;
+    confirmedCustomer: OrderRequestDecisionCustomerCopy;
+    declinedCustomer: OrderRequestDecisionCustomerCopy;
+  }
+> = {
+  en: {
+    createdCustomer: {
+      heading: "Booking request sent",
+      subject: (tenantLabel) => `Booking request sent to ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `Your booking request was sent to ${tenantLabel}.`,
+      intro: (tenantLabel, dateRange) =>
+        `Your booking request was sent to ${tenantLabel}${dateRange ? ` for ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "The provider still needs to confirm before this booking is scheduled.",
+      cancellationNoteClosed:
+        "The provider still needs to confirm before this booking is scheduled.",
+      nextStepsNote:
+        "You will receive an update after the provider confirms or declines the request.",
+    },
+    createdTenant: {
+      heading: "New booking request",
+      subject: "New booking request awaiting confirmation",
+      preview: "A customer sent a booking request.",
+      intro: (customerName, dateRange) =>
+        `${(customerName ?? "A customer").trim() || "A customer"} sent a booking request${dateRange ? ` for ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Please confirm or decline this request from your dashboard.",
+      cancellationNoteClosed:
+        "Please confirm or decline this request from your dashboard.",
+      nextStepsNote:
+        "Only confirm the request if you can provide the service at the requested time.",
+    },
+    confirmedCustomer: {
+      heading: "Booking request confirmed",
+      subject: (tenantLabel) => `Booking confirmed by ${tenantLabel}`,
+      preview: (tenantLabel) => `${tenantLabel} confirmed your booking request.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Dear ${customerName.trim()},` : "Dear,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} confirmed your booking request${dateRange ? ` for ${dateRange}` : ""}. The booking is now scheduled.`,
+      statusNote:
+        "You can view the scheduled booking from your Orders page.",
+      ctaLabel: "View Orders",
+      orderLabel: "Order",
+    },
+    declinedCustomer: {
+      heading: "Booking request declined",
+      subject: (tenantLabel) => `Booking request declined by ${tenantLabel}`,
+      preview: (tenantLabel) => `${tenantLabel} declined your booking request.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Dear ${customerName.trim()},` : "Dear,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} declined your booking request${dateRange ? ` for ${dateRange}` : ""}.`,
+      statusNote:
+        "The requested slots have been released and are no longer reserved for this order.",
+      providerReasonLabel: "Provider note",
+      ctaLabel: "View Orders",
+      orderLabel: "Order",
+    },
+  },
+  de: {
+    createdCustomer: {
+      heading: "Buchungsanfrage gesendet",
+      subject: (tenantLabel) => `Buchungsanfrage an ${tenantLabel} gesendet`,
+      preview: (tenantLabel) =>
+        `Ihre Buchungsanfrage wurde an ${tenantLabel} gesendet.`,
+      intro: (tenantLabel, dateRange) =>
+        `Ihre Buchungsanfrage wurde an ${tenantLabel} gesendet${dateRange ? ` für ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Der Anbieter muss die Anfrage noch bestätigen, bevor die Buchung geplant ist.",
+      cancellationNoteClosed:
+        "Der Anbieter muss die Anfrage noch bestätigen, bevor die Buchung geplant ist.",
+      nextStepsNote:
+        "Sie erhalten eine Aktualisierung, nachdem der Anbieter die Anfrage bestätigt oder ablehnt.",
+    },
+    createdTenant: {
+      heading: "Neue Buchungsanfrage",
+      subject: "Neue Buchungsanfrage wartet auf Bestätigung",
+      preview: "Ein Kunde hat eine Buchungsanfrage gesendet.",
+      intro: (customerName, dateRange) =>
+        `${(customerName ?? "Ein Kunde").trim() || "Ein Kunde"} hat eine Buchungsanfrage gesendet${dateRange ? ` für ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Bitte bestätigen oder lehnen Sie diese Anfrage in Ihrem Dashboard ab.",
+      cancellationNoteClosed:
+        "Bitte bestätigen oder lehnen Sie diese Anfrage in Ihrem Dashboard ab.",
+      nextStepsNote:
+        "Bestätigen Sie die Anfrage nur, wenn Sie die Leistung zum angefragten Zeitpunkt erbringen können.",
+    },
+    confirmedCustomer: {
+      heading: "Buchungsanfrage bestätigt",
+      subject: (tenantLabel) => `Buchung von ${tenantLabel} bestätigt`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} hat Ihre Buchungsanfrage bestätigt.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Hallo ${customerName.trim()},` : "Hallo,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} hat Ihre Buchungsanfrage${dateRange ? ` für ${dateRange}` : ""} bestätigt. Die Buchung ist jetzt geplant.`,
+      statusNote:
+        "Sie können die geplante Buchung auf Ihrer Bestellseite ansehen.",
+      ctaLabel: "Bestellungen ansehen",
+      orderLabel: "Bestellung",
+    },
+    declinedCustomer: {
+      heading: "Buchungsanfrage abgelehnt",
+      subject: (tenantLabel) => `Buchungsanfrage von ${tenantLabel} abgelehnt`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} hat Ihre Buchungsanfrage abgelehnt.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Hallo ${customerName.trim()},` : "Hallo,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} hat Ihre Buchungsanfrage${dateRange ? ` für ${dateRange}` : ""} abgelehnt.`,
+      statusNote:
+        "Die angefragten Zeitfenster wurden freigegeben und sind für diese Bestellung nicht mehr reserviert.",
+      providerReasonLabel: "Hinweis des Anbieters",
+      ctaLabel: "Bestellungen ansehen",
+      orderLabel: "Bestellung",
+    },
+  },
+  es: {
+    createdCustomer: {
+      heading: "Solicitud de reserva enviada",
+      subject: (tenantLabel) => `Solicitud de reserva enviada a ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `Tu solicitud de reserva se envió a ${tenantLabel}.`,
+      intro: (tenantLabel, dateRange) =>
+        `Tu solicitud de reserva se envió a ${tenantLabel}${dateRange ? ` para ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "El proveedor todavía debe confirmar antes de que la reserva quede programada.",
+      cancellationNoteClosed:
+        "El proveedor todavía debe confirmar antes de que la reserva quede programada.",
+      nextStepsNote:
+        "Recibirás una actualización cuando el proveedor confirme o rechace la solicitud.",
+    },
+    createdTenant: {
+      heading: "Nueva solicitud de reserva",
+      subject: "Nueva solicitud de reserva pendiente de confirmación",
+      preview: "Un cliente envió una solicitud de reserva.",
+      intro: (customerName, dateRange) =>
+        `${(customerName ?? "Un cliente").trim() || "Un cliente"} envió una solicitud de reserva${dateRange ? ` para ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Confirma o rechaza esta solicitud desde tu panel.",
+      cancellationNoteClosed:
+        "Confirma o rechaza esta solicitud desde tu panel.",
+      nextStepsNote:
+        "Confirma la solicitud solo si puedes prestar el servicio en el horario solicitado.",
+    },
+    confirmedCustomer: {
+      heading: "Solicitud de reserva confirmada",
+      subject: (tenantLabel) => `Reserva confirmada por ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} confirmó tu solicitud de reserva.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Hola ${customerName.trim()},` : "Hola,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} confirmó tu solicitud de reserva${dateRange ? ` para ${dateRange}` : ""}. La reserva ya está programada.`,
+      statusNote: "Puedes ver la reserva programada desde tu página de pedidos.",
+      ctaLabel: "Ver pedidos",
+      orderLabel: "Pedido",
+    },
+    declinedCustomer: {
+      heading: "Solicitud de reserva rechazada",
+      subject: (tenantLabel) =>
+        `Solicitud de reserva rechazada por ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} rechazó tu solicitud de reserva.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Hola ${customerName.trim()},` : "Hola,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} rechazó tu solicitud de reserva${dateRange ? ` para ${dateRange}` : ""}.`,
+      statusNote:
+        "Los horarios solicitados se han liberado y ya no están reservados para este pedido.",
+      providerReasonLabel: "Nota del proveedor",
+      ctaLabel: "Ver pedidos",
+      orderLabel: "Pedido",
+    },
+  },
+  fr: {
+    createdCustomer: {
+      heading: "Demande de réservation envoyée",
+      subject: (tenantLabel) =>
+        `Demande de réservation envoyée à ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `Votre demande de réservation a été envoyée à ${tenantLabel}.`,
+      intro: (tenantLabel, dateRange) =>
+        `Votre demande de réservation a été envoyée à ${tenantLabel}${dateRange ? ` pour ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Le prestataire doit encore confirmer avant que la réservation soit planifiée.",
+      cancellationNoteClosed:
+        "Le prestataire doit encore confirmer avant que la réservation soit planifiée.",
+      nextStepsNote:
+        "Vous recevrez une mise à jour lorsque le prestataire confirmera ou refusera la demande.",
+    },
+    createdTenant: {
+      heading: "Nouvelle demande de réservation",
+      subject: "Nouvelle demande de réservation à confirmer",
+      preview: "Un client a envoyé une demande de réservation.",
+      intro: (customerName, dateRange) =>
+        `${(customerName ?? "Un client").trim() || "Un client"} a envoyé une demande de réservation${dateRange ? ` pour ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Veuillez confirmer ou refuser cette demande depuis votre Dashboard.",
+      cancellationNoteClosed:
+        "Veuillez confirmer ou refuser cette demande depuis votre Dashboard.",
+      nextStepsNote:
+        "Confirmez la demande uniquement si vous pouvez fournir le service au créneau demandé.",
+    },
+    confirmedCustomer: {
+      heading: "Demande de réservation confirmée",
+      subject: (tenantLabel) => `Réservation confirmée par ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} a confirmé votre demande de réservation.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Bonjour ${customerName.trim()},` : "Bonjour,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} a confirmé votre demande de réservation${dateRange ? ` pour ${dateRange}` : ""}. La réservation est maintenant planifiée.`,
+      statusNote:
+        "Vous pouvez consulter la réservation planifiée depuis votre page Commandes.",
+      ctaLabel: "Voir les commandes",
+      orderLabel: "Commande",
+    },
+    declinedCustomer: {
+      heading: "Demande de réservation refusée",
+      subject: (tenantLabel) =>
+        `Demande de réservation refusée par ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} a refusé votre demande de réservation.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Bonjour ${customerName.trim()},` : "Bonjour,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} a refusé votre demande de réservation${dateRange ? ` pour ${dateRange}` : ""}.`,
+      statusNote:
+        "Les créneaux demandés ont été libérés et ne sont plus réservés pour cette commande.",
+      providerReasonLabel: "Note du prestataire",
+      ctaLabel: "Voir les commandes",
+      orderLabel: "Commande",
+    },
+  },
+  it: {
+    createdCustomer: {
+      heading: "Richiesta di prenotazione inviata",
+      subject: (tenantLabel) =>
+        `Richiesta di prenotazione inviata a ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `La tua richiesta di prenotazione è stata inviata a ${tenantLabel}.`,
+      intro: (tenantLabel, dateRange) =>
+        `La tua richiesta di prenotazione è stata inviata a ${tenantLabel}${dateRange ? ` per ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Il fornitore deve ancora confermare prima che la prenotazione sia programmata.",
+      cancellationNoteClosed:
+        "Il fornitore deve ancora confermare prima che la prenotazione sia programmata.",
+      nextStepsNote:
+        "Riceverai un aggiornamento quando il fornitore confermerà o rifiuterà la richiesta.",
+    },
+    createdTenant: {
+      heading: "Nuova richiesta di prenotazione",
+      subject: "Nuova richiesta di prenotazione in attesa di conferma",
+      preview: "Un cliente ha inviato una richiesta di prenotazione.",
+      intro: (customerName, dateRange) =>
+        `${(customerName ?? "Un cliente").trim() || "Un cliente"} ha inviato una richiesta di prenotazione${dateRange ? ` per ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Conferma o rifiuta questa richiesta dalla Dashboard.",
+      cancellationNoteClosed:
+        "Conferma o rifiuta questa richiesta dalla Dashboard.",
+      nextStepsNote:
+        "Conferma la richiesta solo se puoi fornire il servizio nell'orario richiesto.",
+    },
+    confirmedCustomer: {
+      heading: "Richiesta di prenotazione confermata",
+      subject: (tenantLabel) => `Prenotazione confermata da ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} ha confermato la tua richiesta di prenotazione.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Ciao ${customerName.trim()},` : "Ciao,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} ha confermato la tua richiesta di prenotazione${dateRange ? ` per ${dateRange}` : ""}. La prenotazione è ora programmata.`,
+      statusNote:
+        "Puoi vedere la prenotazione programmata dalla tua pagina Ordini.",
+      ctaLabel: "Vedi ordini",
+      orderLabel: "Ordine",
+    },
+    declinedCustomer: {
+      heading: "Richiesta di prenotazione rifiutata",
+      subject: (tenantLabel) =>
+        `Richiesta di prenotazione rifiutata da ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} ha rifiutato la tua richiesta di prenotazione.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Ciao ${customerName.trim()},` : "Ciao,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} ha rifiutato la tua richiesta di prenotazione${dateRange ? ` per ${dateRange}` : ""}.`,
+      statusNote:
+        "Gli slot richiesti sono stati rilasciati e non sono più riservati per questo ordine.",
+      providerReasonLabel: "Nota del fornitore",
+      ctaLabel: "Vedi ordini",
+      orderLabel: "Ordine",
+    },
+  },
+  pl: {
+    createdCustomer: {
+      heading: "Wysłano prośbę o rezerwację",
+      subject: (tenantLabel) =>
+        `Prośba o rezerwację wysłana do ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `Twoja prośba o rezerwację została wysłana do ${tenantLabel}.`,
+      intro: (tenantLabel, dateRange) =>
+        `Twoja prośba o rezerwację została wysłana do ${tenantLabel}${dateRange ? ` na ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Usługodawca musi ją jeszcze potwierdzić, zanim rezerwacja zostanie zaplanowana.",
+      cancellationNoteClosed:
+        "Usługodawca musi ją jeszcze potwierdzić, zanim rezerwacja zostanie zaplanowana.",
+      nextStepsNote:
+        "Otrzymasz aktualizację, gdy usługodawca potwierdzi lub odrzuci prośbę.",
+    },
+    createdTenant: {
+      heading: "Nowa prośba o rezerwację",
+      subject: "Nowa prośba o rezerwację oczekuje na potwierdzenie",
+      preview: "Klient wysłał prośbę o rezerwację.",
+      intro: (customerName, dateRange) =>
+        `${(customerName ?? "Klient").trim() || "Klient"} wysłał prośbę o rezerwację${dateRange ? ` na ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Potwierdź lub odrzuć tę prośbę w panelu.",
+      cancellationNoteClosed:
+        "Potwierdź lub odrzuć tę prośbę w panelu.",
+      nextStepsNote:
+        "Potwierdź prośbę tylko wtedy, gdy możesz wykonać usługę w wybranym terminie.",
+    },
+    confirmedCustomer: {
+      heading: "Prośba o rezerwację potwierdzona",
+      subject: (tenantLabel) =>
+        `Rezerwacja potwierdzona przez ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} potwierdził Twoją prośbę o rezerwację.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Cześć ${customerName.trim()},` : "Cześć,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} potwierdził Twoją prośbę o rezerwację${dateRange ? ` na ${dateRange}` : ""}. Rezerwacja jest teraz zaplanowana.`,
+      statusNote:
+        "Zaplanowaną rezerwację możesz zobaczyć na stronie zamówień.",
+      ctaLabel: "Zobacz zamówienia",
+      orderLabel: "Zamówienie",
+    },
+    declinedCustomer: {
+      heading: "Prośba o rezerwację odrzucona",
+      subject: (tenantLabel) =>
+        `Prośba o rezerwację odrzucona przez ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} odrzucił Twoją prośbę o rezerwację.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Cześć ${customerName.trim()},` : "Cześć,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} odrzucił Twoją prośbę o rezerwację${dateRange ? ` na ${dateRange}` : ""}.`,
+      statusNote:
+        "Wybrane terminy zostały zwolnione i nie są już zarezerwowane dla tego zamówienia.",
+      providerReasonLabel: "Notatka usługodawcy",
+      ctaLabel: "Zobacz zamówienia",
+      orderLabel: "Zamówienie",
+    },
+  },
+  pt: {
+    createdCustomer: {
+      heading: "Pedido de reserva enviado",
+      subject: (tenantLabel) => `Pedido de reserva enviado para ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `O seu pedido de reserva foi enviado para ${tenantLabel}.`,
+      intro: (tenantLabel, dateRange) =>
+        `O seu pedido de reserva foi enviado para ${tenantLabel}${dateRange ? ` para ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "O fornecedor ainda precisa de confirmar antes de a reserva ficar agendada.",
+      cancellationNoteClosed:
+        "O fornecedor ainda precisa de confirmar antes de a reserva ficar agendada.",
+      nextStepsNote:
+        "Receberá uma atualização quando o fornecedor confirmar ou recusar o pedido.",
+    },
+    createdTenant: {
+      heading: "Novo pedido de reserva",
+      subject: "Novo pedido de reserva a aguardar confirmação",
+      preview: "Um cliente enviou um pedido de reserva.",
+      intro: (customerName, dateRange) =>
+        `${(customerName ?? "Um cliente").trim() || "Um cliente"} enviou um pedido de reserva${dateRange ? ` para ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Confirme ou recuse este pedido no painel.",
+      cancellationNoteClosed:
+        "Confirme ou recuse este pedido no painel.",
+      nextStepsNote:
+        "Confirme o pedido apenas se puder prestar o serviço no horário solicitado.",
+    },
+    confirmedCustomer: {
+      heading: "Pedido de reserva confirmado",
+      subject: (tenantLabel) => `Reserva confirmada por ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} confirmou o seu pedido de reserva.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Olá ${customerName.trim()},` : "Olá,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} confirmou o seu pedido de reserva${dateRange ? ` para ${dateRange}` : ""}. A reserva está agora agendada.`,
+      statusNote:
+        "Pode ver a reserva agendada na sua página de encomendas.",
+      ctaLabel: "Ver encomendas",
+      orderLabel: "Encomenda",
+    },
+    declinedCustomer: {
+      heading: "Pedido de reserva recusado",
+      subject: (tenantLabel) =>
+        `Pedido de reserva recusado por ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} recusou o seu pedido de reserva.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Olá ${customerName.trim()},` : "Olá,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} recusou o seu pedido de reserva${dateRange ? ` para ${dateRange}` : ""}.`,
+      statusNote:
+        "Os horários solicitados foram libertados e já não estão reservados para esta encomenda.",
+      providerReasonLabel: "Nota do fornecedor",
+      ctaLabel: "Ver encomendas",
+      orderLabel: "Encomenda",
+    },
+  },
+  ro: {
+    createdCustomer: {
+      heading: "Cerere de rezervare trimisă",
+      subject: (tenantLabel) =>
+        `Cerere de rezervare trimisă către ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `Cererea ta de rezervare a fost trimisă către ${tenantLabel}.`,
+      intro: (tenantLabel, dateRange) =>
+        `Cererea ta de rezervare a fost trimisă către ${tenantLabel}${dateRange ? ` pentru ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Furnizorul trebuie să confirme înainte ca rezervarea să fie programată.",
+      cancellationNoteClosed:
+        "Furnizorul trebuie să confirme înainte ca rezervarea să fie programată.",
+      nextStepsNote:
+        "Vei primi o actualizare după ce furnizorul confirmă sau refuză cererea.",
+    },
+    createdTenant: {
+      heading: "Cerere nouă de rezervare",
+      subject: "Cerere nouă de rezervare în așteptarea confirmării",
+      preview: "Un client a trimis o cerere de rezervare.",
+      intro: (customerName, dateRange) =>
+        `${(customerName ?? "Un client").trim() || "Un client"} a trimis o cerere de rezervare${dateRange ? ` pentru ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Confirmați sau refuzați această cerere din panou.",
+      cancellationNoteClosed:
+        "Confirmați sau refuzați această cerere din panou.",
+      nextStepsNote:
+        "Confirmați cererea numai dacă puteți presta serviciul la ora solicitată.",
+    },
+    confirmedCustomer: {
+      heading: "Cerere de rezervare confirmată",
+      subject: (tenantLabel) => `Rezervare confirmată de ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} a confirmat cererea ta de rezervare.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Bună ${customerName.trim()},` : "Bună,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} a confirmat cererea ta de rezervare${dateRange ? ` pentru ${dateRange}` : ""}. Rezervarea este acum programată.`,
+      statusNote:
+        "Poți vedea rezervarea programată din pagina ta de comenzi.",
+      ctaLabel: "Vezi comenzile",
+      orderLabel: "Comandă",
+    },
+    declinedCustomer: {
+      heading: "Cerere de rezervare refuzată",
+      subject: (tenantLabel) =>
+        `Cerere de rezervare refuzată de ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} a refuzat cererea ta de rezervare.`,
+      greeting: (customerName) =>
+        customerName?.trim() ? `Bună ${customerName.trim()},` : "Bună,",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} a refuzat cererea ta de rezervare${dateRange ? ` pentru ${dateRange}` : ""}.`,
+      statusNote:
+        "Intervalele solicitate au fost eliberate și nu mai sunt rezervate pentru această comandă.",
+      providerReasonLabel: "Notă de la furnizor",
+      ctaLabel: "Vezi comenzile",
+      orderLabel: "Comandă",
+    },
+  },
+  uk: {
+    createdCustomer: {
+      heading: "Запит на бронювання надіслано",
+      subject: (tenantLabel) =>
+        `Запит на бронювання надіслано ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `Ваш запит на бронювання надіслано ${tenantLabel}.`,
+      intro: (tenantLabel, dateRange) =>
+        `Ваш запит на бронювання надіслано ${tenantLabel}${dateRange ? ` на ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Постачальник ще має підтвердити його, перш ніж бронювання буде заплановано.",
+      cancellationNoteClosed:
+        "Постачальник ще має підтвердити його, перш ніж бронювання буде заплановано.",
+      nextStepsNote:
+        "Ви отримаєте оновлення, коли постачальник підтвердить або відхилить запит.",
+    },
+    createdTenant: {
+      heading: "Новий запит на бронювання",
+      subject: "Новий запит на бронювання очікує підтвердження",
+      preview: "Клієнт надіслав запит на бронювання.",
+      intro: (customerName, dateRange) =>
+        `${(customerName ?? "Клієнт").trim() || "Клієнт"} надіслав запит на бронювання${dateRange ? ` на ${dateRange}` : ""}.`,
+      cancellationNoteOpen:
+        "Підтвердьте або відхиліть цей запит у панелі.",
+      cancellationNoteClosed:
+        "Підтвердьте або відхиліть цей запит у панелі.",
+      nextStepsNote:
+        "Підтверджуйте запит лише якщо можете надати послугу в запитаний час.",
+    },
+    confirmedCustomer: {
+      heading: "Запит на бронювання підтверджено",
+      subject: (tenantLabel) => `Бронювання підтверджено ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} підтвердив Ваш запит на бронювання.`,
+      greeting: (customerName) =>
+        customerName?.trim()
+          ? `Вітаємо, ${customerName.trim()}!`
+          : "Вітаємо!",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} підтвердив Ваш запит на бронювання${dateRange ? ` на ${dateRange}` : ""}. Тепер бронювання заплановано.`,
+      statusNote:
+        "Ви можете переглянути заплановане бронювання на сторінці замовлень.",
+      ctaLabel: "Переглянути замовлення",
+      orderLabel: "Замовлення",
+    },
+    declinedCustomer: {
+      heading: "Запит на бронювання відхилено",
+      subject: (tenantLabel) =>
+        `Запит на бронювання відхилено ${tenantLabel}`,
+      preview: (tenantLabel) =>
+        `${tenantLabel} відхилив Ваш запит на бронювання.`,
+      greeting: (customerName) =>
+        customerName?.trim()
+          ? `Вітаємо, ${customerName.trim()}!`
+          : "Вітаємо!",
+      intro: (tenantLabel, dateRange) =>
+        `${tenantLabel} відхилив Ваш запит на бронювання${dateRange ? ` на ${dateRange}` : ""}.`,
+      statusNote:
+        "Запитані слоти звільнено, і вони більше не зарезервовані для цього замовлення.",
+      providerReasonLabel: "Примітка постачальника",
+      ctaLabel: "Переглянути замовлення",
+      orderLabel: "Замовлення",
+    },
+  },
+};
+
 const ORDER_CANCELED_EMAIL_COPY: Record<
   AppLang,
   { customer: OrderCanceledCustomerCopy; tenant: OrderCanceledTenantCopy }
@@ -812,11 +1371,29 @@ const ORDER_CANCELED_EMAIL_COPY: Record<
 };
 
 export function getOrderCreatedCustomerCopy(locale?: string) {
-  return ORDER_EMAIL_COPY[resolveOrderEmailLang(locale)].createdCustomer;
+  const lang = resolveOrderEmailLang(locale);
+  return {
+    ...ORDER_EMAIL_COPY[lang].createdCustomer,
+    ...ORDER_REQUEST_EMAIL_COPY[lang].createdCustomer,
+  };
 }
 
 export function getOrderCreatedTenantCopy(locale?: string) {
-  return ORDER_EMAIL_COPY[resolveOrderEmailLang(locale)].createdTenant;
+  const lang = resolveOrderEmailLang(locale);
+  return {
+    ...ORDER_EMAIL_COPY[lang].createdTenant,
+    ...ORDER_REQUEST_EMAIL_COPY[lang].createdTenant,
+  };
+}
+
+export function getOrderRequestConfirmedCustomerCopy(locale?: string) {
+  return ORDER_REQUEST_EMAIL_COPY[resolveOrderEmailLang(locale)]
+    .confirmedCustomer;
+}
+
+export function getOrderRequestDeclinedCustomerCopy(locale?: string) {
+  return ORDER_REQUEST_EMAIL_COPY[resolveOrderEmailLang(locale)]
+    .declinedCustomer;
 }
 
 export function getOrderCanceledCustomerCopy(locale?: string) {
