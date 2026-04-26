@@ -11,15 +11,15 @@
   },
   "section2": {
     "title": "2. Ciclo de la reserva",
-    "p1": "Las reservas reservan una franja horaria con un proveedor. La plataforma utiliza los siguientes conceptos de ciclo de vida:",
+    "p1": "Una reserva de cliente primero crea una solicitud de reserva. El proveedor debe confirmar la solicitud antes de que la reserva quede programada. Los horarios solicitados quedan bloqueados para otros clientes mientras esperan la confirmación del proveedor. La plataforma utiliza los siguientes conceptos de ciclo de vida:",
     "service_status_label": "Estado del servicio (valores del sistema):",
     "payment_status_label": "Estado del pago (valores del sistema):"
   },
   "section3": {
     "title": "3. Cancelaciones",
-    "p1": "Las cancelaciones solo pueden permitirse dentro de la ventana de cancelación aplicable. Por defecto, la plataforma utiliza:",
+    "p1": "Un cliente puede cancelar una solicitud de reserva antes de la confirmación del proveedor. Después de que un proveedor confirme la solicitud y la reserva quede programada, las cancelaciones solo pueden permitirse dentro de la ventana de cancelación aplicable. Por defecto, la plataforma utiliza:",
     "cancellation_window": "Ventana de cancelación: {hours} horas antes de la hora de inicio de la reserva (por defecto).",
-    "p2": "Las condiciones específicas de cancelación también pueden depender del proveedor, de la categoría del servicio y de cualquier normativa imperativa de protección al consumidor."
+    "p2": "Un proveedor puede rechazar una solicitud de reserva, lo que libera los horarios solicitados. Las condiciones específicas de cancelación también pueden depender del proveedor, de la categoría del servicio y de cualquier normativa imperativa de protección al consumidor."
   },
   "section4": {
     "title": "4. Confirmaciones, disputas y plazos",

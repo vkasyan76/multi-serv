@@ -11,15 +11,15 @@
   },
   "section2": {
     "title": "2. Ciclo da reserva",
-    "p1": "As reservas servem para reservar um horário com um fornecedor. A plataforma utiliza os seguintes conceitos de ciclo de vida:",
+    "p1": "Uma reserva de cliente cria primeiro um pedido de reserva. O fornecedor deve confirmar o pedido antes de a reserva ficar agendada. Os horários solicitados ficam bloqueados para outros clientes enquanto aguardam a confirmação do fornecedor. A plataforma utiliza os seguintes conceitos de ciclo de vida:",
     "service_status_label": "Estado do serviço (valores do sistema):",
     "payment_status_label": "Estado do pagamento (valores do sistema):"
   },
   "section3": {
     "title": "3. Cancelamentos",
-    "p1": "Os cancelamentos só podem ser permitidos dentro da janela de cancelamento aplicável. Por predefinição, a plataforma utiliza:",
+    "p1": "Um cliente pode cancelar um pedido de reserva antes da confirmação do fornecedor. Depois de o fornecedor confirmar o pedido e a reserva ficar agendada, os cancelamentos podem ser permitidos apenas dentro da janela de cancelamento aplicável. Por defeito, a plataforma utiliza:",
     "cancellation_window": "Janela de cancelamento: {hours} horas antes da hora de início da reserva (predefinição).",
-    "p2": "As condições específicas de cancelamento podem também depender do fornecedor, da categoria de serviço e de qualquer legislação imperativa de defesa do consumidor."
+    "p2": "Um fornecedor pode recusar um pedido de reserva, libertando os horários solicitados. As condições específicas de cancelamento também podem depender do fornecedor, da categoria do serviço e de qualquer norma imperativa de proteção do consumidor."
   },
   "section4": {
     "title": "4. Confirmações, litígios e prazos",

@@ -11,15 +11,15 @@
   },
   "section2": {
     "title": "2. Ciclo della prenotazione",
-    "p1": "Le prenotazioni riservano una fascia oraria presso un fornitore. La piattaforma utilizza i seguenti concetti di ciclo di vita:",
+    "p1": "Una prenotazione del cliente crea prima una richiesta di prenotazione. Il fornitore deve confermare la richiesta prima che la prenotazione sia programmata. Gli slot richiesti sono bloccati per altri clienti mentre attendono la conferma del fornitore. La piattaforma utilizza i seguenti concetti di ciclo di vita:",
     "service_status_label": "Stato del servizio (valori di sistema):",
     "payment_status_label": "Stato del pagamento (valori di sistema):"
   },
   "section3": {
     "title": "3. Cancellazioni",
-    "p1": "Le cancellazioni possono essere consentite solo entro la finestra di cancellazione applicabile. Per impostazione predefinita, la piattaforma utilizza:",
+    "p1": "Un cliente può annullare una richiesta di prenotazione prima della conferma del fornitore. Dopo che il fornitore conferma la richiesta e la prenotazione diventa programmata, le cancellazioni possono essere consentite solo entro la finestra di cancellazione applicabile. Per impostazione predefinita, la piattaforma utilizza:",
     "cancellation_window": "Finestra di cancellazione: {hours} ore prima dell'orario di inizio della prenotazione (predefinita).",
-    "p2": "Le condizioni specifiche di cancellazione possono inoltre dipendere dal fornitore, dalla categoria del servizio e da eventuali norme imperative a tutela dei consumatori."
+    "p2": "Un fornitore può rifiutare una richiesta di prenotazione, liberando gli slot richiesti. Le condizioni specifiche di cancellazione possono inoltre dipendere dal fornitore, dalla categoria del servizio e da eventuali norme imperative di tutela dei consumatori."
   },
   "section4": {
     "title": "4. Conferme, contestazioni e termini",

@@ -391,6 +391,16 @@ Required env groups are defined in `README.md`:
 
 ## Working Conventions
 
+- Local command environment:
+  - This repository is developed from Windows.
+  - Use Windows PowerShell or `cmd.exe` for repo commands.
+  - Do not use WSL for normal repo commands unless explicitly requested.
+  - Keep command output narrow and task-specific.
+  - Avoid broad `git status`, broad `git diff`, or full-tree scans unless needed.
+  - Prefer targeted diffs by file, for example:
+    - `git diff -- src/modules/orders/server/procedures.tsx`
+    - `git diff -- src/modules/email/templates/order-email-copy.ts`
+  - Prefer focused validation commands over broad test runs when reviewing narrow patches.
 - Preserve strict typing and existing Zod input schemas on tRPC procedures.
 - Keep server/client boundaries explicit (`server-only`, `"use client"`).
 - Reuse existing utilities before adding new helpers.
