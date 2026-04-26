@@ -1312,17 +1312,14 @@ export default function TenantCalendar({
             padding: 0 !important;
             overflow: hidden;
           }
-          .calendar--dashboard .ev-status .rbc-event-label {
-            padding: 3px 6px 0;
-            margin: 0;
-            line-height: 1.15;
-            font-size: 12px;
+          .calendar--dashboard .rbc-time-view .ev-status .rbc-event-label {
+            display: none;
           }
           .calendar--dashboard .ev-status .rbc-event-content {
-            padding: 1px 6px 3px;
+            padding: 4px 6px;
             font-weight: 600;
             font-size: 12px;
-            line-height: 1.15;
+            line-height: 1.1;
             color: #111827;
           }
         `}</style>
