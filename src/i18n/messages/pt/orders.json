@@ -18,7 +18,8 @@
     "expand": "Expandir encomenda",
     "collapse": "Recolher encomenda",
     "open_menu": "Abrir menu",
-    "awaiting_provider_confirmation": "A aguardar confirmação do prestador"
+    "awaiting_provider_confirmation": "A aguardar confirmação do prestador",
+    "awaiting_your_confirmation": "A aguardar a sua confirmação"
   },
   "status": {
     "requested": "Solicitado",
@@ -39,7 +40,9 @@
     "view_invoice": "Ver fatura",
     "write_review": "Escrever avaliação",
     "cancel_order": "Cancelar pedido",
-    "cancel_request": "Cancelar pedido"
+    "cancel_request": "Cancelar pedido",
+    "confirm_request": "Confirmar pedido",
+    "decline_request": "Recusar pedido"
   },
   "tooltips": {
     "request_payment": "Pode solicitar o pagamento após a aceitação do cliente.",
@@ -65,7 +68,16 @@
     "submitting_cancel": "A cancelar...",
     "cancel_error_short_reason": "O motivo é opcional, mas se for fornecido deve ter pelo menos 3 caracteres.",
     "cancel_request_title_customer": "Cancelar este pedido de reserva?",
-    "cancel_request_body_customer": "Isto cancela o seu pedido e liberta os horários selecionados."
+    "cancel_request_body_customer": "Isto cancela o seu pedido e liberta os horários selecionados.",
+    "confirm_request_title": "Confirmar este pedido de reserva?",
+    "confirm_request_body": "Isto agenda a reserva solicitada e mantém os horários selecionados atribuídos ao cliente.",
+    "confirm_request": "Confirmar pedido",
+    "decline_request_title": "Recusar este pedido de reserva?",
+    "decline_request_body": "Isto cancela o pedido e liberta os horários selecionados.",
+    "decline_request": "Recusar pedido",
+    "decline_reason": "Motivo (opcional)",
+    "decline_placeholder": "Adicione um motivo curto se ajudar...",
+    "decline_error_short_reason": "O motivo é opcional, mas se for fornecido deve ter pelo menos 3 caracteres."
   },
   "states": {
     "load_error": "Não foi possível carregar as encomendas.",
@@ -93,7 +105,10 @@
     "cancel_already_canceled": "Esta encomenda já foi cancelada.",
     "cancel_invalid_slots": "Esta encomenda não pode ser cancelada porque os horários já não são válidos.",
     "cancel_release_failed": "A encomenda foi cancelada, mas a libertação dos horários não pôde ser totalmente verificada.",
-    "request_canceled": "Pedido de reserva cancelado."
+    "request_canceled": "Pedido de reserva cancelado.",
+    "request_confirmed": "Pedido de reserva confirmado.",
+    "request_declined": "Pedido de reserva recusado.",
+    "request_decision_failed": "Não foi possível atualizar o pedido de reserva. Tente novamente."
   },
   "errors": {
     "not_slot_lifecycle_order": "Esta encomenda não usa o ciclo de reserva por horários.",

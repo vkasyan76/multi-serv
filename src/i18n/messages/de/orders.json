@@ -18,7 +18,8 @@
     "expand": "Bestellung ausklappen",
     "collapse": "Bestellung einklappen",
     "open_menu": "Menü öffnen",
-    "awaiting_provider_confirmation": "Wartet auf Bestätigung des Anbieters"
+    "awaiting_provider_confirmation": "Wartet auf Bestätigung des Anbieters",
+    "awaiting_your_confirmation": "Wartet auf Ihre Bestätigung"
   },
   "status": {
     "requested": "Angefragt",
@@ -39,7 +40,9 @@
     "view_invoice": "Rechnung ansehen",
     "write_review": "Bewertung schreiben",
     "cancel_order": "Bestellung stornieren",
-    "cancel_request": "Anfrage stornieren"
+    "cancel_request": "Anfrage stornieren",
+    "confirm_request": "Anfrage bestätigen",
+    "decline_request": "Anfrage ablehnen"
   },
   "tooltips": {
     "request_payment": "Sie können die Zahlung anfordern, nachdem der Kunde die Leistung akzeptiert hat.",
@@ -65,7 +68,16 @@
     "submitting_cancel": "Wird storniert...",
     "cancel_error_short_reason": "Eine Begründung ist optional, muss aber mindestens 3 Zeichen lang sein, wenn sie angegeben wird.",
     "cancel_request_title_customer": "Diese Buchungsanfrage stornieren?",
-    "cancel_request_body_customer": "Dadurch wird Ihre Anfrage storniert und die ausgewählten Zeitfenster werden freigegeben."
+    "cancel_request_body_customer": "Dadurch wird Ihre Anfrage storniert und die ausgewählten Zeitfenster werden freigegeben.",
+    "confirm_request_title": "Diese Buchungsanfrage bestätigen?",
+    "confirm_request_body": "Dadurch wird die angefragte Buchung geplant und die ausgewählten Zeitfenster bleiben dem Kunden zugeordnet.",
+    "confirm_request": "Anfrage bestätigen",
+    "decline_request_title": "Diese Buchungsanfrage ablehnen?",
+    "decline_request_body": "Dadurch wird die Anfrage storniert und die ausgewählten Zeitfenster werden wieder freigegeben.",
+    "decline_request": "Anfrage ablehnen",
+    "decline_reason": "Grund (optional)",
+    "decline_placeholder": "Optional einen kurzen Grund angeben...",
+    "decline_error_short_reason": "Eine Begründung ist optional, muss aber mindestens 3 Zeichen lang sein, wenn sie angegeben wird."
   },
   "states": {
     "load_error": "Bestellungen konnten nicht geladen werden.",
@@ -93,7 +105,10 @@
     "cancel_already_canceled": "Diese Bestellung wurde bereits storniert.",
     "cancel_invalid_slots": "Diese Bestellung kann nicht storniert werden, weil ihre Zeitfenster nicht mehr gültig sind.",
     "cancel_release_failed": "Die Bestellung wurde storniert, aber die Freigabe der Zeitfenster konnte nicht vollständig verifiziert werden.",
-    "request_canceled": "Buchungsanfrage storniert."
+    "request_canceled": "Buchungsanfrage storniert.",
+    "request_confirmed": "Buchungsanfrage bestätigt.",
+    "request_declined": "Buchungsanfrage abgelehnt.",
+    "request_decision_failed": "Die Buchungsanfrage konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
   },
   "errors": {
     "not_slot_lifecycle_order": "Diese Bestellung verwendet nicht den Terminbuchungsablauf.",

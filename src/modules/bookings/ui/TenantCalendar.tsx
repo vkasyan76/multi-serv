@@ -746,7 +746,19 @@ export default function TenantCalendar({
     const statusLabel = tBookings(
       `legend.${getServiceStatusKey(b.serviceStatus)}`,
     );
+    const status = normalizeServiceStatus(b.serviceStatus);
     const who = displayName(b) ?? statusLabel;
+
+    if (status === "requested" && who !== statusLabel) {
+      return (
+        <div className="rbc-dash-ev truncate">
+          <span className="block truncate">{who}</span>
+          <span className="block truncate text-[11px] font-medium">
+            {statusLabel}
+          </span>
+        </div>
+      );
+    }
 
     return <div className="rbc-dash-ev truncate">{who}</div>;
   };
@@ -827,7 +839,6 @@ export default function TenantCalendar({
         };
       } else {
         const status = normalizeServiceStatus(event.resource.serviceStatus);
-        const labelColor = status === "accepted" ? "#ffffff" : "#111827";
         return {
           className: `ev-status ev-${status}`,
           style: {
@@ -835,7 +846,7 @@ export default function TenantCalendar({
               event.resource.serviceStatus,
             ),
             border: "none",
-            color: labelColor,
+            color: "#111827",
           },
         };
       }
@@ -1312,20 +1323,20 @@ export default function TenantCalendar({
             font-weight: 600;
             font-size: 12px;
             line-height: 1.15;
-            color: #ffffff;
+            color: #111827;
           }
         `}</style>
       )}
       {!dashboardMode && (
         <style jsx global>{`
           .ev-status .rbc-event-content {
-            color: #ffffff;
+            color: #111827;
             font-weight: 600;
             font-size: 11px;
             line-height: 1rem;
           }
-          .ev-status.ev-accepted .rbc-event-label {
-            color: #ffffff;
+          .ev-status .rbc-event-label {
+            color: #111827;
           }
         `}</style>
       )}

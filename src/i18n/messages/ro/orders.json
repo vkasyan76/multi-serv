@@ -18,7 +18,8 @@
     "expand": "Extinde comanda",
     "collapse": "Restrânge comanda",
     "open_menu": "Deschide meniul",
-    "awaiting_provider_confirmation": "Așteaptă confirmarea prestatorului"
+    "awaiting_provider_confirmation": "Așteaptă confirmarea prestatorului",
+    "awaiting_your_confirmation": "Așteaptă confirmarea ta"
   },
   "status": {
     "requested": "Solicitată",
@@ -39,7 +40,9 @@
     "view_invoice": "Vezi factura",
     "write_review": "Scrie o recenzie",
     "cancel_order": "Anulează comanda",
-    "cancel_request": "Anulează solicitarea"
+    "cancel_request": "Anulează solicitarea",
+    "confirm_request": "Confirmă solicitarea",
+    "decline_request": "Refuză solicitarea"
   },
   "tooltips": {
     "request_payment": "Poți solicita plata după acceptarea clientului.",
@@ -65,7 +68,16 @@
     "submitting_cancel": "Se anulează...",
     "cancel_error_short_reason": "Motivul este opțional, dar dacă este furnizat trebuie să aibă cel puțin 3 caractere.",
     "cancel_request_title_customer": "Anulezi această solicitare de rezervare?",
-    "cancel_request_body_customer": "Aceasta anulează solicitarea și eliberează intervalele selectate."
+    "cancel_request_body_customer": "Aceasta anulează solicitarea și eliberează intervalele selectate.",
+    "confirm_request_title": "Confirmi această solicitare de rezervare?",
+    "confirm_request_body": "Aceasta programează rezervarea solicitată și păstrează intervalele selectate alocate clientului.",
+    "confirm_request": "Confirmă solicitarea",
+    "decline_request_title": "Refuzi această solicitare de rezervare?",
+    "decline_request_body": "Aceasta anulează solicitarea și eliberează intervalele selectate.",
+    "decline_request": "Refuză solicitarea",
+    "decline_reason": "Motiv (opțional)",
+    "decline_placeholder": "Adaugă un motiv scurt dacă ajută...",
+    "decline_error_short_reason": "Motivul este opțional, dar dacă este furnizat trebuie să aibă cel puțin 3 caractere."
   },
   "states": {
     "load_error": "Nu s-au putut încărca comenzile.",
@@ -93,7 +105,10 @@
     "cancel_already_canceled": "Această comandă a fost deja anulată.",
     "cancel_invalid_slots": "Această comandă nu poate fi anulată deoarece intervalele ei nu mai sunt valabile.",
     "cancel_release_failed": "Comanda a fost anulată, dar eliberarea intervalelor nu a putut fi verificată complet.",
-    "request_canceled": "Solicitarea de rezervare a fost anulată."
+    "request_canceled": "Solicitarea de rezervare a fost anulată.",
+    "request_confirmed": "Solicitarea de rezervare a fost confirmată.",
+    "request_declined": "Solicitarea de rezervare a fost refuzată.",
+    "request_decision_failed": "Solicitarea de rezervare nu a putut fi actualizată. Încearcă din nou."
   },
   "errors": {
     "not_slot_lifecycle_order": "Această comandă nu folosește ciclul de rezervare pe intervale.",

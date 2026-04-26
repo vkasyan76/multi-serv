@@ -73,8 +73,8 @@ function normalizeDisplayServiceStatus(
   return "scheduled";
 }
 
-function statusTextClass(s: NormalizedServiceStatus) {
-  return s === "accepted" ? "text-white" : "text-slate-900";
+function statusTextClass() {
+  return "text-slate-900";
 }
 
 export function StatusBadge({
@@ -88,7 +88,7 @@ export function StatusBadge({
   return (
     <Badge
       variant="secondary"
-      className={`border-0 ${SERVICE_STATUS_COLORS[st].className} ${statusTextClass(st)}`}
+      className={`border-0 ${SERVICE_STATUS_COLORS[st].className} ${statusTextClass()}`}
     >
       {/* Keep default English fallback for admin and older callers. */}
       {label ?? SERVICE_STATUS_LABELS[st]}
