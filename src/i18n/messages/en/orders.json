@@ -17,7 +17,8 @@
     "service": "Service",
     "expand": "Expand order",
     "collapse": "Collapse order",
-    "open_menu": "Open menu"
+    "open_menu": "Open menu",
+    "awaiting_provider_confirmation": "Awaiting provider confirmation"
   },
   "status": {
     "requested": "Requested",
@@ -37,7 +38,8 @@
     "pay": "Pay",
     "view_invoice": "View invoice",
     "write_review": "Write a review",
-    "cancel_order": "Cancel order"
+    "cancel_order": "Cancel order",
+    "cancel_request": "Cancel request"
   },
   "tooltips": {
     "request_payment": "You can request payment after user acceptance.",
@@ -61,7 +63,9 @@
     "cancel_placeholder_tenant": "Add a short reason for the cancellation...",
     "confirm_cancel": "Confirm cancellation",
     "submitting_cancel": "Canceling...",
-    "cancel_error_short_reason": "Reason is optional, but if provided it must be at least 3 characters."
+    "cancel_error_short_reason": "Reason is optional, but if provided it must be at least 3 characters.",
+    "cancel_request_title_customer": "Cancel this booking request?",
+    "cancel_request_body_customer": "This cancels your request and releases the selected slots."
   },
   "states": {
     "load_error": "Failed to load orders.",
@@ -88,7 +92,8 @@
     "cancel_payment_locked": "This order can no longer be canceled because payment or invoicing has already started.",
     "cancel_already_canceled": "This order was already canceled.",
     "cancel_invalid_slots": "This order cannot be canceled because its booking slots are no longer valid.",
-    "cancel_release_failed": "The order was canceled, but slot release could not be fully verified."
+    "cancel_release_failed": "The order was canceled, but slot release could not be fully verified.",
+    "request_canceled": "Booking request canceled."
   },
   "errors": {
     "not_slot_lifecycle_order": "This order does not use the slot booking lifecycle.",

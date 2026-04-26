@@ -14,7 +14,8 @@
     "slot_id": "Slot-ID",
     "pick_service": "Service auswählen",
     "cancel": "Abbrechen",
-    "book": "Buchen"
+    "book": "Buchen",
+    "request_booking": "Buchung anfragen"
   },
   "customer": {
     "invoice_address": "Rechnungsadresse",
@@ -35,7 +36,8 @@
     "card_saved": "Karte gespeichert.",
     "card_setup_finalize_failed": "Die Karteneinrichtung konnte nicht abgeschlossen werden.",
     "start_setup_failed": "Die Einrichtung konnte nicht gestartet werden.",
-    "no_charge_at_booking": "Bei der Buchung erfolgt keine Belastung. Die Belastung erfolgt nach Annahme oder automatischer Annahme des abgeschlossenen Services."
+    "no_charge_at_booking": "Bei der Buchung erfolgt keine Belastung. Die Belastung erfolgt nach Annahme oder automatischer Annahme des abgeschlossenen Services.",
+    "provider_confirmation_note": "Der Anbieter muss Ihre Anfrage bestätigen, bevor die Buchung geplant wird."
   },
   "terms": {
     "title": "Nutzungsbedingungen",
@@ -57,7 +59,8 @@
     "checkout_failed": "Checkout fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "checkout_started_failed": "Checkout konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
     "order_created_pay_later": "Bestellung erstellt. Die Zahlung erfolgt später nach Annahme.",
-    "payment_received_finalizing": "Zahlung erhalten. Ihre Buchung wird abgeschlossen..."
+    "payment_received_finalizing": "Zahlung erhalten. Ihre Buchung wird abgeschlossen...",
+    "booking_request_sent": "Buchungsanfrage gesendet. Der Anbieter bestätigt oder lehnt sie ab."
   },
   "errors": {
     "generic": "Checkout fehlgeschlagen. Bitte versuchen Sie es erneut.",

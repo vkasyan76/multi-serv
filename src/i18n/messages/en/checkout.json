@@ -14,7 +14,8 @@
     "slot_id": "Slot ID",
     "pick_service": "Pick a service",
     "cancel": "Cancel",
-    "book": "Book"
+    "book": "Book",
+    "request_booking": "Request booking"
   },
   "customer": {
     "invoice_address": "Invoice address",
@@ -35,7 +36,8 @@
     "card_saved": "Card saved.",
     "card_setup_finalize_failed": "Could not finalize card setup.",
     "start_setup_failed": "Could not start setup.",
-    "no_charge_at_booking": "No charge at booking. You'll be charged after service completion is accepted (or auto-accepted)."
+    "no_charge_at_booking": "No charge at booking. You'll be charged after service completion is accepted (or auto-accepted).",
+    "provider_confirmation_note": "The provider must confirm your request before the booking is scheduled."
   },
   "terms": {
     "title": "Terms of Use",
@@ -57,7 +59,8 @@
     "checkout_failed": "Checkout failed. Please try again.",
     "checkout_started_failed": "Could not start checkout. Please try again.",
     "order_created_pay_later": "Order created. Payment will happen later (after acceptance).",
-    "payment_received_finalizing": "Payment received. Finalizing your booking..."
+    "payment_received_finalizing": "Payment received. Finalizing your booking...",
+    "booking_request_sent": "Booking request sent. The provider will confirm or decline it."
   },
   "errors": {
     "generic": "Checkout failed. Please try again.",

@@ -14,7 +14,8 @@
     "slot_id": "ID interval",
     "pick_service": "Alege un serviciu",
     "cancel": "Anulează",
-    "book": "Rezervă"
+    "book": "Rezervă",
+    "request_booking": "Solicită rezervarea"
   },
   "customer": {
     "invoice_address": "Adresă de facturare",
@@ -35,7 +36,8 @@
     "card_saved": "Card salvat.",
     "card_setup_finalize_failed": "Nu s-a putut finaliza configurarea cardului.",
     "start_setup_failed": "Nu s-a putut începe configurarea.",
-    "no_charge_at_booking": "Nu se percepe nicio taxă la rezervare. Vei fi taxat după ce finalizarea serviciului este acceptată (sau acceptată automat)."
+    "no_charge_at_booking": "Nu se percepe nicio taxă la rezervare. Vei fi taxat după ce finalizarea serviciului este acceptată (sau acceptată automat).",
+    "provider_confirmation_note": "Prestatorul trebuie să confirme solicitarea înainte ca rezervarea să fie programată."
   },
   "terms": {
     "title": "Condiții de utilizare",
@@ -57,7 +59,8 @@
     "checkout_failed": "Rezervarea nu a putut fi finalizată. Te rugăm să încerci din nou.",
     "checkout_started_failed": "Nu s-a putut porni checkout-ul. Te rugăm să încerci din nou.",
     "order_created_pay_later": "Comanda a fost creată. Plata va avea loc mai târziu (după acceptare).",
-    "payment_received_finalizing": "Plata a fost primită. Finalizăm rezervarea ta..."
+    "payment_received_finalizing": "Plata a fost primită. Finalizăm rezervarea ta...",
+    "booking_request_sent": "Solicitarea de rezervare a fost trimisă. Prestatorul o va confirma sau o va refuza."
   },
   "errors": {
     "generic": "Rezervarea nu a putut fi finalizată. Te rugăm să încerci din nou.",

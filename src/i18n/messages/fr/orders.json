@@ -17,7 +17,8 @@
     "service": "Service",
     "expand": "Développer la commande",
     "collapse": "Réduire la commande",
-    "open_menu": "Ouvrir le menu"
+    "open_menu": "Ouvrir le menu",
+    "awaiting_provider_confirmation": "En attente de confirmation du prestataire"
   },
   "status": {
     "requested": "Demandée",
@@ -37,7 +38,8 @@
     "pay": "Payer",
     "view_invoice": "Voir la facture",
     "write_review": "Écrire un avis",
-    "cancel_order": "Annuler la commande"
+    "cancel_order": "Annuler la commande",
+    "cancel_request": "Annuler la demande"
   },
   "tooltips": {
     "request_payment": "Vous pouvez demander le paiement après l'acceptation du client.",
@@ -61,7 +63,9 @@
     "cancel_placeholder_tenant": "Ajoutez un court motif d'annulation...",
     "confirm_cancel": "Confirmer l'annulation",
     "submitting_cancel": "Annulation...",
-    "cancel_error_short_reason": "Le motif est facultatif, mais s'il est fourni, il doit comporter au moins 3 caractères."
+    "cancel_error_short_reason": "Le motif est facultatif, mais s'il est fourni, il doit comporter au moins 3 caractères.",
+    "cancel_request_title_customer": "Annuler cette demande de réservation ?",
+    "cancel_request_body_customer": "Cela annule votre demande et libère les créneaux sélectionnés."
   },
   "states": {
     "load_error": "Impossible de charger les commandes.",
@@ -88,7 +92,8 @@
     "cancel_payment_locked": "Cette commande ne peut plus être annulée car le paiement ou la facturation a déjà commencé.",
     "cancel_already_canceled": "Cette commande a déjà été annulée.",
     "cancel_invalid_slots": "Cette commande ne peut pas être annulée car ses créneaux ne sont plus valides.",
-    "cancel_release_failed": "La commande a été annulée, mais la remise à disposition des créneaux n'a pas pu être entièrement vérifiée."
+    "cancel_release_failed": "La commande a été annulée, mais la remise à disposition des créneaux n'a pas pu être entièrement vérifiée.",
+    "request_canceled": "Demande de réservation annulée."
   },
   "errors": {
     "not_slot_lifecycle_order": "Cette commande n'utilise pas le cycle de réservation par créneau.",

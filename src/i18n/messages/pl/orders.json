@@ -17,7 +17,8 @@
     "service": "Usługa",
     "expand": "Rozwiń zamówienie",
     "collapse": "Zwiń zamówienie",
-    "open_menu": "Otwórz menu"
+    "open_menu": "Otwórz menu",
+    "awaiting_provider_confirmation": "Oczekuje na potwierdzenie wykonawcy"
   },
   "status": {
     "requested": "Zgłoszone",
@@ -37,7 +38,8 @@
     "pay": "Zapłać",
     "view_invoice": "Zobacz fakturę",
     "write_review": "Napisz opinię",
-    "cancel_order": "Anuluj zamówienie"
+    "cancel_order": "Anuluj zamówienie",
+    "cancel_request": "Anuluj zgłoszenie"
   },
   "tooltips": {
     "request_payment": "Możesz poprosić o płatność po akceptacji klienta.",
@@ -61,7 +63,9 @@
     "cancel_placeholder_tenant": "Dodaj krótki powód anulowania...",
     "confirm_cancel": "Potwierdź anulowanie",
     "submitting_cancel": "Anulowanie...",
-    "cancel_error_short_reason": "Powód jest opcjonalny, ale jeśli go podasz, musi mieć co najmniej 3 znaki."
+    "cancel_error_short_reason": "Powód jest opcjonalny, ale jeśli go podasz, musi mieć co najmniej 3 znaki.",
+    "cancel_request_title_customer": "Anulować to zgłoszenie rezerwacji?",
+    "cancel_request_body_customer": "Spowoduje to anulowanie zgłoszenia i zwolnienie wybranych terminów."
   },
   "states": {
     "load_error": "Nie udało się załadować zamówień.",
@@ -88,7 +92,8 @@
     "cancel_payment_locked": "Tego zamówienia nie można już anulować, ponieważ płatność lub fakturowanie już się rozpoczęły.",
     "cancel_already_canceled": "To zamówienie zostało już anulowane.",
     "cancel_invalid_slots": "Tego zamówienia nie można anulować, ponieważ jego terminy nie są już prawidłowe.",
-    "cancel_release_failed": "Zamówienie zostało anulowane, ale nie udało się w pełni zweryfikować zwolnienia terminów."
+    "cancel_release_failed": "Zamówienie zostało anulowane, ale nie udało się w pełni zweryfikować zwolnienia terminów.",
+    "request_canceled": "Zgłoszenie rezerwacji anulowano."
   },
   "errors": {
     "not_slot_lifecycle_order": "To zamówienie nie korzysta z cyklu rezerwacji terminów.",

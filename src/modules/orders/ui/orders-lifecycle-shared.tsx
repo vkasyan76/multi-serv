@@ -265,11 +265,13 @@ export function canShowSelfCancelAction(
     "status" | "serviceStatus" | "invoiceStatus" | "slots" | "lifecycleMode"
   >,
   nowMs = Date.now(),
+  options: { allowRequested?: boolean } = {},
 ) {
   if (row.lifecycleMode !== "slot") return false;
   if (row.status === "canceled") return false;
-  if (row.serviceStatus !== "scheduled") return false;
   if (row.invoiceStatus !== "none") return false;
+  if (row.serviceStatus === "requested") return options.allowRequested === true;
+  if (row.serviceStatus !== "scheduled") return false;
 
   const cutoffMs = CANCELLATION_WINDOW_HOURS * 60 * 60 * 1000;
   const firstSlotStartMs = getEarliestSlotStartMs(row.slots ?? []);

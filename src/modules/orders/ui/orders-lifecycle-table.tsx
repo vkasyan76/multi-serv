@@ -281,8 +281,15 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
 
   const customerCancelOrder = useMutation({
     ...trpc.orders.customerCancelSlotOrder.mutationOptions(),
-    onSuccess: async () => {
-      toast.success(tOrders("toasts.order_canceled"));
+    onSuccess: async (_data, variables) => {
+      const canceledOrder = (orders ?? []).find(
+        (order) => order.id === variables.orderId,
+      );
+      toast.success(
+        canceledOrder?.serviceStatus === "requested"
+          ? tOrders("toasts.request_canceled")
+          : tOrders("toasts.order_canceled"),
+      );
       setCancelDialogOpen(false);
       setPendingCancelOrderId(null);
       setCancelReason("");
@@ -351,6 +358,11 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     : undefined;
   const isCancelPending =
     customerCancelOrder.isPending || tenantCancelOrder.isPending;
+  const pendingCancelOrder = (orders ?? []).find(
+    (order) => order.id === pendingCancelOrderId,
+  );
+  const isPendingCancelRequest =
+    mode === "customer" && pendingCancelOrder?.serviceStatus === "requested";
 
   // Customer-only: fetch payable invoice ids per order so the Pay button can work.
   const invoiceQueries = useQueries({
@@ -555,7 +567,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
             const isOpen = !!open[o.id];
             const range = getDateRange(o.slots ?? [], locale);
             const isCanceled = o.status === "canceled";
-            const canCancel = canShowSelfCancelAction(o, nowMs);
+            const canCancel = canShowSelfCancelAction(o, nowMs, {
+              allowRequested: mode === "customer",
+            });
 
             const label =
               mode === "customer"
@@ -617,10 +631,20 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                     {isCanceled ? (
                       <CanceledBadge label={tOrders("status.canceled")} />
                     ) : (
-                      <StatusBadge
-                        value={o.serviceStatus}
-                        label={getStatusLabel(o.serviceStatus)}
-                      />
+                      <div className="space-y-1">
+                        <StatusBadge
+                          value={o.serviceStatus}
+                          label={getStatusLabel(o.serviceStatus)}
+                        />
+                        {mode === "customer" &&
+                        o.serviceStatus === "requested" ? (
+                          <div className="text-xs leading-snug text-muted-foreground">
+                            {tOrders(
+                              "table.awaiting_provider_confirmation",
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell>
@@ -699,7 +723,10 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                   tenantCancelOrder.isPending
                                 }
                               >
-                                {tOrders("actions.cancel_order")}
+                                {mode === "customer" &&
+                                o.serviceStatus === "requested"
+                                  ? tOrders("actions.cancel_request")
+                                  : tOrders("actions.cancel_order")}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                             </>
@@ -971,12 +998,16 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {mode === "customer"
+              {isPendingCancelRequest
+                ? tOrders("dialog.cancel_request_title_customer")
+                : mode === "customer"
                 ? tOrders("dialog.cancel_order_title_customer")
                 : tOrders("dialog.cancel_order_title_tenant")}
             </DialogTitle>
             <DialogDescription>
-              {mode === "customer"
+              {isPendingCancelRequest
+                ? tOrders("dialog.cancel_request_body_customer")
+                : mode === "customer"
                 ? tOrders("dialog.cancel_order_body_customer")
                 : tOrders("dialog.cancel_order_body_tenant")}
             </DialogDescription>
@@ -1059,6 +1090,4 @@ export function OrdersLifecycleSkeleton() {
     </div>
   );
 }
-
-
 

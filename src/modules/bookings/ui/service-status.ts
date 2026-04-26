@@ -56,7 +56,7 @@ export const SERVICE_STATUS_COLORS: Record<
   NormalizedServiceStatus,
   { className: string; hex: string }
 > = {
-  requested: { className: "bg-slate-300", hex: "#cbd5e1" },
+  requested: { className: "bg-orange-300", hex: "#fdba74" },
   scheduled: { className: "bg-amber-400", hex: "#fbbf24" },
   completed: { className: "bg-sky-400", hex: "#38bdf8" },
   accepted: { className: "bg-teal-600", hex: "#0d9488" },

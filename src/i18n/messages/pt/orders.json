@@ -17,7 +17,8 @@
     "service": "Serviço",
     "expand": "Expandir encomenda",
     "collapse": "Recolher encomenda",
-    "open_menu": "Abrir menu"
+    "open_menu": "Abrir menu",
+    "awaiting_provider_confirmation": "A aguardar confirmação do prestador"
   },
   "status": {
     "requested": "Solicitado",
@@ -37,7 +38,8 @@
     "pay": "Pagar",
     "view_invoice": "Ver fatura",
     "write_review": "Escrever avaliação",
-    "cancel_order": "Cancelar pedido"
+    "cancel_order": "Cancelar pedido",
+    "cancel_request": "Cancelar pedido"
   },
   "tooltips": {
     "request_payment": "Pode solicitar o pagamento após a aceitação do cliente.",
@@ -61,7 +63,9 @@
     "cancel_placeholder_tenant": "Adicione um motivo curto para o cancelamento...",
     "confirm_cancel": "Confirmar cancelamento",
     "submitting_cancel": "A cancelar...",
-    "cancel_error_short_reason": "O motivo é opcional, mas se for fornecido deve ter pelo menos 3 caracteres."
+    "cancel_error_short_reason": "O motivo é opcional, mas se for fornecido deve ter pelo menos 3 caracteres.",
+    "cancel_request_title_customer": "Cancelar este pedido de reserva?",
+    "cancel_request_body_customer": "Isto cancela o seu pedido e liberta os horários selecionados."
   },
   "states": {
     "load_error": "Não foi possível carregar as encomendas.",
@@ -88,7 +92,8 @@
     "cancel_payment_locked": "Esta encomenda já não pode ser cancelada porque o pagamento ou a faturação já começaram.",
     "cancel_already_canceled": "Esta encomenda já foi cancelada.",
     "cancel_invalid_slots": "Esta encomenda não pode ser cancelada porque os horários já não são válidos.",
-    "cancel_release_failed": "A encomenda foi cancelada, mas a libertação dos horários não pôde ser totalmente verificada."
+    "cancel_release_failed": "A encomenda foi cancelada, mas a libertação dos horários não pôde ser totalmente verificada.",
+    "request_canceled": "Pedido de reserva cancelado."
   },
   "errors": {
     "not_slot_lifecycle_order": "Esta encomenda não usa o ciclo de reserva por horários.",

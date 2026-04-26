@@ -17,7 +17,8 @@
     "service": "Serviciu",
     "expand": "Extinde comanda",
     "collapse": "Restrânge comanda",
-    "open_menu": "Deschide meniul"
+    "open_menu": "Deschide meniul",
+    "awaiting_provider_confirmation": "Așteaptă confirmarea prestatorului"
   },
   "status": {
     "requested": "Solicitată",
@@ -37,7 +38,8 @@
     "pay": "Plătește",
     "view_invoice": "Vezi factura",
     "write_review": "Scrie o recenzie",
-    "cancel_order": "Anulează comanda"
+    "cancel_order": "Anulează comanda",
+    "cancel_request": "Anulează solicitarea"
   },
   "tooltips": {
     "request_payment": "Poți solicita plata după acceptarea clientului.",
@@ -61,7 +63,9 @@
     "cancel_placeholder_tenant": "Adaugă un motiv scurt pentru anulare...",
     "confirm_cancel": "Confirmă anularea",
     "submitting_cancel": "Se anulează...",
-    "cancel_error_short_reason": "Motivul este opțional, dar dacă este furnizat trebuie să aibă cel puțin 3 caractere."
+    "cancel_error_short_reason": "Motivul este opțional, dar dacă este furnizat trebuie să aibă cel puțin 3 caractere.",
+    "cancel_request_title_customer": "Anulezi această solicitare de rezervare?",
+    "cancel_request_body_customer": "Aceasta anulează solicitarea și eliberează intervalele selectate."
   },
   "states": {
     "load_error": "Nu s-au putut încărca comenzile.",
@@ -88,7 +92,8 @@
     "cancel_payment_locked": "Această comandă nu mai poate fi anulată deoarece plata sau facturarea au început deja.",
     "cancel_already_canceled": "Această comandă a fost deja anulată.",
     "cancel_invalid_slots": "Această comandă nu poate fi anulată deoarece intervalele ei nu mai sunt valabile.",
-    "cancel_release_failed": "Comanda a fost anulată, dar eliberarea intervalelor nu a putut fi verificată complet."
+    "cancel_release_failed": "Comanda a fost anulată, dar eliberarea intervalelor nu a putut fi verificată complet.",
+    "request_canceled": "Solicitarea de rezervare a fost anulată."
   },
   "errors": {
     "not_slot_lifecycle_order": "Această comandă nu folosește ciclul de rezervare pe intervale.",

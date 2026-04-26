@@ -14,7 +14,8 @@
     "slot_id": "ID fascia oraria",
     "pick_service": "Scegli un servizio",
     "cancel": "Annulla",
-    "book": "Prenota"
+    "book": "Prenota",
+    "request_booking": "Richiedi prenotazione"
   },
   "customer": {
     "invoice_address": "Indirizzo di fatturazione",
@@ -35,7 +36,8 @@
     "card_saved": "Carta salvata.",
     "card_setup_finalize_failed": "Impossibile finalizzare la configurazione della carta.",
     "start_setup_failed": "Impossibile avviare la configurazione.",
-    "no_charge_at_booking": "Nessun addebito al momento della prenotazione. L'addebito avverrà dopo l'accettazione o l'accettazione automatica del servizio completato."
+    "no_charge_at_booking": "Nessun addebito al momento della prenotazione. L'addebito avverrà dopo l'accettazione o l'accettazione automatica del servizio completato.",
+    "provider_confirmation_note": "Il professionista deve confermare la richiesta prima che la prenotazione venga programmata."
   },
   "terms": {
     "title": "Termini di utilizzo",
@@ -57,7 +59,8 @@
     "checkout_failed": "Checkout non riuscito. Riprova.",
     "checkout_started_failed": "Impossibile avviare il checkout. Riprova.",
     "order_created_pay_later": "Ordine creato. Il pagamento avverrà più tardi dopo l'accettazione.",
-    "payment_received_finalizing": "Pagamento ricevuto. Finalizzazione della prenotazione..."
+    "payment_received_finalizing": "Pagamento ricevuto. Finalizzazione della prenotazione...",
+    "booking_request_sent": "Richiesta di prenotazione inviata. Il professionista la confermerà o la rifiuterà."
   },
   "errors": {
     "generic": "Checkout non riuscito. Riprova.",

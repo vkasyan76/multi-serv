@@ -17,7 +17,8 @@
     "service": "Leistung",
     "expand": "Bestellung ausklappen",
     "collapse": "Bestellung einklappen",
-    "open_menu": "Menü öffnen"
+    "open_menu": "Menü öffnen",
+    "awaiting_provider_confirmation": "Wartet auf Bestätigung des Anbieters"
   },
   "status": {
     "requested": "Angefragt",
@@ -37,7 +38,8 @@
     "pay": "Bezahlen",
     "view_invoice": "Rechnung ansehen",
     "write_review": "Bewertung schreiben",
-    "cancel_order": "Bestellung stornieren"
+    "cancel_order": "Bestellung stornieren",
+    "cancel_request": "Anfrage stornieren"
   },
   "tooltips": {
     "request_payment": "Sie können die Zahlung anfordern, nachdem der Kunde die Leistung akzeptiert hat.",
@@ -61,7 +63,9 @@
     "cancel_placeholder_tenant": "Optional einen kurzen Stornierungsgrund angeben...",
     "confirm_cancel": "Stornierung bestätigen",
     "submitting_cancel": "Wird storniert...",
-    "cancel_error_short_reason": "Eine Begründung ist optional, muss aber mindestens 3 Zeichen lang sein, wenn sie angegeben wird."
+    "cancel_error_short_reason": "Eine Begründung ist optional, muss aber mindestens 3 Zeichen lang sein, wenn sie angegeben wird.",
+    "cancel_request_title_customer": "Diese Buchungsanfrage stornieren?",
+    "cancel_request_body_customer": "Dadurch wird Ihre Anfrage storniert und die ausgewählten Zeitfenster werden freigegeben."
   },
   "states": {
     "load_error": "Bestellungen konnten nicht geladen werden.",
@@ -88,7 +92,8 @@
     "cancel_payment_locked": "Diese Bestellung kann nicht mehr storniert werden, weil Zahlung oder Rechnungsstellung bereits begonnen hat.",
     "cancel_already_canceled": "Diese Bestellung wurde bereits storniert.",
     "cancel_invalid_slots": "Diese Bestellung kann nicht storniert werden, weil ihre Zeitfenster nicht mehr gültig sind.",
-    "cancel_release_failed": "Die Bestellung wurde storniert, aber die Freigabe der Zeitfenster konnte nicht vollständig verifiziert werden."
+    "cancel_release_failed": "Die Bestellung wurde storniert, aber die Freigabe der Zeitfenster konnte nicht vollständig verifiziert werden.",
+    "request_canceled": "Buchungsanfrage storniert."
   },
   "errors": {
     "not_slot_lifecycle_order": "Diese Bestellung verwendet nicht den Terminbuchungsablauf.",

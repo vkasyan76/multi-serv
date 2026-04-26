@@ -17,7 +17,8 @@
     "service": "Servicio",
     "expand": "Expandir pedido",
     "collapse": "Contraer pedido",
-    "open_menu": "Abrir menú"
+    "open_menu": "Abrir menú",
+    "awaiting_provider_confirmation": "Pendiente de confirmación del proveedor"
   },
   "status": {
     "requested": "Solicitado",
@@ -37,7 +38,8 @@
     "pay": "Pagar",
     "view_invoice": "Ver factura",
     "write_review": "Escribir una reseña",
-    "cancel_order": "Cancelar pedido"
+    "cancel_order": "Cancelar pedido",
+    "cancel_request": "Cancelar solicitud"
   },
   "tooltips": {
     "request_payment": "Puede solicitar el pago después de que el cliente haya aceptado el servicio.",
@@ -61,7 +63,9 @@
     "cancel_placeholder_tenant": "Añade un motivo breve para la cancelación...",
     "confirm_cancel": "Confirmar cancelación",
     "submitting_cancel": "Cancelando...",
-    "cancel_error_short_reason": "El motivo es opcional, pero si se proporciona debe tener al menos 3 caracteres."
+    "cancel_error_short_reason": "El motivo es opcional, pero si se proporciona debe tener al menos 3 caracteres.",
+    "cancel_request_title_customer": "¿Cancelar esta solicitud de reserva?",
+    "cancel_request_body_customer": "Esto cancela tu solicitud y libera las franjas seleccionadas."
   },
   "states": {
     "load_error": "No se pudieron cargar los pedidos.",
@@ -88,7 +92,8 @@
     "cancel_payment_locked": "Este pedido ya no se puede cancelar porque el pago o la facturación ya han comenzado.",
     "cancel_already_canceled": "Este pedido ya estaba cancelado.",
     "cancel_invalid_slots": "Este pedido no se puede cancelar porque sus franjas horarias ya no son válidas.",
-    "cancel_release_failed": "El pedido fue cancelado, pero no se pudo verificar completamente la liberación de las franjas."
+    "cancel_release_failed": "El pedido fue cancelado, pero no se pudo verificar completamente la liberación de las franjas.",
+    "request_canceled": "Solicitud de reserva cancelada."
   },
   "errors": {
     "not_slot_lifecycle_order": "Este pedido no usa el ciclo de reservas por franjas.",
