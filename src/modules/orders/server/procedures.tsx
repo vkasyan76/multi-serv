@@ -274,6 +274,7 @@ async function claimSlotOrderCancellation(
     {
       _id: order.id,
       status: order.status,
+      serviceStatus: order.serviceStatus,
       canceledAt: order.canceledAt ?? null,
       canceledByRole: order.canceledByRole ?? null,
       cancelReason: order.cancelReason ?? null,

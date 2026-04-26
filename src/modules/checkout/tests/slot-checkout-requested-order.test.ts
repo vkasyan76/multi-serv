@@ -9,11 +9,13 @@ loadEnv({ path: ".env.local" });
 loadEnv();
 process.env.PAYLOAD_SECRET ??= "test-payload-secret";
 process.env.RESEND_API_KEY ??= "test-resend-key";
+process.env.SKIP_ORDER_EMAILS ??= "1";
 
 type TestPayload = Awaited<ReturnType<typeof getPayload>>;
 type DocWithId<T> = T & { id: string };
 
 let payloadPromise: Promise<TestPayload> | null = null;
+let checkoutTestFailed = false;
 const createdUserIds = new Set<string>();
 const createdTenantIds = new Set<string>();
 const createdCategoryIds = new Set<string>();
@@ -270,79 +272,87 @@ after(async () => {
     if (typeof payload.db.destroy === "function") {
       await payload.db.destroy();
     }
+    setImmediate(() =>
+      process.exit(checkoutTestFailed ? 1 : (process.exitCode ?? 0)),
+    );
   }
 });
 
 test("slot checkout creates a requested order and keeps promoted slots blocked", async () => {
-  const payload = await getTestPayload();
-  const fixture = await createFixture(payload);
+  try {
+    const payload = await getTestPayload();
+    const fixture = await createFixture(payload);
 
-  const bookingCaller = await makeBookingCaller(
-    payload,
-    fixture.customerClerkId,
-  );
-  const slotCheckoutCaller = await makeSlotCheckoutCaller(
-    payload,
-    fixture.customerClerkId,
-  );
+    const bookingCaller = await makeBookingCaller(
+      payload,
+      fixture.customerClerkId,
+    );
+    const slotCheckoutCaller = await makeSlotCheckoutCaller(
+      payload,
+      fixture.customerClerkId,
+    );
 
-  const hold = await bookingCaller.bookSlots({
-    items: [
-      {
-        bookingId: String(fixture.booking.id),
-        serviceId: String(fixture.service.id),
-      },
-    ],
-  });
+    const hold = await bookingCaller.bookSlots({
+      items: [
+        {
+          bookingId: String(fixture.booking.id),
+          serviceId: String(fixture.service.id),
+        },
+      ],
+    });
 
-  assert.deepEqual(hold.bookedIds, [String(fixture.booking.id)]);
-  assert.equal(hold.unavailableIds.length, 0);
-  assert.equal(hold.updated, 1);
+    assert.deepEqual(hold.bookedIds, [String(fixture.booking.id)]);
+    assert.equal(hold.unavailableIds.length, 0);
+    assert.equal(hold.updated, 1);
 
-  const heldBooking = await payload.findByID({
-    collection: "bookings",
-    id: String(fixture.booking.id),
-    depth: 0,
-    overrideAccess: true,
-  });
+    const heldBooking = await payload.findByID({
+      collection: "bookings",
+      id: String(fixture.booking.id),
+      depth: 0,
+      overrideAccess: true,
+    });
 
-  assert.equal(heldBooking?.status, "booked");
-  assert.equal(relId(heldBooking?.customer), String(fixture.customer.id));
-  assert.equal(heldBooking?.paymentStatus, "unpaid");
+    assert.equal(heldBooking?.status, "booked");
+    assert.equal(relId(heldBooking?.customer), String(fixture.customer.id));
+    assert.equal(heldBooking?.paymentStatus, "unpaid");
 
-  const result = await slotCheckoutCaller.createOrder({
-    slotIds: [String(fixture.booking.id)],
-  });
-  assert.equal(result.ok, true);
-  createdOrderIds.add(String(result.orderId));
+    const result = await slotCheckoutCaller.createOrder({
+      slotIds: [String(fixture.booking.id)],
+    });
+    assert.equal(result.ok, true);
+    createdOrderIds.add(String(result.orderId));
 
-  const order = await payload.findByID({
-    collection: "orders",
-    id: String(result.orderId),
-    depth: 0,
-    overrideAccess: true,
-  });
+    const order = await payload.findByID({
+      collection: "orders",
+      id: String(result.orderId),
+      depth: 0,
+      overrideAccess: true,
+    });
 
-  assert.equal(order?.lifecycleMode, "slot");
-  assert.equal(order?.status, "pending");
-  assert.equal(order?.serviceStatus, "requested");
-  assert.notEqual(order?.serviceStatus, "scheduled");
-  assert.equal(order?.invoiceStatus, "none");
-  assert.deepEqual(
-    (order?.slots ?? []).map((slot) => relId(slot) ?? String(slot)),
-    [String(fixture.booking.id)],
-  );
+    assert.equal(order?.lifecycleMode, "slot");
+    assert.equal(order?.status, "pending");
+    assert.equal(order?.serviceStatus, "requested");
+    assert.notEqual(order?.serviceStatus, "scheduled");
+    assert.equal(order?.invoiceStatus, "none");
+    assert.deepEqual(
+      (order?.slots ?? []).map((slot) => relId(slot) ?? String(slot)),
+      [String(fixture.booking.id)],
+    );
 
-  const promotedBooking = await payload.findByID({
-    collection: "bookings",
-    id: String(fixture.booking.id),
-    depth: 0,
-    overrideAccess: true,
-  });
+    const promotedBooking = await payload.findByID({
+      collection: "bookings",
+      id: String(fixture.booking.id),
+      depth: 0,
+      overrideAccess: true,
+    });
 
-  assert.equal(promotedBooking?.status, "confirmed");
-  assert.equal(promotedBooking?.serviceStatus, "requested");
-  assert.notEqual(promotedBooking?.serviceStatus, "scheduled");
-  assert.equal(promotedBooking?.paymentStatus, "unpaid");
-  assert.equal(relId(promotedBooking?.customer), String(fixture.customer.id));
+    assert.equal(promotedBooking?.status, "confirmed");
+    assert.equal(promotedBooking?.serviceStatus, "requested");
+    assert.notEqual(promotedBooking?.serviceStatus, "scheduled");
+    assert.equal(promotedBooking?.paymentStatus, "unpaid");
+    assert.equal(relId(promotedBooking?.customer), String(fixture.customer.id));
+  } catch (error) {
+    checkoutTestFailed = true;
+    throw error;
+  }
 });

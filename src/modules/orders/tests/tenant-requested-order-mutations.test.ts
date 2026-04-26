@@ -292,6 +292,7 @@ after(async () => {
     if (typeof payload.db.destroy === "function") {
       await payload.db.destroy();
     }
+    setImmediate(() => process.exit(process.exitCode ?? 0));
   }
 });
 

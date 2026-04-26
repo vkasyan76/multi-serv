@@ -30,7 +30,13 @@
     "test:orders:cancel-race": "node --conditions=react-server --import tsx --test --test-timeout=60000 --test-concurrency=1 src/modules/orders/tests/cancel-slot-order-race.test.ts",
     "test:orders:tenant-requested": "node --conditions=react-server --import tsx --test --test-timeout=60000 --test-concurrency=1 src/modules/orders/tests/tenant-requested-order-mutations.test.ts",
     "test:orders:requested-guards": "node --conditions=react-server --import tsx --test --test-timeout=60000 --test-concurrency=1 src/modules/orders/tests/requested-lifecycle-guards.test.ts",
+    "test:orders:requested-race": "node --conditions=react-server --import tsx --test --test-timeout=60000 --test-concurrency=1 src/modules/orders/tests/requested-lifecycle-race.test.ts",
+    "test:orders:ui-actions": "node --import tsx --test --test-concurrency=1 src/modules/orders/tests/orders-lifecycle-ui-actions.test.ts",
     "test:checkout:slot-request": "node --conditions=react-server --import tsx --test --test-timeout=60000 --test-concurrency=1 src/modules/checkout/tests/slot-checkout-requested-order.test.ts",
+    "test:checkout": "npm run test:checkout:slot-request",
+    "test:orders": "npm run test:orders:tenant-requested && npm run test:orders:requested-guards && npm run test:orders:cancel-race && npm run test:orders:requested-race && npm run test:orders:ui-actions",
+    "test:email:order-request-lifecycle": "node --import tsx --test --test-concurrency=1 src/modules/email/templates/order-request-lifecycle-copy.test.ts",
+    "test:booking-request-lifecycle": "npm run test:checkout && npm run test:orders && npm run test:email:order-request-lifecycle && npm run test:i18n:messages",
     "test:i18n:messages": "node --import tsx ./src/scripts/i18n-check.ts",
     "test:support-chat:phase1": "node --conditions=react-server --import tsx ./src/scripts/run-support-chat-phase1-tests.ts"
   },
