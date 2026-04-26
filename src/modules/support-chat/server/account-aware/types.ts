@@ -64,6 +64,7 @@ export type SupportAccountPaymentReferenceInput = {
 };
 
 export type SupportAccountOrderServiceStatusCategory =
+  | "requested"
   | "scheduled"
   | "completed"
   | "accepted"
@@ -102,6 +103,7 @@ export type SupportAccountCancellationBlockReason =
   | "unknown";
 
 export type SupportAccountNextStepKey =
+  | "await_provider_confirmation"
   | "view_orders"
   | "view_invoice"
   | "pay_invoice"

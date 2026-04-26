@@ -1,6 +1,6 @@
 ---
 id: support-faq
-version: support-faq-2026-04-21
+version: support-faq-2026-04-26
 locale: en
 sourceType: operational-guidance
 ---
@@ -21,9 +21,9 @@ Support chat should explain the general rule and then direct the user to the rig
 
 ## faq-customer-start
 
-Customers usually start by creating an account, completing their profile, browsing providers, selecting available booking slots, choosing a service for each selected slot, adding a payment method when required, accepting Terms of Use, and creating the order.
+Customers usually start by creating an account, completing their profile, browsing providers, selecting available booking slots, choosing a service for each selected slot, adding a payment method when required, accepting Terms of Use, and submitting a booking request.
 
-The current booking flow creates the order first. Payment is handled later in the service lifecycle when payment is requested.
+The current booking flow creates a booking request first. The provider must confirm the request before it becomes a scheduled booking. Payment is handled later in the service lifecycle when payment is requested.
 
 ## faq-provider-start
 

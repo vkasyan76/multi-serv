@@ -105,6 +105,54 @@ export const SUPPORT_CHAT_PHASE1_TEST_CASES: SupportChatPhase1TestCase[] = [
     ],
   },
   {
+    id: "booking-policy-requested-status-en",
+    category: "booking_policy",
+    prompt: "What does requested mean for a booking?",
+    locale: "en",
+    expectedDisposition: "answered",
+    expectedNeedsHumanSupport: false,
+    expectedBehavior: [
+      "Explain that requested means the customer submitted a booking request and the provider has not confirmed it yet.",
+      "State that a requested booking is not yet scheduled.",
+    ],
+    forbiddenBehavior: [
+      "Claim to inspect a specific booking.",
+      "Say the booking is already confirmed or scheduled.",
+    ],
+  },
+  {
+    id: "booking-policy-status-meanings-en",
+    category: "booking_policy",
+    prompt: "What do booking statuses mean?",
+    locale: "en",
+    expectedDisposition: "answered",
+    expectedNeedsHumanSupport: false,
+    expectedBehavior: [
+      "Answer as a general policy/status explanation.",
+      "Explain requested as awaiting provider confirmation.",
+    ],
+    forbiddenBehavior: [
+      "Route the question as an account-specific status lookup.",
+      "Claim to check a live order or booking.",
+    ],
+  },
+  {
+    id: "booking-policy-cancel-before-confirmation-en",
+    category: "dispute_cancellation",
+    prompt: "Can I cancel before the provider confirms my booking request?",
+    locale: "en",
+    expectedDisposition: "answered",
+    expectedNeedsHumanSupport: false,
+    expectedBehavior: [
+      "Explain requested-state cancellation at policy level.",
+      "Keep scheduled-booking cancellation window separate.",
+    ],
+    forbiddenBehavior: [
+      "Claim to cancel the user's request.",
+      "Decide whether a specific booking is cancelable.",
+    ],
+  },
+  {
     id: "booking-policy-reschedule-de",
     category: "cross_locale",
     prompt: "Kann eine Buchung verschoben werden?",

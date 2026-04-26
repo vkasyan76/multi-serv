@@ -4,11 +4,14 @@ Phase 2 adds limited account-aware support helpers to the existing support-chat
 system. It must remain backend-governed: the model does not get broad database
 access, broad search capability, tool-calling, or action permissions.
 
-## Current Commit Scope
+## Current Contract Scope
 
-This document belongs to Commit 1 only.
+This document started as Block 13 Commit 1 and is amended by the booking
+request / tenant confirmation bridge commit so future account-aware helpers use
+the corrected lifecycle.
 
-Commit 1 defines contracts, types, versioning, and boundaries. It must not add:
+This contract defines types, versioning, and boundaries. Contract updates must
+not add:
 
 - database reads
 - helper implementation
@@ -112,6 +115,14 @@ Allowed output fields include:
 - relevant safe dates
 - next-step copy key
 - short support-safe explanation only if needed later
+
+Order/service status categories include `requested`. A requested order means
+the customer submitted a booking request, the provider has not confirmed it yet,
+and the booking should not be described as scheduled.
+
+When a helper DTO reports `requested`, the preferred next-step key is
+`await_provider_confirmation` unless cancellation eligibility or another more
+specific safe next step applies.
 
 DTOs must not expose:
 
