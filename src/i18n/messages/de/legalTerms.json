@@ -11,15 +11,15 @@
   },
   "section2": {
     "title": "2. Buchungsablauf",
-    "p1": "Buchungen reservieren ein Zeitfenster bei einem Anbieter. Die Plattform verwendet die folgenden Lebenszykluskonzepte:",
+    "p1": "Eine Kundenbuchung erstellt zunächst eine Buchungsanfrage. Der Anbieter muss die Anfrage bestätigen, bevor die Buchung geplant wird. Angefragte Zeitfenster sind für andere Kunden blockiert, während sie auf die Bestätigung des Anbieters warten. Die Plattform verwendet die folgenden Lebenszykluskonzepte:",
     "service_status_label": "Servicestatus (Systemwerte):",
     "payment_status_label": "Zahlungsstatus (Systemwerte):"
   },
   "section3": {
     "title": "3. Stornierungen",
-    "p1": "Stornierungen können nur innerhalb des jeweils geltenden Stornierungsfensters zulässig sein. Standardmäßig gilt auf der Plattform:",
+    "p1": "Ein Kunde kann eine Buchungsanfrage vor der Bestätigung durch den Anbieter stornieren. Nachdem ein Anbieter die Anfrage bestätigt hat und die Buchung geplant ist, können Stornierungen nur innerhalb des jeweils geltenden Stornierungsfensters zulässig sein. Standardmäßig gilt auf der Plattform:",
     "cancellation_window": "Stornierungsfenster: {hours} Stunden vor dem Beginn der Buchung (Standard).",
-    "p2": "Spezifische Stornierungsbedingungen können außerdem vom Anbieter, von der Leistungskategorie und von zwingendem Verbraucherrecht abhängen."
+    "p2": "Ein Anbieter kann eine Buchungsanfrage ablehnen; dadurch werden die angefragten Zeitfenster wieder freigegeben. Spezifische Stornierungsbedingungen können außerdem vom Anbieter, von der Leistungskategorie und von zwingendem Verbraucherrecht abhängen."
   },
   "section4": {
     "title": "4. Bestätigungen, Streitfälle und Fristen",

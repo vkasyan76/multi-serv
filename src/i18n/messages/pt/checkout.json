@@ -14,7 +14,8 @@
     "slot_id": "ID do horário",
     "pick_service": "Escolha um serviço",
     "cancel": "Cancelar",
-    "book": "Reservar"
+    "book": "Reservar",
+    "request_booking": "Solicitar reserva"
   },
   "customer": {
     "invoice_address": "Endereço de faturação",
@@ -35,7 +36,8 @@
     "card_saved": "Cartão guardado.",
     "card_setup_finalize_failed": "Não foi possível concluir a configuração do cartão.",
     "start_setup_failed": "Não foi possível iniciar a configuração.",
-    "no_charge_at_booking": "Não haverá cobrança no momento da reserva. O valor será cobrado após a conclusão do serviço ser aceite (ou aceite automaticamente)."
+    "no_charge_at_booking": "Não haverá cobrança no momento da reserva. O valor será cobrado após a conclusão do serviço ser aceite (ou aceite automaticamente).",
+    "provider_confirmation_note": "O prestador deve confirmar o seu pedido antes de a reserva ser agendada."
   },
   "terms": {
     "title": "Termos de utilização",
@@ -57,7 +59,8 @@
     "checkout_failed": "Não foi possível concluir a reserva. Tente novamente.",
     "checkout_started_failed": "Não foi possível iniciar o checkout. Tente novamente.",
     "order_created_pay_later": "Encomenda criada. O pagamento acontecerá mais tarde (após a aceitação).",
-    "payment_received_finalizing": "Pagamento recebido. A finalizar a sua reserva..."
+    "payment_received_finalizing": "Pagamento recebido. A finalizar a sua reserva...",
+    "booking_request_sent": "Pedido de reserva enviado. O prestador irá confirmá-lo ou recusá-lo."
   },
   "errors": {
     "generic": "Não foi possível concluir a reserva. Tente novamente.",

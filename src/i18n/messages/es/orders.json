@@ -17,9 +17,12 @@
     "service": "Servicio",
     "expand": "Expandir pedido",
     "collapse": "Contraer pedido",
-    "open_menu": "Abrir menú"
+    "open_menu": "Abrir menú",
+    "awaiting_provider_confirmation": "Pendiente de confirmación del proveedor",
+    "awaiting_your_confirmation": "Pendiente de tu confirmación"
   },
   "status": {
+    "requested": "Solicitado",
     "scheduled": "Programado",
     "accepted": "Aceptado",
     "completed": "Completado",
@@ -36,7 +39,10 @@
     "pay": "Pagar",
     "view_invoice": "Ver factura",
     "write_review": "Escribir una reseña",
-    "cancel_order": "Cancelar pedido"
+    "cancel_order": "Cancelar pedido",
+    "cancel_request": "Cancelar solicitud",
+    "confirm_request": "Confirmar solicitud",
+    "decline_request": "Rechazar solicitud"
   },
   "tooltips": {
     "request_payment": "Puede solicitar el pago después de que el cliente haya aceptado el servicio.",
@@ -60,7 +66,18 @@
     "cancel_placeholder_tenant": "Añade un motivo breve para la cancelación...",
     "confirm_cancel": "Confirmar cancelación",
     "submitting_cancel": "Cancelando...",
-    "cancel_error_short_reason": "El motivo es opcional, pero si se proporciona debe tener al menos 3 caracteres."
+    "cancel_error_short_reason": "El motivo es opcional, pero si se proporciona debe tener al menos 3 caracteres.",
+    "cancel_request_title_customer": "¿Cancelar esta solicitud de reserva?",
+    "cancel_request_body_customer": "Esto cancela tu solicitud y libera las franjas seleccionadas.",
+    "confirm_request_title": "¿Confirmar esta solicitud de reserva?",
+    "confirm_request_body": "Esto programa la reserva solicitada y mantiene las franjas seleccionadas asignadas al cliente.",
+    "confirm_request": "Confirmar solicitud",
+    "decline_request_title": "¿Rechazar esta solicitud de reserva?",
+    "decline_request_body": "Esto cancela la solicitud y libera las franjas seleccionadas para que vuelvan a estar disponibles.",
+    "decline_request": "Rechazar solicitud",
+    "decline_reason": "Motivo (opcional)",
+    "decline_placeholder": "Añade un motivo breve si ayuda...",
+    "decline_error_short_reason": "El motivo es opcional, pero si se proporciona debe tener al menos 3 caracteres."
   },
   "states": {
     "load_error": "No se pudieron cargar los pedidos.",
@@ -87,6 +104,17 @@
     "cancel_payment_locked": "Este pedido ya no se puede cancelar porque el pago o la facturación ya han comenzado.",
     "cancel_already_canceled": "Este pedido ya estaba cancelado.",
     "cancel_invalid_slots": "Este pedido no se puede cancelar porque sus franjas horarias ya no son válidas.",
-    "cancel_release_failed": "El pedido fue cancelado, pero no se pudo verificar completamente la liberación de las franjas."
+    "cancel_release_failed": "El pedido fue cancelado, pero no se pudo verificar completamente la liberación de las franjas.",
+    "request_canceled": "Solicitud de reserva cancelada.",
+    "request_confirmed": "Solicitud de reserva confirmada.",
+    "request_declined": "Solicitud de reserva rechazada.",
+    "request_decision_failed": "No se pudo actualizar la solicitud de reserva. Inténtelo de nuevo."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "Este pedido no usa el ciclo de reservas por franjas.",
+    "already_canceled": "Este pedido ya estaba cancelado.",
+    "not_awaiting_tenant_confirmation": "Este pedido no está esperando la confirmación del proveedor.",
+    "slots_not_awaiting_confirmation": "Las franjas seleccionadas no están esperando la confirmación del proveedor.",
+    "confirm_all_requested_failed": "No se pudieron confirmar todas las franjas solicitadas. Inténtelo de nuevo."
   }
 }

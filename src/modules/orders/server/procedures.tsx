@@ -4,13 +4,19 @@ import { createTRPCRouter, baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import type { Order, Booking, Tenant } from "@/payload-types";
-import type { Where } from "payload";
 import { z } from "zod";
 import { resolvePayloadUserId } from "./identity";
 import {
   getSlotOrderCancelability,
   type SlotOrderCancellationBlockReason,
 } from "./order-cancelability";
+import {
+  loadOrderSlotsForRelease,
+  releaseOrderSlotsToAvailable,
+  isReleasedOrderSlot,
+  type OrderSlotReleaseMode,
+  type OrderSlotReleaseSnapshot,
+} from "./order-slot-release";
 import {
   listMineSlotLifecycle as listMineSlotLifecycleImpl,
   listForMyTenantSlotLifecycle as listForMyTenantSlotLifecycleImpl,
@@ -65,24 +71,6 @@ function relId(
     return value.id;
   }
   return null;
-}
-
-function buildCancelableSlotReleaseWhere(
-  slotIds: string[],
-  orderUserId: string,
-): Where {
-  return {
-    and: [
-      { id: { in: slotIds } },
-      { customer: { equals: orderUserId } },
-      {
-        or: [
-          { status: { equals: "booked" } },
-          { status: { equals: "confirmed" } },
-        ],
-      },
-    ],
-  };
 }
 
 function cancelConflictMessage(
@@ -172,24 +160,99 @@ async function assertTenantOwnsOrder(
   }
 }
 
-async function loadReleasableOrderSlots(
-  ctx: TRPCContext,
-  slotIds: string[],
-  orderUserId: string,
+function toOrderSlotIds(order: Pick<Order, "slots">): string[] {
+  return [
+    ...new Set(
+      (order.slots ?? [])
+        .map((slot) => (typeof slot === "string" ? slot : slot?.id))
+        .filter(
+          (value): value is string =>
+            typeof value === "string" && value.length > 0,
+        ),
+    ),
+  ];
+}
+
+function requestedTenantDecisionConflictMessage(order: CancelableSlotOrder) {
+  if (order.lifecycleMode !== "slot") {
+    return "orders.errors.not_slot_lifecycle_order";
+  }
+
+  if (order.status === "canceled") {
+    return "orders.errors.already_canceled";
+  }
+
+  return "orders.errors.not_awaiting_tenant_confirmation";
+}
+
+function assertRequestedTenantDecisionAllowed(order: CancelableSlotOrder) {
+  if (
+    order.lifecycleMode !== "slot" ||
+    order.status === "canceled" ||
+    order.serviceStatus !== "requested"
+  ) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: requestedTenantDecisionConflictMessage(order),
+    });
+  }
+}
+
+function assertRequestedDecisionSlots(
+  slots: OrderSlotReleaseSnapshot[],
+  expectedCount: number,
 ) {
-  if (!slotIds.length) return [];
+  if (slots.length !== expectedCount) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "orders.errors.slots_not_awaiting_confirmation",
+    });
+  }
 
-  const res = await ctx.db.find({
-    collection: "bookings",
-    where: buildCancelableSlotReleaseWhere(slotIds, orderUserId),
-    limit: slotIds.length,
-    depth: 0,
-    overrideAccess: true,
-  });
+  const allRequested = slots.every(
+    (slot) => slot.status === "confirmed" && slot.serviceStatus === "requested",
+  );
 
-  return (res.docs ?? []) as Array<
-    DocWithId<Pick<Booking, "id" | "status" | "customer">>
-  >;
+  if (!allRequested) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "orders.errors.slots_not_awaiting_confirmation",
+    });
+  }
+}
+
+async function claimRequestedOrderServiceStatus(
+  ctx: TRPCContext,
+  order: CancelableSlotOrder,
+  nextServiceStatus: "scheduled",
+): Promise<boolean> {
+  const ordersModel = getOrdersModel(ctx);
+  if (!ordersModel) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "orders.errors.cancel_not_allowed",
+    });
+  }
+
+  const updated = await ordersModel.findOneAndUpdate(
+    {
+      _id: order.id,
+      lifecycleMode: "slot",
+      status: order.status,
+      serviceStatus: "requested",
+      canceledAt: order.canceledAt ?? null,
+      canceledByRole: order.canceledByRole ?? null,
+      cancelReason: order.cancelReason ?? null,
+    },
+    {
+      $set: {
+        serviceStatus: nextServiceStatus,
+      },
+    },
+    { new: true },
+  );
+
+  return !!updated;
 }
 
 async function claimSlotOrderCancellation(
@@ -211,6 +274,7 @@ async function claimSlotOrderCancellation(
     {
       _id: order.id,
       status: order.status,
+      serviceStatus: order.serviceStatus,
       canceledAt: order.canceledAt ?? null,
       canceledByRole: order.canceledByRole ?? null,
       cancelReason: order.cancelReason ?? null,
@@ -233,59 +297,21 @@ async function releaseCanceledOrderSlots(
   ctx: TRPCContext,
   slotIds: string[],
   orderUserId: string,
+  mode: OrderSlotReleaseMode = "preserve_lifecycle",
 ): Promise<void> {
-  if (!slotIds.length) return;
-
-  // Mirrors existing release paths:
-  // - legacy checkout rollback releases "booked" slots
-  // - slot checkout promotes slots to "confirmed"
-  const updateRes = await ctx.db.update({
-    collection: "bookings",
-    where: buildCancelableSlotReleaseWhere(slotIds, orderUserId),
-    data: {
-      status: "available",
-      customer: null,
-    },
-    overrideAccess: true,
+  await releaseOrderSlotsToAvailable(ctx, {
+    slotIds,
+    orderUserId,
+    mode,
   });
-
-  let releasedCount = Array.isArray(updateRes?.docs)
-    ? updateRes.docs.length
-    : null;
-
-  if (releasedCount === null) {
-    const verify = await ctx.db.find({
-      collection: "bookings",
-      where: {
-        and: [
-          { id: { in: slotIds } },
-          { status: { equals: "available" } },
-        ],
-      },
-      limit: slotIds.length,
-      depth: 0,
-      overrideAccess: true,
-    });
-
-    releasedCount = (verify.docs ?? []).filter(
-      // Cleared booking ownership is stored as null in the existing release paths.
-      (booking) => relId((booking as Pick<Booking, "customer">).customer) == null,
-    ).length;
-  }
-
-  if (releasedCount !== slotIds.length) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "orders.errors.cancel_release_failed",
-    });
-  }
 }
 
 async function rollbackCanceledOrderState(
   ctx: TRPCContext,
   order: CancelableSlotOrder,
-  releaseSnapshot: Array<DocWithId<Pick<Booking, "id" | "status" | "customer">>>,
+  releaseSnapshot: OrderSlotReleaseSnapshot[],
   attempt: CancelAttemptSnapshot,
+  releaseMode: OrderSlotReleaseMode,
 ) {
   // Backup compensation for the winning cancel attempt only.
   const currentOrder = (await ctx.db.findByID({
@@ -319,7 +345,7 @@ async function rollbackCanceledOrderState(
         id: booking.id,
         depth: 0,
         overrideAccess: true,
-      })) as DocWithId<Pick<Booking, "id" | "status" | "customer">> | null;
+      })) as OrderSlotReleaseSnapshot | null;
 
       return { snapshot: booking, current };
     }),
@@ -327,11 +353,8 @@ async function rollbackCanceledOrderState(
 
   // Abort rollback if any slot no longer matches the released shape. This keeps
   // compensation all-or-nothing at the app level and avoids mixed state.
-  const allBookingsStillReleased = currentBookings.every(
-    ({ current }) =>
-      !!current &&
-      current.status === "available" &&
-      relId(current.customer) == null,
+  const allBookingsStillReleased = currentBookings.every(({ current }) =>
+    isReleasedOrderSlot(current, releaseMode),
   );
 
   if (!allBookingsStillReleased) {
@@ -351,6 +374,14 @@ async function rollbackCanceledOrderState(
         data: {
           status: snapshot.status,
           customer: relId(snapshot.customer),
+          service: relId(snapshot.service),
+          serviceStatus: snapshot.serviceStatus ?? null,
+          paymentStatus: snapshot.paymentStatus ?? null,
+          serviceSnapshot: snapshot.serviceSnapshot ?? undefined,
+          serviceCompletedAt: snapshot.serviceCompletedAt ?? null,
+          acceptedAt: snapshot.acceptedAt ?? null,
+          disputedAt: snapshot.disputedAt ?? null,
+          disputeReason: snapshot.disputeReason ?? null,
         },
         overrideAccess: true,
         depth: 0,
@@ -388,8 +419,16 @@ async function cancelSlotOrder(
   order: CancelableSlotOrder,
   canceledByRole: "customer" | "tenant",
   reason?: string,
+  options: { allowRequested?: boolean } = {},
 ) {
-  const cancelability = await getSlotOrderCancelability(ctx.db, order);
+  const cancelability = await getSlotOrderCancelability(
+    ctx.db,
+    order,
+    new Date(),
+    {
+      allowRequested: options.allowRequested === true,
+    },
+  );
   if (!cancelability.cancelable) {
     throw new TRPCError({
       code: "CONFLICT",
@@ -400,7 +439,7 @@ async function cancelSlotOrder(
   const orderUserId = relId(order.user);
   if (!orderUserId) throw new TRPCError({ code: "BAD_REQUEST" });
 
-  const releaseSnapshot = await loadReleasableOrderSlots(
+  const releaseSnapshot = await loadOrderSlotsForRelease(
     ctx,
     cancelability.slotIds,
     orderUserId,
@@ -421,6 +460,10 @@ async function cancelSlotOrder(
     cancelReason: cancelReason ?? null,
   };
   const attemptId = `${canceledByRole}:${canceledAt}`;
+  const releaseMode: OrderSlotReleaseMode =
+    order.serviceStatus === "requested"
+      ? "clear_request_state"
+      : "preserve_lifecycle";
 
   logCancelDebug({
     attemptId,
@@ -449,6 +492,8 @@ async function cancelSlotOrder(
     const latestCancelability = await getSlotOrderCancelability(
       ctx.db,
       latestOrder,
+      new Date(),
+      { allowRequested: options.allowRequested === true },
     );
 
     logCancelDebug({
@@ -473,7 +518,12 @@ async function cancelSlotOrder(
       step: "before-release",
       slotIds: cancelability.slotIds,
     });
-    await releaseCanceledOrderSlots(ctx, cancelability.slotIds, orderUserId);
+    await releaseCanceledOrderSlots(
+      ctx,
+      cancelability.slotIds,
+      orderUserId,
+      releaseMode,
+    );
     logCancelDebug({
       attemptId,
       orderId: order.id,
@@ -484,12 +534,17 @@ async function cancelSlotOrder(
       attemptId,
       orderId: order.id,
       step: "release-failed",
-      error:
-        error instanceof Error ? error.message : "unknown_release_error",
+      error: error instanceof Error ? error.message : "unknown_release_error",
     });
     // Best-effort compensation keeps retries possible when slot release fails.
     try {
-      await rollbackCanceledOrderState(ctx, order, releaseSnapshot, attempt);
+      await rollbackCanceledOrderState(
+        ctx,
+        order,
+        releaseSnapshot,
+        attempt,
+        releaseMode,
+      );
     } catch (rollbackErr) {
       if (process.env.NODE_ENV !== "production") {
         console.error(
@@ -512,6 +567,209 @@ async function cancelSlotOrder(
     status: "canceled" as const,
     canceledAt,
     slotIds: cancelability.slotIds,
+  };
+}
+
+async function updateRequestedOrderSlotsToScheduled(
+  ctx: TRPCContext,
+  slotIds: string[],
+  orderUserId: string,
+) {
+  const updateRes = await ctx.db.update({
+    collection: "bookings",
+    where: {
+      and: [
+        { id: { in: slotIds } },
+        { customer: { equals: orderUserId } },
+        { status: { equals: "confirmed" } },
+        { serviceStatus: { equals: "requested" } },
+      ],
+    },
+    data: {
+      serviceStatus: "scheduled",
+    },
+    overrideAccess: true,
+  });
+
+  let updatedCount = Array.isArray(updateRes?.docs)
+    ? updateRes.docs.length
+    : null;
+
+  if (updatedCount === null) {
+    const verify = await ctx.db.find({
+      collection: "bookings",
+      where: {
+        and: [
+          { id: { in: slotIds } },
+          { customer: { equals: orderUserId } },
+          { status: { equals: "confirmed" } },
+          { serviceStatus: { equals: "scheduled" } },
+        ],
+      },
+      limit: slotIds.length,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    updatedCount = verify.docs?.length ?? 0;
+  }
+
+  if (updatedCount !== slotIds.length) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "orders.errors.confirm_all_requested_failed",
+    });
+  }
+}
+
+async function rollbackRequestedOrderConfirmation(
+  ctx: TRPCContext,
+  order: CancelableSlotOrder,
+  slotSnapshots: OrderSlotReleaseSnapshot[],
+) {
+  const currentOrder = (await ctx.db.findByID({
+    collection: "orders",
+    id: order.id,
+    depth: 0,
+    overrideAccess: true,
+  })) as CancelableSlotOrder | null;
+
+  if (
+    !currentOrder ||
+    currentOrder.status !== order.status ||
+    currentOrder.serviceStatus !== "scheduled"
+  ) {
+    return;
+  }
+
+  const currentBookings = await Promise.all(
+    slotSnapshots.map(async (slot) => {
+      const current = (await ctx.db.findByID({
+        collection: "bookings",
+        id: slot.id,
+        depth: 0,
+        overrideAccess: true,
+      })) as OrderSlotReleaseSnapshot | null;
+
+      return { snapshot: slot, current };
+    }),
+  );
+
+  const toRestore = currentBookings.filter(
+    ({ snapshot, current }) =>
+      !!current &&
+      current.status === "confirmed" &&
+      relId(current.customer) === relId(order.user) &&
+      current.serviceStatus === "scheduled" &&
+      snapshot.serviceStatus === "requested",
+  );
+
+  await Promise.all(
+    toRestore.map(({ snapshot }) =>
+      ctx.db.update({
+        collection: "bookings",
+        id: snapshot.id,
+        data: {
+          serviceStatus: snapshot.serviceStatus ?? null,
+        },
+        overrideAccess: true,
+        depth: 0,
+      }),
+    ),
+  );
+
+  await ctx.db.update({
+    collection: "orders",
+    id: order.id,
+    data: {
+      serviceStatus: order.serviceStatus,
+    },
+    overrideAccess: true,
+    depth: 0,
+  });
+}
+
+async function declineRequestedSlotOrder(
+  ctx: TRPCContext,
+  order: CancelableSlotOrder,
+  reason?: string,
+) {
+  assertRequestedTenantDecisionAllowed(order);
+
+  const slotIds = toOrderSlotIds(order);
+  const orderUserId = relId(order.user);
+  if (!slotIds.length || !orderUserId) {
+    throw new TRPCError({ code: "BAD_REQUEST" });
+  }
+
+  const releaseSnapshot = await loadOrderSlotsForRelease(
+    ctx,
+    slotIds,
+    orderUserId,
+  );
+  assertRequestedDecisionSlots(releaseSnapshot, slotIds.length);
+
+  const canceledAt = new Date().toISOString();
+  const cancelReason = reason?.trim() ? reason.trim() : undefined;
+  const attempt: CancelAttemptSnapshot = {
+    canceledAt,
+    canceledByRole: "tenant",
+    cancelReason: cancelReason ?? null,
+  };
+
+  const claimed = await claimSlotOrderCancellation(
+    ctx,
+    order,
+    canceledAt,
+    "tenant",
+    cancelReason,
+  );
+
+  if (!claimed) {
+    const latestOrder = await loadOrderForCancellation(ctx, order.id);
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: requestedTenantDecisionConflictMessage(latestOrder),
+    });
+  }
+
+  try {
+    await releaseOrderSlotsToAvailable(ctx, {
+      slotIds,
+      orderUserId,
+      mode: "clear_request_state",
+    });
+  } catch (error) {
+    try {
+      await rollbackCanceledOrderState(
+        ctx,
+        order,
+        releaseSnapshot,
+        attempt,
+        "clear_request_state",
+      );
+    } catch (rollbackErr) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error(
+          "[orders] rollback after requested decline release failed",
+          {
+            orderId: order.id,
+            releaseSnapshotIds: releaseSnapshot.map((booking) => booking.id),
+            canceledAt,
+          },
+          rollbackErr,
+        );
+      }
+    }
+    throw error;
+  }
+
+  return {
+    ok: true,
+    orderId: order.id,
+    status: "canceled" as const,
+    canceledAt,
+    slotIds,
   };
 }
 
@@ -543,6 +801,28 @@ async function sendCanceledOrderEmails(params: {
   await sendCanceledOrderEmailsBestEffort(params);
 }
 
+async function sendOrderRequestConfirmedEmail(params: {
+  ctx: TRPCContext;
+  orderId: string;
+}) {
+  if (process.env.SKIP_ORDER_EMAILS === "1") return;
+  const { sendOrderRequestConfirmedEmailBestEffort } = await import(
+    "./order-request-decision-emails"
+  );
+  await sendOrderRequestConfirmedEmailBestEffort(params);
+}
+
+async function sendOrderRequestDeclinedEmail(params: {
+  ctx: TRPCContext;
+  orderId: string;
+}) {
+  if (process.env.SKIP_ORDER_EMAILS === "1") return;
+  const { sendOrderRequestDeclinedEmailBestEffort } = await import(
+    "./order-request-decision-emails"
+  );
+  await sendOrderRequestDeclinedEmailBestEffort(params);
+}
+
 export const ordersRouter = createTRPCRouter({
   customerCancelSlotOrder: baseProcedure
     .input(
@@ -562,7 +842,15 @@ export const ordersRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      const result = await cancelSlotOrder(ctx, order, "customer", input.reason);
+      const result = await cancelSlotOrder(
+        ctx,
+        order,
+        "customer",
+        input.reason,
+        {
+          allowRequested: true,
+        },
+      );
       await sendCanceledOrderEmails({
         ctx,
         orderId: result.orderId,
@@ -591,6 +879,104 @@ export const ordersRouter = createTRPCRouter({
         ctx,
         orderId: result.orderId,
         canceledByRole: "tenant",
+      });
+      return result;
+    }),
+
+  tenantConfirmSlotOrder: baseProcedure
+    .input(
+      z.object({
+        orderId: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+      const order = await loadOrderForCancellation(ctx, input.orderId);
+
+      await assertTenantOwnsOrder(ctx, payloadUserId, order);
+      assertRequestedTenantDecisionAllowed(order);
+
+      const slotIds = toOrderSlotIds(order);
+      const orderUserId = relId(order.user);
+      if (!slotIds.length || !orderUserId) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+
+      const slotSnapshots = await loadOrderSlotsForRelease(
+        ctx,
+        slotIds,
+        orderUserId,
+      );
+      assertRequestedDecisionSlots(slotSnapshots, slotIds.length);
+
+      const claimed = await claimRequestedOrderServiceStatus(
+        ctx,
+        order,
+        "scheduled",
+      );
+
+      if (!claimed) {
+        const latestOrder = await loadOrderForCancellation(ctx, order.id);
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: requestedTenantDecisionConflictMessage(latestOrder),
+        });
+      }
+
+      try {
+        await updateRequestedOrderSlotsToScheduled(ctx, slotIds, orderUserId);
+      } catch (error) {
+        try {
+          await rollbackRequestedOrderConfirmation(ctx, order, slotSnapshots);
+        } catch (rollbackErr) {
+          if (process.env.NODE_ENV !== "production") {
+            console.error(
+              "[orders] rollback after requested confirmation failed",
+              {
+                orderId: order.id,
+                slotIds,
+              },
+              rollbackErr,
+            );
+          }
+        }
+        throw error;
+      }
+
+      await sendOrderRequestConfirmedEmail({
+        ctx,
+        orderId: order.id,
+      });
+
+      return {
+        ok: true,
+        orderId: order.id,
+        serviceStatus: "scheduled" as const,
+        slotIds,
+      };
+    }),
+
+  tenantDeclineSlotOrder: baseProcedure
+    .input(
+      z.object({
+        orderId: z.string().min(1),
+        reason: z.string().trim().min(3).max(500).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const payloadUserId = await resolvePayloadUserId(ctx, ctx.userId);
+      const order = await loadOrderForCancellation(ctx, input.orderId);
+
+      await assertTenantOwnsOrder(ctx, payloadUserId, order);
+
+      const result = await declineRequestedSlotOrder(ctx, order, input.reason);
+      await sendOrderRequestDeclinedEmail({
+        ctx,
+        orderId: result.orderId,
       });
       return result;
     }),

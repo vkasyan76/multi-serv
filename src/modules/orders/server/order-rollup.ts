@@ -71,6 +71,7 @@ export type AdminOrderCustomerOption = {
 };
 
 function normalizeServiceStatus(ss: unknown): ServiceStatus {
+  if (ss === "requested") return ss;
   if (ss === "completed" || ss === "accepted" || ss === "disputed") return ss;
   return "scheduled";
 }
@@ -667,6 +668,7 @@ export async function recomputeOrdersForBookingId(
     const allCompleted = statuses.every(
       (s) => s === "completed" || s === "accepted",
     );
+    const anyRequested = statuses.includes("requested");
 
     const next = anyDisputed
       ? "disputed"
@@ -674,7 +676,9 @@ export async function recomputeOrdersForBookingId(
         ? "accepted"
         : allCompleted
           ? "completed"
-          : "scheduled";
+          : anyRequested
+            ? "requested"
+            : "scheduled";
 
     const nowIso = new Date().toISOString();
 

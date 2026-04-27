@@ -3,9 +3,11 @@ import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
+  Check,
   ChevronDown,
   ChevronRight,
   MoreHorizontal,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
@@ -77,6 +79,7 @@ import {
 } from "./orders-lifecycle-shared";
 
 type Mode = "customer" | "tenant";
+type RequestDecision = "confirm" | "decline";
 
 type Props = {
   mode: Mode;
@@ -129,6 +132,13 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     string | null
   >(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [requestDecisionDialogOpen, setRequestDecisionDialogOpen] =
+    useState(false);
+  const [pendingRequestDecision, setPendingRequestDecision] = useState<{
+    orderId: string;
+    type: RequestDecision;
+  } | null>(null);
+  const [declineReason, setDeclineReason] = useState("");
 
   const getStatusLabel = (
     value:
@@ -138,6 +148,8 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
       | undefined,
   ) => {
     switch (normalizeServiceStatus(value)) {
+      case "requested":
+        return tOrders("status.requested");
       case "completed":
         return tOrders("status.completed");
       case "accepted":
@@ -176,6 +188,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     return undefined;
   };
 
+  const findOrder = (orderId: string) =>
+    (orders ?? []).find((order) => order.id === orderId);
+
   // updating the calendar when service status changes:
   const broadcastBookingUpdated = (tenantSlug: string, bookingId: string) => {
     if (typeof window === "undefined" || !("BroadcastChannel" in window)) {
@@ -187,6 +202,36 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
         type: "booking:updated",
         tenantSlug,
         ids: [bookingId],
+        ts: Date.now(),
+      });
+      ch.close();
+    } catch {}
+  };
+
+  const broadcastOrderBookingsUpdated = (
+    order: OrdersLifecycleCustomerRow | OrdersLifecycleTenantRow | undefined,
+  ) => {
+    const slotIds = (order?.slots ?? []).map((slot) => slot.id);
+    const tenantSlug =
+      order?.slots
+        ?.find((slot) => slot.serviceSnapshot?.tenantSlug)
+        ?.serviceSnapshot?.tenantSlug ?? undefined;
+
+    if (
+      !tenantSlug ||
+      slotIds.length === 0 ||
+      typeof window === "undefined" ||
+      !("BroadcastChannel" in window)
+    ) {
+      return;
+    }
+
+    try {
+      const ch = new BroadcastChannel(BOOKING_CH);
+      ch.postMessage({
+        type: "booking:updated",
+        tenantSlug,
+        ids: slotIds,
         ts: Date.now(),
       });
       ch.close();
@@ -277,10 +322,37 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     }
   };
 
+  const getRequestDecisionErrorToast = (error: unknown) => {
+    const key =
+      typeof error === "object" && error && "message" in error
+        ? String((error as { message?: unknown }).message ?? "")
+        : "";
+
+    switch (key) {
+      case "orders.errors.already_canceled":
+        return tOrders("errors.already_canceled");
+      case "orders.errors.not_awaiting_tenant_confirmation":
+        return tOrders("errors.not_awaiting_tenant_confirmation");
+      case "orders.errors.slots_not_awaiting_confirmation":
+        return tOrders("errors.slots_not_awaiting_confirmation");
+      case "orders.errors.confirm_all_requested_failed":
+        return tOrders("errors.confirm_all_requested_failed");
+      default:
+        return tOrders("toasts.request_decision_failed");
+    }
+  };
+
   const customerCancelOrder = useMutation({
     ...trpc.orders.customerCancelSlotOrder.mutationOptions(),
-    onSuccess: async () => {
-      toast.success(tOrders("toasts.order_canceled"));
+    onSuccess: async (_data, variables) => {
+      const canceledOrder = (orders ?? []).find(
+        (order) => order.id === variables.orderId,
+      );
+      toast.success(
+        canceledOrder?.serviceStatus === "requested"
+          ? tOrders("toasts.request_canceled")
+          : tOrders("toasts.order_canceled"),
+      );
       setCancelDialogOpen(false);
       setPendingCancelOrderId(null);
       setCancelReason("");
@@ -306,6 +378,41 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     },
     onError: (error) => {
       toast.error(getCancelErrorToast(error));
+    },
+  });
+
+  const tenantConfirmRequest = useMutation({
+    ...trpc.orders.tenantConfirmSlotOrder.mutationOptions(),
+    onSuccess: async (_data, variables) => {
+      const order = findOrder(variables.orderId);
+      toast.success(tOrders("toasts.request_confirmed"));
+      setRequestDecisionDialogOpen(false);
+      setPendingRequestDecision(null);
+      broadcastOrderBookingsUpdated(order);
+      await qc.invalidateQueries({
+        queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
+      });
+    },
+    onError: (error) => {
+      toast.error(getRequestDecisionErrorToast(error));
+    },
+  });
+
+  const tenantDeclineRequest = useMutation({
+    ...trpc.orders.tenantDeclineSlotOrder.mutationOptions(),
+    onSuccess: async (_data, variables) => {
+      const order = findOrder(variables.orderId);
+      toast.success(tOrders("toasts.request_declined"));
+      setRequestDecisionDialogOpen(false);
+      setPendingRequestDecision(null);
+      setDeclineReason("");
+      broadcastOrderBookingsUpdated(order);
+      await qc.invalidateQueries({
+        queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
+      });
+    },
+    onError: (error) => {
+      toast.error(getRequestDecisionErrorToast(error));
     },
   });
 
@@ -344,11 +451,25 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
   const trimmedCancelReason = cancelReason.trim();
   const hasShortCancelReason =
     trimmedCancelReason.length > 0 && trimmedCancelReason.length < 3;
+  const trimmedDeclineReason = declineReason.trim();
+  const hasShortDeclineReason =
+    trimmedDeclineReason.length > 0 && trimmedDeclineReason.length < 3;
   const cancelReasonHintId = hasShortCancelReason
     ? "cancel-reason-helper"
     : undefined;
+  const declineReasonHintId = hasShortDeclineReason
+    ? "decline-reason-helper"
+    : undefined;
   const isCancelPending =
     customerCancelOrder.isPending || tenantCancelOrder.isPending;
+  const isRequestDecisionPending =
+    tenantConfirmRequest.isPending || tenantDeclineRequest.isPending;
+  const pendingCancelOrder = (orders ?? []).find(
+    (order) => order.id === pendingCancelOrderId,
+  );
+  const isPendingCancelRequest =
+    mode === "customer" && pendingCancelOrder?.serviceStatus === "requested";
+  const isDeclineDecision = pendingRequestDecision?.type === "decline";
 
   // Customer-only: fetch payable invoice ids per order so the Pay button can work.
   const invoiceQueries = useQueries({
@@ -444,6 +565,15 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     setCancelDialogOpen(true);
   };
 
+  const openRequestDecisionDialog = (
+    orderId: string,
+    type: RequestDecision,
+  ) => {
+    setPendingRequestDecision({ orderId, type });
+    setDeclineReason("");
+    setRequestDecisionDialogOpen(true);
+  };
+
   const submitDispute = () => {
     if (!pendingDisputeId || disputeSlot.isPending) return;
     const reason = disputeReason.trim();
@@ -468,6 +598,22 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     }
 
     tenantCancelOrder.mutate(payload);
+  };
+
+  const submitRequestDecision = () => {
+    if (!pendingRequestDecision) return;
+    if (isRequestDecisionPending) return;
+
+    if (pendingRequestDecision.type === "confirm") {
+      tenantConfirmRequest.mutate({ orderId: pendingRequestDecision.orderId });
+      return;
+    }
+
+    if (hasShortDeclineReason) return;
+    tenantDeclineRequest.mutate({
+      orderId: pendingRequestDecision.orderId,
+      reason: trimmedDeclineReason ? trimmedDeclineReason : undefined,
+    });
   };
 
   return (
@@ -553,7 +699,9 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
             const isOpen = !!open[o.id];
             const range = getDateRange(o.slots ?? [], locale);
             const isCanceled = o.status === "canceled";
-            const canCancel = canShowSelfCancelAction(o, nowMs);
+            const canCancel = canShowSelfCancelAction(o, nowMs, {
+              allowRequested: mode === "customer",
+            });
 
             const label =
               mode === "customer"
@@ -566,6 +714,8 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
               mode === "tenant" &&
               o.serviceStatus === "accepted" &&
               o.invoiceStatus === "none";
+            const isTenantRequested =
+              !isCanceled && mode === "tenant" && o.serviceStatus === "requested";
             const canPay =
               !isCanceled &&
               mode === "customer" &&
@@ -615,10 +765,25 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                     {isCanceled ? (
                       <CanceledBadge label={tOrders("status.canceled")} />
                     ) : (
-                      <StatusBadge
-                        value={o.serviceStatus}
-                        label={getStatusLabel(o.serviceStatus)}
-                      />
+                      <div className="space-y-1">
+                        <StatusBadge
+                          value={o.serviceStatus}
+                          label={getStatusLabel(o.serviceStatus)}
+                        />
+                        {mode === "customer" &&
+                        o.serviceStatus === "requested" ? (
+                          <div className="text-xs leading-snug text-muted-foreground">
+                            {tOrders(
+                              "table.awaiting_provider_confirmation",
+                            )}
+                          </div>
+                        ) : mode === "tenant" &&
+                          o.serviceStatus === "requested" ? (
+                          <div className="text-xs leading-snug text-amber-700">
+                            {tOrders("table.awaiting_your_confirmation")}
+                          </div>
+                        ) : null}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell>
@@ -630,7 +795,34 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
 
                   <TableCell className="text-right">
                     <div className="flex justify-end items-center gap-2">
-                      {mode === "tenant" ? (
+                      {isTenantRequested ? (
+                        <div className="flex flex-col items-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="neubrutalism"
+                            className="w-full max-w-[160px]"
+                            onClick={() =>
+                              openRequestDecisionDialog(o.id, "confirm")
+                            }
+                            disabled={isRequestDecisionPending}
+                          >
+                            <Check className="mr-1.5 h-4 w-4" />
+                            {tOrders("actions.confirm_request")}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full max-w-[160px]"
+                            onClick={() =>
+                              openRequestDecisionDialog(o.id, "decline")
+                            }
+                            disabled={isRequestDecisionPending}
+                          >
+                            <X className="mr-1.5 h-4 w-4" />
+                            {tOrders("actions.decline_request")}
+                          </Button>
+                        </div>
+                      ) : mode === "tenant" ? (
                         o.invoiceStatus === "none" ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -697,7 +889,10 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
                                   tenantCancelOrder.isPending
                                 }
                               >
-                                {tOrders("actions.cancel_order")}
+                                {mode === "customer" &&
+                                o.serviceStatus === "requested"
+                                  ? tOrders("actions.cancel_request")
+                                  : tOrders("actions.cancel_order")}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                             </>
@@ -969,12 +1164,16 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {mode === "customer"
+              {isPendingCancelRequest
+                ? tOrders("dialog.cancel_request_title_customer")
+                : mode === "customer"
                 ? tOrders("dialog.cancel_order_title_customer")
                 : tOrders("dialog.cancel_order_title_tenant")}
             </DialogTitle>
             <DialogDescription>
-              {mode === "customer"
+              {isPendingCancelRequest
+                ? tOrders("dialog.cancel_request_body_customer")
+                : mode === "customer"
                 ? tOrders("dialog.cancel_order_body_customer")
                 : tOrders("dialog.cancel_order_body_tenant")}
             </DialogDescription>
@@ -1029,6 +1228,79 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog
+        open={requestDecisionDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setRequestDecisionDialogOpen(false);
+            setPendingRequestDecision(null);
+            setDeclineReason("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {isDeclineDecision
+                ? tOrders("dialog.decline_request_title")
+                : tOrders("dialog.confirm_request_title")}
+            </DialogTitle>
+            <DialogDescription>
+              {isDeclineDecision
+                ? tOrders("dialog.decline_request_body")
+                : tOrders("dialog.confirm_request_body")}
+            </DialogDescription>
+          </DialogHeader>
+          {isDeclineDecision ? (
+            <div className="space-y-2">
+              <Label htmlFor="decline-reason">
+                {tOrders("dialog.decline_reason")}
+              </Label>
+              <Textarea
+                id="decline-reason"
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                aria-invalid={hasShortDeclineReason}
+                aria-describedby={declineReasonHintId}
+                placeholder={tOrders("dialog.decline_placeholder")}
+                rows={4}
+                maxLength={500}
+              />
+              {hasShortDeclineReason ? (
+                <p
+                  id={declineReasonHintId}
+                  className="text-sm text-destructive"
+                >
+                  {tOrders("dialog.decline_error_short_reason")}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRequestDecisionDialogOpen(false)}
+              disabled={isRequestDecisionPending}
+            >
+              {tOrders("dialog.cancel")}
+            </Button>
+            <Button
+              variant={isDeclineDecision ? "destructive" : "default"}
+              onClick={submitRequestDecision}
+              disabled={
+                isRequestDecisionPending ||
+                (isDeclineDecision && hasShortDeclineReason)
+              }
+            >
+              {isRequestDecisionPending
+                ? tOrders("dialog.submitting")
+                : isDeclineDecision
+                  ? tOrders("dialog.decline_request")
+                  : tOrders("dialog.confirm_request")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1057,6 +1329,3 @@ export function OrdersLifecycleSkeleton() {
     </div>
   );
 }
-
-
-

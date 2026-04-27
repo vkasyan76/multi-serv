@@ -14,7 +14,8 @@
     "slot_id": "ID terminu",
     "pick_service": "Wybierz usługę",
     "cancel": "Anuluj",
-    "book": "Rezerwuj"
+    "book": "Rezerwuj",
+    "request_booking": "Poproś o rezerwację"
   },
   "customer": {
     "invoice_address": "Adres rozliczeniowy",
@@ -35,7 +36,8 @@
     "card_saved": "Karta została zapisana.",
     "card_setup_finalize_failed": "Nie udało się zakończyć konfiguracji karty.",
     "start_setup_failed": "Nie udało się rozpocząć konfiguracji.",
-    "no_charge_at_booking": "Podczas rezerwacji nie pobieramy opłaty. Opłata zostanie pobrana po zaakceptowaniu wykonanej usługi lub po jej automatycznej akceptacji."
+    "no_charge_at_booking": "Podczas rezerwacji nie pobieramy opłaty. Opłata zostanie pobrana po zaakceptowaniu wykonanej usługi lub po jej automatycznej akceptacji.",
+    "provider_confirmation_note": "Wykonawca musi potwierdzić zgłoszenie, zanim rezerwacja zostanie zaplanowana."
   },
   "terms": {
     "title": "Warunki korzystania",
@@ -57,7 +59,8 @@
     "checkout_failed": "Nie udało się dokończyć rezerwacji. Spróbuj ponownie.",
     "checkout_started_failed": "Nie udało się rozpocząć płatności. Spróbuj ponownie.",
     "order_created_pay_later": "Zamówienie zostało utworzone. Płatność nastąpi później (po akceptacji).",
-    "payment_received_finalizing": "Płatność otrzymana. Kończymy Twoją rezerwację..."
+    "payment_received_finalizing": "Płatność otrzymana. Kończymy Twoją rezerwację...",
+    "booking_request_sent": "Zgłoszenie rezerwacji wysłane. Wykonawca je potwierdzi albo odrzuci."
   },
   "errors": {
     "generic": "Nie udało się dokończyć rezerwacji. Spróbuj ponownie.",

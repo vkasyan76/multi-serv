@@ -17,9 +17,12 @@
     "service": "Service",
     "expand": "Développer la commande",
     "collapse": "Réduire la commande",
-    "open_menu": "Ouvrir le menu"
+    "open_menu": "Ouvrir le menu",
+    "awaiting_provider_confirmation": "En attente de confirmation du prestataire",
+    "awaiting_your_confirmation": "En attente de votre confirmation"
   },
   "status": {
+    "requested": "Demandée",
     "scheduled": "Planifiée",
     "accepted": "Acceptée",
     "completed": "Terminée",
@@ -36,7 +39,10 @@
     "pay": "Payer",
     "view_invoice": "Voir la facture",
     "write_review": "Écrire un avis",
-    "cancel_order": "Annuler la commande"
+    "cancel_order": "Annuler la commande",
+    "cancel_request": "Annuler la demande",
+    "confirm_request": "Confirmer la demande",
+    "decline_request": "Refuser la demande"
   },
   "tooltips": {
     "request_payment": "Vous pouvez demander le paiement après l'acceptation du client.",
@@ -60,7 +66,18 @@
     "cancel_placeholder_tenant": "Ajoutez un court motif d'annulation...",
     "confirm_cancel": "Confirmer l'annulation",
     "submitting_cancel": "Annulation...",
-    "cancel_error_short_reason": "Le motif est facultatif, mais s'il est fourni, il doit comporter au moins 3 caractères."
+    "cancel_error_short_reason": "Le motif est facultatif, mais s'il est fourni, il doit comporter au moins 3 caractères.",
+    "cancel_request_title_customer": "Annuler cette demande de réservation ?",
+    "cancel_request_body_customer": "Cela annule votre demande et libère les créneaux sélectionnés.",
+    "confirm_request_title": "Confirmer cette demande de réservation ?",
+    "confirm_request_body": "Cela planifie la réservation demandée et conserve les créneaux sélectionnés attribués au client.",
+    "confirm_request": "Confirmer la demande",
+    "decline_request_title": "Refuser cette demande de réservation ?",
+    "decline_request_body": "Cela annule la demande et remet les créneaux sélectionnés à disposition.",
+    "decline_request": "Refuser la demande",
+    "decline_reason": "Motif (facultatif)",
+    "decline_placeholder": "Ajoutez un court motif si utile...",
+    "decline_error_short_reason": "Le motif est facultatif, mais s’il est fourni, il doit comporter au moins 3 caractères."
   },
   "states": {
     "load_error": "Impossible de charger les commandes.",
@@ -87,6 +104,17 @@
     "cancel_payment_locked": "Cette commande ne peut plus être annulée car le paiement ou la facturation a déjà commencé.",
     "cancel_already_canceled": "Cette commande a déjà été annulée.",
     "cancel_invalid_slots": "Cette commande ne peut pas être annulée car ses créneaux ne sont plus valides.",
-    "cancel_release_failed": "La commande a été annulée, mais la remise à disposition des créneaux n'a pas pu être entièrement vérifiée."
+    "cancel_release_failed": "La commande a été annulée, mais la remise à disposition des créneaux n'a pas pu être entièrement vérifiée.",
+    "request_canceled": "Demande de réservation annulée.",
+    "request_confirmed": "Demande de réservation confirmée.",
+    "request_declined": "Demande de réservation refusée.",
+    "request_decision_failed": "Impossible de mettre à jour la demande de réservation. Veuillez réessayer."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "Cette commande n'utilise pas le cycle de réservation par créneau.",
+    "already_canceled": "Cette commande a déjà été annulée.",
+    "not_awaiting_tenant_confirmation": "Cette commande n'attend pas la confirmation du prestataire.",
+    "slots_not_awaiting_confirmation": "Les créneaux sélectionnés n'attendent pas la confirmation du prestataire.",
+    "confirm_all_requested_failed": "Impossible de confirmer tous les créneaux demandés. Veuillez réessayer."
   }
 }

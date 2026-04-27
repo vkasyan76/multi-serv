@@ -17,9 +17,12 @@
     "service": "Servizio",
     "expand": "Espandi ordine",
     "collapse": "Comprimi ordine",
-    "open_menu": "Apri menu"
+    "open_menu": "Apri menu",
+    "awaiting_provider_confirmation": "In attesa della conferma del professionista",
+    "awaiting_your_confirmation": "In attesa della tua conferma"
   },
   "status": {
+    "requested": "Richiesto",
     "scheduled": "Programmato",
     "accepted": "Accettato",
     "completed": "Completato",
@@ -36,7 +39,10 @@
     "pay": "Paga",
     "view_invoice": "Visualizza fattura",
     "write_review": "Scrivi una recensione",
-    "cancel_order": "Annulla ordine"
+    "cancel_order": "Annulla ordine",
+    "cancel_request": "Annulla richiesta",
+    "confirm_request": "Conferma richiesta",
+    "decline_request": "Rifiuta richiesta"
   },
   "tooltips": {
     "request_payment": "Puoi richiedere il pagamento dopo l'accettazione da parte del cliente.",
@@ -60,7 +66,18 @@
     "cancel_placeholder_tenant": "Aggiungi un breve motivo della cancellazione...",
     "confirm_cancel": "Conferma annullamento",
     "submitting_cancel": "Annullamento...",
-    "cancel_error_short_reason": "Il motivo è facoltativo, ma se fornito deve contenere almeno 3 caratteri."
+    "cancel_error_short_reason": "Il motivo è facoltativo, ma se fornito deve contenere almeno 3 caratteri.",
+    "cancel_request_title_customer": "Annullare questa richiesta di prenotazione?",
+    "cancel_request_body_customer": "Questo annulla la richiesta e libera gli slot selezionati.",
+    "confirm_request_title": "Confermare questa richiesta di prenotazione?",
+    "confirm_request_body": "Questo programma la prenotazione richiesta e mantiene gli slot selezionati assegnati al cliente.",
+    "confirm_request": "Conferma richiesta",
+    "decline_request_title": "Rifiutare questa richiesta di prenotazione?",
+    "decline_request_body": "Questo annulla la richiesta e libera gli slot selezionati.",
+    "decline_request": "Rifiuta richiesta",
+    "decline_reason": "Motivo (opzionale)",
+    "decline_placeholder": "Aggiungi un breve motivo se utile...",
+    "decline_error_short_reason": "Il motivo è opzionale, ma se fornito deve contenere almeno 3 caratteri."
   },
   "states": {
     "load_error": "Impossibile caricare gli ordini.",
@@ -87,6 +104,17 @@
     "cancel_payment_locked": "Questo ordine non può più essere annullato perché il pagamento o la fatturazione sono già iniziati.",
     "cancel_already_canceled": "Questo ordine è già stato annullato.",
     "cancel_invalid_slots": "Questo ordine non può essere annullato perché i suoi slot non sono più validi.",
-    "cancel_release_failed": "L'ordine è stato annullato, ma il rilascio degli slot non ha potuto essere verificato completamente."
+    "cancel_release_failed": "L'ordine è stato annullato, ma il rilascio degli slot non ha potuto essere verificato completamente.",
+    "request_canceled": "Richiesta di prenotazione annullata.",
+    "request_confirmed": "Richiesta di prenotazione confermata.",
+    "request_declined": "Richiesta di prenotazione rifiutata.",
+    "request_decision_failed": "Impossibile aggiornare la richiesta di prenotazione. Riprova."
+  },
+  "errors": {
+    "not_slot_lifecycle_order": "Questo ordine non usa il flusso di prenotazione a fasce orarie.",
+    "already_canceled": "Questo ordine è già stato annullato.",
+    "not_awaiting_tenant_confirmation": "Questo ordine non è in attesa della conferma del professionista.",
+    "slots_not_awaiting_confirmation": "Le fasce selezionate non sono in attesa della conferma del professionista.",
+    "confirm_all_requested_failed": "Non è stato possibile confermare tutte le fasce richieste. Riprova."
   }
 }

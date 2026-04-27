@@ -11,15 +11,15 @@
   },
   "section2": {
     "title": "2. Cycle de vie de la réservation",
-    "p1": "Les réservations permettent de réserver un créneau horaire auprès d'un prestataire. La plateforme utilise les concepts de cycle de vie suivants :",
+    "p1": "Une réservation client crée d’abord une demande de réservation. Le prestataire doit confirmer la demande avant que la réservation soit planifiée. Les créneaux demandés sont bloqués pour les autres clients pendant qu’ils attendent la confirmation du prestataire. La plateforme utilise les concepts de cycle de vie suivants :",
     "service_status_label": "Statut du service (valeurs système) :",
     "payment_status_label": "Statut du paiement (valeurs système) :"
   },
   "section3": {
     "title": "3. Annulations",
-    "p1": "Les annulations ne peuvent être autorisées que dans le délai d'annulation applicable. Par défaut, la plateforme utilise :",
+    "p1": "Un client peut annuler une demande de réservation avant la confirmation du prestataire. Après confirmation par le prestataire et planification de la réservation, les annulations peuvent être autorisées uniquement dans la fenêtre d’annulation applicable. Par défaut, la plateforme utilise :",
     "cancellation_window": "Délai d'annulation : {hours} heures avant l'heure de début de la réservation (par défaut).",
-    "p2": "Les conditions d'annulation spécifiques peuvent également dépendre du prestataire, de la catégorie de service et de toute règle impérative du droit de la consommation."
+    "p2": "Un prestataire peut refuser une demande de réservation, ce qui libère les créneaux demandés. Les conditions spécifiques d’annulation peuvent également dépendre du prestataire, de la catégorie du service et de toute règle impérative de protection des consommateurs."
   },
   "section4": {
     "title": "4. Confirmations, litiges et délais",

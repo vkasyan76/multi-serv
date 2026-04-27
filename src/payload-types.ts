@@ -465,9 +465,9 @@ export interface Booking {
   end: string;
   status: 'available' | 'booked' | 'confirmed';
   /**
-   * System status: scheduled → completed → accepted | disputed.
+   * System status: requested → scheduled → completed → accepted | disputed.
    */
-  serviceStatus?: ('scheduled' | 'completed' | 'accepted' | 'disputed') | null;
+  serviceStatus?: ('requested' | 'scheduled' | 'completed' | 'accepted' | 'disputed') | null;
   serviceCompletedAt?: string | null;
   acceptedAt?: string | null;
   disputedAt?: string | null;
@@ -502,9 +502,9 @@ export interface Order {
   id: string;
   status: 'pending' | 'paid' | 'canceled' | 'refunded';
   /**
-   * Order-level service lifecycle: scheduled → completed → accepted (or disputed).
+   * Order-level service lifecycle: requested → scheduled → completed → accepted (or disputed).
    */
-  serviceStatus: 'scheduled' | 'completed' | 'accepted' | 'disputed';
+  serviceStatus: 'requested' | 'scheduled' | 'completed' | 'accepted' | 'disputed';
   /**
    * Invoice lifecycle: none → draft/issued → overdue/paid (or void).
    */

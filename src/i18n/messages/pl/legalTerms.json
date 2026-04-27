@@ -11,15 +11,15 @@
   },
   "section2": {
     "title": "2. Cykl rezerwacji",
-    "p1": "Rezerwacje służą do zarezerwowania terminu u dostawcy. Platforma używa następujących pojęć cyklu życia:",
+    "p1": "Rezerwacja klienta najpierw tworzy prośbę o rezerwację. Usługodawca musi potwierdzić prośbę, zanim rezerwacja zostanie zaplanowana. Wybrane terminy są blokowane dla innych klientów, gdy oczekują na potwierdzenie usługodawcy. Platforma używa następujących pojęć cyklu życia:",
     "service_status_label": "Status usługi (wartości systemowe):",
     "payment_status_label": "Status płatności (wartości systemowe):"
   },
   "section3": {
     "title": "3. Anulowanie",
-    "p1": "Anulowanie może być dozwolone wyłącznie w obowiązującym oknie anulowania. Domyślnie platforma stosuje:",
+    "p1": "Klient może anulować prośbę o rezerwację przed potwierdzeniem przez usługodawcę. Po potwierdzeniu prośby przez usługodawcę i zaplanowaniu rezerwacji anulowanie może być dozwolone tylko w obowiązującym oknie anulowania. Domyślnie platforma stosuje:",
     "cancellation_window": "Okno anulowania: {hours} godzin przed rozpoczęciem rezerwacji (domyślnie).",
-    "p2": "Szczegółowe warunki anulowania mogą również zależeć od dostawcy, kategorii usługi oraz bezwzględnie obowiązujących przepisów prawa konsumenckiego."
+    "p2": "Usługodawca może odrzucić prośbę o rezerwację, co zwalnia wybrane terminy. Szczegółowe warunki anulowania mogą również zależeć od usługodawcy, kategorii usługi oraz bezwzględnie obowiązujących przepisów ochrony konsumentów."
   },
   "section4": {
     "title": "4. Potwierdzenia, spory i terminy",

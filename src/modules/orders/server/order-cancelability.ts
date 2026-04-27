@@ -26,6 +26,10 @@ export type SlotOrderCancelability = {
   slotIds: string[];
 };
 
+export type SlotOrderCancelabilityOptions = {
+  allowRequested?: boolean;
+};
+
 function toSlotIds(order: Pick<Order, "slots">): string[] {
   return [
     ...new Set(
@@ -65,6 +69,7 @@ export async function getSlotOrderCancelability(
     | "lifecycleMode"
   >,
   now = new Date(),
+  options: SlotOrderCancelabilityOptions = {},
 ): Promise<SlotOrderCancelability> {
   const slotIds = toSlotIds(order);
 
@@ -81,7 +86,10 @@ export async function getSlotOrderCancelability(
     return { cancelable: false, reason: "not_slot_order", slotIds };
   }
 
-  if (order.serviceStatus !== "scheduled") {
+  const isScheduled = order.serviceStatus === "scheduled";
+  const isRequested = order.serviceStatus === "requested";
+
+  if (!isScheduled && !(options.allowRequested === true && isRequested)) {
     return { cancelable: false, reason: "wrong_service_status", slotIds };
   }
 
@@ -113,14 +121,20 @@ export async function getSlotOrderCancelability(
     return { cancelable: false, reason: "slot_paid", slotIds };
   }
 
+  if (isRequested) {
+    return {
+      cancelable: true,
+      slotIds,
+    };
+  }
+
   const firstSlotStartDate = getEarliestSlotStart(slots);
   if (!firstSlotStartDate) {
     return { cancelable: false, reason: "invalid_slot_dates", slotIds };
   }
 
   const cutoffAtDate = new Date(
-    firstSlotStartDate.getTime() -
-      CANCELLATION_WINDOW_HOURS * 60 * 60 * 1000,
+    firstSlotStartDate.getTime() - CANCELLATION_WINDOW_HOURS * 60 * 60 * 1000,
   );
 
   if (now >= cutoffAtDate) {

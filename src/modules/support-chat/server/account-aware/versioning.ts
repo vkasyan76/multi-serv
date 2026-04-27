@@ -1,7 +1,7 @@
 import "server-only";
 
 export const SUPPORT_ACCOUNT_HELPER_CONTRACT_VERSION =
-  "support-account-helper-contract-2026-04-25";
+  "support-account-helper-contract-2026-04-26";
 
 export const SUPPORT_ACCOUNT_HELPER_VERSION =
   "support-account-helpers-v1";

@@ -1,6 +1,6 @@
 ---
 id: booking-calendar-help
-version: booking-calendar-help-2026-04-21
+version: booking-calendar-help-2026-04-26
 locale: en
 sourceType: operational-guidance
 ---
@@ -37,9 +37,19 @@ Audience: customer and provider.
 
 Calendar/service status and payment status are separate.
 
-Available means a slot can be selected by a customer. Scheduled means a booked service is planned. Completed means the provider has marked the service completed. Accepted means the customer accepted completion. Disputed means the customer reported a problem with the completed service.
+Available means a slot can be selected by a customer. Requested means the customer submitted a booking request and the provider has not confirmed it yet. Requested slots are blocked from other customers while the request is pending. Scheduled means the provider confirmed the request and the booked service is planned. Completed means the provider has marked the service completed. Accepted means the customer accepted completion. Disputed means the customer reported a problem with the completed service.
 
 Payment status is separate and may show whether a booking or order is unpaid, pending, due, or paid.
+
+## calendar-requested-slots
+
+Audience: customer and provider.
+
+A booking request is not yet a scheduled booking. The provider must confirm the request before it becomes scheduled.
+
+Requested slots are blocked from other customers while the request is pending. Other customers should only see those times as unavailable; they should not see private request details.
+
+The customer who created the request can see it in their Orders page as awaiting provider confirmation. Providers can see requested bookings in their dashboard and can confirm or decline them.
 
 ## calendar-no-slots
 

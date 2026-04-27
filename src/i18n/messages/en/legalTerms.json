@@ -11,15 +11,15 @@
   },
   "section2": {
     "title": "2. Booking Lifecycle",
-    "p1": "Bookings reserve a time slot with a provider. The platform uses the following lifecycle concepts:",
+    "p1": "A customer booking first creates a booking request. The provider must confirm the request before the booking becomes scheduled. Requested slots are blocked from other customers while they are awaiting provider confirmation. The platform uses the following lifecycle concepts:",
     "service_status_label": "Service status (system values):",
     "payment_status_label": "Payment status (system values):"
   },
   "section3": {
     "title": "3. Cancellations",
-    "p1": "Cancellations may be allowed only within the applicable cancellation window. By default, the platform uses:",
+    "p1": "A customer may cancel a booking request before provider confirmation. After a provider confirms the request and the booking becomes scheduled, cancellations may be allowed only within the applicable cancellation window. By default, the platform uses:",
     "cancellation_window": "Cancellation window: {hours} hours before the booking start time (default).",
-    "p2": "Specific cancellation terms may also depend on the provider, the service category, and any mandatory consumer law."
+    "p2": "A provider may decline a booking request, which releases the requested slots. Specific cancellation terms may also depend on the provider, the service category, and any mandatory consumer law."
   },
   "section4": {
     "title": "4. Confirmations, Disputes, and Deadlines",

@@ -15,10 +15,10 @@ import { render } from "@react-email/render";
 import {
   formatOrderEmailDateRangeUtc,
   formatOrderEmailTenantLabel,
-  getOrderCreatedCustomerCopy,
+  getOrderRequestConfirmedCustomerCopy,
 } from "./order-email-copy";
 
-type OrderCreatedCustomerTemplateProps = {
+type OrderConfirmedCustomerTemplateProps = {
   customerName?: string;
   tenantName?: string;
   tenantSlug?: string;
@@ -30,13 +30,14 @@ type OrderCreatedCustomerTemplateProps = {
   locale?: string;
 };
 
-function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
+function OrderConfirmedCustomerEmail(
+  props: OrderConfirmedCustomerTemplateProps,
+) {
   const tenantLabel = formatOrderEmailTenantLabel(
     props.tenantSlug,
     props.tenantName,
   );
-  const copy = getOrderCreatedCustomerCopy(props.locale);
-  const requestStatusNote = copy.cancellationNoteOpen;
+  const copy = getOrderRequestConfirmedCustomerCopy(props.locale);
   const greeting = copy.greeting(props.customerName);
   const dateRange = formatOrderEmailDateRangeUtc(
     props.dateRangeStart,
@@ -65,7 +66,9 @@ function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
             {copy.heading}
           </Heading>
           <Text style={{ margin: "0 0 12px" }}>{greeting}</Text>
-          <Text style={{ margin: "0 0 8px" }}>{copy.intro(tenantLabel, dateRange)}</Text>
+          <Text style={{ margin: "0 0 8px" }}>
+            {copy.intro(tenantLabel, dateRange)}
+          </Text>
           {services.length ? (
             <Section style={{ margin: "8px 0 16px" }}>
               <ul style={{ margin: "0", paddingLeft: "20px" }}>
@@ -75,9 +78,7 @@ function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
               </ul>
             </Section>
           ) : null}
-          <Text style={{ margin: "0 0 12px" }}>{requestStatusNote}</Text>
-          <Text style={{ margin: "0 0 12px" }}>{copy.responsibilityNote}</Text>
-          <Text style={{ margin: "0 0 12px" }}>{copy.nextStepsNote}</Text>
+          <Text style={{ margin: "0 0 12px" }}>{copy.statusNote}</Text>
           <Text style={{ margin: "0 0 20px" }}>
             <strong>{copy.orderLabel}:</strong> {props.orderId}
           </Text>
@@ -101,7 +102,7 @@ function OrderCreatedCustomerEmail(props: OrderCreatedCustomerTemplateProps) {
   );
 }
 
-export async function renderOrderCreatedCustomerTemplate(
+export async function renderOrderConfirmedCustomerTemplate(
   data: Record<string, unknown>,
 ) {
   const orderId = String(data.orderId ?? "");
@@ -121,13 +122,17 @@ export async function renderOrderCreatedCustomerTemplate(
   const dateRangeEnd =
     data.dateRangeEnd == null ? undefined : String(data.dateRangeEnd);
   const locale = data.locale == null ? undefined : String(data.locale);
-  const tenantLabel = formatOrderEmailTenantLabel(tenantSlug, tenantName);
-  const copy = getOrderCreatedCustomerCopy(locale);
-  const requestStatusNote = copy.cancellationNoteOpen;
 
+  const tenantLabel = formatOrderEmailTenantLabel(tenantSlug, tenantName);
+  const copy = getOrderRequestConfirmedCustomerCopy(locale);
+  const dateRange = formatOrderEmailDateRangeUtc(
+    dateRangeStart,
+    dateRangeEnd,
+    locale,
+  );
   const subject = copy.subject(tenantLabel);
   const html = await render(
-    <OrderCreatedCustomerEmail
+    <OrderConfirmedCustomerEmail
       customerName={customerName}
       tenantName={tenantName}
       tenantSlug={tenantSlug}
@@ -139,23 +144,13 @@ export async function renderOrderCreatedCustomerTemplate(
       locale={locale}
     />,
   );
-  const dateRange = formatOrderEmailDateRangeUtc(
-    dateRangeStart,
-    dateRangeEnd,
-    locale,
-  );
   const text = [
     copy.greeting(customerName),
     "",
     copy.intro(tenantLabel, dateRange),
     "",
     ...services.map((service) => `- ${service}`),
-    "",
-    requestStatusNote,
-    "",
-    copy.responsibilityNote,
-    "",
-    copy.nextStepsNote,
+    copy.statusNote,
     "",
     `${copy.orderLabel}: ${orderId}`,
     "",

@@ -1,6 +1,6 @@
 ---
 id: terms-reference
-version: terms-reference-2026-04-21
+version: terms-reference-2026-04-26
 locale: en
 sourceType: terms-reference
 termsVersion: v1
@@ -23,15 +23,15 @@ Infinisimo does not guarantee service outcomes and is not a party to the service
 
 ## terms-bookings
 
-Bookings reserve a time slot with a provider.
+Booking requests block the selected time while the provider decides whether to confirm or decline the request. A confirmed request becomes a scheduled booking.
 
-The platform uses service statuses such as scheduled, completed, accepted, and disputed, and payment statuses such as unpaid, pending, and paid.
+The platform uses service statuses such as requested, scheduled, completed, accepted, and disputed, and payment statuses such as unpaid, pending, and paid.
 
 ## terms-cancellations
 
-Cancellations may be allowed only within the applicable cancellation window.
+Customers may cancel a requested booking before provider confirmation where the app allows it. This is separate from scheduled-booking cancellation.
 
-By default, the platform uses a 24-hour cancellation window before the booking start time. Specific cancellation terms may also depend on the provider, service category, and mandatory consumer law.
+After provider confirmation, cancellations may be allowed only within the applicable cancellation window. By default, the platform uses a 24-hour cancellation window before the booking start time. Specific cancellation terms may also depend on the provider, service category, and mandatory consumer law.
 
 ## terms-confirmations-disputes-deadlines
 

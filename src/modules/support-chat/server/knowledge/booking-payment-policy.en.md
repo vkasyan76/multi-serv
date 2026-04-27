@@ -1,6 +1,6 @@
 ---
 id: booking-payment-policy
-version: booking-payment-policy-2026-04-21
+version: booking-payment-policy-2026-04-26
 locale: en
 sourceType: policy-summary
 ---
@@ -19,15 +19,15 @@ If any of these steps are missing, checkout may stop and ask the customer to com
 
 Audience: customer.
 
-In the current slot lifecycle flow, creating a booking order does not mean the customer is charged immediately.
+In the current slot lifecycle flow, checkout creates a booking request first. The provider must confirm the request before the booking becomes scheduled.
 
-The app tells customers that there is no charge at booking. Payment happens later after service completion is accepted or otherwise reaches the payment step supported by the app flow.
+Creating a booking request does not mean the customer is charged immediately. The app tells customers that there is no charge at booking. Payment happens later after service completion is accepted or otherwise reaches the payment step supported by the app flow.
 
 ## booking-service-lifecycle
 
 Audience: customer and provider.
 
-The typical service lifecycle is: the provider performs the service, the provider marks the service completed after the slot has ended, the customer accepts or disputes completion, and payment may then be requested.
+The typical service lifecycle is: the customer submits a booking request, the provider confirms or declines it, a confirmed request becomes scheduled, the provider performs the service, the provider marks the service completed after the slot has ended, the customer accepts or disputes completion, and payment may then be requested.
 
 The provider's completion notice does not by itself prove service delivery.
 
@@ -51,9 +51,13 @@ If an invoice is already issued, the app may prevent issuing another one.
 
 Audience: customer and provider.
 
-Cancellations may be allowed only within the applicable cancellation window. The default platform cancellation window is 24 hours before the booking start time.
+A customer may cancel a requested booking before provider confirmation. This requested-state cancellation is separate from the scheduled-booking cancellation window.
 
-Cancellation may be blocked if the order is already canceled, already paid, already invoiced, no longer scheduled, has invalid or missing slots, has paid slots, or the cancellation cutoff has passed.
+After the provider confirms a request and the booking becomes scheduled, cancellations may be allowed only within the applicable cancellation window. The default platform cancellation window is 24 hours before the booking start time.
+
+Cancellation may be blocked if the order is already canceled, already paid, already invoiced, no longer in a cancelable lifecycle state, has invalid or missing slots, has paid slots, or the cancellation cutoff has passed.
+
+If a provider declines a requested booking, the requested slots are released.
 
 ## booking-disputes
 

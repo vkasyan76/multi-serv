@@ -742,13 +742,25 @@ export default function TenantCalendar({
     const b = event.resource; // typed as BookingWithName
     if (b.status === "available") return null; // green blocks stay clean
 
-    // Show customer name in the tenat dashboard and service status on public calendar
+    // Show customer name in the tenant dashboard and service status on public calendar
     const statusLabel = tBookings(
       `legend.${getServiceStatusKey(b.serviceStatus)}`,
     );
-    const who = displayName(b) ?? statusLabel;
+    const status = normalizeServiceStatus(b.serviceStatus);
+    const name = displayName(b);
 
-    return <div className="rbc-dash-ev truncate">{who}</div>;
+    if (status === "requested" && name) {
+      return (
+        <div className="rbc-dash-ev truncate">
+          <span className="block truncate">{name}</span>
+          <span className="block truncate text-[11px] font-medium">
+            {statusLabel}
+          </span>
+        </div>
+      );
+    }
+
+    return <div className="rbc-dash-ev truncate">{name ?? statusLabel}</div>;
   };
 
   // Map bookings -> RBC events with UI cleanup for past available slots
@@ -827,7 +839,6 @@ export default function TenantCalendar({
         };
       } else {
         const status = normalizeServiceStatus(event.resource.serviceStatus);
-        const labelColor = status === "accepted" ? "#ffffff" : "#111827";
         return {
           className: `ev-status ev-${status}`,
           style: {
@@ -835,7 +846,7 @@ export default function TenantCalendar({
               event.resource.serviceStatus,
             ),
             border: "none",
-            color: labelColor,
+            color: "#111827",
           },
         };
       }
@@ -1301,31 +1312,28 @@ export default function TenantCalendar({
             padding: 0 !important;
             overflow: hidden;
           }
-          .calendar--dashboard .ev-status .rbc-event-label {
-            padding: 3px 6px 0;
-            margin: 0;
-            line-height: 1.15;
-            font-size: 12px;
+          .calendar--dashboard .rbc-time-view .ev-status .rbc-event-label {
+            display: none;
           }
           .calendar--dashboard .ev-status .rbc-event-content {
-            padding: 1px 6px 3px;
+            padding: 4px 6px;
             font-weight: 600;
             font-size: 12px;
-            line-height: 1.15;
-            color: #ffffff;
+            line-height: 1.1;
+            color: #111827;
           }
         `}</style>
       )}
       {!dashboardMode && (
         <style jsx global>{`
           .ev-status .rbc-event-content {
-            color: #ffffff;
+            color: #111827;
             font-weight: 600;
             font-size: 11px;
             line-height: 1rem;
           }
-          .ev-status.ev-accepted .rbc-event-label {
-            color: #ffffff;
+          .ev-status .rbc-event-label {
+            color: #111827;
           }
         `}</style>
       )}

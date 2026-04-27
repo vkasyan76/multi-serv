@@ -11,15 +11,15 @@
   },
   "section2": {
     "title": "2. Ciclul rezervării",
-    "p1": "Rezervările rezervă un interval orar la un furnizor. Platforma folosește următoarele concepte de ciclu de viață:",
+    "p1": "O rezervare a clientului creează mai întâi o cerere de rezervare. Furnizorul trebuie să confirme cererea înainte ca rezervarea să fie programată. Intervalele solicitate sunt blocate pentru alți clienți cât timp așteaptă confirmarea furnizorului. Platforma folosește următoarele concepte de ciclu de viață:",
     "service_status_label": "Starea serviciului (valori de sistem):",
     "payment_status_label": "Starea plății (valori de sistem):"
   },
   "section3": {
     "title": "3. Anulări",
-    "p1": "Anulările pot fi permise numai în cadrul ferestrei de anulare aplicabile. În mod implicit, platforma folosește:",
+    "p1": "Un client poate anula o cerere de rezervare înainte de confirmarea furnizorului. După ce furnizorul confirmă cererea și rezervarea devine programată, anulările pot fi permise numai în cadrul ferestrei de anulare aplicabile. În mod implicit, platforma folosește:",
     "cancellation_window": "Fereastra de anulare: {hours} ore înainte de ora de începere a rezervării (implicit).",
-    "p2": "Condițiile specifice de anulare pot depinde, de asemenea, de furnizor, de categoria serviciului și de orice normă imperativă de protecție a consumatorilor."
+    "p2": "Un furnizor poate refuza o cerere de rezervare, ceea ce eliberează intervalele solicitate. Condițiile specifice de anulare pot depinde, de asemenea, de furnizor, de categoria serviciului și de orice normă imperativă de protecție a consumatorilor."
   },
   "section4": {
     "title": "4. Confirmări, dispute și termene",

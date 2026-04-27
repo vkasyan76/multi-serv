@@ -15,7 +15,6 @@ import { render } from "@react-email/render";
 import {
   formatOrderEmailDateRangeUtc,
   getOrderCreatedTenantCopy,
-  isWithinOrderCancellationCutoff,
 } from "./order-email-copy";
 
 type OrderCreatedTenantTemplateProps = {
@@ -31,11 +30,7 @@ type OrderCreatedTenantTemplateProps = {
 
 function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
   const copy = getOrderCreatedTenantCopy(props.locale);
-  const cancellationNote = isWithinOrderCancellationCutoff(
-    props.dateRangeStart,
-  )
-    ? copy.cancellationNoteClosed
-    : copy.cancellationNoteOpen;
+  const requestStatusNote = copy.cancellationNoteOpen;
   const greeting = copy.greeting(props.tenantName);
   const customerName = (props.customerName ?? "").trim() || undefined;
   const dateRange = formatOrderEmailDateRangeUtc(
@@ -75,7 +70,7 @@ function OrderCreatedTenantEmail(props: OrderCreatedTenantTemplateProps) {
               </ul>
             </Section>
           ) : null}
-          <Text style={{ margin: "0 0 12px" }}>{cancellationNote}</Text>
+          <Text style={{ margin: "0 0 12px" }}>{requestStatusNote}</Text>
           <Text style={{ margin: "0 0 12px" }}>{copy.responsibilityNote}</Text>
           <Text style={{ margin: "0 0 12px" }}>{copy.nextStepsNote}</Text>
           <Text style={{ margin: "0 0 20px" }}>
@@ -120,9 +115,7 @@ export async function renderOrderCreatedTenantTemplate(
     data.dateRangeEnd == null ? undefined : String(data.dateRangeEnd);
   const locale = data.locale == null ? undefined : String(data.locale);
   const copy = getOrderCreatedTenantCopy(locale);
-  const cancellationNote = isWithinOrderCancellationCutoff(dateRangeStart)
-    ? copy.cancellationNoteClosed
-    : copy.cancellationNoteOpen;
+  const requestStatusNote = copy.cancellationNoteOpen;
 
   const subject = copy.subject;
   const html = await render(
@@ -148,7 +141,7 @@ export async function renderOrderCreatedTenantTemplate(
     copy.intro(customerName, dateRange),
     "",
     ...services.map((service) => `- ${service}`),
-    cancellationNote,
+    requestStatusNote,
     "",
     copy.responsibilityNote,
     "",

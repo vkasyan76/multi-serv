@@ -14,7 +14,8 @@
     "slot_id": "ID de franja",
     "pick_service": "Elige un servicio",
     "cancel": "Cancelar",
-    "book": "Reservar"
+    "book": "Reservar",
+    "request_booking": "Solicitar reserva"
   },
   "customer": {
     "invoice_address": "Dirección de facturación",
@@ -35,7 +36,8 @@
     "card_saved": "Tarjeta guardada.",
     "card_setup_finalize_failed": "No se pudo completar la configuración de la tarjeta.",
     "start_setup_failed": "No se pudo iniciar la configuración.",
-    "no_charge_at_booking": "No se realiza ningún cargo al reservar. Se te cobrará después de que se acepte el servicio completado o se acepte automáticamente."
+    "no_charge_at_booking": "No se realiza ningún cargo al reservar. Se te cobrará después de que se acepte el servicio completado o se acepte automáticamente.",
+    "provider_confirmation_note": "El proveedor debe confirmar tu solicitud antes de que la reserva quede programada."
   },
   "terms": {
     "title": "Condiciones de uso",
@@ -57,7 +59,8 @@
     "checkout_failed": "No se pudo completar la reserva. Inténtalo de nuevo.",
     "checkout_started_failed": "No se pudo iniciar el pago. Inténtalo de nuevo.",
     "order_created_pay_later": "Pedido creado. El pago se realizará más tarde (después de la aceptación).",
-    "payment_received_finalizing": "Pago recibido. Finalizando tu reserva..."
+    "payment_received_finalizing": "Pago recibido. Finalizando tu reserva...",
+    "booking_request_sent": "Solicitud de reserva enviada. El proveedor la confirmará o la rechazará."
   },
   "errors": {
     "generic": "No se pudo completar la reserva. Inténtalo de nuevo.",

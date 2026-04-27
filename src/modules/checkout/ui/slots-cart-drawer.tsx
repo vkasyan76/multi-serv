@@ -278,7 +278,7 @@ export function SlotsCartDrawer({
       setOpen(false);
       clear();
 
-      toast.success(tCheckout("toast.order_created_pay_later"));
+      toast.success(tCheckout("toast.booking_request_sent"));
     } catch (err) {
       if (booked) {
         try {
@@ -517,6 +517,10 @@ export function SlotsCartDrawer({
               </span>
             </div>
 
+            <p className="mb-3 text-xs text-muted-foreground">
+              {tCheckout("payment_method.provider_confirmation_note")}
+            </p>
+
             <div className="flex gap-2">
               <LoadingButton
                 className="flex-1"
@@ -536,7 +540,7 @@ export function SlotsCartDrawer({
                   !paymentOk
                 }
               >
-                {tCheckout("cart.book")}
+                {tCheckout("cart.request_booking")}
               </LoadingButton>
 
               <Button

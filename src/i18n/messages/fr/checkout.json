@@ -14,7 +14,8 @@
     "slot_id": "ID du créneau",
     "pick_service": "Choisir un service",
     "cancel": "Annuler",
-    "book": "Réserver"
+    "book": "Réserver",
+    "request_booking": "Demander la réservation"
   },
   "customer": {
     "invoice_address": "Adresse de facturation",
@@ -35,7 +36,8 @@
     "card_saved": "Carte enregistrée.",
     "card_setup_finalize_failed": "Impossible de finaliser la configuration de la carte.",
     "start_setup_failed": "Impossible de démarrer la configuration.",
-    "no_charge_at_booking": "Aucun débit lors de la réservation. Vous serez débité après l'acceptation ou l'acceptation automatique de la prestation terminée."
+    "no_charge_at_booking": "Aucun débit lors de la réservation. Vous serez débité après l'acceptation ou l'acceptation automatique de la prestation terminée.",
+    "provider_confirmation_note": "Le prestataire doit confirmer votre demande avant que la réservation soit planifiée."
   },
   "terms": {
     "title": "Conditions d'utilisation",
@@ -57,7 +59,8 @@
     "checkout_failed": "Le paiement a échoué. Veuillez réessayer.",
     "checkout_started_failed": "Impossible de démarrer le paiement. Veuillez réessayer.",
     "order_created_pay_later": "Commande créée. Le paiement aura lieu plus tard après acceptation.",
-    "payment_received_finalizing": "Paiement reçu. Finalisation de votre réservation..."
+    "payment_received_finalizing": "Paiement reçu. Finalisation de votre réservation...",
+    "booking_request_sent": "Demande de réservation envoyée. Le prestataire la confirmera ou la refusera."
   },
   "errors": {
     "generic": "Le paiement a échoué. Veuillez réessayer.",

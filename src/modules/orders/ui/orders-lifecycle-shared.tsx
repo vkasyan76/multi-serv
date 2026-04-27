@@ -64,14 +64,17 @@ export type OrdersLifecycleSortDir = "asc" | "desc";
 function normalizeDisplayServiceStatus(
   value: OrderServiceStatus | SlotServiceStatus | null | undefined,
 ): NormalizedServiceStatus {
+  if (value === "requested") {
+    return value;
+  }
   if (value === "completed" || value === "accepted" || value === "disputed") {
     return value;
   }
   return "scheduled";
 }
 
-function statusTextClass(s: NormalizedServiceStatus) {
-  return s === "accepted" ? "text-white" : "text-slate-900";
+function statusTextClass() {
+  return "text-slate-900";
 }
 
 export function StatusBadge({
@@ -85,7 +88,7 @@ export function StatusBadge({
   return (
     <Badge
       variant="secondary"
-      className={`border-0 ${SERVICE_STATUS_COLORS[st].className} ${statusTextClass(st)}`}
+      className={`border-0 ${SERVICE_STATUS_COLORS[st].className} ${statusTextClass()}`}
     >
       {/* Keep default English fallback for admin and older callers. */}
       {label ?? SERVICE_STATUS_LABELS[st]}
@@ -262,11 +265,13 @@ export function canShowSelfCancelAction(
     "status" | "serviceStatus" | "invoiceStatus" | "slots" | "lifecycleMode"
   >,
   nowMs = Date.now(),
+  options: { allowRequested?: boolean } = {},
 ) {
   if (row.lifecycleMode !== "slot") return false;
   if (row.status === "canceled") return false;
-  if (row.serviceStatus !== "scheduled") return false;
   if (row.invoiceStatus !== "none") return false;
+  if (row.serviceStatus === "requested") return options.allowRequested === true;
+  if (row.serviceStatus !== "scheduled") return false;
 
   const cutoffMs = CANCELLATION_WINDOW_HOURS * 60 * 60 * 1000;
   const firstSlotStartMs = getEarliestSlotStartMs(row.slots ?? []);
@@ -278,6 +283,8 @@ export function canShowSelfCancelAction(
 
 function statusWeight(s: ServiceStatus) {
   switch (s) {
+    case "requested":
+      return 0;
     case "scheduled":
       return 1;
     case "completed":
@@ -287,7 +294,7 @@ function statusWeight(s: ServiceStatus) {
     case "disputed":
       return 4;
     default:
-      return 0;
+      return -1;
   }
 }
 

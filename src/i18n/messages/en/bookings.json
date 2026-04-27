@@ -31,6 +31,7 @@
   },
   "legend": {
     "available": "Available",
+    "requested": "Requested",
     "scheduled": "Scheduled",
     "completed": "Completed",
     "accepted": "Accepted",
