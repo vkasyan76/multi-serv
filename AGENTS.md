@@ -172,6 +172,28 @@ Required env groups are defined in `README.md`:
 - `src/modules/support-chat/server/rate-limit.ts` is only an in-memory first-layer guard; do not treat it as durable multi-instance rate limiting.
 - Phase 1 support-chat regression cases live in `src/modules/support-chat/testing/phase1-test-cases.ts`, the runner lives in `src/scripts/run-support-chat-phase1-tests.ts`, and the review guide lives in `docs/support-chat-phase1-test-sheet.md`.
 - Rerun `npm run test:support-chat:phase1` after meaningful support-chat changes to prompt, model, retrieval, knowledge pack, or guardrail behavior; use `--json` and `--out <path>` when you want a saved artifact for review.
+- Block 13A Phase 1 support-chat hardening is complete for the targeted safety categories:
+  adversarial unsupported-account prompts, weak-source conservatism, abusive/empty/nonsense boundaries, and "common marketplace rules" prompts.
+- Known non-blocking Phase 1 support-chat regression issue:
+  `npm run test:support-chat:phase1` still has 2 unrelated cross-locale structured failures:
+  `onboarding-complete-profile-fr` and `booking-policy-reschedule-de`.
+- Block 13 account-aware Commit 1 is complete:
+  contracts/types/versioning/boundary documentation live in
+  `src/modules/support-chat/server/account-aware/types.ts`,
+  `src/modules/support-chat/server/account-aware/versioning.ts`, and
+  `docs/support-chat-phase2-account-aware.md`.
+- Block 13 next safe implementation step is Commit 2A only:
+  backend helper functions for `getOrderStatusForCurrentUser`,
+  `getPaymentStatusForCurrentUser`, and `canCancelOrderForCurrentUser`.
+- Do not add Block 13 support-chat routing, model tool-calling, model-drafted
+  account answers, UI changes, broad account lookup, fuzzy/latest-order lookup,
+  cancellation mutations, or admin/vendor actions until backend helpers and
+  helper ownership/safety tests are complete.
+- Initial account-aware helpers must require exact targeted references only
+  (`order_id` and `invoice_id` per the current contract), resolve identity from
+  authenticated Clerk context to the Payload user, enforce ownership, return
+  sanitized DTOs, collapse missing/not-owned cases to `not_found_or_not_owned`,
+  and fail closed without leaking object existence.
 - When extending support chat, prefer documenting stable boundaries here: entry points, ownership, access model, source-of-truth locations, storage shape, and safety constraints.
 
 ## Checkout UI Note
@@ -179,6 +201,51 @@ Required env groups are defined in `README.md`:
 - The active slot-order customer drawer is `src/modules/checkout/ui/slots-cart-drawer.tsx`.
 - Treat `src/modules/checkout/ui/cart-drawer.tsx` as legacy unless a task explicitly says otherwise.
 - For current slot-lifecycle booking/order UX, prefer tracing changes through `slots-cart-drawer.tsx` and the slot checkout flow instead of the legacy drawer.
+
+## Booking Request Lifecycle
+
+- The booking request / tenant confirmation redesign is implemented.
+- Design contract lives in `docs/booking-request-confirmation-lifecycle.md`.
+- Current slot-lifecycle checkout creates a booking request, not a scheduled booking.
+- Keep `bookings.status` as technical slot occupancy:
+  - `available` = open
+  - `booked` = temporary cart hold
+  - `confirmed` = attached to an order / blocked from other customers
+- Use `serviceStatus: "requested"` for the provider-confirmation workflow state.
+- After slot checkout:
+  - `order.serviceStatus = "requested"`
+  - `booking.status = "confirmed"`
+  - `booking.serviceStatus = "requested"`
+- After tenant confirmation:
+  - `order.serviceStatus = "scheduled"`
+  - `booking.serviceStatus = "scheduled"`
+- Tenant decline reuses the canceled order state for v1:
+  - `order.status = "canceled"`
+  - `order.serviceStatus` remains `"requested"` for audit/history
+  - `order.canceledByRole = "tenant"`
+  - `order.cancelReason` stores the optional decline reason
+  - requested slots are released back to available and request/customer/service/payment state is cleared
+- Customers may cancel a requested order before provider confirmation; requested-state cancellation releases slots and clears request state.
+- Scheduled-order cancellation remains separate and still obeys the normal cutoff/payment/invoice rules.
+- Tenant scheduled-cancel must reject requested orders; tenants should decline requested orders instead.
+- Requested orders cannot be completed or invoiced.
+- Order rollup must preserve `requested` before falling back to scheduled; do not normalize requested/unknown statuses to scheduled in shared logic.
+- UI semantics:
+  - customer checkout CTA says "Request booking"
+  - customer requested orders show "Awaiting provider confirmation" and "Cancel request"
+  - tenant requested orders show "Awaiting your confirmation" with Confirm request / Decline request actions
+  - tenant calendar shows requested events distinctly from scheduled events
+- Emails:
+  - `order.created.customer` and `order.created.tenant` use booking-request wording
+  - tenant confirmation sends `order.confirmed.customer`
+  - tenant decline sends `order.declined.customer`
+  - real scheduled cancellations still use `order.canceled.*`
+- Support-chat knowledge and the Block 13 account-aware contract are aligned with
+  `requested` and `await_provider_confirmation`, but no account-aware helpers,
+  routing, tool-calling, or actions were added as part of the order redesign.
+- Aggregate validation for this lifecycle is `npm run test:booking-request-lifecycle`.
+- `test:booking-request-lifecycle` intentionally does not include
+  `test:support-chat:phase1` because the latter has known unrelated cross-locale failures.
 
 ## Admin Dashboard Status (Brief)
 
