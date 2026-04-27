@@ -14,6 +14,9 @@ import {
   type SupportKnowledgeMatch,
 } from "@/modules/support-chat/server/retrieve-knowledge";
 import { getSupportChatCopy } from "@/modules/support-chat/server/support-chat-copy";
+import { buildAccountAwareServerResponse, type SupportAccountHelperMetadata } from "@/modules/support-chat/server/account-aware/server-responses";
+import { routeSupportAccountAwareRequest } from "@/modules/support-chat/server/account-aware/routing";
+import type { TRPCContext } from "@/trpc/init";
 
 export type SupportChatDisposition =
   | "answered"
@@ -37,6 +40,7 @@ export type GenerateSupportResponseInput = {
   message: string;
   threadId?: string;
   locale: AppLang;
+  accountContext?: Pick<TRPCContext, "db" | "userId">;
 };
 
 export type GenerateSupportResponseResult = {
@@ -51,6 +55,7 @@ export type GenerateSupportResponseResult = {
     modelVersion?: string;
     requestId?: string | null;
   };
+  accountHelperMetadata?: SupportAccountHelperMetadata;
 };
 
 const MIN_STRONG_SOURCE_SCORE = 4;
@@ -218,6 +223,27 @@ export async function generateSupportResponse(
       disposition: "uncertain",
       responseOrigin: "server",
       needsHumanSupport: false,
+    });
+  }
+
+  const accountRoute = input.accountContext
+    ? routeSupportAccountAwareRequest(message)
+    : { kind: "none" as const };
+  if (accountRoute.kind !== "none") {
+    const accountResponse = await buildAccountAwareServerResponse({
+      route: accountRoute,
+      accountContext: input.accountContext,
+      locale: input.locale,
+    });
+
+    return supportResponse({
+      threadId,
+      assistantMessage: accountResponse.assistantMessage,
+      sources: [],
+      disposition: accountResponse.disposition,
+      responseOrigin: "server",
+      needsHumanSupport: accountResponse.needsHumanSupport,
+      accountHelperMetadata: accountResponse.accountHelperMetadata,
     });
   }
 

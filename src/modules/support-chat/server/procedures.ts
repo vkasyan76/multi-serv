@@ -71,6 +71,10 @@ export const supportChatRouter = createTRPCRouter({
         message: input.message,
         threadId,
         locale,
+        accountContext: {
+          db: ctx.db,
+          userId: ctx.userId,
+        },
       });
 
       try {
