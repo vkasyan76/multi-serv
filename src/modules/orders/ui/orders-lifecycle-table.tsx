@@ -322,6 +322,26 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
     }
   };
 
+  const getRequestDecisionErrorToast = (error: unknown) => {
+    const key =
+      typeof error === "object" && error && "message" in error
+        ? String((error as { message?: unknown }).message ?? "")
+        : "";
+
+    switch (key) {
+      case "orders.errors.already_canceled":
+        return tOrders("errors.already_canceled");
+      case "orders.errors.not_awaiting_tenant_confirmation":
+        return tOrders("errors.not_awaiting_tenant_confirmation");
+      case "orders.errors.slots_not_awaiting_confirmation":
+        return tOrders("errors.slots_not_awaiting_confirmation");
+      case "orders.errors.confirm_all_requested_failed":
+        return tOrders("errors.confirm_all_requested_failed");
+      default:
+        return tOrders("toasts.request_decision_failed");
+    }
+  };
+
   const customerCancelOrder = useMutation({
     ...trpc.orders.customerCancelSlotOrder.mutationOptions(),
     onSuccess: async (_data, variables) => {
@@ -373,8 +393,8 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
         queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
       });
     },
-    onError: () => {
-      toast.error(tOrders("toasts.request_decision_failed"));
+    onError: (error) => {
+      toast.error(getRequestDecisionErrorToast(error));
     },
   });
 
@@ -391,8 +411,8 @@ export function OrdersLifecycleTable({ mode, orders, appLang }: Props) {
         queryKey: trpc.orders.listForMyTenantSlotLifecycle.queryKey(),
       });
     },
-    onError: () => {
-      toast.error(tOrders("toasts.request_decision_failed"));
+    onError: (error) => {
+      toast.error(getRequestDecisionErrorToast(error));
     },
   });
 

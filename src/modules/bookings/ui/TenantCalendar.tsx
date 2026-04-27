@@ -742,17 +742,17 @@ export default function TenantCalendar({
     const b = event.resource; // typed as BookingWithName
     if (b.status === "available") return null; // green blocks stay clean
 
-    // Show customer name in the tenat dashboard and service status on public calendar
+    // Show customer name in the tenant dashboard and service status on public calendar
     const statusLabel = tBookings(
       `legend.${getServiceStatusKey(b.serviceStatus)}`,
     );
     const status = normalizeServiceStatus(b.serviceStatus);
-    const who = displayName(b) ?? statusLabel;
+    const name = displayName(b);
 
-    if (status === "requested" && who !== statusLabel) {
+    if (status === "requested" && name) {
       return (
         <div className="rbc-dash-ev truncate">
-          <span className="block truncate">{who}</span>
+          <span className="block truncate">{name}</span>
           <span className="block truncate text-[11px] font-medium">
             {statusLabel}
           </span>
@@ -760,7 +760,7 @@ export default function TenantCalendar({
       );
     }
 
-    return <div className="rbc-dash-ev truncate">{who}</div>;
+    return <div className="rbc-dash-ev truncate">{name ?? statusLabel}</div>;
   };
 
   // Map bookings -> RBC events with UI cleanup for past available slots

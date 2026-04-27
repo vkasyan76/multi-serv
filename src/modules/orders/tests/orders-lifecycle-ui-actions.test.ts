@@ -1,8 +1,22 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { CANCELLATION_WINDOW_HOURS } from "@/constants";
 import { canShowSelfCancelAction } from "../ui/orders-lifecycle-shared";
 
 const nowMs = Date.parse("2026-05-01T10:00:00.000Z");
+const HOUR_MS = 60 * 60 * 1000;
+const outsideCutoffStart = new Date(
+  nowMs + (CANCELLATION_WINDOW_HOURS + 24) * HOUR_MS,
+).toISOString();
+const outsideCutoffEnd = new Date(
+  nowMs + (CANCELLATION_WINDOW_HOURS + 25) * HOUR_MS,
+).toISOString();
+const withinCutoffStart = new Date(
+  nowMs + Math.max(CANCELLATION_WINDOW_HOURS - 1, 0) * HOUR_MS,
+).toISOString();
+const withinCutoffEnd = new Date(
+  nowMs + Math.max(CANCELLATION_WINDOW_HOURS, 1) * HOUR_MS,
+).toISOString();
 
 function row(overrides: Partial<Parameters<typeof canShowSelfCancelAction>[0]>) {
   return {
@@ -13,8 +27,8 @@ function row(overrides: Partial<Parameters<typeof canShowSelfCancelAction>[0]>) 
     slots: [
       {
         id: "slot-1",
-        start: "2026-05-03T10:00:00.000Z",
-        end: "2026-05-03T11:00:00.000Z",
+        start: outsideCutoffStart,
+        end: outsideCutoffEnd,
         serviceStatus: "scheduled",
         disputeReason: null,
         serviceSnapshot: null,
@@ -30,8 +44,8 @@ test("requested order cancel action is opt-in for customer UI", () => {
     slots: [
       {
         id: "slot-1",
-        start: "2026-05-03T10:00:00.000Z",
-        end: "2026-05-03T11:00:00.000Z",
+        start: outsideCutoffStart,
+        end: outsideCutoffEnd,
         serviceStatus: "requested",
         disputeReason: null,
         serviceSnapshot: null,
@@ -54,8 +68,8 @@ test("scheduled order cancel action still obeys invoice and cutoff rules", () =>
         slots: [
           {
             id: "slot-1",
-            start: "2026-05-02T09:00:00.000Z",
-            end: "2026-05-02T10:00:00.000Z",
+            start: withinCutoffStart,
+            end: withinCutoffEnd,
             serviceStatus: "scheduled",
             disputeReason: null,
             serviceSnapshot: null,

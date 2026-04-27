@@ -40,9 +40,12 @@ type OrderRequestDecisionCustomerCopy = {
   greeting: (customerName?: string) => string;
   intro: (tenantLabel: string, dateRange?: string | null) => string;
   statusNote: string;
-  providerReasonLabel?: string;
   ctaLabel: string;
   orderLabel: string;
+};
+
+type OrderRequestDeclinedCustomerCopy = OrderRequestDecisionCustomerCopy & {
+  providerReasonLabel: string;
 };
 
 export type OrderCanceledByRole = "customer" | "tenant";
@@ -540,7 +543,7 @@ const ORDER_REQUEST_EMAIL_COPY: Record<
     createdCustomer: Partial<OrderCreatedCustomerCopy>;
     createdTenant: Partial<OrderCreatedTenantCopy>;
     confirmedCustomer: OrderRequestDecisionCustomerCopy;
-    declinedCustomer: OrderRequestDecisionCustomerCopy;
+    declinedCustomer: OrderRequestDeclinedCustomerCopy;
   }
 > = {
   en: {

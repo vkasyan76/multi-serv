@@ -81,7 +81,7 @@ function OrderDeclinedCustomerEmail(props: OrderDeclinedCustomerTemplateProps) {
           <Text style={{ margin: "0 0 12px" }}>{copy.statusNote}</Text>
           {declineReason ? (
             <Text style={{ margin: "0 0 12px" }}>
-              <strong>{copy.providerReasonLabel ?? "Provider note"}:</strong>{" "}
+              <strong>{copy.providerReasonLabel}:</strong>{" "}
               {declineReason}
             </Text>
           ) : null}
@@ -161,9 +161,10 @@ export async function renderOrderDeclinedCustomerTemplate(
     copy.intro(tenantLabel, dateRange),
     "",
     ...services.map((service) => `- ${service}`),
+    "",
     copy.statusNote,
     declineReason
-      ? `${copy.providerReasonLabel ?? "Provider note"}: ${declineReason}`
+      ? `${copy.providerReasonLabel}: ${declineReason}`
       : null,
     "",
     `${copy.orderLabel}: ${orderId}`,

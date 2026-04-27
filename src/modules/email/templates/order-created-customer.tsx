@@ -150,6 +150,7 @@ export async function renderOrderCreatedCustomerTemplate(
     copy.intro(tenantLabel, dateRange),
     "",
     ...services.map((service) => `- ${service}`),
+    "",
     requestStatusNote,
     "",
     copy.responsibilityNote,
