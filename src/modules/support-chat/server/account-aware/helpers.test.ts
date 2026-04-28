@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import type { Booking, Invoice, Order } from "@/payload-types";
+import type { Booking, Invoice, Order, Tenant } from "@/payload-types";
 import {
   canCancelOrderForCurrentUser,
   getOrderStatusForCurrentUser,
@@ -12,7 +12,10 @@ import type { SupportAccountHelperInput } from "./types";
 
 const USER_A = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const USER_B = "bbbbbbbbbbbbbbbbbbbbbbbb";
+const USER_TENANT = "dddddddddddddddddddddddd";
+const USER_OTHER_TENANT = "eeeeeeeeeeeeeeeeeeeeeeee";
 const TENANT_ID = "cccccccccccccccccccccccc";
+const OTHER_TENANT_ID = "ffffffffffffffffffffffff";
 const ORDER_REQUESTED_A = "100000000000000000000001";
 const ORDER_SCHEDULED_A = "100000000000000000000002";
 const ORDER_INSIDE_CUTOFF_A = "100000000000000000000003";
@@ -20,6 +23,7 @@ const ORDER_INVOICED_A = "100000000000000000000004";
 const ORDER_USER_B = "100000000000000000000005";
 const ORDER_LEGACY_A = "100000000000000000000006";
 const ORDER_CANCELED_A = "100000000000000000000007";
+const ORDER_OTHER_TENANT = "100000000000000000000008";
 const ORDER_MISSING = "100000000000000000000099";
 const INVOICE_A = "200000000000000000000001";
 const INVOICE_B = "200000000000000000000002";
@@ -144,6 +148,21 @@ function baseBooking(overrides: Partial<Booking> & { id: string }): Booking {
   };
 }
 
+function baseTenant(overrides: Partial<Tenant> & { id: string }): Tenant {
+  const { id, ...rest } = overrides;
+  return {
+    id,
+    name: "Provider",
+    slug: "provider",
+    stripeAccountId: "acct_test",
+    country: "DE",
+    user: USER_TENANT,
+    updatedAt: "2026-04-27T10:00:00.000Z",
+    createdAt: "2026-04-27T09:00:00.000Z",
+    ...rest,
+  };
+}
+
 function makeFixtures() {
   const orders = new Map<string, Order>([
     [
@@ -196,6 +215,17 @@ function makeFixtures() {
         serviceStatus: "requested",
         invoiceStatus: "none",
         createdAt: "2026-04-28T09:00:00.000Z",
+      }),
+    ],
+    [
+      ORDER_OTHER_TENANT,
+      baseOrder({
+        id: ORDER_OTHER_TENANT,
+        user: USER_B,
+        tenant: OTHER_TENANT_ID,
+        serviceStatus: "scheduled",
+        invoiceStatus: "none",
+        createdAt: "2026-04-22T09:00:00.000Z",
       }),
     ],
     [
@@ -280,7 +310,20 @@ function makeFixtures() {
     ],
   ]);
 
-  return { orders, invoices, bookings };
+  const tenants = new Map<string, Tenant>([
+    [TENANT_ID, baseTenant({ id: TENANT_ID })],
+    [
+      OTHER_TENANT_ID,
+      baseTenant({
+        id: OTHER_TENANT_ID,
+        name: "Other Provider",
+        slug: "other-provider",
+        user: USER_OTHER_TENANT,
+      }),
+    ],
+  ]);
+
+  return { orders, invoices, bookings, tenants };
 }
 
 function clauseEquals(where: unknown, field: string) {
@@ -318,6 +361,12 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         const clerkUserId = clauseEquals(args.where, "clerkUserId");
         if (clerkUserId === "clerk-user-a") return { docs: [{ id: USER_A }] };
         if (clerkUserId === "clerk-user-b") return { docs: [{ id: USER_B }] };
+        if (clerkUserId === "clerk-user-tenant") {
+          return { docs: [{ id: USER_TENANT }] };
+        }
+        if (clerkUserId === "clerk-user-other-tenant") {
+          return { docs: [{ id: USER_OTHER_TENANT }] };
+        }
         return { docs: [] };
       }
 
@@ -364,6 +413,9 @@ function makeCtx(userId: string | null = "clerk-user-a") {
       }
       if (args.collection === "invoices") {
         return fixtures.invoices.get(args.id) ?? null;
+      }
+      if (args.collection === "tenants") {
+        return fixtures.tenants.get(args.id) ?? null;
       }
       return null;
     },
@@ -504,6 +556,7 @@ test("signed-in user can access own requested order status with sanitized DTO", 
   assert.equal(result.data.serviceStatusCategory, "requested");
   assert.equal(result.data.paymentStatusCategory, "not_due");
   assert.equal(result.data.invoiceStatusCategory, "none");
+  assert.equal(result.data.accessRole, "customer");
   assert.equal(result.data.nextStepKey, "await_provider_confirmation");
   assert.equal(result.data.firstSlotStart, undefined);
   assert.equal(result.data.providerDisplayName, "Provider");
@@ -516,6 +569,7 @@ test("signed-in user can access own requested order status with sanitized DTO", 
     "serviceStatusCategory",
     "paymentStatusCategory",
     "invoiceStatusCategory",
+    "accessRole",
     "nextStepKey",
     "createdAt",
     "firstSlotStart",
@@ -540,6 +594,7 @@ test("order status exposes only support-safe selected-order summary fields", asy
 
   assert.equal(result.data.serviceStatusCategory, "canceled");
   assert.equal(result.data.paymentStatusCategory, "canceled");
+  assert.equal(result.data.accessRole, "customer");
   assert.equal(result.data.providerDisplayName, "Provider");
   assert.deepEqual(result.data.serviceNames, ["Deep Tissue Massage"]);
   assert.equal(result.data.firstSlotStart, "2026-04-30T12:00:00.000Z");
@@ -562,6 +617,39 @@ test("order status exposes only support-safe selected-order summary fields", asy
   assert.equal("paymentIntentId" in result.data, false);
 });
 
+test("tenant owner can access exact orders for their tenant with support-safe DTO", async () => {
+  const { ctx } = makeCtx("clerk-user-tenant");
+  const result = await getOrderStatusForCurrentUser(
+    ctx,
+    orderInput(ORDER_USER_B),
+  );
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.equal(result.data.accessRole, "tenant");
+  assert.equal(result.data.serviceStatusCategory, "requested");
+  assert.equal(result.data.providerDisplayName, "Provider");
+  assert.equal("customerSnapshot" in result.data, false);
+  assert.equal("user" in result.data, false);
+  assert.equal("tenant" in result.data, false);
+  assert.equal("slots" in result.data, false);
+  assert.equal("stripeAccountId" in result.data, false);
+});
+
+test("wrong-tenant and missing exact orders collapse to the same denial", async () => {
+  const { ctx } = makeCtx("clerk-user-tenant");
+
+  assert.deepEqual(
+    await getOrderStatusForCurrentUser(ctx, orderInput(ORDER_OTHER_TENANT)),
+    { ok: false, reason: "not_found_or_not_owned" },
+  );
+  assert.deepEqual(
+    await getOrderStatusForCurrentUser(ctx, orderInput(ORDER_MISSING)),
+    { ok: false, reason: "not_found_or_not_owned" },
+  );
+});
+
 test("order-id payment status uses only the exact owned order", async () => {
   const { ctx, db } = makeCtx();
   const result = await getPaymentStatusForCurrentUser(
@@ -574,6 +662,7 @@ test("order-id payment status uses only the exact owned order", async () => {
 
   assert.equal(result.data.paymentStatusCategory, "not_due");
   assert.equal(result.data.invoiceStatusCategory, "none");
+  assert.equal(result.data.accessRole, "customer");
   assert.equal(result.data.nextStepKey, "view_orders");
   assert.equal(
     db.calls.some(
@@ -587,11 +676,31 @@ test("order-id payment status uses only the exact owned order", async () => {
     "resultCategory",
     "paymentStatusCategory",
     "invoiceStatusCategory",
+    "accessRole",
     "nextStepKey",
     "issuedAt",
     "paidAt",
     "paymentDueAt",
   ]);
+});
+
+test("tenant owner can access exact order payment status through order ownership", async () => {
+  const { ctx, db } = makeCtx("clerk-user-tenant");
+  const result = await getPaymentStatusForCurrentUser(
+    ctx,
+    orderInput(ORDER_INVOICED_A),
+  );
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.equal(result.data.accessRole, "tenant");
+  assert.equal(result.data.paymentStatusCategory, "pending");
+  assert.equal(result.data.invoiceStatusCategory, "issued");
+  assert.equal(
+    db.calls.some((call) => call.method === "find" && call.collection === "invoices"),
+    false,
+  );
 });
 
 test("order-id payment status reflects pay-later invoice cache fields", async () => {
@@ -703,6 +812,7 @@ test("cancellation helper reports requested eligibility and does not mutate data
   if (!result.ok) return;
 
   assert.equal(result.data.canCancel, true);
+  assert.equal(result.data.accessRole, "customer");
   assert.equal(result.data.blockReason, undefined);
   assert.equal(result.data.nextStepKey, "cancel_in_app");
   assert.equal(
@@ -716,12 +826,38 @@ test("cancellation helper reports requested eligibility and does not mutate data
     "helper",
     "referenceType",
     "resultCategory",
+    "accessRole",
     "canCancel",
     "blockReason",
     "nextStepKey",
     "firstSlotStart",
     "cutoffAt",
   ]);
+});
+
+test("tenant order cancellation eligibility remains read-only", async () => {
+  const { ctx, fixtures } = makeCtx("clerk-user-tenant");
+  const before = JSON.stringify({
+    orders: [...fixtures.orders.entries()],
+    bookings: [...fixtures.bookings.entries()],
+  });
+
+  const result = await canCancelOrderForCurrentUser(
+    ctx,
+    orderInput(ORDER_SCHEDULED_A),
+  );
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.equal(result.data.accessRole, "tenant");
+  assert.equal(
+    JSON.stringify({
+      orders: [...fixtures.orders.entries()],
+      bookings: [...fixtures.bookings.entries()],
+    }),
+    before,
+  );
 });
 
 test("cancellation helper matches slot-lifecycle/pay-later guard outcomes", async () => {

@@ -144,6 +144,25 @@ function missingReferenceMessage(route: Extract<SupportAccountRoute, { kind: "mi
 }
 
 function orderStatusHeadline(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
+  if (data.accessRole === "tenant") {
+    switch (data.serviceStatusCategory) {
+      case "requested":
+        return "This customer booking request is awaiting your confirmation.";
+      case "scheduled":
+        return "This customer booking is scheduled.";
+      case "completed":
+        return "This customer order is marked completed and is awaiting the next service-lifecycle step.";
+      case "accepted":
+        return "This customer order has been accepted.";
+      case "disputed":
+        return "This customer order is marked disputed.";
+      case "canceled":
+        return "This customer order is canceled.";
+      default:
+        return "I found the order, but its current service status is not available in a support-safe category.";
+    }
+  }
+
   switch (data.serviceStatusCategory) {
     case "requested":
       return "This order is awaiting provider confirmation. It is a booking request, not a scheduled booking yet.";
@@ -163,6 +182,29 @@ function orderStatusHeadline(data: Extract<SupportAccountHelperDTO, { resultCate
 }
 
 function statusReasonLabel(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
+  if (data.accessRole === "tenant") {
+    switch (data.statusReasonKey) {
+      case "customer_canceled":
+        return "The customer canceled this order.";
+      case "provider_declined":
+        return "You declined this booking request.";
+      case "provider_canceled":
+        return "The provider side canceled this order.";
+      case "awaiting_provider_confirmation":
+        return "This booking request is waiting for your confirmation or decline.";
+      case "provider_confirmed":
+        return "The provider side has confirmed this booking.";
+      case "completed":
+        return "The provider side has marked the service completed.";
+      case "accepted":
+        return "The customer accepted the service completion.";
+      case "disputed":
+        return "The customer disputed the service completion.";
+      default:
+        return undefined;
+    }
+  }
+
   switch (data.statusReasonKey) {
     case "customer_canceled":
       return "The order was canceled by the customer.";
@@ -186,6 +228,21 @@ function statusReasonLabel(data: Extract<SupportAccountHelperDTO, { resultCatego
 }
 
 function nextStepLabel(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
+  if (data.accessRole === "tenant") {
+    switch (data.nextStepKey) {
+      case "await_provider_confirmation":
+        return "Confirm or decline the request from your dashboard.";
+      case "pay_invoice":
+        return "Review the issued invoice from your dashboard.";
+      case "view_orders":
+        return "Open your dashboard Orders view for the full order view.";
+      case "no_action_needed":
+        return "No payment action is needed right now.";
+      default:
+        return undefined;
+    }
+  }
+
   switch (data.nextStepKey) {
     case "await_provider_confirmation":
       return "Wait for the provider to confirm or decline the request.";

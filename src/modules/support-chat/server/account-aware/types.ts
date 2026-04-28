@@ -105,6 +105,8 @@ export type SupportAccountCancellationBlockReason =
 
 export type SupportAccountCanceledByRole = "customer" | "tenant";
 
+export type SupportAccountAccessRole = "customer" | "tenant";
+
 export type SupportAccountOrderStatusReasonKey =
   | "customer_canceled"
   | "provider_declined"
@@ -140,6 +142,7 @@ export type SupportOrderStatusDTO = SupportAccountHelperBaseDTO & {
   serviceStatusCategory: SupportAccountOrderServiceStatusCategory;
   paymentStatusCategory: SupportAccountPaymentStatusCategory;
   invoiceStatusCategory: SupportAccountInvoiceStatusCategory;
+  accessRole: SupportAccountAccessRole;
   createdAt?: string;
   firstSlotStart?: string;
   lastUpdatedAt?: string;
@@ -156,6 +159,7 @@ export type SupportPaymentStatusDTO = SupportAccountHelperBaseDTO & {
   resultCategory: "payment_status";
   paymentStatusCategory: SupportAccountPaymentStatusCategory;
   invoiceStatusCategory: SupportAccountInvoiceStatusCategory;
+  accessRole?: SupportAccountAccessRole;
   issuedAt?: string;
   paidAt?: string;
   paymentDueAt?: string;
@@ -166,6 +170,7 @@ export type SupportCancellationEligibilityDTO =
     helper: "canCancelOrderForCurrentUser";
     referenceType: "order_id";
     resultCategory: "cancellation_eligibility";
+    accessRole: SupportAccountAccessRole;
     canCancel: boolean;
     blockReason?: SupportAccountCancellationBlockReason;
     firstSlotStart?: string;

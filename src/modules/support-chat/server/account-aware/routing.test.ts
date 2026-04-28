@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import type { Booking, Invoice, Order } from "@/payload-types";
+import type { Booking, Invoice, Order, Tenant } from "@/payload-types";
 import {
   buildAccountAwareActionResponse,
   buildAccountAwareServerResponse,
@@ -13,11 +13,15 @@ process.env.PAYLOAD_SECRET ??= "support-chat-action-test-secret";
 
 const USER_A = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const USER_B = "bbbbbbbbbbbbbbbbbbbbbbbb";
+const USER_TENANT = "dddddddddddddddddddddddd";
+const USER_OTHER_TENANT = "eeeeeeeeeeeeeeeeeeeeeeee";
 const TENANT_ID = "cccccccccccccccccccccccc";
+const OTHER_TENANT_ID = "ffffffffffffffffffffffff";
 const ORDER_REQUESTED_A = "100000000000000000000001";
 const ORDER_SCHEDULED_A = "100000000000000000000002";
 const ORDER_USER_B = "100000000000000000000005";
 const ORDER_CANCELED_A = "100000000000000000000007";
+const ORDER_OTHER_TENANT = "100000000000000000000008";
 const INVOICE_A = "200000000000000000000001";
 const SLOT_REQUESTED = "300000000000000000000001";
 const SLOT_CANCELED = "300000000000000000000005";
@@ -129,6 +133,21 @@ function booking(overrides: Partial<Booking> & { id: string }): Booking {
   };
 }
 
+function tenant(overrides: Partial<Tenant> & { id: string }): Tenant {
+  const { id, ...rest } = overrides;
+  return {
+    id,
+    name: "Provider",
+    slug: "provider",
+    stripeAccountId: "acct_test",
+    country: "DE",
+    user: USER_TENANT,
+    updatedAt: "2026-04-27T10:00:00.000Z",
+    createdAt: "2026-04-27T09:00:00.000Z",
+    ...rest,
+  };
+}
+
 function clauseEquals(where: unknown, field: string) {
   const value = where as Record<string, unknown> | undefined;
   const clause = value?.[field] as { equals?: unknown } | undefined;
@@ -154,6 +173,16 @@ function makeCtx(userId: string | null = "clerk-user-a") {
       }),
     ],
     [ORDER_USER_B, order({ id: ORDER_USER_B, user: USER_B })],
+    [
+      ORDER_OTHER_TENANT,
+      order({
+        id: ORDER_OTHER_TENANT,
+        user: USER_B,
+        tenant: OTHER_TENANT_ID,
+        serviceStatus: "scheduled",
+        createdAt: "2026-04-24T09:00:00.000Z",
+      }),
+    ],
     [
       ORDER_CANCELED_A,
       order({
@@ -187,6 +216,18 @@ function makeCtx(userId: string | null = "clerk-user-a") {
   const bookings = new Map<string, Booking>([
     [SLOT_REQUESTED, booking({ id: SLOT_REQUESTED })],
   ]);
+  const tenants = new Map<string, Tenant>([
+    [TENANT_ID, tenant({ id: TENANT_ID })],
+    [
+      OTHER_TENANT_ID,
+      tenant({
+        id: OTHER_TENANT_ID,
+        name: "Other Provider",
+        slug: "other-provider",
+        user: USER_OTHER_TENANT,
+      }),
+    ],
+  ]);
 
   const db: FakeDb = {
     calls: [],
@@ -205,6 +246,12 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         const clerkUserId = clauseEquals(args.where, "clerkUserId");
         if (clerkUserId === "clerk-user-a") return { docs: [{ id: USER_A }] };
         if (clerkUserId === "clerk-user-b") return { docs: [{ id: USER_B }] };
+        if (clerkUserId === "clerk-user-tenant") {
+          return { docs: [{ id: USER_TENANT }] };
+        }
+        if (clerkUserId === "clerk-user-other-tenant") {
+          return { docs: [{ id: USER_OTHER_TENANT }] };
+        }
       }
 
       if (args.collection === "bookings") {
@@ -246,6 +293,7 @@ function makeCtx(userId: string | null = "clerk-user-a") {
       this.calls.push({ method: "findByID", collection: args.collection, id: args.id });
       if (args.collection === "orders") return orders.get(args.id) ?? null;
       if (args.collection === "invoices") return invoices.get(args.id) ?? null;
+      if (args.collection === "tenants") return tenants.get(args.id) ?? null;
       return null;
     },
     create() {
@@ -315,6 +363,30 @@ test("selected order status response includes support-safe order context", async
     /Provider\/customer note: Provider cannot accommodate this request/i,
   );
   assert.doesNotMatch(response.assistantMessage, /stripe|paymentIntent|checkoutSession/i);
+});
+
+test("tenant exact order status uses tenant wording and safe authorization", async () => {
+  const { response } = await respond(
+    `What is my order status ${ORDER_USER_B}?`,
+    "clerk-user-tenant",
+  );
+
+  assert.equal(response.disposition, "answered");
+  assert.equal(response.accountHelperMetadata.helper, "getOrderStatusForCurrentUser");
+  assert.match(response.assistantMessage, /customer booking request/i);
+  assert.match(response.assistantMessage, /awaiting your confirmation/i);
+  assert.match(response.assistantMessage, /Provider: Provider/i);
+  assert.doesNotMatch(response.assistantMessage, /Ada|Lovelace|email|stripe/i);
+
+  const wrongTenant = await respond(
+    `What is my order status ${ORDER_OTHER_TENANT}?`,
+    "clerk-user-tenant",
+  );
+  assert.equal(wrongTenant.response.disposition, "unsupported_account_question");
+  assert.equal(
+    wrongTenant.response.accountHelperMetadata.deniedReason,
+    "not_found_or_not_owned",
+  );
 });
 
 test("routes exact payment requests by order and invoice reference", async () => {
@@ -496,6 +568,32 @@ test("candidate action click validates token and calls exact helper", async () =
     ),
     true,
   );
+});
+
+test("candidate action token is re-authorized for tenant order access", async () => {
+  const token = createAccountCandidateActionToken({
+    helper: "getOrderStatusForCurrentUser",
+    reference: ORDER_USER_B,
+    threadId: THREAD_ID,
+  });
+
+  const allowed = await buildAccountAwareActionResponse({
+    token,
+    threadId: THREAD_ID,
+    accountContext: makeCtx("clerk-user-tenant").accountContext,
+    locale: "en",
+  });
+  assert.equal(allowed.disposition, "answered");
+  assert.match(allowed.assistantMessage, /customer booking request/i);
+
+  const denied = await buildAccountAwareActionResponse({
+    token,
+    threadId: THREAD_ID,
+    accountContext: makeCtx("clerk-user-a").accountContext,
+    locale: "en",
+  });
+  assert.equal(denied.disposition, "unsupported_account_question");
+  assert.equal(denied.accountHelperMetadata.deniedReason, "not_found_or_not_owned");
 });
 
 test("candidate actions preserve payment and cancellation intent", async () => {

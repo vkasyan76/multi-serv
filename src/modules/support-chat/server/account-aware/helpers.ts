@@ -2,7 +2,7 @@ import "server-only";
 
 import { TRPCError } from "@trpc/server";
 
-import type { Booking, Invoice, Order } from "@/payload-types";
+import type { Booking, Invoice, Order, Tenant } from "@/payload-types";
 import { resolvePayloadUserId } from "@/modules/orders/server/identity";
 import {
   getSlotOrderCancelability,
@@ -11,6 +11,7 @@ import {
 import type { TRPCContext } from "@/trpc/init";
 import type {
   SupportAccountCancellationBlockReason,
+  SupportAccountAccessRole,
   SupportAccountHelperDeniedReason,
   SupportAccountHelperInput,
   SupportAccountHelperResult,
@@ -83,11 +84,29 @@ async function resolveCurrentPayloadUserId(ctx: HelperCtx) {
   }
 }
 
-async function loadOwnedOrderById(
+async function loadTenantOwnerRole(
+  ctx: HelperCtx,
+  payloadUserId: string,
+  tenantId: string,
+): Promise<SupportAccountAccessRole | null> {
+  const tenant = (await ctx.db.findByID({
+    collection: "tenants",
+    id: tenantId,
+    depth: 0,
+    overrideAccess: true,
+  })) as DocWithId<Tenant> | null;
+
+  return tenant && relId(tenant.user) === payloadUserId ? "tenant" : null;
+}
+
+async function loadAccessibleOrderById(
   ctx: HelperCtx,
   payloadUserId: string,
   orderId: string,
-) {
+): Promise<
+  | { ok: true; order: DocWithId<Order>; accessRole: SupportAccountAccessRole }
+  | ReturnType<typeof denied>
+> {
   const order = (await ctx.db.findByID({
     collection: "orders",
     id: orderId,
@@ -95,11 +114,28 @@ async function loadOwnedOrderById(
     overrideAccess: true,
   })) as DocWithId<Order> | null;
 
-  if (!order || relId(order.user) !== payloadUserId) {
+  if (!order) {
     return denied("not_found_or_not_owned");
   }
 
-  return { ok: true as const, order };
+  if (relId(order.user) === payloadUserId) {
+    return { ok: true as const, order, accessRole: "customer" as const };
+  }
+
+  const tenantId = relId(order.tenant);
+  if (!tenantId) {
+    return denied("not_found_or_not_owned");
+  }
+
+  // Exact order helpers are role-aware, but still fail closed. A signed action
+  // token only carries an exact reference; this ownership check remains the
+  // authority for both customer and tenant/provider access.
+  const tenantRole = await loadTenantOwnerRole(ctx, payloadUserId, tenantId);
+  if (!tenantRole) {
+    return denied("not_found_or_not_owned");
+  }
+
+  return { ok: true as const, order, accessRole: tenantRole };
 }
 
 async function loadOwnedInvoiceById(
@@ -326,6 +362,34 @@ function orderCandidate(order: DocWithId<Order>): SupportOrderCandidateDTO {
   };
 }
 
+function orderStatusDTO(
+  order: DocWithId<Order>,
+  accessRole: SupportAccountAccessRole,
+): SupportOrderStatusDTO {
+  const paymentStatus = orderPaymentStatusCategory(order);
+  const invoiceStatus = invoiceStatusCategory(order.invoiceStatus);
+  const serviceNames = slotServiceNames(order);
+
+  return {
+    helper: "getOrderStatusForCurrentUser",
+    referenceType: "order_id",
+    resultCategory: "order_status",
+    serviceStatusCategory: serviceStatusCategory(order),
+    paymentStatusCategory: paymentStatus,
+    invoiceStatusCategory: invoiceStatus,
+    accessRole,
+    nextStepKey: orderNextStepKey(order),
+    createdAt: order.createdAt,
+    firstSlotStart: firstPopulatedSlotStart(order),
+    lastUpdatedAt: order.updatedAt,
+    providerDisplayName: providerDisplayName(order),
+    serviceNames: serviceNames.length ? serviceNames : undefined,
+    canceledByRole: order.canceledByRole ?? undefined,
+    statusReasonKey: statusReasonKey(order),
+    publicStatusReason: publicStatusReason(order),
+  };
+}
+
 export async function getOrderStatusForCurrentUser(
   ctx: HelperCtx,
   input: SupportAccountHelperInput,
@@ -340,37 +404,16 @@ export async function getOrderStatusForCurrentUser(
   const identity = await resolveCurrentPayloadUserId(ctx);
   if (!identity.ok) return identity;
 
-  const ownedOrder = await loadOwnedOrderById(
+  const accessibleOrder = await loadAccessibleOrderById(
     ctx,
     identity.payloadUserId,
     reference.reference,
   );
-  if (!ownedOrder.ok) return ownedOrder;
-
-  const { order } = ownedOrder;
-  const paymentStatus = orderPaymentStatusCategory(order);
-  const invoiceStatus = invoiceStatusCategory(order.invoiceStatus);
-  const serviceNames = slotServiceNames(order);
+  if (!accessibleOrder.ok) return accessibleOrder;
 
   return {
     ok: true,
-    data: {
-      helper: "getOrderStatusForCurrentUser",
-      referenceType: "order_id",
-      resultCategory: "order_status",
-      serviceStatusCategory: serviceStatusCategory(order),
-      paymentStatusCategory: paymentStatus,
-      invoiceStatusCategory: invoiceStatus,
-      nextStepKey: orderNextStepKey(order),
-      createdAt: order.createdAt,
-      firstSlotStart: firstPopulatedSlotStart(order),
-      lastUpdatedAt: order.updatedAt,
-      providerDisplayName: providerDisplayName(order),
-      serviceNames: serviceNames.length ? serviceNames : undefined,
-      canceledByRole: order.canceledByRole ?? undefined,
-      statusReasonKey: statusReasonKey(order),
-      publicStatusReason: publicStatusReason(order),
-    },
+    data: orderStatusDTO(accessibleOrder.order, accessibleOrder.accessRole),
   };
 }
 
@@ -415,14 +458,14 @@ export async function getPaymentStatusForCurrentUser(
     };
   }
 
-  const ownedOrder = await loadOwnedOrderById(
+  const accessibleOrder = await loadAccessibleOrderById(
     ctx,
     identity.payloadUserId,
     reference.reference,
   );
-  if (!ownedOrder.ok) return ownedOrder;
+  if (!accessibleOrder.ok) return accessibleOrder;
 
-  const { order } = ownedOrder;
+  const { order } = accessibleOrder;
   const paymentStatus = orderPaymentStatusCategory(order);
   const invoiceStatus = invoiceStatusCategory(order.invoiceStatus);
 
@@ -434,6 +477,7 @@ export async function getPaymentStatusForCurrentUser(
       resultCategory: "payment_status",
       paymentStatusCategory: paymentStatus,
       invoiceStatusCategory: invoiceStatus,
+      accessRole: accessibleOrder.accessRole,
       nextStepKey: paymentNextStepKey(paymentStatus, invoiceStatus),
       issuedAt: order.invoiceIssuedAt ?? undefined,
       paidAt: order.paidAt ?? undefined,
@@ -456,16 +500,16 @@ export async function canCancelOrderForCurrentUser(
   const identity = await resolveCurrentPayloadUserId(ctx);
   if (!identity.ok) return identity;
 
-  const ownedOrder = await loadOwnedOrderById(
+  const accessibleOrder = await loadAccessibleOrderById(
     ctx,
     identity.payloadUserId,
     reference.reference,
   );
-  if (!ownedOrder.ok) return ownedOrder;
+  if (!accessibleOrder.ok) return accessibleOrder;
 
   const cancelability = await getSlotOrderCancelability(
     ctx.db,
-    ownedOrder.order,
+    accessibleOrder.order,
     new Date(),
     { allowRequested: true },
   );
@@ -476,6 +520,7 @@ export async function canCancelOrderForCurrentUser(
       helper: "canCancelOrderForCurrentUser",
       referenceType: "order_id",
       resultCategory: "cancellation_eligibility",
+      accessRole: accessibleOrder.accessRole,
       canCancel: cancelability.cancelable,
       blockReason: cancellationBlockReason(cancelability.reason),
       nextStepKey: cancelability.cancelable ? "cancel_in_app" : "view_orders",
