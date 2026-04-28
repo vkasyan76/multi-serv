@@ -17,7 +17,16 @@ type RunnerArgs = {
   out?: string;
 };
 
-type DbCall = { method: string; collection?: string; id?: string };
+type DbCall = {
+  method: string;
+  collection?: string;
+  id?: string;
+  where?: unknown;
+  limit?: number;
+  sort?: string;
+  depth?: number;
+  overrideAccess?: boolean;
+};
 
 type Phase2Result = {
   id: string;
@@ -183,9 +192,17 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
         invoiceIssuedAt: "2026-04-27T11:00:00.000Z",
         paymentDueAt: "2026-05-11T11:00:00.000Z",
         slots: [SLOT_INVOICED],
+        createdAt: "2026-04-26T09:00:00.000Z",
       }),
     ],
-    [ids.wrongOwnerOrder, order({ id: ids.wrongOwnerOrder, user: USER_B })],
+    [
+      ids.wrongOwnerOrder,
+      order({
+        id: ids.wrongOwnerOrder,
+        user: USER_B,
+        createdAt: "2026-04-28T09:00:00.000Z",
+      }),
+    ],
   ]);
   const invoices = new Map<string, Invoice>([
     [ids.ownedInvoice, invoice({ id: ids.ownedInvoice })],
@@ -201,8 +218,23 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
   // reads and throws on mutation or broad account searches.
   const db = {
     calls,
-    async find(args: { collection: string; where?: unknown }) {
-      calls.push({ method: "find", collection: args.collection });
+    async find(args: {
+      collection: string;
+      where?: unknown;
+      limit?: number;
+      sort?: string;
+      depth?: number;
+      overrideAccess?: boolean;
+    }) {
+      calls.push({
+        method: "find",
+        collection: args.collection,
+        where: args.where,
+        limit: args.limit,
+        sort: args.sort,
+        depth: args.depth,
+        overrideAccess: args.overrideAccess,
+      });
 
       if (args.collection === "users") {
         const clerkUserId = clauseEquals(args.where, "clerkUserId");
@@ -220,7 +252,31 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
         };
       }
 
-      if (args.collection === "orders" || args.collection === "invoices") {
+      if (args.collection === "orders") {
+        const userId = clauseEquals(args.where, "user");
+        const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
+        if (
+          args.limit !== 3 ||
+          args.sort !== "-createdAt" ||
+          args.depth !== 0 ||
+          args.overrideAccess !== true ||
+          userId !== USER_A ||
+          lifecycleMode !== "slot"
+        ) {
+          throw new Error("Unexpected broad orders lookup");
+        }
+        return {
+          docs: [...orders.values()]
+            .filter((item) => item.user === userId)
+            .filter((item) => item.lifecycleMode === lifecycleMode)
+            .sort((left, right) =>
+              String(right.createdAt).localeCompare(String(left.createdAt)),
+            )
+            .slice(0, args.limit),
+        };
+      }
+
+      if (args.collection === "invoices") {
         throw new Error(`Unexpected broad ${args.collection} lookup`);
       }
 
@@ -280,10 +336,24 @@ function hasAccountDbCall(calls: DbCall[]) {
 
 function hasBroadLookup(calls: DbCall[]) {
   return calls.some(
-    (call) =>
-      call.method === "find" &&
-      (call.collection === "orders" || call.collection === "invoices"),
+    (call) => {
+      if (call.method !== "find") return false;
+      if (call.collection === "invoices") return true;
+      if (call.collection !== "orders") return false;
+      return !(
+        call.limit === 3 &&
+        call.sort === "-createdAt" &&
+        call.depth === 0 &&
+        call.overrideAccess === true &&
+        clauseEquals(call.where, "user") === USER_A &&
+        clauseEquals(call.where, "lifecycleMode") === "slot"
+      );
+    },
   );
+}
+
+function hasExactLookup(calls: DbCall[]) {
+  return calls.some((call) => call.method === "findByID");
 }
 
 function hasMutation(calls: DbCall[]) {
@@ -320,6 +390,8 @@ function evaluateCase(
       testCase.expectNoAccountDbCalls !== true || !hasAccountDbCall(calls),
     noBroadLookup:
       testCase.expectNoBroadLookup !== true || !hasBroadLookup(calls),
+    noExactLookup:
+      testCase.expectNoExactLookup !== true || !hasExactLookup(calls),
     noMutation: testCase.expectNoMutation !== true || !hasMutation(calls),
     expectedAnswerPatterns: containsAny(
       result.assistantMessage,
