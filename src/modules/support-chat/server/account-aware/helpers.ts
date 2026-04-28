@@ -2,7 +2,7 @@ import "server-only";
 
 import { TRPCError } from "@trpc/server";
 
-import type { Invoice, Order } from "@/payload-types";
+import type { Booking, Invoice, Order } from "@/payload-types";
 import { resolvePayloadUserId } from "@/modules/orders/server/identity";
 import {
   getSlotOrderCancelability,
@@ -15,6 +15,7 @@ import type {
   SupportAccountHelperInput,
   SupportAccountHelperResult,
   SupportAccountInvoiceStatusCategory,
+  SupportAccountOrderStatusReasonKey,
   SupportAccountNextStepKey,
   SupportAccountOrderServiceStatusCategory,
   SupportAccountPaymentStatusCategory,
@@ -250,10 +251,67 @@ function firstPopulatedSlotStart(order: Pick<Order, "slots">) {
   return new Date(Math.min(...times)).toISOString();
 }
 
+function safeTrim(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed || undefined;
+}
+
+function providerDisplayName(order: Pick<Order, "vendorSnapshot">) {
+  return safeTrim(order.vendorSnapshot?.tenantName);
+}
+
+function populatedSlots(order: Pick<Order, "slots">) {
+  return (order.slots ?? []).filter(
+    (slot): slot is Booking => typeof slot !== "string" && Boolean(slot),
+  );
+}
+
+function slotServiceNames(order: Pick<Order, "slots">) {
+  const names = populatedSlots(order)
+    .map((slot) => safeTrim(slot.serviceSnapshot?.serviceName))
+    .filter((value): value is string => Boolean(value));
+
+  return [...new Set(names)];
+}
+
+function publicStatusReason(order: Pick<Order, "status" | "cancelReason">) {
+  if (order.status !== "canceled") return undefined;
+  return safeTrim(order.cancelReason);
+}
+
+function statusReasonKey(
+  order: Pick<Order, "status" | "serviceStatus" | "canceledByRole">,
+): SupportAccountOrderStatusReasonKey {
+  if (order.status === "canceled") {
+    if (order.canceledByRole === "customer") return "customer_canceled";
+    if (order.canceledByRole === "tenant") {
+      return order.serviceStatus === "requested"
+        ? "provider_declined"
+        : "provider_canceled";
+    }
+    return "unknown";
+  }
+
+  switch (order.serviceStatus) {
+    case "requested":
+      return "awaiting_provider_confirmation";
+    case "scheduled":
+      return "provider_confirmed";
+    case "completed":
+      return "completed";
+    case "accepted":
+      return "accepted";
+    case "disputed":
+      return "disputed";
+    default:
+      return "unknown";
+  }
+}
+
 function orderCandidate(order: DocWithId<Order>): SupportOrderCandidateDTO {
   const paymentStatus = orderPaymentStatusCategory(order);
   const invoiceStatus = invoiceStatusCategory(order.invoiceStatus);
-  const tenantDisplayName = order.vendorSnapshot?.tenantName?.trim();
+  const serviceNames = slotServiceNames(order);
 
   return {
     orderId: order.id,
@@ -262,7 +320,8 @@ function orderCandidate(order: DocWithId<Order>): SupportOrderCandidateDTO {
     invoiceStatusCategory: invoiceStatus,
     createdAt: order.createdAt,
     firstSlotStart: firstPopulatedSlotStart(order),
-    tenantDisplayName: tenantDisplayName || undefined,
+    tenantDisplayName: providerDisplayName(order),
+    serviceNames: serviceNames.length ? serviceNames : undefined,
     nextStepKey: orderNextStepKey(order),
   };
 }
@@ -291,6 +350,7 @@ export async function getOrderStatusForCurrentUser(
   const { order } = ownedOrder;
   const paymentStatus = orderPaymentStatusCategory(order);
   const invoiceStatus = invoiceStatusCategory(order.invoiceStatus);
+  const serviceNames = slotServiceNames(order);
 
   return {
     ok: true,
@@ -305,6 +365,11 @@ export async function getOrderStatusForCurrentUser(
       createdAt: order.createdAt,
       firstSlotStart: firstPopulatedSlotStart(order),
       lastUpdatedAt: order.updatedAt,
+      providerDisplayName: providerDisplayName(order),
+      serviceNames: serviceNames.length ? serviceNames : undefined,
+      canceledByRole: order.canceledByRole ?? undefined,
+      statusReasonKey: statusReasonKey(order),
+      publicStatusReason: publicStatusReason(order),
     },
   };
 }

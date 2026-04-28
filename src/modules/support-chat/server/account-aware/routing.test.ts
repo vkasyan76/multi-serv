@@ -17,8 +17,10 @@ const TENANT_ID = "cccccccccccccccccccccccc";
 const ORDER_REQUESTED_A = "100000000000000000000001";
 const ORDER_SCHEDULED_A = "100000000000000000000002";
 const ORDER_USER_B = "100000000000000000000005";
+const ORDER_CANCELED_A = "100000000000000000000007";
 const INVOICE_A = "200000000000000000000001";
 const SLOT_REQUESTED = "300000000000000000000001";
+const SLOT_CANCELED = "300000000000000000000005";
 const THREAD_ID = "11111111-1111-4111-8111-111111111111";
 
 type FakeDb = {
@@ -152,6 +154,32 @@ function makeCtx(userId: string | null = "clerk-user-a") {
       }),
     ],
     [ORDER_USER_B, order({ id: ORDER_USER_B, user: USER_B })],
+    [
+      ORDER_CANCELED_A,
+      order({
+        id: ORDER_CANCELED_A,
+        status: "canceled",
+        serviceStatus: "requested",
+        canceledByRole: "tenant",
+        cancelReason: "Provider cannot accommodate this request",
+        lifecycleMode: "legacy",
+        slots: [
+          booking({
+            id: SLOT_CANCELED,
+            start: "2026-04-30T12:00:00.000Z",
+            end: "2026-04-30T13:00:00.000Z",
+            serviceSnapshot: {
+              serviceName: "Deep Tissue Massage",
+              serviceSlug: "deep-tissue-massage",
+              tenantName: "Provider",
+              tenantSlug: "provider",
+              hourlyRate: 120,
+            },
+          }),
+        ],
+        createdAt: "2026-04-25T09:00:00.000Z",
+      }),
+    ],
   ]);
   const invoices = new Map<string, Invoice>([
     [INVOICE_A, invoice({ id: INVOICE_A })],
@@ -268,6 +296,25 @@ test("routes exact order status requests to deterministic helper responses", asy
   if (exactWithCandidateContext.kind === "helper") {
     assert.equal(exactWithCandidateContext.helper, "getOrderStatusForCurrentUser");
   }
+});
+
+test("selected order status response includes support-safe order context", async () => {
+  const { response } = await respond(
+    `What is my order status ${ORDER_CANCELED_A}?`,
+  );
+
+  assert.equal(response.disposition, "answered");
+  assert.equal(response.accountHelperMetadata.helper, "getOrderStatusForCurrentUser");
+  assert.match(response.assistantMessage, /This order is canceled/i);
+  assert.match(response.assistantMessage, /Provider: Provider/i);
+  assert.match(response.assistantMessage, /Service: Deep Tissue Massage/i);
+  assert.match(response.assistantMessage, /Date: 30 Apr 2026/i);
+  assert.match(response.assistantMessage, /Reason: The provider declined/i);
+  assert.match(
+    response.assistantMessage,
+    /Provider\/customer note: Provider cannot accommodate this request/i,
+  );
+  assert.doesNotMatch(response.assistantMessage, /stripe|paymentIntent|checkoutSession/i);
 });
 
 test("routes exact payment requests by order and invoice reference", async () => {
@@ -439,6 +486,10 @@ test("candidate action click validates token and calls exact helper", async () =
     "getOrderStatusForCurrentUser",
   );
   assert.match(clickResponse.assistantMessage, /awaiting provider confirmation/i);
+  assert.match(clickResponse.assistantMessage, /Provider: Provider/i);
+  assert.match(clickResponse.assistantMessage, /Status: requested/i);
+  assert.match(clickResponse.assistantMessage, /Payment: payment not due/i);
+  assert.match(clickResponse.assistantMessage, /Reason: The provider has not confirmed/i);
   assert.equal(
     db.calls.some(
       (call) => call.method === "findByID" && call.collection === "orders",

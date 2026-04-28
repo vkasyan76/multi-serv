@@ -19,6 +19,7 @@ const ORDER_INSIDE_CUTOFF_A = "100000000000000000000003";
 const ORDER_INVOICED_A = "100000000000000000000004";
 const ORDER_USER_B = "100000000000000000000005";
 const ORDER_LEGACY_A = "100000000000000000000006";
+const ORDER_CANCELED_A = "100000000000000000000007";
 const ORDER_MISSING = "100000000000000000000099";
 const INVOICE_A = "200000000000000000000001";
 const INVOICE_B = "200000000000000000000002";
@@ -27,6 +28,7 @@ const SLOT_REQUESTED = "300000000000000000000001";
 const SLOT_SCHEDULED = "300000000000000000000002";
 const SLOT_INSIDE_CUTOFF = "300000000000000000000003";
 const SLOT_INVOICED = "300000000000000000000004";
+const SLOT_CANCELED = "300000000000000000000005";
 
 type FakeDb = {
   calls: Array<{
@@ -204,6 +206,32 @@ function makeFixtures() {
         serviceStatus: "scheduled",
         invoiceStatus: "none",
         createdAt: "2026-04-29T09:00:00.000Z",
+      }),
+    ],
+    [
+      ORDER_CANCELED_A,
+      baseOrder({
+        id: ORDER_CANCELED_A,
+        status: "canceled",
+        serviceStatus: "requested",
+        invoiceStatus: "none",
+        canceledByRole: "tenant",
+        cancelReason: "Provider cannot accommodate this request",
+        slots: [
+          baseBooking({
+            id: SLOT_CANCELED,
+            start: "2026-04-30T12:00:00.000Z",
+            end: "2026-04-30T13:00:00.000Z",
+            serviceSnapshot: {
+              serviceName: "Deep Tissue Massage",
+              serviceSlug: "deep-tissue-massage",
+              tenantName: "Provider",
+              tenantSlug: "provider",
+              hourlyRate: 120,
+            },
+          }),
+        ],
+        createdAt: "2026-04-23T09:00:00.000Z",
       }),
     ],
   ]);
@@ -421,6 +449,7 @@ test("recent order candidate helper returns a constrained sanitized list", async
       "createdAt",
       "firstSlotStart",
       "tenantDisplayName",
+      "serviceNames",
       "nextStepKey",
     ]);
     assert.equal("customerSnapshot" in candidate, false);
@@ -477,6 +506,9 @@ test("signed-in user can access own requested order status with sanitized DTO", 
   assert.equal(result.data.invoiceStatusCategory, "none");
   assert.equal(result.data.nextStepKey, "await_provider_confirmation");
   assert.equal(result.data.firstSlotStart, undefined);
+  assert.equal(result.data.providerDisplayName, "Provider");
+  assert.equal(result.data.statusReasonKey, "awaiting_provider_confirmation");
+  assert.equal(result.data.publicStatusReason, undefined);
   assertKeys(result.data, [
     "helper",
     "referenceType",
@@ -488,7 +520,46 @@ test("signed-in user can access own requested order status with sanitized DTO", 
     "createdAt",
     "firstSlotStart",
     "lastUpdatedAt",
+    "providerDisplayName",
+    "serviceNames",
+    "canceledByRole",
+    "statusReasonKey",
+    "publicStatusReason",
   ]);
+});
+
+test("order status exposes only support-safe selected-order summary fields", async () => {
+  const { ctx } = makeCtx();
+  const result = await getOrderStatusForCurrentUser(
+    ctx,
+    orderInput(ORDER_CANCELED_A),
+  );
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.equal(result.data.serviceStatusCategory, "canceled");
+  assert.equal(result.data.paymentStatusCategory, "canceled");
+  assert.equal(result.data.providerDisplayName, "Provider");
+  assert.deepEqual(result.data.serviceNames, ["Deep Tissue Massage"]);
+  assert.equal(result.data.firstSlotStart, "2026-04-30T12:00:00.000Z");
+  assert.equal(result.data.canceledByRole, "tenant");
+  assert.equal(result.data.statusReasonKey, "provider_declined");
+  assert.equal(
+    result.data.publicStatusReason,
+    "Provider cannot accommodate this request",
+  );
+  assert.equal("customerSnapshot" in result.data, false);
+  assert.equal("vendorSnapshot" in result.data, false);
+  assert.equal("amount" in result.data, false);
+  assert.equal("currency" in result.data, false);
+  assert.equal("tenant" in result.data, false);
+  assert.equal("user" in result.data, false);
+  assert.equal("slots" in result.data, false);
+  assert.equal("stripeAccountId" in result.data, false);
+  assert.equal("destination" in result.data, false);
+  assert.equal("checkoutSessionId" in result.data, false);
+  assert.equal("paymentIntentId" in result.data, false);
 });
 
 test("order-id payment status uses only the exact owned order", async () => {

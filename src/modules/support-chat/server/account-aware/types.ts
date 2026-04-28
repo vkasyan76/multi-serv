@@ -103,6 +103,19 @@ export type SupportAccountCancellationBlockReason =
   | "slot_paid"
   | "unknown";
 
+export type SupportAccountCanceledByRole = "customer" | "tenant";
+
+export type SupportAccountOrderStatusReasonKey =
+  | "customer_canceled"
+  | "provider_declined"
+  | "provider_canceled"
+  | "awaiting_provider_confirmation"
+  | "provider_confirmed"
+  | "completed"
+  | "accepted"
+  | "disputed"
+  | "unknown";
+
 export type SupportAccountNextStepKey =
   | "await_provider_confirmation"
   | "view_orders"
@@ -130,6 +143,11 @@ export type SupportOrderStatusDTO = SupportAccountHelperBaseDTO & {
   createdAt?: string;
   firstSlotStart?: string;
   lastUpdatedAt?: string;
+  providerDisplayName?: string;
+  serviceNames?: string[];
+  canceledByRole?: SupportAccountCanceledByRole;
+  statusReasonKey: SupportAccountOrderStatusReasonKey;
+  publicStatusReason?: string;
 };
 
 export type SupportPaymentStatusDTO = SupportAccountHelperBaseDTO & {

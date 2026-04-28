@@ -59,22 +59,6 @@ function categoryLabel(value: string) {
   return value.replaceAll("_", " ");
 }
 
-function candidatePaymentLabel(candidate: SupportOrderCandidateDTO) {
-  if (
-    candidate.invoiceStatusCategory === "issued" ||
-    candidate.invoiceStatusCategory === "overdue"
-  ) {
-    return `payment ${categoryLabel(candidate.paymentStatusCategory)}`;
-  }
-  if (
-    candidate.invoiceStatusCategory !== "none" &&
-    candidate.invoiceStatusCategory !== "unknown"
-  ) {
-    return `invoice ${categoryLabel(candidate.invoiceStatusCategory)}`;
-  }
-  return `payment ${categoryLabel(candidate.paymentStatusCategory)}`;
-}
-
 function formatCandidateDate(value: string | undefined) {
   if (!value) return undefined;
   const date = new Date(value);
@@ -84,6 +68,25 @@ function formatCandidateDate(value: string | undefined) {
     month: "short",
     year: "numeric",
   }).format(date);
+}
+
+function paymentSummary(input: {
+  paymentStatusCategory: string;
+  invoiceStatusCategory: string;
+}) {
+  if (
+    input.invoiceStatusCategory === "issued" ||
+    input.invoiceStatusCategory === "overdue"
+  ) {
+    return `payment ${categoryLabel(input.paymentStatusCategory)}`;
+  }
+  if (
+    input.invoiceStatusCategory !== "none" &&
+    input.invoiceStatusCategory !== "unknown"
+  ) {
+    return `invoice ${categoryLabel(input.invoiceStatusCategory)}`;
+  }
+  return `payment ${categoryLabel(input.paymentStatusCategory)}`;
 }
 
 function candidateActionLabel(candidate: SupportOrderCandidateDTO) {
@@ -99,7 +102,7 @@ function candidateActionLabel(candidate: SupportOrderCandidateDTO) {
 function candidateActionDescription(candidate: SupportOrderCandidateDTO) {
   return [
     categoryLabel(candidate.serviceStatusCategory),
-    candidatePaymentLabel(candidate),
+    paymentSummary(candidate),
   ]
     .filter((value): value is string => Boolean(value))
     .join(" - ");
@@ -140,7 +143,7 @@ function missingReferenceMessage(route: Extract<SupportAccountRoute, { kind: "mi
   return "Please provide the exact order ID so I can check that safely.";
 }
 
-function orderStatusMessage(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
+function orderStatusHeadline(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
   switch (data.serviceStatusCategory) {
     case "requested":
       return "This order is awaiting provider confirmation. It is a booking request, not a scheduled booking yet.";
@@ -157,6 +160,75 @@ function orderStatusMessage(data: Extract<SupportAccountHelperDTO, { resultCateg
     default:
       return "I found the order, but its current service status is not available in a support-safe category.";
   }
+}
+
+function statusReasonLabel(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
+  switch (data.statusReasonKey) {
+    case "customer_canceled":
+      return "The order was canceled by the customer.";
+    case "provider_declined":
+      return "The provider declined this booking request.";
+    case "provider_canceled":
+      return "The provider canceled this order.";
+    case "awaiting_provider_confirmation":
+      return "The provider has not confirmed or declined this booking request yet.";
+    case "provider_confirmed":
+      return "The provider has confirmed this booking.";
+    case "completed":
+      return "The provider has marked the service completed.";
+    case "accepted":
+      return "The service completion has been accepted.";
+    case "disputed":
+      return "The order is currently marked as disputed.";
+    default:
+      return undefined;
+  }
+}
+
+function nextStepLabel(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
+  switch (data.nextStepKey) {
+    case "await_provider_confirmation":
+      return "Wait for the provider to confirm or decline the request.";
+    case "pay_invoice":
+      return "Open the invoice from your Orders page to pay.";
+    case "view_orders":
+      return "Open your Orders page for the full order view.";
+    case "no_action_needed":
+      return "No payment action is needed right now.";
+    default:
+      return undefined;
+  }
+}
+
+function orderStatusMessage(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
+  const lines = [orderStatusHeadline(data)];
+
+  // Keep the summary deterministic and bounded to fields the helper already
+  // sanitized; do not expose raw order records, Stripe data, or internal notes.
+  const context = [
+    data.providerDisplayName ? `Provider: ${data.providerDisplayName}` : undefined,
+    data.serviceNames?.length ? `Service: ${data.serviceNames.join(", ")}` : undefined,
+    formatCandidateDate(data.firstSlotStart ?? data.createdAt)
+      ? `Date: ${formatCandidateDate(data.firstSlotStart ?? data.createdAt)}`
+      : undefined,
+    `Status: ${categoryLabel(data.serviceStatusCategory)}`,
+    `Payment: ${paymentSummary(data)}`,
+  ].filter((value): value is string => Boolean(value));
+
+  if (context.length) {
+    lines.push(context.join("\n"));
+  }
+
+  const reason = statusReasonLabel(data);
+  if (reason) lines.push(`Reason: ${reason}`);
+  if (data.publicStatusReason) {
+    lines.push(`Provider/customer note: ${data.publicStatusReason}`);
+  }
+
+  const nextStep = nextStepLabel(data);
+  if (nextStep) lines.push(`Next step: ${nextStep}`);
+
+  return lines.join("\n\n");
 }
 
 function paymentStatusMessage(data: Extract<SupportAccountHelperDTO, { resultCategory: "payment_status" }>) {
