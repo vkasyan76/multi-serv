@@ -46,6 +46,7 @@ export function SupportChatPanel({ className }: { className?: string }) {
     isSending,
     error,
     sendMessage,
+    sendAction,
   } = useSupportChat();
 
   const contactHref = withLocalePrefix("/contact", lang);
@@ -131,6 +132,7 @@ export function SupportChatPanel({ className }: { className?: string }) {
             messages={messages}
             isSending={isSending}
             sendingText={t("sending")}
+            onActionSelect={sendAction}
             getHandoffText={(message) =>
               getHandoffText(message, {
                 account: t("handoffAccount"),

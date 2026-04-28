@@ -4,10 +4,19 @@ export type SupportChatDisposition =
   | "escalate"
   | "unsupported_account_question";
 
+export type SupportChatAction = {
+  id: string;
+  type: "account_candidate_select";
+  label: string;
+  description?: string;
+  token: string;
+};
+
 export type SupportChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  actions?: SupportChatAction[];
   disposition?: SupportChatDisposition;
   needsHumanSupport?: boolean;
   sources?: {

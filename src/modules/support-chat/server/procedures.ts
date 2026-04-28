@@ -10,6 +10,7 @@ import {
 } from "@/modules/support-chat/lib/boundaries";
 import { SUPPORT_CHAT_CAPABILITIES } from "@/modules/support-chat/lib/scope";
 import { supportChatAdminProcedures } from "@/modules/support-chat/server/admin-procedures";
+import { buildAccountAwareActionResponse } from "@/modules/support-chat/server/account-aware/server-responses";
 import { generateSupportResponse } from "@/modules/support-chat/server/generate-support-response";
 import { persistSupportInteraction } from "@/modules/support-chat/server/persist-support-interaction";
 import { checkSupportChatRateLimit } from "@/modules/support-chat/server/rate-limit";
@@ -43,6 +44,12 @@ export const supportChatRouter = createTRPCRouter({
         message: z.string().trim().min(1).max(2000),
         threadId: z.string().uuid().optional(),
         locale: z.enum(SUPPORTED_APP_LANGS).optional(),
+        action: z
+          .object({
+            type: z.literal("account_candidate_select"),
+            token: z.string().min(1).max(4000),
+          })
+          .optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -67,15 +74,29 @@ export const supportChatRouter = createTRPCRouter({
         };
       }
 
-      const response = await generateSupportResponse({
-        message: input.message,
-        threadId,
-        locale,
-        accountContext: {
-          db: ctx.db,
-          userId: ctx.userId,
-        },
-      });
+      const accountContext = {
+        db: ctx.db,
+        userId: ctx.userId,
+      };
+
+      const response = input.action
+        ? {
+            threadId,
+            sources: [],
+            responseOrigin: "server" as const,
+            ...(await buildAccountAwareActionResponse({
+              token: input.action.token,
+              threadId,
+              locale,
+              accountContext,
+            })),
+          }
+        : await generateSupportResponse({
+            message: input.message,
+            threadId,
+            locale,
+            accountContext,
+          });
 
       try {
         await persistSupportInteraction({

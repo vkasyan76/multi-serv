@@ -2,8 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { Booking, Invoice, Order } from "@/payload-types";
-import { buildAccountAwareServerResponse } from "./server-responses";
+import {
+  buildAccountAwareActionResponse,
+  buildAccountAwareServerResponse,
+} from "./server-responses";
 import { routeSupportAccountAwareRequest } from "./routing";
+import { createAccountCandidateActionToken } from "./action-tokens";
+
+process.env.PAYLOAD_SECRET ??= "support-chat-action-test-secret";
 
 const USER_A = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const USER_B = "bbbbbbbbbbbbbbbbbbbbbbbb";
@@ -13,6 +19,7 @@ const ORDER_SCHEDULED_A = "100000000000000000000002";
 const ORDER_USER_B = "100000000000000000000005";
 const INVOICE_A = "200000000000000000000001";
 const SLOT_REQUESTED = "300000000000000000000001";
+const THREAD_ID = "11111111-1111-4111-8111-111111111111";
 
 type FakeDb = {
   calls: Array<{
@@ -235,8 +242,9 @@ async function respond(message: string, userId: string | null = "clerk-user-a") 
     route: route as Exclude<typeof route, { kind: "none" }>,
     accountContext,
     locale: "en",
+    threadId: THREAD_ID,
   });
-  return { route, response, db };
+  return { route, response, db, accountContext };
 }
 
 test("routes exact order status requests to deterministic helper responses", async () => {
@@ -318,6 +326,7 @@ test("signed-out candidate-selection account request returns safe handoff", asyn
     route: route as Exclude<typeof route, { kind: "none" }>,
     accountContext,
     locale: "en",
+    threadId: THREAD_ID,
   });
 
   assert.equal(response.disposition, "unsupported_account_question");
@@ -381,10 +390,13 @@ test("vague account prompts route to candidate selection", () => {
   }
 });
 
-test("candidate selection lists readable candidates without exact helper calls", async () => {
+test("candidate selection returns clickable actions without exact helper calls", async () => {
   const { route, response, db } = await respond("What was my last order?");
 
   assert.equal(route.kind, "candidate_selection");
+  if (route.kind === "candidate_selection") {
+    assert.equal(route.selectionHelper, "getOrderStatusForCurrentUser");
+  }
   assert.equal(response.disposition, "uncertain");
   assert.equal(response.needsHumanSupport, false);
   assert.equal(
@@ -392,18 +404,141 @@ test("candidate selection lists readable candidates without exact helper calls",
     "getRecentSupportOrderCandidatesForCurrentUser",
   );
   assert.equal(response.accountHelperMetadata.resultCategory, "order_candidates");
-  assert.match(response.assistantMessage, /Provider/i);
-  assert.match(response.assistantMessage, /27 Apr 2026/i);
-  assert.match(response.assistantMessage, /requested/i);
-  assert.match(response.assistantMessage, /payment not due/i);
-  assert.match(response.assistantMessage, new RegExp(ORDER_REQUESTED_A));
-  assert.match(response.assistantMessage, /Reply with the exact order ID/i);
+  assert.match(response.assistantMessage, /Which order do you mean/i);
+  assert.equal(response.actions?.length, 2);
+  assert.equal(response.actions?.[0]?.type, "account_candidate_select");
+  assert.match(response.actions?.[0]?.label ?? "", /Provider/i);
+  assert.match(response.actions?.[0]?.label ?? "", /27 Apr 2026/i);
+  assert.match(response.actions?.[0]?.description ?? "", /requested/i);
+  assert.match(response.actions?.[0]?.description ?? "", /payment not due/i);
+  assert.ok(response.actions?.[0]?.token);
+  assert.doesNotMatch(response.actions?.[0]?.token ?? "", new RegExp(ORDER_REQUESTED_A));
   assert.doesNotMatch(response.assistantMessage, /your last order is/i);
   assert.doesNotMatch(response.assistantMessage, /reply\s+(1|one)/i);
   assert.equal(
     db.calls.some((call) => call.method === "findByID"),
     false,
   );
+});
+
+test("candidate action click validates token and calls exact helper", async () => {
+  const { response, db, accountContext } = await respond("What was my last order?");
+  const action = response.actions?.[0];
+  assert.ok(action);
+
+  const clickResponse = await buildAccountAwareActionResponse({
+    token: action.token,
+    threadId: THREAD_ID,
+    accountContext,
+    locale: "en",
+  });
+
+  assert.equal(clickResponse.disposition, "answered");
+  assert.equal(
+    clickResponse.accountHelperMetadata.helper,
+    "getOrderStatusForCurrentUser",
+  );
+  assert.match(clickResponse.assistantMessage, /awaiting provider confirmation/i);
+  assert.equal(
+    db.calls.some(
+      (call) => call.method === "findByID" && call.collection === "orders",
+    ),
+    true,
+  );
+});
+
+test("candidate actions preserve payment and cancellation intent", async () => {
+  const payment = await respond("Did my payment go through?");
+  assert.equal(payment.route.kind, "candidate_selection");
+  if (payment.route.kind === "candidate_selection") {
+    assert.equal(payment.route.selectionHelper, "getPaymentStatusForCurrentUser");
+  }
+  const paymentAction = payment.response.actions?.[0];
+  assert.ok(paymentAction);
+  const paymentClick = await buildAccountAwareActionResponse({
+    token: paymentAction.token,
+    threadId: THREAD_ID,
+    accountContext: payment.accountContext,
+    locale: "en",
+  });
+  assert.equal(
+    paymentClick.accountHelperMetadata.helper,
+    "getPaymentStatusForCurrentUser",
+  );
+  assert.match(paymentClick.assistantMessage, /not due/i);
+
+  const cancel = await respond("Can I cancel my latest booking?");
+  assert.equal(cancel.route.kind, "candidate_selection");
+  if (cancel.route.kind === "candidate_selection") {
+    assert.equal(cancel.route.selectionHelper, "canCancelOrderForCurrentUser");
+  }
+  const cancelAction = cancel.response.actions?.[0];
+  assert.ok(cancelAction);
+  const cancelClick = await buildAccountAwareActionResponse({
+    token: cancelAction.token,
+    threadId: THREAD_ID,
+    accountContext: cancel.accountContext,
+    locale: "en",
+  });
+  assert.equal(
+    cancelClick.accountHelperMetadata.helper,
+    "canCancelOrderForCurrentUser",
+  );
+  assert.match(cancelClick.assistantMessage, /eligible for in-app cancellation/i);
+  assert.doesNotMatch(cancelClick.assistantMessage, /has been canceled/i);
+});
+
+test("tampered and wrong-thread action tokens fail safely", async () => {
+  const { response, accountContext } = await respond("What was my last order?");
+  const action = response.actions?.[0];
+  assert.ok(action);
+
+  const tampered = await buildAccountAwareActionResponse({
+    token: `${action.token.slice(0, -2)}xx`,
+    threadId: THREAD_ID,
+    accountContext,
+    locale: "en",
+  });
+  assert.equal(tampered.disposition, "unsupported_account_question");
+  assert.match(tampered.assistantMessage, /cannot check live order/i);
+
+  const wrongThread = await buildAccountAwareActionResponse({
+    token: action.token,
+    threadId: "22222222-2222-4222-8222-222222222222",
+    accountContext,
+    locale: "en",
+  });
+  assert.equal(wrongThread.disposition, "unsupported_account_question");
+});
+
+test("expired and signed-out candidate action clicks fail safely", async () => {
+  const expiredToken = createAccountCandidateActionToken({
+    helper: "getOrderStatusForCurrentUser",
+    reference: ORDER_REQUESTED_A,
+    threadId: THREAD_ID,
+    now: new Date(Date.now() - 20 * 60 * 1000),
+  });
+  const { accountContext } = makeCtx();
+
+  const expired = await buildAccountAwareActionResponse({
+    token: expiredToken,
+    threadId: THREAD_ID,
+    accountContext,
+    locale: "en",
+  });
+  assert.equal(expired.disposition, "unsupported_account_question");
+
+  const { response } = await respond("What was my last order?");
+  const action = response.actions?.[0];
+  assert.ok(action);
+  const signedOut = await buildAccountAwareActionResponse({
+    token: action.token,
+    threadId: THREAD_ID,
+    accountContext: makeCtx(null).accountContext,
+    locale: "en",
+  });
+  assert.equal(signedOut.disposition, "unsupported_account_question");
+  assert.equal(signedOut.accountHelperMetadata.deniedReason, "unauthenticated");
 });
 
 test("one candidate still asks for the exact order ID", async () => {
@@ -423,11 +558,11 @@ test("one candidate still asks for the exact order ID", async () => {
     route,
     accountContext,
     locale: "en",
+    threadId: THREAD_ID,
   });
 
   assert.match(response.assistantMessage, /one recent order candidate/i);
-  assert.match(response.assistantMessage, new RegExp(ORDER_REQUESTED_A));
-  assert.match(response.assistantMessage, /Reply with the exact order ID/i);
+  assert.equal(response.actions?.length, 1);
   assert.doesNotMatch(response.assistantMessage, /eligible for in-app cancellation/i);
   assert.doesNotMatch(response.assistantMessage, /reply\s+(1|one)/i);
 });

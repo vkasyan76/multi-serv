@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { AccountCandidateSelectionHelper } from "./action-tokens";
 import type {
   SupportAccountHelperInput,
   SupportAccountHelperName,
@@ -23,7 +24,10 @@ export type SupportAccountRoute =
       helper: ExactReferenceSupportAccountHelperName;
       referenceType: SupportAccountReferenceType;
     }
-  | { kind: "candidate_selection" }
+  | {
+      kind: "candidate_selection";
+      selectionHelper: AccountCandidateSelectionHelper;
+    }
   | { kind: "unsupported_reference" }
   | { kind: "broad_or_deferred" }
   | { kind: "none" };
@@ -64,8 +68,8 @@ const PAYMENT_STATUS_PATTERNS = [
 ];
 
 const CANCEL_ELIGIBILITY_PATTERNS = [
-  /\bcan\s+i\s+cancel\s+(my\s+|this\s+|the\s+)?(order|booking)\b/i,
-  /\bcancel\s+(my\s+|this\s+|the\s+)?(order|booking)\b/i,
+  /\bcan\s+i\s+cancel\s+(my\s+|this\s+|the\s+)?(?:last\s+|latest\s+|recent\s+|most\s+recent\s+)?(order|booking)\b/i,
+  /\bcancel\s+(my\s+|this\s+|the\s+)?(?:last\s+|latest\s+|recent\s+|most\s+recent\s+)?(order|booking)\b/i,
   /\bcancelable\b/i,
   /\bcancellation\s+eligibility\b/i,
 ];
@@ -95,6 +99,15 @@ function helperInput(
   };
 }
 
+function candidateSelectionHelper(input: {
+  hasCancelEligibility: boolean;
+  hasPaymentStatus: boolean;
+}): AccountCandidateSelectionHelper {
+  if (input.hasCancelEligibility) return "canCancelOrderForCurrentUser";
+  if (input.hasPaymentStatus) return "getPaymentStatusForCurrentUser";
+  return "getOrderStatusForCurrentUser";
+}
+
 export function routeSupportAccountAwareRequest(
   message: string,
 ): SupportAccountRoute {
@@ -119,7 +132,13 @@ export function routeSupportAccountAwareRequest(
     ids.length === 0 &&
     detectCandidateSelectionIntent(trimmed)
   ) {
-    return { kind: "candidate_selection" };
+    return {
+      kind: "candidate_selection",
+      selectionHelper: candidateSelectionHelper({
+        hasCancelEligibility,
+        hasPaymentStatus,
+      }),
+    };
   }
 
   if (!isAccountAware) return { kind: "none" };
@@ -162,7 +181,13 @@ export function routeSupportAccountAwareRequest(
           );
     }
 
-    return { kind: "candidate_selection" };
+    return {
+      kind: "candidate_selection",
+      selectionHelper: candidateSelectionHelper({
+        hasCancelEligibility,
+        hasPaymentStatus,
+      }),
+    };
   }
 
   if (hasCancelEligibility) {

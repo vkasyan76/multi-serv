@@ -9,6 +9,11 @@ import {
   getPaymentStatusForCurrentUser,
   getRecentSupportOrderCandidatesForCurrentUser,
 } from "./helpers";
+import {
+  createAccountCandidateActionToken,
+  verifyAccountCandidateActionToken,
+  type AccountCandidateSelectionHelper,
+} from "./action-tokens";
 import type { SupportAccountRoute } from "./routing";
 import type {
   SupportAccountHelperDeniedReason,
@@ -35,6 +40,15 @@ export type AccountAwareServerResponse = {
   disposition: "answered" | "uncertain" | "unsupported_account_question";
   needsHumanSupport: boolean;
   accountHelperMetadata: SupportAccountHelperMetadata;
+  actions?: SupportChatAction[];
+};
+
+export type SupportChatAction = {
+  id: string;
+  type: "account_candidate_select";
+  label: string;
+  description?: string;
+  token: string;
 };
 
 function fallback(locale: AppLang) {
@@ -72,32 +86,41 @@ function formatCandidateDate(value: string | undefined) {
   }).format(date);
 }
 
-function candidateDisplayLine(candidate: SupportOrderCandidateDTO, index: number) {
-  // Provider/service/date are display context only. They are never used for
-  // candidate matching in v1; the exact order ID remains the selector.
-  const primary = [
+function candidateActionLabel(candidate: SupportOrderCandidateDTO) {
+  return [
     candidate.tenantDisplayName,
     ...(candidate.serviceNames ?? []),
     formatCandidateDate(candidate.firstSlotStart ?? candidate.createdAt),
   ]
     .filter((value): value is string => Boolean(value))
-    .join(" — ");
+    .join(" - ");
+}
 
-  const statuses = [
+function candidateActionDescription(candidate: SupportOrderCandidateDTO) {
+  return [
     categoryLabel(candidate.serviceStatusCategory),
     candidatePaymentLabel(candidate),
   ]
     .filter((value): value is string => Boolean(value))
-    .join(", ");
+    .join(" - ");
+}
 
-  const summary = primary
-    ? `${primary}${statuses ? ` — ${statuses}` : ""}`
-    : statuses;
-
-  return [
-    `${index + 1}. ${summary}`,
-    `   Order ID: ${candidate.orderId}`,
-  ].join("\n");
+function candidateActions(input: {
+  candidates: SupportOrderCandidateDTO[];
+  helper: AccountCandidateSelectionHelper;
+  threadId: string;
+}): SupportChatAction[] {
+  return input.candidates.map((candidate, index) => ({
+    id: `${input.helper}:${index}`,
+    type: "account_candidate_select",
+    label: candidateActionLabel(candidate) || "Order candidate",
+    description: candidateActionDescription(candidate),
+    token: createAccountCandidateActionToken({
+      helper: input.helper,
+      reference: candidate.orderId,
+      threadId: input.threadId,
+    }),
+  }));
 }
 
 function candidateSelectionMessage(candidates: SupportOrderCandidateDTO[]) {
@@ -105,20 +128,9 @@ function candidateSelectionMessage(candidates: SupportOrderCandidateDTO[]) {
     return "I can help, but I could not find recent support-safe order candidates. Please open your Orders page or contact support with the exact order ID.";
   }
 
-  const intro =
-    candidates.length === 1
-      ? "I found one recent order candidate. Please confirm the exact order first:"
-      : "I can help, but I need you to choose the exact order first. Recent order candidates:";
-  const list = candidates.map(candidateDisplayLine).join("\n\n");
-  const example = candidates[0]?.orderId;
-
-  return [
-    intro,
-    "",
-    list,
-    "",
-    `Reply with the exact order ID for the order you mean, for example: order ${example}`,
-  ].join("\n");
+  return candidates.length === 1
+    ? "I found one recent order candidate. Please select it below if it is the order you mean."
+    : "I found a few recent order candidates. Which order do you mean?";
 }
 
 function missingReferenceMessage(route: Extract<SupportAccountRoute, { kind: "missing_reference" }>) {
@@ -198,6 +210,7 @@ export async function buildAccountAwareServerResponse(input: {
   route: Exclude<SupportAccountRoute, { kind: "none" }>;
   accountContext?: AccountCtx;
   locale: AppLang;
+  threadId: string;
 }): Promise<AccountAwareServerResponse> {
   const authenticated = Boolean(input.accountContext?.userId);
 
@@ -286,6 +299,11 @@ export async function buildAccountAwareServerResponse(input: {
         requiredInputPresent: false,
         serverAuthored: true,
       },
+      actions: candidateActions({
+        candidates: result.data.candidates,
+        helper: input.route.selectionHelper,
+        threadId: input.threadId,
+      }),
     };
   }
 
@@ -361,4 +379,42 @@ export async function buildAccountAwareServerResponse(input: {
       serverAuthored: true,
     },
   };
+}
+
+export async function buildAccountAwareActionResponse(input: {
+  token: string;
+  threadId: string;
+  accountContext?: AccountCtx;
+  locale: AppLang;
+}): Promise<AccountAwareServerResponse> {
+  const authenticated = Boolean(input.accountContext?.userId);
+  const verified = verifyAccountCandidateActionToken({
+    token: input.token,
+    threadId: input.threadId,
+  });
+
+  if (!verified.ok) {
+    return {
+      assistantMessage: fallback(input.locale),
+      disposition: "unsupported_account_question",
+      needsHumanSupport: true,
+      accountHelperMetadata: {
+        helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+        authenticated,
+        requiredInputPresent: true,
+        serverAuthored: true,
+      },
+    };
+  }
+
+  return buildAccountAwareServerResponse({
+    route: {
+      kind: "helper",
+      helper: verified.helper,
+      input: verified.input,
+    },
+    accountContext: input.accountContext,
+    locale: input.locale,
+    threadId: input.threadId,
+  });
 }

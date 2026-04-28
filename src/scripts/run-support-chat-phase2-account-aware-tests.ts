@@ -39,6 +39,7 @@ type Phase2Result = {
   responseOrigin: GenerateSupportResponseResult["responseOrigin"];
   expectedResponseOrigin?: GenerateSupportResponseResult["responseOrigin"];
   assistantMessage: string;
+  actions: GenerateSupportResponseResult["actions"];
   accountHelperMetadata: GenerateSupportResponseResult["accountHelperMetadata"];
   dbCalls: DbCall[];
   checks: Record<string, boolean>;
@@ -323,6 +324,12 @@ function containsNone(message: string, patterns: string[] | undefined) {
   );
 }
 
+function actionText(result: GenerateSupportResponseResult) {
+  return (result.actions ?? [])
+    .map((action) => `${action.label} ${action.description ?? ""}`)
+    .join("\n");
+}
+
 function hasAccountDbCall(calls: DbCall[]) {
   return calls.some(
     (call) =>
@@ -368,6 +375,7 @@ function evaluateCase(
   calls: DbCall[],
 ): Phase2Result {
   const metadata = result.accountHelperMetadata;
+  const actions = actionText(result);
   const checks: Record<string, boolean> = {
     expectedDisposition:
       testCase.expectedDisposition == null ||
@@ -401,6 +409,17 @@ function evaluateCase(
       result.assistantMessage,
       testCase.forbiddenAnswerPatterns,
     ),
+    expectedActionPatterns: containsAny(
+      actions,
+      testCase.expectedActionPatterns,
+    ),
+    forbiddenActionPatterns: containsNone(
+      actions,
+      testCase.forbiddenActionPatterns,
+    ),
+    expectedActionCount:
+      testCase.expectedActionCount == null ||
+      (result.actions ?? []).length === testCase.expectedActionCount,
     accountResponsesAreServerAuthored:
       metadata == null ||
       (result.responseOrigin === "server" && metadata.serverAuthored === true),
@@ -419,6 +438,7 @@ function evaluateCase(
     responseOrigin: result.responseOrigin,
     expectedResponseOrigin: testCase.expectedResponseOrigin,
     assistantMessage: result.assistantMessage,
+    actions: result.actions,
     accountHelperMetadata: metadata,
     dbCalls: calls,
     checks,
@@ -437,6 +457,7 @@ function formatResult(result: Phase2Result) {
     `Needs human: expected=${result.expectedNeedsHumanSupport ?? "*"} actual=${result.actualNeedsHumanSupport}`,
     `Origin: expected=${result.expectedResponseOrigin ?? "*"} actual=${result.responseOrigin}`,
     `Helper metadata: ${JSON.stringify(result.accountHelperMetadata ?? null)}`,
+    `Actions: ${JSON.stringify(result.actions ?? [])}`,
     `DB calls: ${result.dbCalls.map((call) => `${call.method}:${call.collection ?? ""}:${call.id ?? ""}`).join(", ")}`,
     ...checkEntries,
     `Answer: ${result.assistantMessage}`,

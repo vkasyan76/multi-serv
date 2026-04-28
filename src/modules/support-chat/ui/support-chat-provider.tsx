@@ -13,7 +13,10 @@ import { useMutation } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { type AppLang } from "@/lib/i18n/app-lang";
 import { useTRPC } from "@/trpc/client";
-import { type SupportChatMessage } from "@/modules/support-chat/ui/types";
+import {
+  type SupportChatAction,
+  type SupportChatMessage,
+} from "@/modules/support-chat/ui/types";
 
 type SupportChatContextValue = {
   lang: AppLang;
@@ -27,6 +30,7 @@ type SupportChatContextValue = {
   isSending: boolean;
   error: string | null;
   sendMessage: (message?: string) => Promise<void>;
+  sendAction: (action: SupportChatAction) => Promise<void>;
 };
 
 const SupportChatContext = createContext<SupportChatContextValue | null>(null);
@@ -104,6 +108,7 @@ export function SupportChatProvider({
             disposition: response.disposition,
             needsHumanSupport: response.needsHumanSupport,
             sources: response.sources,
+            actions: response.actions,
           },
         ]);
       } catch {
@@ -122,6 +127,61 @@ export function SupportChatProvider({
     [input, lang, sendSupportMessage, t, threadId]
   );
 
+  const sendAction = useCallback(
+    async (action: SupportChatAction) => {
+      if (pendingSendRef.current) return;
+      pendingSendRef.current = true;
+
+      const message = `Selected: ${action.label}`;
+      const userMessage: SupportChatMessage = {
+        id: createMessageId(),
+        role: "user",
+        content: action.description
+          ? `${message}\n${action.description}`
+          : message,
+      };
+
+      setError(null);
+      setIsSending(true);
+      setMessages((current) => [...current, userMessage]);
+
+      try {
+        const response = await sendSupportMessage.mutateAsync({
+          message: userMessage.content,
+          threadId,
+          locale: lang,
+          action: {
+            type: action.type,
+            token: action.token,
+          },
+        });
+
+        setThreadId(response.threadId);
+        setMessages((current) => [
+          ...current,
+          {
+            id: createMessageId(),
+            role: "assistant",
+            content: response.assistantMessage,
+            disposition: response.disposition,
+            needsHumanSupport: response.needsHumanSupport,
+            sources: response.sources,
+            actions: response.actions,
+          },
+        ]);
+      } catch {
+        setMessages((current) =>
+          current.filter((item) => item.id !== userMessage.id)
+        );
+        setError(t("error"));
+      } finally {
+        pendingSendRef.current = false;
+        setIsSending(false);
+      }
+    },
+    [lang, sendSupportMessage, t, threadId]
+  );
+
   const value = useMemo<SupportChatContextValue>(
     () => ({
       lang,
@@ -135,6 +195,7 @@ export function SupportChatProvider({
       isSending,
       error,
       sendMessage,
+      sendAction,
     }),
     [
       closeChat,
@@ -146,6 +207,7 @@ export function SupportChatProvider({
       open,
       openChat,
       sendMessage,
+      sendAction,
     ]
   );
 

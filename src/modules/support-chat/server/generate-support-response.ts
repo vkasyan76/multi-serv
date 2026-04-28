@@ -14,7 +14,11 @@ import {
   type SupportKnowledgeMatch,
 } from "@/modules/support-chat/server/retrieve-knowledge";
 import { getSupportChatCopy } from "@/modules/support-chat/server/support-chat-copy";
-import { buildAccountAwareServerResponse, type SupportAccountHelperMetadata } from "@/modules/support-chat/server/account-aware/server-responses";
+import {
+  buildAccountAwareServerResponse,
+  type SupportAccountHelperMetadata,
+  type SupportChatAction,
+} from "@/modules/support-chat/server/account-aware/server-responses";
 import { routeSupportAccountAwareRequest } from "@/modules/support-chat/server/account-aware/routing";
 import type { TRPCContext } from "@/trpc/init";
 
@@ -56,6 +60,7 @@ export type GenerateSupportResponseResult = {
     requestId?: string | null;
   };
   accountHelperMetadata?: SupportAccountHelperMetadata;
+  actions?: SupportChatAction[];
 };
 
 const MIN_STRONG_SOURCE_SCORE = 4;
@@ -234,6 +239,7 @@ export async function generateSupportResponse(
       route: accountRoute,
       accountContext: input.accountContext,
       locale: input.locale,
+      threadId,
     });
 
     return supportResponse({
@@ -244,6 +250,7 @@ export async function generateSupportResponse(
       responseOrigin: "server",
       needsHumanSupport: accountResponse.needsHumanSupport,
       accountHelperMetadata: accountResponse.accountHelperMetadata,
+      actions: accountResponse.actions,
     });
   }
 

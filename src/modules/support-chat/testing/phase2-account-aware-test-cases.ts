@@ -43,6 +43,9 @@ export type SupportChatPhase2AccountAwareCase = {
   expectNoMutation?: boolean;
   expectedAnswerPatterns?: string[];
   forbiddenAnswerPatterns?: string[];
+  expectedActionPatterns?: string[];
+  forbiddenActionPatterns?: string[];
+  expectedActionCount?: number;
 };
 
 const ids = PHASE2_ACCOUNT_FIXTURE_IDS;
@@ -136,15 +139,14 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectNoExactLookup: true,
       expectNoMutation: true,
       expectedAnswerPatterns: [
-        "Recent order candidates",
-        "Provider",
-        "Order ID:",
-        ids.ownedRequestedOrder,
-        "Reply with the exact order ID",
+        "Which order do you mean",
       ],
+      expectedActionPatterns: ["Provider", "27 Apr 2026", "requested"],
+      expectedActionCount: 2,
       forbiddenAnswerPatterns: [
         "awaiting provider confirmation",
         "eligible for in-app cancellation",
+        "Order ID:",
         "reply 1",
       ],
     },
@@ -160,7 +162,9 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedHelper: "getRecentSupportOrderCandidatesForCurrentUser",
       expectNoExactLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["Recent order candidates", "Order ID:", "Reply with the exact order ID"],
+      expectedAnswerPatterns: ["Which order do you mean"],
+      expectedActionPatterns: ["Provider", "payment not due"],
+      expectedActionCount: 2,
       forbiddenAnswerPatterns: ["payment is pending", "payment is marked paid", "successful", "failed", "reply 1"],
     },
     {
@@ -176,14 +180,15 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectNoExactLookup: true,
       expectNoMutation: true,
       expectedAnswerPatterns: [
-        "Recent order candidates",
-        "Order ID:",
-        "Reply with the exact order ID",
+        "Which order do you mean",
       ],
+      expectedActionPatterns: ["Provider", "27 Apr 2026", "requested"],
+      expectedActionCount: 2,
       forbiddenAnswerPatterns: [
         "your last order is",
         "found your last order",
         "awaiting provider confirmation",
+        "Order ID:",
         "reply 1",
       ],
     },
@@ -215,10 +220,10 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectNoExactLookup: true,
       expectNoMutation: true,
       expectedAnswerPatterns: [
-        "Recent order candidates",
-        "Order ID:",
-        "Reply with the exact order ID",
+        "Which order do you mean",
       ],
+      expectedActionPatterns: ["Provider", "payment not due"],
+      expectedActionCount: 2,
       forbiddenAnswerPatterns: ["payment is marked paid", "successful", "failed", "reply 1"],
     },
     {
@@ -304,10 +309,10 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectNoExactLookup: true,
       expectNoMutation: true,
       expectedAnswerPatterns: [
-        "Recent order candidates",
-        "Order ID:",
-        "Reply with the exact order ID",
+        "Which order do you mean",
       ],
+      expectedActionPatterns: ["Provider", "27 Apr 2026"],
+      expectedActionCount: 2,
       forbiddenAnswerPatterns: [
         "Your order is",
         "I checked",
@@ -327,7 +332,9 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedHelper: "getRecentSupportOrderCandidatesForCurrentUser",
       expectNoExactLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["Recent order candidates", "Order ID:", "Reply with the exact order ID"],
+      expectedAnswerPatterns: ["Which order do you mean"],
+      expectedActionPatterns: ["Provider", "27 Apr 2026"],
+      expectedActionCount: 2,
       forbiddenAnswerPatterns: ["found your latest order", "awaiting provider confirmation", "reply 1"],
     },
     {
@@ -355,7 +362,9 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedHelper: "getRecentSupportOrderCandidatesForCurrentUser",
       expectNoExactLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["Recent order candidates", "Order ID:", "Reply with the exact order ID"],
+      expectedAnswerPatterns: ["Which order do you mean"],
+      expectedActionPatterns: ["Provider", "27 Apr 2026"],
+      expectedActionCount: 2,
       forbiddenAnswerPatterns: ["awaiting provider confirmation", "payment is pending", "reply 1"],
     },
     {
@@ -370,7 +379,9 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedHelper: "getRecentSupportOrderCandidatesForCurrentUser",
       expectNoExactLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["Recent order candidates", "Order ID:", "Reply with the exact order ID"],
+      expectedAnswerPatterns: ["Which order do you mean"],
+      expectedActionPatterns: ["Provider", "27 Apr 2026"],
+      expectedActionCount: 2,
       forbiddenAnswerPatterns: ["eligible for in-app cancellation", "I canceled", "has been canceled", "reply 1"],
     },
     {
