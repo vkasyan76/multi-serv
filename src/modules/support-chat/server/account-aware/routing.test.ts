@@ -9,13 +9,30 @@ const USER_A = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const USER_B = "bbbbbbbbbbbbbbbbbbbbbbbb";
 const TENANT_ID = "cccccccccccccccccccccccc";
 const ORDER_REQUESTED_A = "100000000000000000000001";
+const ORDER_SCHEDULED_A = "100000000000000000000002";
 const ORDER_USER_B = "100000000000000000000005";
 const INVOICE_A = "200000000000000000000001";
 const SLOT_REQUESTED = "300000000000000000000001";
 
 type FakeDb = {
-  calls: Array<{ method: string; collection?: string; id?: string }>;
-  find: (args: { collection: string; where?: unknown }) => Promise<{ docs: unknown[] }>;
+  calls: Array<{
+    method: string;
+    collection?: string;
+    id?: string;
+    where?: unknown;
+    limit?: number;
+    sort?: string;
+    depth?: number;
+    overrideAccess?: boolean;
+  }>;
+  find: (args: {
+    collection: string;
+    where?: unknown;
+    limit?: number;
+    sort?: string;
+    depth?: number;
+    overrideAccess?: boolean;
+  }) => Promise<{ docs: unknown[] }>;
   findByID: (args: { collection: string; id: string }) => Promise<unknown>;
   create: () => never;
   update: () => never;
@@ -118,6 +135,15 @@ function clauseIn(where: unknown, field: string) {
 function makeCtx(userId: string | null = "clerk-user-a") {
   const orders = new Map<string, Order>([
     [ORDER_REQUESTED_A, order({ id: ORDER_REQUESTED_A })],
+    [
+      ORDER_SCHEDULED_A,
+      order({
+        id: ORDER_SCHEDULED_A,
+        serviceStatus: "scheduled",
+        invoiceStatus: "issued",
+        createdAt: "2026-04-26T09:00:00.000Z",
+      }),
+    ],
     [ORDER_USER_B, order({ id: ORDER_USER_B, user: USER_B })],
   ]);
   const invoices = new Map<string, Invoice>([
@@ -130,7 +156,15 @@ function makeCtx(userId: string | null = "clerk-user-a") {
   const db: FakeDb = {
     calls: [],
     async find(args) {
-      this.calls.push({ method: "find", collection: args.collection });
+      this.calls.push({
+        method: "find",
+        collection: args.collection,
+        where: args.where,
+        limit: args.limit,
+        sort: args.sort,
+        depth: args.depth,
+        overrideAccess: args.overrideAccess,
+      });
 
       if (args.collection === "users") {
         const clerkUserId = clauseEquals(args.where, "clerkUserId");
@@ -147,7 +181,27 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         };
       }
 
-      if (args.collection === "invoices" || args.collection === "orders") {
+      if (args.collection === "orders") {
+        const userId = clauseEquals(args.where, "user");
+        const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
+        assert.equal(args.limit, 3);
+        assert.equal(args.sort, "-createdAt");
+        assert.equal(args.depth, 0);
+        assert.equal(args.overrideAccess, true);
+        assert.equal(userId, USER_A);
+        assert.equal(lifecycleMode, "slot");
+        return {
+          docs: [...orders.values()]
+            .filter((item) => item.user === userId)
+            .filter((item) => item.lifecycleMode === lifecycleMode)
+            .sort((left, right) =>
+              String(right.createdAt).localeCompare(String(left.createdAt)),
+            )
+            .slice(0, args.limit),
+        };
+      }
+
+      if (args.collection === "invoices") {
         throw new Error("Unexpected broad account lookup");
       }
 
@@ -198,6 +252,14 @@ test("routes exact order status requests to deterministic helper responses", asy
   assert.equal(response.needsHumanSupport, false);
   assert.equal(response.accountHelperMetadata.helper, "getOrderStatusForCurrentUser");
   assert.match(response.assistantMessage, /awaiting provider confirmation/i);
+
+  const exactWithCandidateContext = routeSupportAccountAwareRequest(
+    `What is the status of my order with this provider ${ORDER_REQUESTED_A}?`,
+  );
+  assert.equal(exactWithCandidateContext.kind, "helper");
+  if (exactWithCandidateContext.kind === "helper") {
+    assert.equal(exactWithCandidateContext.helper, "getOrderStatusForCurrentUser");
+  }
 });
 
 test("routes exact payment requests by order and invoice reference", async () => {
@@ -239,11 +301,11 @@ test("signed-out exact account request returns safe handoff", async () => {
   assert.match(response.assistantMessage, /cannot check live order/i);
 });
 
-test("signed-out missing-reference account request returns safe handoff", async () => {
+test("signed-out candidate-selection account request returns safe handoff", async () => {
   const route = routeSupportAccountAwareRequest("What is my order status?");
-  assert.equal(route.kind, "missing_reference");
+  assert.equal(route.kind, "candidate_selection");
 
-  const { accountContext } = makeCtx(null);
+  const { accountContext, db } = makeCtx(null);
   const response = await buildAccountAwareServerResponse({
     route: route as Exclude<typeof route, { kind: "none" }>,
     accountContext,
@@ -256,22 +318,13 @@ test("signed-out missing-reference account request returns safe handoff", async 
   assert.equal(response.accountHelperMetadata.authenticated, false);
   assert.equal(response.accountHelperMetadata.requiredInputPresent, false);
   assert.match(response.assistantMessage, /cannot check live order/i);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
 });
 
 test("missing, invalid, and wrong-owner references are deterministic and safe", async () => {
-  const missingRoute = routeSupportAccountAwareRequest("What is my order status?");
-  assert.equal(missingRoute.kind, "missing_reference");
-  if (missingRoute.kind === "missing_reference") {
-    const { accountContext } = makeCtx();
-    const missingResponse = await buildAccountAwareServerResponse({
-      route: missingRoute,
-      accountContext,
-      locale: "en",
-    });
-    assert.equal(missingResponse.disposition, "uncertain");
-    assert.match(missingResponse.assistantMessage, /exact order ID/i);
-  }
-
   const invalid = await respond("What is my order status order id abc123?");
   assert.equal(invalid.response.disposition, "unsupported_account_question");
   assert.equal(invalid.response.accountHelperMetadata.deniedReason, "invalid_reference");
@@ -287,15 +340,82 @@ test("missing, invalid, and wrong-owner references are deterministic and safe", 
 
 test("broad or deferred account prompts do not helper-route", async () => {
   for (const prompt of [
-    "Find my latest order",
     "Show all my payments",
     "Check my account",
-    "Find my booking from last week",
-    "Check the order with this provider",
+    "Show my order history",
+    "Show all my invoices",
   ]) {
     const route = routeSupportAccountAwareRequest(prompt);
     assert.equal(route.kind, "broad_or_deferred", prompt);
   }
+});
+
+test("vague account prompts route to candidate selection", () => {
+  for (const prompt of [
+    "What is my order status?",
+    "Did my payment go through?",
+    "Why has my order not been paid yet?",
+    "Can I cancel my latest booking?",
+    "Find my latest order",
+    "What happened with my booking from last week?",
+    "What is the status of my order with this provider?",
+  ]) {
+    assert.equal(
+      routeSupportAccountAwareRequest(prompt).kind,
+      "candidate_selection",
+      prompt,
+    );
+  }
+});
+
+test("candidate selection lists readable candidates without exact helper calls", async () => {
+  const { route, response, db } = await respond("What is my order status?");
+
+  assert.equal(route.kind, "candidate_selection");
+  assert.equal(response.disposition, "uncertain");
+  assert.equal(response.needsHumanSupport, false);
+  assert.equal(
+    response.accountHelperMetadata.helper,
+    "getRecentSupportOrderCandidatesForCurrentUser",
+  );
+  assert.equal(response.accountHelperMetadata.resultCategory, "order_candidates");
+  assert.match(response.assistantMessage, /Provider/i);
+  assert.match(response.assistantMessage, /27 Apr 2026/i);
+  assert.match(response.assistantMessage, /requested/i);
+  assert.match(response.assistantMessage, /payment not due/i);
+  assert.match(response.assistantMessage, new RegExp(ORDER_REQUESTED_A));
+  assert.match(response.assistantMessage, /Reply with the exact order ID/i);
+  assert.doesNotMatch(response.assistantMessage, /reply\s+(1|one)/i);
+  assert.equal(
+    db.calls.some((call) => call.method === "findByID"),
+    false,
+  );
+});
+
+test("one candidate still asks for the exact order ID", async () => {
+  const { db, accountContext } = makeCtx();
+  const originalFind = db.find.bind(db);
+  db.find = async (args) => {
+    const result = await originalFind(args);
+    if (args.collection === "orders") {
+      return { docs: result.docs.slice(0, 1) };
+    }
+    return result;
+  };
+
+  const route = routeSupportAccountAwareRequest("Can I cancel my latest booking?");
+  assert.equal(route.kind, "candidate_selection");
+  const response = await buildAccountAwareServerResponse({
+    route,
+    accountContext,
+    locale: "en",
+  });
+
+  assert.match(response.assistantMessage, /one recent order candidate/i);
+  assert.match(response.assistantMessage, new RegExp(ORDER_REQUESTED_A));
+  assert.match(response.assistantMessage, /Reply with the exact order ID/i);
+  assert.doesNotMatch(response.assistantMessage, /eligible for in-app cancellation/i);
+  assert.doesNotMatch(response.assistantMessage, /reply\s+(1|one)/i);
 });
 
 test("multiple references ask for clarification instead of guessing", () => {

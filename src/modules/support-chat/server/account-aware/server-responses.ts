@@ -7,12 +7,14 @@ import {
   canCancelOrderForCurrentUser,
   getOrderStatusForCurrentUser,
   getPaymentStatusForCurrentUser,
+  getRecentSupportOrderCandidatesForCurrentUser,
 } from "./helpers";
 import type { SupportAccountRoute } from "./routing";
 import type {
   SupportAccountHelperDeniedReason,
   SupportAccountHelperDTO,
   SupportAccountHelperName,
+  SupportOrderCandidateDTO,
 } from "./types";
 import { SUPPORT_ACCOUNT_HELPER_VERSION } from "./versioning";
 
@@ -37,6 +39,86 @@ export type AccountAwareServerResponse = {
 
 function fallback(locale: AppLang) {
   return getSupportChatCopy(locale).serverMessages.unsupportedAccount;
+}
+
+function categoryLabel(value: string) {
+  return value.replaceAll("_", " ");
+}
+
+function candidatePaymentLabel(candidate: SupportOrderCandidateDTO) {
+  if (
+    candidate.invoiceStatusCategory === "issued" ||
+    candidate.invoiceStatusCategory === "overdue"
+  ) {
+    return `payment ${categoryLabel(candidate.paymentStatusCategory)}`;
+  }
+  if (
+    candidate.invoiceStatusCategory !== "none" &&
+    candidate.invoiceStatusCategory !== "unknown"
+  ) {
+    return `invoice ${categoryLabel(candidate.invoiceStatusCategory)}`;
+  }
+  return `payment ${categoryLabel(candidate.paymentStatusCategory)}`;
+}
+
+function formatCandidateDate(value: string | undefined) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return undefined;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function candidateDisplayLine(candidate: SupportOrderCandidateDTO, index: number) {
+  // Provider/service/date are display context only. They are never used for
+  // candidate matching in v1; the exact order ID remains the selector.
+  const primary = [
+    candidate.tenantDisplayName,
+    ...(candidate.serviceNames ?? []),
+    formatCandidateDate(candidate.firstSlotStart ?? candidate.createdAt),
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(" — ");
+
+  const statuses = [
+    categoryLabel(candidate.serviceStatusCategory),
+    candidatePaymentLabel(candidate),
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(", ");
+
+  const summary = primary
+    ? `${primary}${statuses ? ` — ${statuses}` : ""}`
+    : statuses;
+
+  return [
+    `${index + 1}. ${summary}`,
+    `   Order ID: ${candidate.orderId}`,
+  ].join("\n");
+}
+
+function candidateSelectionMessage(candidates: SupportOrderCandidateDTO[]) {
+  if (!candidates.length) {
+    return "I can help, but I could not find recent support-safe order candidates. Please open your Orders page or contact support with the exact order ID.";
+  }
+
+  const intro =
+    candidates.length === 1
+      ? "I found one recent order candidate. Please confirm the exact order first:"
+      : "I can help, but I need you to choose the exact order first. Recent order candidates:";
+  const list = candidates.map(candidateDisplayLine).join("\n\n");
+  const example = candidates[0]?.orderId;
+
+  return [
+    intro,
+    "",
+    list,
+    "",
+    `Reply with the exact order ID for the order you mean, for example: order ${example}`,
+  ].join("\n");
 }
 
 function missingReferenceMessage(route: Extract<SupportAccountRoute, { kind: "missing_reference" }>) {
@@ -147,6 +229,59 @@ export async function buildAccountAwareServerResponse(input: {
       accountHelperMetadata: {
         helper: input.route.helper,
         helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+        authenticated,
+        requiredInputPresent: false,
+        serverAuthored: true,
+      },
+    };
+  }
+
+  if (input.route.kind === "candidate_selection") {
+    const accountContext = input.accountContext;
+    if (!accountContext) {
+      return {
+        assistantMessage: fallback(input.locale),
+        disposition: "unsupported_account_question",
+        needsHumanSupport: true,
+        accountHelperMetadata: {
+          helper: "getRecentSupportOrderCandidatesForCurrentUser",
+          helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+          authenticated: false,
+          requiredInputPresent: false,
+          deniedReason: "unauthenticated",
+          serverAuthored: true,
+        },
+      };
+    }
+
+    const result = await getRecentSupportOrderCandidatesForCurrentUser(
+      accountContext,
+    );
+
+    if (!result.ok) {
+      return {
+        assistantMessage: fallback(input.locale),
+        disposition: "unsupported_account_question",
+        needsHumanSupport: true,
+        accountHelperMetadata: {
+          helper: "getRecentSupportOrderCandidatesForCurrentUser",
+          helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+          authenticated,
+          requiredInputPresent: false,
+          deniedReason: result.reason,
+          serverAuthored: true,
+        },
+      };
+    }
+
+    return {
+      assistantMessage: candidateSelectionMessage(result.data.candidates),
+      disposition: "uncertain",
+      needsHumanSupport: false,
+      accountHelperMetadata: {
+        helper: "getRecentSupportOrderCandidatesForCurrentUser",
+        helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+        resultCategory: result.data.resultCategory,
         authenticated,
         requiredInputPresent: false,
         serverAuthored: true,

@@ -22,6 +22,7 @@ export type SupportAccountRoute =
       helper: ExactReferenceSupportAccountHelperName;
       referenceType: SupportAccountReferenceType;
     }
+  | { kind: "candidate_selection" }
   | { kind: "unsupported_reference" }
   | { kind: "broad_or_deferred" }
   | { kind: "none" };
@@ -31,15 +32,26 @@ const EXPLICIT_BAD_REF_RE =
   /\b(?:order|booking|invoice)\s*(?:id|#|number|reference|ref)\s*[:#-]?\s*([a-z0-9_-]{6,})\b/i;
 
 const BROAD_OR_DEFERRED_PATTERNS = [
-  /\blatest\b/i,
-  /\brecent\b/i,
   /\bhistory\b/i,
   /\ball\s+(my\s+)?(orders|payments|invoices|bookings)\b/i,
   /\bcheck\s+my\s+account\b/i,
-  /\bfind\s+my\s+(order|booking|payment|invoice)\b/i,
+  /\bshow\s+(me\s+)?(my\s+)?(orders|payments|invoices|bookings)\b/i,
+  /\b(all|every)\s+(of\s+)?(my\s+)?(orders|payments|invoices|bookings)\b/i,
+  /\bpayment\s+history\b/i,
+  /\border\s+history\b/i,
+  /\binvoice\s+history\b/i,
+];
+
+const CANDIDATE_SELECTION_PATTERNS = [
+  /\blatest\s+(order|booking)\b/i,
+  /\brecent\s+(order|booking)\b/i,
+  /\bfind\s+my\s+(order|booking)\b/i,
   /\blast\s+week\b/i,
   /\bwith\s+this\s+provider\b/i,
   /\bprovider\s+name\b/i,
+  /\bwhat\s+happened\s+with\s+my\s+(order|booking)\b/i,
+  /\bwhy\s+has\s+my\s+order\s+not\s+been\s+paid\b/i,
+  /\bwhy\s+has\s+my\s+booking\s+not\s+been\s+paid\b/i,
 ];
 
 const ORDER_STATUS_PATTERNS = [
@@ -114,6 +126,14 @@ export function routeSupportAccountAwareRequest(
     return { kind: "broad_or_deferred" };
   }
 
+  if (
+    ids.length === 0 &&
+    CANDIDATE_SELECTION_PATTERNS.some((pattern) => pattern.test(trimmed)) &&
+    /\b(orders?|bookings?|payments?|invoices?|provider)\b/i.test(trimmed)
+  ) {
+    return { kind: "candidate_selection" };
+  }
+
   if (!isAccountAware) return { kind: "none" };
 
   if (ids.length > 1) {
@@ -154,25 +174,7 @@ export function routeSupportAccountAwareRequest(
           );
     }
 
-    if (hasCancelEligibility) {
-      return {
-        kind: "missing_reference",
-        helper: "canCancelOrderForCurrentUser",
-        referenceType: "order_id",
-      };
-    }
-    if (hasPaymentStatus) {
-      return {
-        kind: "missing_reference",
-        helper: "getPaymentStatusForCurrentUser",
-        referenceType: /\binvoice\b/i.test(trimmed) ? "invoice_id" : "order_id",
-      };
-    }
-    return {
-      kind: "missing_reference",
-      helper: "getOrderStatusForCurrentUser",
-      referenceType: "order_id",
-    };
+    return { kind: "candidate_selection" };
   }
 
   if (hasCancelEligibility) {
