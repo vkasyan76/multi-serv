@@ -20,6 +20,8 @@ import type {
   SupportAccountPaymentStatusCategory,
   SupportCancellationEligibilityDTO,
   SupportOrderStatusDTO,
+  SupportOrderCandidateDTO,
+  SupportOrderCandidateListDTO,
   SupportPaymentStatusDTO,
 } from "./types";
 
@@ -248,6 +250,23 @@ function firstPopulatedSlotStart(order: Pick<Order, "slots">) {
   return new Date(Math.min(...times)).toISOString();
 }
 
+function orderCandidate(order: DocWithId<Order>): SupportOrderCandidateDTO {
+  const paymentStatus = orderPaymentStatusCategory(order);
+  const invoiceStatus = invoiceStatusCategory(order.invoiceStatus);
+  const tenantDisplayName = order.vendorSnapshot?.tenantName?.trim();
+
+  return {
+    orderId: order.id,
+    serviceStatusCategory: serviceStatusCategory(order),
+    paymentStatusCategory: paymentStatus,
+    invoiceStatusCategory: invoiceStatus,
+    createdAt: order.createdAt,
+    firstSlotStart: firstPopulatedSlotStart(order),
+    tenantDisplayName: tenantDisplayName || undefined,
+    nextStepKey: orderNextStepKey(order),
+  };
+}
+
 export async function getOrderStatusForCurrentUser(
   ctx: HelperCtx,
   input: SupportAccountHelperInput,
@@ -397,6 +416,36 @@ export async function canCancelOrderForCurrentUser(
       nextStepKey: cancelability.cancelable ? "cancel_in_app" : "view_orders",
       firstSlotStart: cancelability.firstSlotStart,
       cutoffAt: cancelability.cutoffAt,
+    },
+  };
+}
+
+export async function getRecentSupportOrderCandidatesForCurrentUser(
+  ctx: HelperCtx,
+): Promise<SupportAccountHelperResult<SupportOrderCandidateListDTO>> {
+  const identity = await resolveCurrentPayloadUserId(ctx);
+  if (!identity.ok) return identity;
+
+  // Candidate resolution is intentionally narrow: a fixed recent owned slot-order
+  // list, not a text-derived account search or relationship enrichment path.
+  const result = (await ctx.db.find({
+    collection: "orders",
+    where: {
+      user: { equals: identity.payloadUserId },
+      lifecycleMode: { equals: "slot" },
+    },
+    limit: 3,
+    sort: "-createdAt",
+    depth: 0,
+    overrideAccess: true,
+  })) as { docs: Array<DocWithId<Order>> };
+
+  return {
+    ok: true,
+    data: {
+      helper: "getRecentSupportOrderCandidatesForCurrentUser",
+      resultCategory: "order_candidates",
+      candidates: result.docs.map(orderCandidate),
     },
   };
 }

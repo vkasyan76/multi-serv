@@ -6,15 +6,20 @@ import type {
   SupportAccountReferenceType,
 } from "./types";
 
+type ExactReferenceSupportAccountHelperName = Exclude<
+  SupportAccountHelperName,
+  "getRecentSupportOrderCandidatesForCurrentUser"
+>;
+
 export type SupportAccountRoute =
   | {
       kind: "helper";
-      helper: SupportAccountHelperName;
+      helper: ExactReferenceSupportAccountHelperName;
       input: SupportAccountHelperInput;
     }
   | {
       kind: "missing_reference";
-      helper: SupportAccountHelperName;
+      helper: ExactReferenceSupportAccountHelperName;
       referenceType: SupportAccountReferenceType;
     }
   | { kind: "unsupported_reference" }
@@ -78,7 +83,7 @@ function hasExplicitInvalidReference(message: string) {
 }
 
 function helperInput(
-  helper: SupportAccountHelperName,
+  helper: ExactReferenceSupportAccountHelperName,
   referenceType: SupportAccountReferenceType,
   reference: string,
 ): SupportAccountRoute {

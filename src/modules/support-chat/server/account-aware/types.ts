@@ -4,6 +4,7 @@ export const SUPPORT_ACCOUNT_HELPER_NAMES = [
   "getOrderStatusForCurrentUser",
   "getPaymentStatusForCurrentUser",
   "canCancelOrderForCurrentUser",
+  "getRecentSupportOrderCandidatesForCurrentUser",
 ] as const;
 
 export type SupportAccountHelperName =
@@ -153,10 +154,29 @@ export type SupportCancellationEligibilityDTO =
     cutoffAt?: string;
   };
 
+export type SupportOrderCandidateDTO = {
+  orderId: string;
+  serviceStatusCategory: SupportAccountOrderServiceStatusCategory;
+  paymentStatusCategory: SupportAccountPaymentStatusCategory;
+  invoiceStatusCategory: SupportAccountInvoiceStatusCategory;
+  createdAt?: string;
+  firstSlotStart?: string;
+  tenantDisplayName?: string;
+  serviceNames?: string[];
+  nextStepKey: SupportAccountNextStepKey;
+};
+
+export type SupportOrderCandidateListDTO = {
+  helper: "getRecentSupportOrderCandidatesForCurrentUser";
+  resultCategory: "order_candidates";
+  candidates: SupportOrderCandidateDTO[];
+};
+
 export type SupportAccountHelperDTO =
   | SupportOrderStatusDTO
   | SupportPaymentStatusDTO
-  | SupportCancellationEligibilityDTO;
+  | SupportCancellationEligibilityDTO
+  | SupportOrderCandidateListDTO;
 
 export type SupportAccountResult =
   SupportAccountHelperResult<SupportAccountHelperDTO>;

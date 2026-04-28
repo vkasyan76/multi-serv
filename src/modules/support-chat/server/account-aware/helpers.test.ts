@@ -6,6 +6,7 @@ import {
   canCancelOrderForCurrentUser,
   getOrderStatusForCurrentUser,
   getPaymentStatusForCurrentUser,
+  getRecentSupportOrderCandidatesForCurrentUser,
 } from "./helpers";
 import type { SupportAccountHelperInput } from "./types";
 
@@ -17,6 +18,7 @@ const ORDER_SCHEDULED_A = "100000000000000000000002";
 const ORDER_INSIDE_CUTOFF_A = "100000000000000000000003";
 const ORDER_INVOICED_A = "100000000000000000000004";
 const ORDER_USER_B = "100000000000000000000005";
+const ORDER_LEGACY_A = "100000000000000000000006";
 const ORDER_MISSING = "100000000000000000000099";
 const INVOICE_A = "200000000000000000000001";
 const INVOICE_B = "200000000000000000000002";
@@ -27,13 +29,30 @@ const SLOT_INSIDE_CUTOFF = "300000000000000000000003";
 const SLOT_INVOICED = "300000000000000000000004";
 
 type FakeDb = {
-  calls: Array<{ method: string; collection?: string; id?: string }>;
+  calls: Array<{
+    method: string;
+    collection?: string;
+    id?: string;
+    where?: unknown;
+    limit?: number;
+    sort?: string;
+    depth?: number;
+    overrideAccess?: boolean;
+  }>;
   find: (args: {
     collection: string;
     where?: unknown;
     limit?: number;
+    sort?: string;
+    depth?: number;
+    overrideAccess?: boolean;
   }) => Promise<{ docs: unknown[] }>;
-  findByID: (args: { collection: string; id: string }) => Promise<unknown>;
+  findByID: (args: {
+    collection: string;
+    id: string;
+    depth?: number;
+    overrideAccess?: boolean;
+  }) => Promise<unknown>;
   create: () => never;
   update: () => never;
   delete: () => never;
@@ -132,6 +151,7 @@ function makeFixtures() {
         serviceStatus: "requested",
         invoiceStatus: "none",
         slots: [SLOT_REQUESTED],
+        createdAt: "2026-04-27T09:00:00.000Z",
       }),
     ],
     [
@@ -141,6 +161,7 @@ function makeFixtures() {
         serviceStatus: "scheduled",
         invoiceStatus: "none",
         slots: [SLOT_SCHEDULED],
+        createdAt: "2026-04-26T09:00:00.000Z",
       }),
     ],
     [
@@ -150,6 +171,7 @@ function makeFixtures() {
         serviceStatus: "scheduled",
         invoiceStatus: "none",
         slots: [SLOT_INSIDE_CUTOFF],
+        createdAt: "2026-04-25T09:00:00.000Z",
       }),
     ],
     [
@@ -161,6 +183,7 @@ function makeFixtures() {
         invoiceIssuedAt: "2026-04-27T11:00:00.000Z",
         paymentDueAt: "2026-05-11T11:00:00.000Z",
         slots: [SLOT_INVOICED],
+        createdAt: "2026-04-24T09:00:00.000Z",
       }),
     ],
     [
@@ -170,6 +193,17 @@ function makeFixtures() {
         user: USER_B,
         serviceStatus: "requested",
         invoiceStatus: "none",
+        createdAt: "2026-04-28T09:00:00.000Z",
+      }),
+    ],
+    [
+      ORDER_LEGACY_A,
+      baseOrder({
+        id: ORDER_LEGACY_A,
+        lifecycleMode: "legacy",
+        serviceStatus: "scheduled",
+        invoiceStatus: "none",
+        createdAt: "2026-04-29T09:00:00.000Z",
       }),
     ],
   ]);
@@ -242,7 +276,15 @@ function makeCtx(userId: string | null = "clerk-user-a") {
   const db: FakeDb = {
     calls: [],
     async find(args) {
-      this.calls.push({ method: "find", collection: args.collection });
+      this.calls.push({
+        method: "find",
+        collection: args.collection,
+        where: args.where,
+        limit: args.limit,
+        sort: args.sort,
+        depth: args.depth,
+        overrideAccess: args.overrideAccess,
+      });
 
       if (args.collection === "users") {
         const clerkUserId = clauseEquals(args.where, "clerkUserId");
@@ -259,6 +301,20 @@ function makeCtx(userId: string | null = "clerk-user-a") {
               typeof id === "string" ? fixtures.bookings.get(id) : null,
             )
             .filter(Boolean),
+        };
+      }
+
+      if (args.collection === "orders") {
+        const userId = clauseEquals(args.where, "user");
+        const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
+        return {
+          docs: [...fixtures.orders.values()]
+            .filter((order) => order.user === userId)
+            .filter((order) => order.lifecycleMode === lifecycleMode)
+            .sort((left, right) =>
+              String(right.createdAt).localeCompare(String(left.createdAt)),
+            )
+            .slice(0, args.limit ?? 10),
         };
       }
 
@@ -334,6 +390,75 @@ test("signed-out users are rejected by account-aware helpers", async () => {
   assert.deepEqual(
     await canCancelOrderForCurrentUser(ctx, orderInput(ORDER_REQUESTED_A)),
     { ok: false, reason: "unauthenticated" },
+  );
+  assert.deepEqual(await getRecentSupportOrderCandidatesForCurrentUser(ctx), {
+    ok: false,
+    reason: "unauthenticated",
+  });
+});
+
+test("recent order candidate helper returns a constrained sanitized list", async () => {
+  const { ctx, db } = makeCtx();
+  const result = await getRecentSupportOrderCandidatesForCurrentUser(ctx);
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.equal(result.data.helper, "getRecentSupportOrderCandidatesForCurrentUser");
+  assert.equal(result.data.resultCategory, "order_candidates");
+  assert.deepEqual(
+    result.data.candidates.map((candidate) => candidate.orderId),
+    [ORDER_REQUESTED_A, ORDER_SCHEDULED_A, ORDER_INSIDE_CUTOFF_A],
+  );
+  assert.equal(result.data.candidates.length, 3);
+
+  for (const candidate of result.data.candidates) {
+    assertKeys(candidate, [
+      "orderId",
+      "serviceStatusCategory",
+      "paymentStatusCategory",
+      "invoiceStatusCategory",
+      "createdAt",
+      "firstSlotStart",
+      "tenantDisplayName",
+      "nextStepKey",
+    ]);
+    assert.equal("customerSnapshot" in candidate, false);
+    assert.equal("vendorSnapshot" in candidate, false);
+    assert.equal("amount" in candidate, false);
+    assert.equal("currency" in candidate, false);
+    assert.equal("tenant" in candidate, false);
+    assert.equal("user" in candidate, false);
+    assert.equal("slots" in candidate, false);
+    assert.equal("stripeAccountId" in candidate, false);
+    assert.equal("destination" in candidate, false);
+    assert.equal("checkoutSessionId" in candidate, false);
+    assert.equal("paymentIntentId" in candidate, false);
+  }
+
+  const orderFind = db.calls.find(
+    (call) => call.method === "find" && call.collection === "orders",
+  );
+  assert.ok(orderFind);
+  assert.equal(orderFind.limit, 3);
+  assert.equal(orderFind.sort, "-createdAt");
+  assert.equal(orderFind.depth, 0);
+  assert.equal(orderFind.overrideAccess, true);
+  assert.equal(clauseEquals(orderFind.where, "user"), USER_A);
+  assert.equal(clauseEquals(orderFind.where, "lifecycleMode"), "slot");
+  assert.equal(
+    db.calls.some((call) => call.collection === "invoices"),
+    false,
+  );
+  assert.equal(
+    db.calls.some((call) => call.collection === "bookings"),
+    false,
+  );
+  assert.equal(
+    db.calls.some((call) =>
+      ["create", "update", "delete"].includes(call.method),
+    ),
+    false,
   );
 });
 
