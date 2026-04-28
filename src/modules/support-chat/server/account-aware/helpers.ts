@@ -2,7 +2,7 @@ import "server-only";
 
 import { TRPCError } from "@trpc/server";
 
-import type { Booking, Invoice, Order } from "@/payload-types";
+import type { Invoice, Order } from "@/payload-types";
 import { resolvePayloadUserId } from "@/modules/orders/server/identity";
 import {
   getSlotOrderCancelability,

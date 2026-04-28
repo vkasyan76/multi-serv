@@ -119,6 +119,26 @@ export async function buildAccountAwareServerResponse(input: {
 }): Promise<AccountAwareServerResponse> {
   const authenticated = Boolean(input.accountContext?.userId);
 
+  if (!authenticated) {
+    return {
+      assistantMessage: fallback(input.locale),
+      disposition: "unsupported_account_question",
+      needsHumanSupport: true,
+      accountHelperMetadata: {
+        helper:
+          input.route.kind === "helper" ||
+          input.route.kind === "missing_reference"
+            ? input.route.helper
+            : undefined,
+        helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+        authenticated: false,
+        requiredInputPresent: input.route.kind === "helper",
+        deniedReason: "unauthenticated",
+        serverAuthored: true,
+      },
+    };
+  }
+
   if (input.route.kind === "missing_reference") {
     return {
       assistantMessage: missingReferenceMessage(input.route),
@@ -148,7 +168,8 @@ export async function buildAccountAwareServerResponse(input: {
     };
   }
 
-  if (!input.accountContext) {
+  const accountContext = input.accountContext;
+  if (!accountContext) {
     return {
       assistantMessage: fallback(input.locale),
       disposition: "unsupported_account_question",
@@ -164,7 +185,7 @@ export async function buildAccountAwareServerResponse(input: {
     };
   }
 
-  const result = await callHelper(input.accountContext, input.route);
+  const result = await callHelper(accountContext, input.route);
 
   if (!result.ok) {
     return {

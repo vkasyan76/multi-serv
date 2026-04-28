@@ -239,6 +239,25 @@ test("signed-out exact account request returns safe handoff", async () => {
   assert.match(response.assistantMessage, /cannot check live order/i);
 });
 
+test("signed-out missing-reference account request returns safe handoff", async () => {
+  const route = routeSupportAccountAwareRequest("What is my order status?");
+  assert.equal(route.kind, "missing_reference");
+
+  const { accountContext } = makeCtx(null);
+  const response = await buildAccountAwareServerResponse({
+    route: route as Exclude<typeof route, { kind: "none" }>,
+    accountContext,
+    locale: "en",
+  });
+
+  assert.equal(response.disposition, "unsupported_account_question");
+  assert.equal(response.needsHumanSupport, true);
+  assert.equal(response.accountHelperMetadata.deniedReason, "unauthenticated");
+  assert.equal(response.accountHelperMetadata.authenticated, false);
+  assert.equal(response.accountHelperMetadata.requiredInputPresent, false);
+  assert.match(response.assistantMessage, /cannot check live order/i);
+});
+
 test("missing, invalid, and wrong-owner references are deterministic and safe", async () => {
   const missingRoute = routeSupportAccountAwareRequest("What is my order status?");
   assert.equal(missingRoute.kind, "missing_reference");
