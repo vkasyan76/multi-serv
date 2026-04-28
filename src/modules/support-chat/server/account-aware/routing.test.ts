@@ -278,6 +278,14 @@ test("routes exact payment requests by order and invoice reference", async () =>
   }
   assert.equal(byInvoice.response.disposition, "answered");
   assert.match(byInvoice.response.assistantMessage, /payment is pending/i);
+
+  const explicitPaymentStatus = routeSupportAccountAwareRequest(
+    `Payment status for order ${ORDER_REQUESTED_A}`,
+  );
+  assert.equal(explicitPaymentStatus.kind, "helper");
+  if (explicitPaymentStatus.kind === "helper") {
+    assert.equal(explicitPaymentStatus.helper, "getPaymentStatusForCurrentUser");
+  }
 });
 
 test("routes exact cancellation eligibility without mutating", async () => {
@@ -357,6 +365,11 @@ test("vague account prompts route to candidate selection", () => {
     "Why has my order not been paid yet?",
     "Can I cancel my latest booking?",
     "Find my latest order",
+    "What was my last order?",
+    "What is my most recent booking?",
+    "Was war meine letzte Buchung?",
+    "Quelle est ma dernière réservation ?",
+    "Quelle est ma derniere reservation ?",
     "What happened with my booking from last week?",
     "What is the status of my order with this provider?",
   ]) {
@@ -369,7 +382,7 @@ test("vague account prompts route to candidate selection", () => {
 });
 
 test("candidate selection lists readable candidates without exact helper calls", async () => {
-  const { route, response, db } = await respond("What is my order status?");
+  const { route, response, db } = await respond("What was my last order?");
 
   assert.equal(route.kind, "candidate_selection");
   assert.equal(response.disposition, "uncertain");
@@ -385,6 +398,7 @@ test("candidate selection lists readable candidates without exact helper calls",
   assert.match(response.assistantMessage, /payment not due/i);
   assert.match(response.assistantMessage, new RegExp(ORDER_REQUESTED_A));
   assert.match(response.assistantMessage, /Reply with the exact order ID/i);
+  assert.doesNotMatch(response.assistantMessage, /your last order is/i);
   assert.doesNotMatch(response.assistantMessage, /reply\s+(1|one)/i);
   assert.equal(
     db.calls.some((call) => call.method === "findByID"),
@@ -431,6 +445,9 @@ test("policy-only status language does not route to account helpers", () => {
     kind: "none",
   });
   assert.deepEqual(routeSupportAccountAwareRequest("What does requested mean for a booking?"), {
+    kind: "none",
+  });
+  assert.deepEqual(routeSupportAccountAwareRequest("When do I pay?"), {
     kind: "none",
   });
 });

@@ -5,6 +5,7 @@ import type {
   SupportAccountHelperName,
   SupportAccountReferenceType,
 } from "./types";
+import { detectCandidateSelectionIntent } from "./intent-normalizer";
 
 type ExactReferenceSupportAccountHelperName = Exclude<
   SupportAccountHelperName,
@@ -40,18 +41,6 @@ const BROAD_OR_DEFERRED_PATTERNS = [
   /\bpayment\s+history\b/i,
   /\border\s+history\b/i,
   /\binvoice\s+history\b/i,
-];
-
-const CANDIDATE_SELECTION_PATTERNS = [
-  /\blatest\s+(order|booking)\b/i,
-  /\brecent\s+(order|booking)\b/i,
-  /\bfind\s+my\s+(order|booking)\b/i,
-  /\blast\s+week\b/i,
-  /\bwith\s+this\s+provider\b/i,
-  /\bprovider\s+name\b/i,
-  /\bwhat\s+happened\s+with\s+my\s+(order|booking)\b/i,
-  /\bwhy\s+has\s+my\s+order\s+not\s+been\s+paid\b/i,
-  /\bwhy\s+has\s+my\s+booking\s+not\s+been\s+paid\b/i,
 ];
 
 const ORDER_STATUS_PATTERNS = [
@@ -128,8 +117,7 @@ export function routeSupportAccountAwareRequest(
 
   if (
     ids.length === 0 &&
-    CANDIDATE_SELECTION_PATTERNS.some((pattern) => pattern.test(trimmed)) &&
-    /\b(orders?|bookings?|payments?|invoices?|provider)\b/i.test(trimmed)
+    detectCandidateSelectionIntent(trimmed)
   ) {
     return { kind: "candidate_selection" };
   }
