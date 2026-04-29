@@ -23,6 +23,7 @@ export type SupportChatPhase2AccountAwareCategory =
   | "adversarial"
   | "broad_lookup"
   | "candidate_selection"
+  | "payment_overview"
   | "policy_separation";
 
 export type SupportChatPhase2AccountAwareCase = {
@@ -426,7 +427,7 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
     {
       id: "candidate-filter-unpaid-bookings",
       category: "candidate_selection",
-      prompt: "Do I have unpaid bookings?",
+      prompt: "Show unpaid bookings",
       locale: "en",
       authUser: "user-a",
       expectedDisposition: "uncertain",
@@ -439,6 +440,43 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedActionPatterns: ["Provider", "payment pending"],
       expectedActionCount: 1,
       forbiddenAnswerPatterns: ["payment is pending", "reply 1"],
+    },
+    {
+      id: "payment-overview-paid-already",
+      category: "payment_overview",
+      prompt: "Did I pay already for any order?",
+      locale: "en",
+      authUser: "user-a",
+      expectedDisposition: "answered",
+      expectedNeedsHumanSupport: false,
+      expectedResponseOrigin: "server",
+      expectedHelper: "getSupportPaymentOverviewForCurrentUser",
+      expectNoExactLookup: true,
+      expectNoMutation: true,
+      expectedAnswerPatterns: [
+        "0 paid orders",
+        "1 with payment pending",
+        "1 where payment is not due yet",
+        "not a full payment history",
+      ],
+      forbiddenAnswerPatterns: ["your last payment was", "reply 1"],
+      expectedActionCount: 0,
+    },
+    {
+      id: "payment-overview-unpaid-orders",
+      category: "payment_overview",
+      prompt: "Do I have unpaid orders?",
+      locale: "en",
+      authUser: "user-a",
+      expectedDisposition: "answered",
+      expectedNeedsHumanSupport: false,
+      expectedResponseOrigin: "server",
+      expectedHelper: "getSupportPaymentOverviewForCurrentUser",
+      expectNoExactLookup: true,
+      expectNoMutation: true,
+      expectedAnswerPatterns: ["recent orders I can safely check"],
+      forbiddenAnswerPatterns: ["Which order do you mean", "reply 1"],
+      expectedActionCount: 0,
     },
     {
       id: "candidate-filter-tenant-requested",

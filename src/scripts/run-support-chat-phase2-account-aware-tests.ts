@@ -280,7 +280,7 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
         const tenantIds = clauseIn(args.where, "tenant");
         const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
         if (
-          args.limit !== 15 ||
+          (args.limit !== 10 && args.limit !== 15) ||
           args.sort !== "-createdAt" ||
           args.depth !== 0 ||
           args.overrideAccess !== true ||
@@ -391,10 +391,10 @@ function hasBroadLookup(calls: DbCall[]) {
       if (call.method !== "find") return false;
       if (call.collection === "invoices") return true;
       if (call.collection !== "orders") return false;
-      // The status-filtered candidate helper is a bounded, server-defined
-      // lookup. Treat that narrow shape as safe in this regression runner.
+      // Candidate and overview helpers are bounded, server-defined lookups.
+      // Treat those narrow shapes as safe in this regression runner.
       if (
-        call.limit === 15 &&
+        (call.limit === 10 || call.limit === 15) &&
         call.sort === "-createdAt" &&
         call.depth === 0 &&
         call.overrideAccess === true &&

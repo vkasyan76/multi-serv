@@ -8,6 +8,7 @@ import {
   getPaymentStatusForCurrentUser,
   getRecentSupportOrderCandidatesForCurrentUser,
   getSupportOrderCandidatesForCurrentUser,
+  getSupportPaymentOverviewForCurrentUser,
 } from "./helpers";
 import type { SupportAccountHelperInput } from "./types";
 
@@ -506,6 +507,10 @@ test("signed-out users are rejected by account-aware helpers", async () => {
     ok: false,
     reason: "unauthenticated",
   });
+  assert.deepEqual(await getSupportPaymentOverviewForCurrentUser(ctx), {
+    ok: false,
+    reason: "unauthenticated",
+  });
 });
 
 test("recent order candidate helper returns a constrained sanitized list", async () => {
@@ -650,6 +655,103 @@ test("payment status filters map to server-owned candidate categories", async ()
       [ORDER_REQUESTED_A, ORDER_SCHEDULED_A, ORDER_INSIDE_CUTOFF_A],
     );
   }
+});
+
+test("payment overview helper returns bounded sanitized recent-order counts", async () => {
+  const { ctx, db } = makeCtx();
+  const result = await getSupportPaymentOverviewForCurrentUser(ctx);
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.equal(result.data.helper, "getSupportPaymentOverviewForCurrentUser");
+  assert.equal(result.data.resultCategory, "payment_overview");
+  assert.equal(result.data.inspectedOrderCount, 6);
+  assert.equal(result.data.limitDescription, "recent_support_orders");
+  assert.deepEqual(result.data.categories, {
+    paid: 1,
+    paymentPending: 1,
+    paymentNotDue: 3,
+    paymentCanceled: 1,
+    refunded: 0,
+    unknown: 0,
+  });
+  assert.equal(result.data.recentExamples.length, 3);
+  assert.deepEqual(
+    result.data.recentExamples.map((candidate) => candidate.orderId),
+    [ORDER_REQUESTED_A, ORDER_SCHEDULED_A, ORDER_INSIDE_CUTOFF_A],
+  );
+  assert.equal(result.data.nextStepKey, "pay_invoice");
+  assertKeys(result.data, [
+    "helper",
+    "resultCategory",
+    "inspectedOrderCount",
+    "limitDescription",
+    "categories",
+    "recentExamples",
+    "nextStepKey",
+  ]);
+  assert.equal("rawOrders" in result.data, false);
+  assert.equal("rawInvoices" in result.data, false);
+  assert.equal("stripeAccountId" in result.data, false);
+
+  for (const candidate of result.data.recentExamples) {
+    assert.equal("customerSnapshot" in candidate, false);
+    assert.equal("vendorSnapshot" in candidate, false);
+    assert.equal("amount" in candidate, false);
+    assert.equal("currency" in candidate, false);
+    assert.equal("tenant" in candidate, false);
+    assert.equal("user" in candidate, false);
+    assert.equal("slots" in candidate, false);
+    assert.equal("paymentIntentId" in candidate, false);
+  }
+
+  const orderFinds = db.calls.filter(
+    (call) => call.method === "find" && call.collection === "orders",
+  );
+  assert.equal(orderFinds.length, 1);
+  assert.equal(orderFinds[0]?.limit, 10);
+  assert.equal(orderFinds[0]?.sort, "-createdAt");
+  assert.equal(orderFinds[0]?.depth, 0);
+  assert.equal(orderFinds[0]?.overrideAccess, true);
+  assert.equal(
+    db.calls.some((call) => call.collection === "invoices"),
+    false,
+  );
+  assert.equal(
+    db.calls.some((call) =>
+      ["create", "update", "delete"].includes(call.method),
+    ),
+    false,
+  );
+});
+
+test("payment overview helper includes tenant-owned orders without wrong-tenant data", async () => {
+  const { ctx } = makeCtx("clerk-user-tenant");
+  const result = await getSupportPaymentOverviewForCurrentUser(ctx);
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.equal(result.data.inspectedOrderCount, 7);
+  assert.deepEqual(result.data.categories, {
+    paid: 1,
+    paymentPending: 1,
+    paymentNotDue: 4,
+    paymentCanceled: 1,
+    refunded: 0,
+    unknown: 0,
+  });
+  assert.equal(
+    result.data.recentExamples.some(
+      (candidate) => candidate.orderId === ORDER_OTHER_TENANT,
+    ),
+    false,
+  );
+  assert.deepEqual(
+    result.data.recentExamples.map((candidate) => candidate.orderId),
+    [ORDER_USER_B, ORDER_REQUESTED_A, ORDER_SCHEDULED_A],
+  );
 });
 
 test("signed-in user can access own requested order status with sanitized DTO", async () => {

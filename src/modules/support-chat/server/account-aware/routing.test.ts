@@ -216,7 +216,6 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         status: "paid",
         serviceStatus: "accepted",
         invoiceStatus: "paid",
-        lifecycleMode: "legacy",
         paidAt: "2026-04-21T11:00:00.000Z",
         createdAt: "2026-04-21T09:00:00.000Z",
       }),
@@ -286,7 +285,7 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         const userId = clauseEquals(args.where, "user");
         const tenantIds = clauseIn(args.where, "tenant");
         const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
-        assert.equal(args.limit, 15);
+        assert.ok(args.limit === 10 || args.limit === 15);
         assert.equal(args.sort, "-createdAt");
         assert.equal(args.depth, 0);
         assert.equal(args.overrideAccess, true);
@@ -440,6 +439,14 @@ test("routes exact payment requests by order and invoice reference", async () =>
   if (explicitPaymentStatus.kind === "helper") {
     assert.equal(explicitPaymentStatus.helper, "getPaymentStatusForCurrentUser");
   }
+
+  const overviewWithExactOrder = routeSupportAccountAwareRequest(
+    `Did I pay already for order ${ORDER_REQUESTED_A}?`,
+  );
+  assert.equal(overviewWithExactOrder.kind, "helper");
+  if (overviewWithExactOrder.kind === "helper") {
+    assert.equal(overviewWithExactOrder.helper, "getPaymentStatusForCurrentUser");
+  }
 });
 
 test("routes exact cancellation eligibility without mutating", async () => {
@@ -519,7 +526,7 @@ test("status-filtered prompts route to bounded candidate selection", async () =>
   const cases = [
     ["Show my canceled orders", "canceled"],
     ["Which orders are scheduled?", "scheduled"],
-    ["Do I have unpaid bookings?", "payment_pending"],
+    ["Show unpaid bookings", "payment_pending"],
     ["Which bookings are awaiting confirmation?", "requested"],
     ["Show my completed bookings", "completed_or_accepted"],
     ["Show my paid orders", "paid"],
@@ -531,6 +538,23 @@ test("status-filtered prompts route to bounded candidate selection", async () =>
     if (route.kind === "candidate_selection") {
       assert.equal(route.statusFilter, filter, prompt);
     }
+  }
+});
+
+test("payment overview prompts route to bounded overview helper", async () => {
+  for (const prompt of [
+    "Did I pay already for any order?",
+    "Have I paid for anything?",
+    "Do I have unpaid orders?",
+    "Do I have unpaid bookings?",
+    "Any paid orders?",
+    "What payments are still pending?",
+  ]) {
+    assert.deepEqual(
+      routeSupportAccountAwareRequest(prompt),
+      { kind: "payment_overview" },
+      prompt,
+    );
   }
 });
 
@@ -639,6 +663,54 @@ test("empty filtered candidate selection stays bounded and deterministic", async
   assert.match(response.assistantMessage, /could not find recent paid booking candidates/i);
   assert.match(response.assistantMessage, /not a full history check/i);
   assert.equal(response.actions?.length, 0);
+});
+
+test("payment overview returns bounded deterministic summary", async () => {
+  const { route, response, db } = await respond("Did I pay already for any order?");
+
+  assert.equal(route.kind, "payment_overview");
+  assert.equal(response.disposition, "answered");
+  assert.equal(response.needsHumanSupport, false);
+  assert.equal(
+    response.accountHelperMetadata.helper,
+    "getSupportPaymentOverviewForCurrentUser",
+  );
+  assert.equal(response.accountHelperMetadata.resultCategory, "payment_overview");
+  assert.match(response.assistantMessage, /From the recent orders I can safely check/i);
+  assert.match(response.assistantMessage, /1 paid order/i);
+  assert.match(response.assistantMessage, /1 with payment pending/i);
+  assert.match(response.assistantMessage, /1 where payment is not due yet/i);
+  assert.match(response.assistantMessage, /1 with payment canceled/i);
+  assert.match(response.assistantMessage, /not a full payment history/i);
+  assert.equal(response.actions, undefined);
+  assert.equal(
+    db.calls.some((call) => call.collection === "invoices"),
+    false,
+  );
+  assert.equal(
+    db.calls.some((call) => call.method === "findByID"),
+    false,
+  );
+});
+
+test("signed-out payment overview returns safe handoff without account reads", async () => {
+  const route = routeSupportAccountAwareRequest("Did I pay already for any order?");
+  assert.equal(route.kind, "payment_overview");
+
+  const { accountContext, db } = makeCtx(null);
+  const response = await buildAccountAwareServerResponse({
+    route,
+    accountContext,
+    locale: "en",
+    threadId: THREAD_ID,
+  });
+
+  assert.equal(response.disposition, "unsupported_account_question");
+  assert.equal(response.accountHelperMetadata.deniedReason, "unauthenticated");
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
 });
 
 test("candidate action click validates token and calls exact helper", async () => {

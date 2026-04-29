@@ -25,6 +25,7 @@ import type {
   SupportOrderCandidateDTO,
   SupportOrderCandidateListDTO,
   SupportOrderCandidateStatusFilter,
+  SupportPaymentOverviewDTO,
   SupportPaymentStatusDTO,
 } from "./types";
 
@@ -35,6 +36,8 @@ type HelperCtx = Pick<TRPCContext, "db" | "userId">;
 const OBJECT_ID_RE = /^[a-f0-9]{24}$/i;
 const CANDIDATE_FETCH_WINDOW = 15;
 const CANDIDATE_RETURN_LIMIT = 3;
+const OVERVIEW_FETCH_WINDOW = 10;
+const OVERVIEW_EXAMPLE_LIMIT = 3;
 
 function isPayloadObjectId(value: string) {
   return OBJECT_ID_RE.test(value);
@@ -461,6 +464,7 @@ async function loadOwnedTenantIds(ctx: HelperCtx, payloadUserId: string) {
 async function loadRecentCustomerCandidateOrders(
   ctx: HelperCtx,
   payloadUserId: string,
+  limit = CANDIDATE_FETCH_WINDOW,
 ) {
   const result = (await ctx.db.find({
     collection: "orders",
@@ -468,7 +472,7 @@ async function loadRecentCustomerCandidateOrders(
       user: { equals: payloadUserId },
       lifecycleMode: { equals: "slot" },
     },
-    limit: CANDIDATE_FETCH_WINDOW,
+    limit,
     sort: "-createdAt",
     depth: 0,
     overrideAccess: true,
@@ -480,6 +484,7 @@ async function loadRecentCustomerCandidateOrders(
 async function loadRecentTenantCandidateOrders(
   ctx: HelperCtx,
   tenantIds: string[],
+  limit = CANDIDATE_FETCH_WINDOW,
 ) {
   if (!tenantIds.length) return [];
 
@@ -489,13 +494,50 @@ async function loadRecentTenantCandidateOrders(
       tenant: { in: tenantIds },
       lifecycleMode: { equals: "slot" },
     },
-    limit: CANDIDATE_FETCH_WINDOW,
+    limit,
     sort: "-createdAt",
     depth: 0,
     overrideAccess: true,
   })) as { docs: Array<DocWithId<Order>> };
 
   return result.docs;
+}
+
+function emptyPaymentOverviewCategories(): SupportPaymentOverviewDTO["categories"] {
+  return {
+    paid: 0,
+    paymentPending: 0,
+    paymentNotDue: 0,
+    paymentCanceled: 0,
+    refunded: 0,
+    unknown: 0,
+  };
+}
+
+function incrementPaymentOverviewCategory(
+  categories: SupportPaymentOverviewDTO["categories"],
+  order: Pick<Order, "status" | "invoiceStatus">,
+) {
+  switch (orderPaymentStatusCategory(order)) {
+    case "paid":
+      categories.paid += 1;
+      break;
+    case "pending":
+      categories.paymentPending += 1;
+      break;
+    case "not_due":
+      categories.paymentNotDue += 1;
+      break;
+    case "canceled":
+      categories.paymentCanceled += 1;
+      break;
+    case "refunded":
+      categories.refunded += 1;
+      break;
+    default:
+      categories.unknown += 1;
+      break;
+  }
 }
 
 export async function getOrderStatusForCurrentUser(
@@ -666,6 +708,55 @@ export async function getSupportOrderCandidatesForCurrentUser(
       resultCategory: "order_candidates",
       statusFilter: input.statusFilter,
       candidates,
+    },
+  };
+}
+
+export async function getSupportPaymentOverviewForCurrentUser(
+  ctx: HelperCtx,
+): Promise<SupportAccountHelperResult<SupportPaymentOverviewDTO>> {
+  const identity = await resolveCurrentPayloadUserId(ctx);
+  if (!identity.ok) return identity;
+
+  // Overview helpers deliberately summarize only a fixed recent support window.
+  // They are not payment history, invoice search, Stripe lookup, or full account
+  // reporting; the DTO exposes counts and sanitized candidate examples only.
+  const tenantIds = await loadOwnedTenantIds(ctx, identity.payloadUserId);
+  const [customerOrders, tenantOrders] = await Promise.all([
+    loadRecentCustomerCandidateOrders(
+      ctx,
+      identity.payloadUserId,
+      OVERVIEW_FETCH_WINDOW,
+    ),
+    loadRecentTenantCandidateOrders(ctx, tenantIds, OVERVIEW_FETCH_WINDOW),
+  ]);
+  const inspectedOrders = mergeUniqueOrders([customerOrders, tenantOrders]).slice(
+    0,
+    OVERVIEW_FETCH_WINDOW,
+  );
+  const categories = emptyPaymentOverviewCategories();
+
+  for (const order of inspectedOrders) {
+    incrementPaymentOverviewCategory(categories, order);
+  }
+
+  return {
+    ok: true,
+    data: {
+      helper: "getSupportPaymentOverviewForCurrentUser",
+      resultCategory: "payment_overview",
+      inspectedOrderCount: inspectedOrders.length,
+      limitDescription: "recent_support_orders",
+      categories,
+      recentExamples: inspectedOrders
+        .slice(0, OVERVIEW_EXAMPLE_LIMIT)
+        .map(orderCandidate),
+      nextStepKey:
+        categories.paymentPending > 0
+          ? "pay_invoice"
+          : categories.paid > 0
+            ? "no_action_needed"
+            : "view_orders",
     },
   };
 }

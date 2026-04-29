@@ -16,6 +16,7 @@ type ExactReferenceSupportAccountHelperName = Exclude<
   SupportAccountHelperName,
   | "getSupportOrderCandidatesForCurrentUser"
   | "getRecentSupportOrderCandidatesForCurrentUser"
+  | "getSupportPaymentOverviewForCurrentUser"
 >;
 
 export type SupportAccountRoute =
@@ -34,6 +35,7 @@ export type SupportAccountRoute =
       selectionHelper: AccountCandidateSelectionHelper;
       statusFilter?: SupportOrderCandidateStatusFilter;
     }
+  | { kind: "payment_overview" }
   | { kind: "unsupported_reference" }
   | { kind: "broad_or_deferred" }
   | { kind: "none" };
@@ -83,6 +85,17 @@ const PAYMENT_STATUS_PATTERNS = [
   /\binvoice\b.*\bstatus\b/i,
   /\binvoice\s+status\b/i,
   /\bcheck\s+(my\s+)?invoice\b/i,
+];
+
+const PAYMENT_OVERVIEW_PATTERNS = [
+  /\bdid\s+i\s+pay\s+already\b/i,
+  /\bhave\s+i\s+paid\b/i,
+  /\bpaid\s+already\b/i,
+  /\bdo\s+i\s+have\s+(any\s+)?paid\s+(orders|bookings)\b/i,
+  /\bany\s+paid\s+(orders|bookings)\b/i,
+  /\bdo\s+i\s+have\s+unpaid\s+(orders|bookings)\b/i,
+  /\bwhat\s+payments\s+are\s+still\s+pending\b/i,
+  /\bwhich\s+payments\s+are\s+still\s+pending\b/i,
 ];
 
 const CANCEL_ELIGIBILITY_PATTERNS = [
@@ -144,9 +157,14 @@ export function routeSupportAccountAwareRequest(
   const hasOrderStatus = hasAny(ORDER_STATUS_PATTERNS, trimmed);
   const hasPaymentStatus = hasAny(PAYMENT_STATUS_PATTERNS, trimmed);
   const hasCancelEligibility = hasAny(CANCEL_ELIGIBILITY_PATTERNS, trimmed);
+  const hasPaymentOverview = hasAny(PAYMENT_OVERVIEW_PATTERNS, trimmed);
   const statusFilter = detectCandidateStatusFilter(trimmed);
   const isAccountAware =
-    hasOrderStatus || hasPaymentStatus || hasCancelEligibility || statusFilter;
+    hasOrderStatus ||
+    hasPaymentStatus ||
+    hasCancelEligibility ||
+    hasPaymentOverview ||
+    statusFilter;
 
   if (
     ALWAYS_BROAD_OR_DEFERRED_PATTERNS.some((pattern) => pattern.test(trimmed)) &&
@@ -161,6 +179,13 @@ export function routeSupportAccountAwareRequest(
     /\b(orders?|bookings?|payments?|invoices?|account|provider)\b/i.test(trimmed)
   ) {
     return { kind: "broad_or_deferred" };
+  }
+
+  if (
+    ids.length === 0 &&
+    hasPaymentOverview
+  ) {
+    return { kind: "payment_overview" };
   }
 
   if (
@@ -188,7 +213,7 @@ export function routeSupportAccountAwareRequest(
         referenceType: "order_id",
       };
     }
-    if (hasPaymentStatus) {
+    if (hasPaymentStatus || hasPaymentOverview) {
       return {
         kind: "missing_reference",
         helper: "getPaymentStatusForCurrentUser",
@@ -205,12 +230,12 @@ export function routeSupportAccountAwareRequest(
   const id = ids[0];
   if (!id) {
     if (hasExplicitInvalidReference(trimmed)) {
-      return hasPaymentStatus && /\binvoice\b/i.test(trimmed)
+      return (hasPaymentStatus || hasPaymentOverview) && /\binvoice\b/i.test(trimmed)
         ? helperInput("getPaymentStatusForCurrentUser", "invoice_id", trimmed)
         : helperInput(
             hasCancelEligibility
               ? "canCancelOrderForCurrentUser"
-              : hasPaymentStatus
+              : hasPaymentStatus || hasPaymentOverview
                 ? "getPaymentStatusForCurrentUser"
                 : "getOrderStatusForCurrentUser",
             "order_id",
@@ -233,7 +258,7 @@ export function routeSupportAccountAwareRequest(
     return helperInput("canCancelOrderForCurrentUser", "order_id", id);
   }
 
-  if (hasPaymentStatus) {
+  if (hasPaymentStatus || hasPaymentOverview) {
     return helperInput(
       "getPaymentStatusForCurrentUser",
       /\binvoice\b/i.test(trimmed) ? "invoice_id" : "order_id",

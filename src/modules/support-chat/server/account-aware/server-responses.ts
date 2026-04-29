@@ -7,6 +7,7 @@ import {
   canCancelOrderForCurrentUser,
   getOrderStatusForCurrentUser,
   getPaymentStatusForCurrentUser,
+  getSupportPaymentOverviewForCurrentUser,
   getSupportOrderCandidatesForCurrentUser,
 } from "./helpers";
 import {
@@ -347,6 +348,35 @@ function cancellationMessage(data: Extract<SupportAccountHelperDTO, { resultCate
   return "This order does not currently appear eligible for in-app cancellation. Please use your Orders page or contact support if you need help.";
 }
 
+function countPhrase(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function paymentOverviewMessage(data: Extract<SupportAccountHelperDTO, { resultCategory: "payment_overview" }>) {
+  if (data.inspectedOrderCount === 0) {
+    return "I could not find recent support-safe orders to summarize. This is not a full account or payment history check.";
+  }
+
+  const parts = [
+    countPhrase(data.categories.paid, "paid order"),
+    `${data.categories.paymentPending} with payment pending`,
+    `${data.categories.paymentNotDue} where payment is not due yet`,
+    `${data.categories.paymentCanceled} with payment canceled`,
+    `${data.categories.refunded} refunded`,
+  ];
+
+  if (data.categories.unknown > 0) {
+    parts.push(`${data.categories.unknown} with an unknown payment status`);
+  }
+
+  // This wording is intentionally deterministic: the helper returns a bounded
+  // recent-order summary, not a complete payment ledger or Stripe timeline.
+  return [
+    `From the recent orders I can safely check, I found ${parts.join(", ")}.`,
+    `I inspected ${countPhrase(data.inspectedOrderCount, "recent support-safe order")}. This is not a full payment history.`,
+  ].join("\n\n");
+}
+
 function successMessage(data: SupportAccountHelperDTO) {
   switch (data.resultCategory) {
     case "order_status":
@@ -355,6 +385,8 @@ function successMessage(data: SupportAccountHelperDTO) {
       return paymentStatusMessage(data);
     case "cancellation_eligibility":
       return cancellationMessage(data);
+    case "payment_overview":
+      return paymentOverviewMessage(data);
     default:
       return "I found the account item, but I cannot safely summarize it yet.";
   }
@@ -389,6 +421,8 @@ export async function buildAccountAwareServerResponse(input: {
           input.route.kind === "helper" ||
           input.route.kind === "missing_reference"
             ? input.route.helper
+            : input.route.kind === "payment_overview"
+              ? "getSupportPaymentOverviewForCurrentUser"
             : undefined,
         helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
         authenticated: false,
@@ -407,6 +441,57 @@ export async function buildAccountAwareServerResponse(input: {
       accountHelperMetadata: {
         helper: input.route.helper,
         helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+        authenticated,
+        requiredInputPresent: false,
+        serverAuthored: true,
+      },
+    };
+  }
+
+  if (input.route.kind === "payment_overview") {
+    const accountContext = input.accountContext;
+    if (!accountContext) {
+      return {
+        assistantMessage: fallback(input.locale),
+        disposition: "unsupported_account_question",
+        needsHumanSupport: true,
+        accountHelperMetadata: {
+          helper: "getSupportPaymentOverviewForCurrentUser",
+          helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+          authenticated: false,
+          requiredInputPresent: false,
+          deniedReason: "unauthenticated",
+          serverAuthored: true,
+        },
+      };
+    }
+
+    const result = await getSupportPaymentOverviewForCurrentUser(accountContext);
+
+    if (!result.ok) {
+      return {
+        assistantMessage: fallback(input.locale),
+        disposition: "unsupported_account_question",
+        needsHumanSupport: true,
+        accountHelperMetadata: {
+          helper: "getSupportPaymentOverviewForCurrentUser",
+          helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+          authenticated,
+          requiredInputPresent: false,
+          deniedReason: result.reason,
+          serverAuthored: true,
+        },
+      };
+    }
+
+    return {
+      assistantMessage: successMessage(result.data),
+      disposition: "answered",
+      needsHumanSupport: false,
+      accountHelperMetadata: {
+        helper: "getSupportPaymentOverviewForCurrentUser",
+        helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+        resultCategory: result.data.resultCategory,
         authenticated,
         requiredInputPresent: false,
         serverAuthored: true,
