@@ -16,6 +16,7 @@ import { useTRPC } from "@/trpc/client";
 import {
   type SupportChatAction,
   type SupportChatMessage,
+  type SupportSelectedOrderContext,
 } from "@/modules/support-chat/ui/types";
 
 type SupportChatContextValue = {
@@ -60,6 +61,8 @@ export function SupportChatProvider({
   const [open, setOpen] = useState(initialOpen);
   const [threadId, setThreadId] = useState<string | undefined>();
   const [messages, setMessages] = useState<SupportChatMessage[]>([]);
+  const [selectedOrderContext, setSelectedOrderContext] =
+    useState<SupportSelectedOrderContext | null>(null);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,9 +99,13 @@ export function SupportChatProvider({
           message,
           threadId,
           locale: lang,
+          selectedOrderContext: selectedOrderContext ?? undefined,
         });
 
         setThreadId(response.threadId);
+        if (response.selectedOrderContext) {
+          setSelectedOrderContext(response.selectedOrderContext);
+        }
         setMessages((current) => [
           ...current,
           {
@@ -124,7 +131,7 @@ export function SupportChatProvider({
         setIsSending(false);
       }
     },
-    [input, lang, sendSupportMessage, t, threadId]
+    [input, lang, selectedOrderContext, sendSupportMessage, t, threadId]
   );
 
   const sendAction = useCallback(
@@ -157,6 +164,9 @@ export function SupportChatProvider({
         });
 
         setThreadId(response.threadId);
+        if (response.selectedOrderContext) {
+          setSelectedOrderContext(response.selectedOrderContext);
+        }
         setMessages((current) => [
           ...current,
           {

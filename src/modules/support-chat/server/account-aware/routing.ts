@@ -105,6 +105,55 @@ const CANCEL_ELIGIBILITY_PATTERNS = [
   /\bcancellation\s+eligibility\b/i,
 ];
 
+const SELECTED_ORDER_REFERENCE_PATTERNS = [
+  /\b(this|that|selected)\s+(order|booking)\b/i,
+  /\b(this|that)\s+one\b/i,
+];
+
+const SELECTED_ORDER_FOLLOW_UP_PATTERNS = [
+  /^\s*why\b.*\b(this|that|selected)\s+(order|booking)\b/i,
+  /^\s*what\s+about\b.*\b(this|that|selected)\s+(order|booking)\b/i,
+  /^\s*and\s+what\s+about\b.*\b(this|that|selected)\s+(order|booking)\b/i,
+  /^\s*can\s+i\b.*\b(this|that|selected)\s+(order|booking)\b/i,
+  /^\s*could\s+i\b.*\b(this|that|selected)\s+(order|booking)\b/i,
+  /^\s*should\s+i\b.*\b(this|that|selected)\s+(order|booking)\b/i,
+  /^\s*what\s+should\s+i\b.*\b(this|that|selected)\s+(order|booking)\b/i,
+  /\bwhat\s+happened\b/i,
+  /\bnext\s+step\b/i,
+  /\bwhat\s+is\s+its\s+status\b/i,
+  /\bwhat's\s+its\s+status\b/i,
+  /\bcan\s+i\s+cancel\s+it\b/i,
+  /\bcould\s+i\s+cancel\s+it\b/i,
+  /\bwhy\s+was\s+it\s+canceled\b/i,
+  /\bwhy\s+is\s+it\s+(not\s+)?paid\b/i,
+  /\bwhy\s+is\s+payment\s+not\s+due\b/i,
+  /\bwhat\s+about\s+(the\s+)?payment\b/i,
+];
+
+const SELECTED_ORDER_STATUS_PATTERNS = [
+  /\bstatus\b/i,
+  /\breason\b/i,
+  /\bwhy\b/i,
+  /\bwhat\s+happened\b/i,
+  /\bnext\s+step\b/i,
+  /\bwhat\s+should\s+i\s+do\b/i,
+];
+
+const SELECTED_ORDER_PAYMENT_PATTERNS = [
+  /\bpayment\b/i,
+  /\bpaid\b/i,
+  /\bpay\b/i,
+  /\bdue\b/i,
+  /\binvoice\b/i,
+  /\bcharged\b/i,
+];
+
+const SELECTED_ORDER_CANCEL_PATTERNS = [
+  /\bcancel\b/i,
+  /\bcancelable\b/i,
+  /\bcancellation\b/i,
+];
+
 function hasAny(patterns: RegExp[], message: string) {
   return patterns.some((pattern) => pattern.test(message));
 }
@@ -147,8 +196,45 @@ function candidateSelectionHelper(input: {
   return "getOrderStatusForCurrentUser";
 }
 
+function selectedOrderFollowUpHelper(input: {
+  message: string;
+  hasCancelEligibility: boolean;
+  hasPaymentStatus: boolean;
+}): AccountCandidateSelectionHelper | null {
+  const hasSelectedReference = hasAny(
+    SELECTED_ORDER_REFERENCE_PATTERNS,
+    input.message,
+  );
+  const hasFollowUpShape = hasAny(
+    SELECTED_ORDER_FOLLOW_UP_PATTERNS,
+    input.message,
+  );
+
+  if (!hasSelectedReference && !hasFollowUpShape) return null;
+  if (
+    input.hasCancelEligibility ||
+    hasAny(SELECTED_ORDER_CANCEL_PATTERNS, input.message)
+  ) {
+    return "canCancelOrderForCurrentUser";
+  }
+  if (
+    input.hasPaymentStatus ||
+    hasAny(SELECTED_ORDER_PAYMENT_PATTERNS, input.message)
+  ) {
+    return "getPaymentStatusForCurrentUser";
+  }
+  if (hasAny(SELECTED_ORDER_STATUS_PATTERNS, input.message)) {
+    return "getOrderStatusForCurrentUser";
+  }
+
+  return hasSelectedReference ? "getOrderStatusForCurrentUser" : null;
+}
+
 export function routeSupportAccountAwareRequest(
   message: string,
+  options?: {
+    selectedOrder?: SupportAccountHelperInput & { referenceType: "order_id" };
+  },
 ): SupportAccountRoute {
   const trimmed = message.trim();
   if (!trimmed) return { kind: "none" };
@@ -186,6 +272,22 @@ export function routeSupportAccountAwareRequest(
     hasPaymentOverview
   ) {
     return { kind: "payment_overview" };
+  }
+
+  if (ids.length === 0 && options?.selectedOrder) {
+    const selectedHelper = selectedOrderFollowUpHelper({
+      message: trimmed,
+      hasCancelEligibility,
+      hasPaymentStatus,
+    });
+
+    if (selectedHelper) {
+      return {
+        kind: "helper",
+        helper: selectedHelper,
+        input: options.selectedOrder,
+      };
+    }
   }
 
   if (

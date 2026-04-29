@@ -50,6 +50,12 @@ export const supportChatRouter = createTRPCRouter({
             token: z.string().min(1).max(4000),
           })
           .optional(),
+        selectedOrderContext: z
+          .object({
+            type: z.literal("selected_order"),
+            token: z.string().min(1).max(4000),
+          })
+          .optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -96,6 +102,7 @@ export const supportChatRouter = createTRPCRouter({
             threadId,
             locale,
             accountContext,
+            selectedOrderContext: input.selectedOrderContext,
           });
 
       try {

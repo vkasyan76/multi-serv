@@ -24,6 +24,7 @@ export type SupportChatPhase2AccountAwareCategory =
   | "broad_lookup"
   | "candidate_selection"
   | "payment_overview"
+  | "selected_context"
   | "policy_separation";
 
 export type SupportChatPhase2AccountAwareCase = {
@@ -47,6 +48,8 @@ export type SupportChatPhase2AccountAwareCase = {
   expectedActionPatterns?: string[];
   forbiddenActionPatterns?: string[];
   expectedActionCount?: number;
+  selectedOrderContextReference?: string;
+  selectedOrderContextCreatedAt?: string;
 };
 
 const ids = PHASE2_ACCOUNT_FIXTURE_IDS;
@@ -476,6 +479,58 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectNoMutation: true,
       expectedAnswerPatterns: ["recent orders I can safely check"],
       forbiddenAnswerPatterns: ["Which order do you mean", "reply 1"],
+      expectedActionCount: 0,
+    },
+    {
+      id: "selected-context-payment-follow-up",
+      category: "selected_context",
+      prompt: "Why is payment not due for this order yet?",
+      locale: "en",
+      authUser: "user-a",
+      selectedOrderContextReference: ids.ownedRequestedOrder,
+      expectedDisposition: "answered",
+      expectedNeedsHumanSupport: false,
+      expectedResponseOrigin: "server",
+      expectedHelper: "getPaymentStatusForCurrentUser",
+      expectNoBroadLookup: true,
+      expectNoMutation: true,
+      expectedAnswerPatterns: ["Payment is not due"],
+      forbiddenAnswerPatterns: ["Which order do you mean", "reply 1"],
+      expectedActionCount: 0,
+    },
+    {
+      id: "selected-context-cancel-follow-up",
+      category: "selected_context",
+      prompt: "Can I cancel it?",
+      locale: "en",
+      authUser: "user-a",
+      selectedOrderContextReference: ids.ownedRequestedOrder,
+      expectedDisposition: "answered",
+      expectedNeedsHumanSupport: false,
+      expectedResponseOrigin: "server",
+      expectedHelper: "canCancelOrderForCurrentUser",
+      expectNoBroadLookup: true,
+      expectNoMutation: true,
+      expectedAnswerPatterns: ["eligible for in-app cancellation"],
+      forbiddenAnswerPatterns: ["has been canceled", "Which order do you mean"],
+      expectedActionCount: 0,
+    },
+    {
+      id: "selected-context-wrong-owner-still-denied",
+      category: "selected_context",
+      prompt: "What is its status?",
+      locale: "en",
+      authUser: "user-a",
+      selectedOrderContextReference: ids.wrongOwnerOrder,
+      expectedDisposition: "unsupported_account_question",
+      expectedNeedsHumanSupport: true,
+      expectedResponseOrigin: "server",
+      expectedHelper: "getOrderStatusForCurrentUser",
+      expectedDeniedReason: "not_found_or_not_owned",
+      expectNoBroadLookup: true,
+      expectNoMutation: true,
+      expectedAnswerPatterns: ["cannot check live order"],
+      forbiddenAnswerPatterns: ["belongs to another"],
       expectedActionCount: 0,
     },
     {

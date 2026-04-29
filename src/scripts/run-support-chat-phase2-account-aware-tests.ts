@@ -528,16 +528,33 @@ async function main() {
   const { generateSupportResponse } = await import(
     "@/modules/support-chat/server/generate-support-response"
   );
+  const { createSelectedOrderContextToken } = await import(
+    "@/modules/support-chat/server/account-aware/action-tokens"
+  );
 
   for (const testCase of cases) {
     const account = makeAccountContext(testCase.authUser);
+    const selectedOrderContext = testCase.selectedOrderContextReference
+      ? {
+          type: "selected_order" as const,
+          token: createSelectedOrderContextToken({
+            reference: testCase.selectedOrderContextReference,
+            threadId: "11111111-1111-4111-8111-111111111111",
+            now: testCase.selectedOrderContextCreatedAt
+              ? new Date(testCase.selectedOrderContextCreatedAt)
+              : undefined,
+          }),
+        }
+      : undefined;
     const response = await generateSupportResponse({
       message: testCase.prompt,
+      threadId: "11111111-1111-4111-8111-111111111111",
       locale: testCase.locale,
       accountContext: {
         db: account.db as never,
         userId: account.userId,
       },
+      selectedOrderContext,
     });
     results.push(evaluateCase(testCase, response, account.calls));
   }

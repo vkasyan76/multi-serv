@@ -12,6 +12,13 @@ export type SupportChatAction = {
   token: string;
 };
 
+export type SupportSelectedOrderContext = {
+  type: "selected_order";
+  token: string;
+  label?: string;
+  description?: string;
+};
+
 export type SupportChatMessage = {
   id: string;
   role: "user" | "assistant";

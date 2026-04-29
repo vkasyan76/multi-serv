@@ -12,6 +12,7 @@ import {
 } from "./helpers";
 import {
   createAccountCandidateActionToken,
+  createSelectedOrderContextToken,
   verifyAccountCandidateActionToken,
   type AccountCandidateSelectionHelper,
 } from "./action-tokens";
@@ -43,6 +44,7 @@ export type AccountAwareServerResponse = {
   needsHumanSupport: boolean;
   accountHelperMetadata: SupportAccountHelperMetadata;
   actions?: SupportChatAction[];
+  selectedOrderContext?: SupportSelectedOrderContext;
 };
 
 export type SupportChatAction = {
@@ -51,6 +53,13 @@ export type SupportChatAction = {
   label: string;
   description?: string;
   token: string;
+};
+
+export type SupportSelectedOrderContext = {
+  type: "selected_order";
+  token: string;
+  label?: string;
+  description?: string;
 };
 
 function fallback(locale: AppLang) {
@@ -115,17 +124,23 @@ function candidateActions(input: {
   helper: AccountCandidateSelectionHelper;
   threadId: string;
 }): SupportChatAction[] {
-  return input.candidates.map((candidate, index) => ({
-    id: `${input.helper}:${index}`,
-    type: "account_candidate_select",
-    label: candidateActionLabel(candidate) || "Order candidate",
-    description: candidateActionDescription(candidate),
-    token: createAccountCandidateActionToken({
-      helper: input.helper,
-      reference: candidate.orderId,
-      threadId: input.threadId,
-    }),
-  }));
+  return input.candidates.map((candidate, index) => {
+    const label = candidateActionLabel(candidate) || "Order candidate";
+    const description = candidateActionDescription(candidate);
+    return {
+      id: `${input.helper}:${index}`,
+      type: "account_candidate_select",
+      label,
+      description,
+      token: createAccountCandidateActionToken({
+        helper: input.helper,
+        reference: candidate.orderId,
+        threadId: input.threadId,
+        displayLabel: label,
+        displayDescription: description,
+      }),
+    };
+  });
 }
 
 function candidateSelectionMessage(candidates: SupportOrderCandidateDTO[]) {
@@ -660,7 +675,7 @@ export async function buildAccountAwareActionResponse(input: {
     };
   }
 
-  return buildAccountAwareServerResponse({
+  const response = await buildAccountAwareServerResponse({
     route: {
       kind: "helper",
       helper: verified.helper,
@@ -670,4 +685,23 @@ export async function buildAccountAwareActionResponse(input: {
     locale: input.locale,
     threadId: input.threadId,
   });
+
+  if (response.disposition !== "answered") return response;
+
+  return {
+    ...response,
+    // The context token is only a short-lived reference hint. Every follow-up
+    // still calls the exact helper again, so ownership is rechecked server-side.
+    selectedOrderContext: {
+      type: "selected_order",
+      token: createSelectedOrderContextToken({
+        reference: verified.input.reference,
+        threadId: input.threadId,
+        displayLabel: verified.displayLabel,
+        displayDescription: verified.displayDescription,
+      }),
+      label: verified.displayLabel,
+      description: verified.displayDescription,
+    },
+  };
 }

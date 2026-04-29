@@ -18,7 +18,9 @@ import {
   buildAccountAwareServerResponse,
   type SupportAccountHelperMetadata,
   type SupportChatAction,
+  type SupportSelectedOrderContext,
 } from "@/modules/support-chat/server/account-aware/server-responses";
+import { verifySelectedOrderContextToken } from "@/modules/support-chat/server/account-aware/action-tokens";
 import { routeSupportAccountAwareRequest } from "@/modules/support-chat/server/account-aware/routing";
 import type { TRPCContext } from "@/trpc/init";
 
@@ -45,6 +47,7 @@ export type GenerateSupportResponseInput = {
   threadId?: string;
   locale: AppLang;
   accountContext?: Pick<TRPCContext, "db" | "userId">;
+  selectedOrderContext?: Pick<SupportSelectedOrderContext, "token">;
 };
 
 export type GenerateSupportResponseResult = {
@@ -61,6 +64,7 @@ export type GenerateSupportResponseResult = {
   };
   accountHelperMetadata?: SupportAccountHelperMetadata;
   actions?: SupportChatAction[];
+  selectedOrderContext?: SupportSelectedOrderContext;
 };
 
 const MIN_STRONG_SOURCE_SCORE = 4;
@@ -231,8 +235,18 @@ export async function generateSupportResponse(
     });
   }
 
+  const selectedOrder =
+    input.accountContext && input.selectedOrderContext
+      ? verifySelectedOrderContextToken({
+          token: input.selectedOrderContext.token,
+          threadId,
+        })
+      : null;
+
   const accountRoute = input.accountContext
-    ? routeSupportAccountAwareRequest(message)
+    ? routeSupportAccountAwareRequest(message, {
+        selectedOrder: selectedOrder?.ok ? selectedOrder.input : undefined,
+      })
     : { kind: "none" as const };
   if (accountRoute.kind !== "none") {
     const accountResponse = await buildAccountAwareServerResponse({
@@ -251,6 +265,7 @@ export async function generateSupportResponse(
       needsHumanSupport: accountResponse.needsHumanSupport,
       accountHelperMetadata: accountResponse.accountHelperMetadata,
       actions: accountResponse.actions,
+      selectedOrderContext: accountResponse.selectedOrderContext,
     });
   }
 

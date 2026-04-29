@@ -7,7 +7,11 @@ import {
   buildAccountAwareServerResponse,
 } from "./server-responses";
 import { routeSupportAccountAwareRequest } from "./routing";
-import { createAccountCandidateActionToken } from "./action-tokens";
+import {
+  createAccountCandidateActionToken,
+  createSelectedOrderContextToken,
+  verifySelectedOrderContextToken,
+} from "./action-tokens";
 
 process.env.PAYLOAD_SECRET ??= "support-chat-action-test-secret";
 
@@ -735,12 +739,118 @@ test("candidate action click validates token and calls exact helper", async () =
   assert.match(clickResponse.assistantMessage, /Status: requested/i);
   assert.match(clickResponse.assistantMessage, /Payment: payment not due/i);
   assert.match(clickResponse.assistantMessage, /Reason: The provider has not confirmed/i);
+  assert.equal(clickResponse.selectedOrderContext?.type, "selected_order");
+  assert.ok(clickResponse.selectedOrderContext?.token);
+  assert.doesNotMatch(
+    clickResponse.selectedOrderContext?.token ?? "",
+    new RegExp(ORDER_REQUESTED_A),
+  );
   assert.equal(
     db.calls.some(
       (call) => call.method === "findByID" && call.collection === "orders",
     ),
     true,
   );
+});
+
+test("selected order context routes follow-up questions to exact helpers", () => {
+  const selected = { referenceType: "order_id" as const, reference: ORDER_SCHEDULED_A };
+
+  const payment = routeSupportAccountAwareRequest(
+    "Why is payment not due for this order yet?",
+    { selectedOrder: selected },
+  );
+  assert.equal(payment.kind, "helper");
+  if (payment.kind === "helper") {
+    assert.equal(payment.helper, "getPaymentStatusForCurrentUser");
+    assert.deepEqual(payment.input, selected);
+  }
+
+  const cancel = routeSupportAccountAwareRequest("Can I cancel it?", {
+    selectedOrder: selected,
+  });
+  assert.equal(cancel.kind, "helper");
+  if (cancel.kind === "helper") {
+    assert.equal(cancel.helper, "canCancelOrderForCurrentUser");
+    assert.deepEqual(cancel.input, selected);
+  }
+
+  const status = routeSupportAccountAwareRequest("What is its status?", {
+    selectedOrder: selected,
+  });
+  assert.equal(status.kind, "helper");
+  if (status.kind === "helper") {
+    assert.equal(status.helper, "getOrderStatusForCurrentUser");
+    assert.deepEqual(status.input, selected);
+  }
+
+  const aboutPayment = routeSupportAccountAwareRequest("What about payment?", {
+    selectedOrder: selected,
+  });
+  assert.equal(aboutPayment.kind, "helper");
+  if (aboutPayment.kind === "helper") {
+    assert.equal(aboutPayment.helper, "getPaymentStatusForCurrentUser");
+    assert.deepEqual(aboutPayment.input, selected);
+  }
+});
+
+test("selected order context does not capture unrelated it follow-ups", () => {
+  const selected = { referenceType: "order_id" as const, reference: ORDER_SCHEDULED_A };
+
+  for (const prompt of [
+    "It does not work",
+    "Is it possible?",
+    "I don't understand it",
+    "It is confusing",
+  ]) {
+    const route = routeSupportAccountAwareRequest(prompt, {
+      selectedOrder: selected,
+    });
+
+    assert.notEqual(
+      route.kind,
+      "helper",
+      `unexpected selected-order helper route for: ${prompt}`,
+    );
+  }
+});
+
+test("selected order context tokens validate thread and expiry", () => {
+  const token = createSelectedOrderContextToken({
+    reference: ORDER_SCHEDULED_A,
+    threadId: THREAD_ID,
+    displayLabel: "Provider - 26 Apr 2026",
+  });
+
+  const verified = verifySelectedOrderContextToken({
+    token,
+    threadId: THREAD_ID,
+  });
+  assert.equal(verified.ok, true);
+  if (verified.ok) {
+    assert.deepEqual(verified.input, {
+      referenceType: "order_id",
+      reference: ORDER_SCHEDULED_A,
+    });
+    assert.equal(verified.displayLabel, "Provider - 26 Apr 2026");
+  }
+
+  const wrongThread = verifySelectedOrderContextToken({
+    token,
+    threadId: "22222222-2222-4222-8222-222222222222",
+  });
+  assert.deepEqual(wrongThread, { ok: false, reason: "invalid_token" });
+
+  const expiredToken = createSelectedOrderContextToken({
+    reference: ORDER_SCHEDULED_A,
+    threadId: THREAD_ID,
+    now: new Date(Date.now() - 60 * 60 * 1000),
+  });
+  const expired = verifySelectedOrderContextToken({
+    token: expiredToken,
+    threadId: THREAD_ID,
+  });
+  assert.deepEqual(expired, { ok: false, reason: "expired_token" });
 });
 
 test("candidate action token is re-authorized for tenant order access", async () => {
