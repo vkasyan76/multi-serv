@@ -348,7 +348,19 @@ function paymentStatusMessage(data: Extract<SupportAccountHelperDTO, { resultCat
     return "A payment is pending for this order or invoice. You can open the invoice from your Orders page.";
   }
   if (data.invoiceStatusCategory === "none" || data.paymentStatusCategory === "not_due") {
-    return "Payment is not due for this order yet.";
+    switch (data.serviceStatusCategory) {
+      case "requested":
+        return "Payment is not due yet because this is still a booking request awaiting provider confirmation. Booking requests do not become payable immediately. Once the provider confirms and the order later reaches the invoice/payment step, the payment status can change.";
+      case "scheduled":
+        return "Payment is not due yet because no invoice has been issued for this scheduled booking. In this flow, payment is requested later through the invoice/payment step.";
+      case "completed":
+      case "accepted":
+        return "Payment is not due yet because no invoice has been issued for this order. Please check your Orders page for invoice or payment status updates.";
+      case "canceled":
+        return "Payment is not due because this order is canceled and no payable invoice is currently associated with it.";
+      default:
+        return "Payment is not due for this order yet. No payable invoice is currently associated with it.";
+    }
   }
   if (data.invoiceStatusCategory === "void" || data.paymentStatusCategory === "canceled") {
     return "This invoice is not currently payable.";

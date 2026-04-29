@@ -170,6 +170,7 @@ export type SupportPaymentStatusDTO = SupportAccountHelperBaseDTO & {
   resultCategory: "payment_status";
   paymentStatusCategory: SupportAccountPaymentStatusCategory;
   invoiceStatusCategory: SupportAccountInvoiceStatusCategory;
+  serviceStatusCategory?: SupportAccountOrderServiceStatusCategory;
   accessRole?: SupportAccountAccessRole;
   issuedAt?: string;
   paidAt?: string;

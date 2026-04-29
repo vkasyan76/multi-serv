@@ -27,6 +27,7 @@ const ORDER_USER_B = "100000000000000000000005";
 const ORDER_CANCELED_A = "100000000000000000000007";
 const ORDER_OTHER_TENANT = "100000000000000000000008";
 const ORDER_PAID_A = "100000000000000000000009";
+const ORDER_SCHEDULED_NOT_DUE_A = "100000000000000000000010";
 const INVOICE_A = "200000000000000000000001";
 const SLOT_REQUESTED = "300000000000000000000001";
 const SLOT_CANCELED = "300000000000000000000005";
@@ -222,6 +223,15 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         invoiceStatus: "paid",
         paidAt: "2026-04-21T11:00:00.000Z",
         createdAt: "2026-04-21T09:00:00.000Z",
+      }),
+    ],
+    [
+      ORDER_SCHEDULED_NOT_DUE_A,
+      order({
+        id: ORDER_SCHEDULED_NOT_DUE_A,
+        serviceStatus: "scheduled",
+        invoiceStatus: "none",
+        createdAt: "2026-04-20T09:00:00.000Z",
       }),
     ],
   ]);
@@ -427,6 +437,16 @@ test("routes exact payment requests by order and invoice reference", async () =>
   }
   assert.equal(byOrder.response.disposition, "answered");
   assert.match(byOrder.response.assistantMessage, /not due/i);
+  assert.match(byOrder.response.assistantMessage, /booking request/i);
+  assert.match(byOrder.response.assistantMessage, /awaiting provider confirmation/i);
+
+  const scheduledNotDue = await respond(
+    `Did my payment go through for order ${ORDER_SCHEDULED_NOT_DUE_A}?`,
+  );
+  assert.equal(scheduledNotDue.response.disposition, "answered");
+  assert.match(scheduledNotDue.response.assistantMessage, /no invoice has been issued/i);
+  assert.match(scheduledNotDue.response.assistantMessage, /scheduled booking/i);
+  assert.match(scheduledNotDue.response.assistantMessage, /invoice\/payment step/i);
 
   const byInvoice = await respond(`What is invoice ${INVOICE_A} status?`);
   assert.equal(byInvoice.route.kind, "helper");
@@ -683,7 +703,7 @@ test("payment overview returns bounded deterministic summary", async () => {
   assert.match(response.assistantMessage, /From the recent orders I can safely check/i);
   assert.match(response.assistantMessage, /1 paid order/i);
   assert.match(response.assistantMessage, /1 with payment pending/i);
-  assert.match(response.assistantMessage, /1 where payment is not due yet/i);
+  assert.match(response.assistantMessage, /2 where payment is not due yet/i);
   assert.match(response.assistantMessage, /1 with payment canceled/i);
   assert.match(response.assistantMessage, /not a full payment history/i);
   assert.equal(response.actions, undefined);
@@ -898,6 +918,8 @@ test("candidate actions preserve payment and cancellation intent", async () => {
     "getPaymentStatusForCurrentUser",
   );
   assert.match(paymentClick.assistantMessage, /not due/i);
+  assert.match(paymentClick.assistantMessage, /booking request/i);
+  assert.match(paymentClick.assistantMessage, /awaiting provider confirmation/i);
 
   const lastPayment = await respond("What was my last payment?");
   assert.equal(lastPayment.route.kind, "candidate_selection");

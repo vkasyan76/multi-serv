@@ -627,6 +627,7 @@ export async function getPaymentStatusForCurrentUser(
       resultCategory: "payment_status",
       paymentStatusCategory: paymentStatus,
       invoiceStatusCategory: invoiceStatus,
+      serviceStatusCategory: serviceStatusCategory(order),
       accessRole: accessibleOrder.accessRole,
       nextStepKey: paymentNextStepKey(paymentStatus, invoiceStatus),
       issuedAt: order.invoiceIssuedAt ?? undefined,

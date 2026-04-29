@@ -83,7 +83,11 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedHelper: "getPaymentStatusForCurrentUser",
       expectNoBroadLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["not due"],
+      expectedAnswerPatterns: [
+        "Payment is not due",
+        "booking request",
+        "awaiting provider confirmation",
+      ],
       forbiddenAnswerPatterns: ["paid", "failed", "successful"],
     },
     {
@@ -494,7 +498,11 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedHelper: "getPaymentStatusForCurrentUser",
       expectNoBroadLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["Payment is not due"],
+      expectedAnswerPatterns: [
+        "Payment is not due",
+        "booking request",
+        "awaiting provider confirmation",
+      ],
       forbiddenAnswerPatterns: ["Which order do you mean", "reply 1"],
       expectedActionCount: 0,
     },

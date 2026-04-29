@@ -873,6 +873,7 @@ test("order-id payment status uses only the exact owned order", async () => {
 
   assert.equal(result.data.paymentStatusCategory, "not_due");
   assert.equal(result.data.invoiceStatusCategory, "none");
+  assert.equal(result.data.serviceStatusCategory, "requested");
   assert.equal(result.data.accessRole, "customer");
   assert.equal(result.data.nextStepKey, "view_orders");
   assert.equal(
@@ -887,6 +888,7 @@ test("order-id payment status uses only the exact owned order", async () => {
     "resultCategory",
     "paymentStatusCategory",
     "invoiceStatusCategory",
+    "serviceStatusCategory",
     "accessRole",
     "nextStepKey",
     "issuedAt",
@@ -908,6 +910,7 @@ test("tenant owner can access exact order payment status through order ownership
   assert.equal(result.data.accessRole, "tenant");
   assert.equal(result.data.paymentStatusCategory, "pending");
   assert.equal(result.data.invoiceStatusCategory, "issued");
+  assert.equal(result.data.serviceStatusCategory, "scheduled");
   assert.equal(
     db.calls.some((call) => call.method === "find" && call.collection === "invoices"),
     false,
@@ -926,6 +929,7 @@ test("order-id payment status reflects pay-later invoice cache fields", async ()
 
   assert.equal(result.data.paymentStatusCategory, "pending");
   assert.equal(result.data.invoiceStatusCategory, "issued");
+  assert.equal(result.data.serviceStatusCategory, "scheduled");
   assert.equal(result.data.nextStepKey, "pay_invoice");
   assert.equal(result.data.issuedAt, "2026-04-27T11:00:00.000Z");
   assert.equal(result.data.paymentDueAt, "2026-05-11T11:00:00.000Z");
