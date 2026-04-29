@@ -96,6 +96,8 @@ const PAYMENT_CANDIDATE_PATTERNS = [
   /\b(my\s+)?payment\s+go\s+through\b/,
   /\bdid\s+my\s+payment\b/,
   /\bcheck\s+my\s+payment\b/,
+  /\b(last|latest|recent|most\s+recent)\s+(payment|payments)\b/,
+  /\b(payment|payments)\s+(last|latest|recent)\b/,
 ] as const;
 
 const STATUS_FILTER_PATTERNS = {

@@ -76,6 +76,8 @@ const PAYMENT_STATUS_PATTERNS = [
   /\bpayment\s+status\b/i,
   /\b(my\s+)?payment\s+go\s+through\b/i,
   /\bcheck\s+(my\s+)?payment\b/i,
+  /\b(last|latest|recent|most\s+recent)\s+(payment|payments)\b/i,
+  /\b(payment|payments)\s+(last|latest|recent)\b/i,
   /\bcharged\s+twice\b/i,
   /\bwhy\s+was\s+(my\s+)?card\s+charged\b/i,
   /\binvoice\b.*\bstatus\b/i,

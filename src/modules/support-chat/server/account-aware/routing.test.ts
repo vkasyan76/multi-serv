@@ -538,6 +538,7 @@ test("vague account prompts route to candidate selection", () => {
   for (const prompt of [
     "What is my order status?",
     "Did my payment go through?",
+    "What was my last payment?",
     "Why has my order not been paid yet?",
     "Can I cancel my latest booking?",
     "Find my latest order",
@@ -715,6 +716,21 @@ test("candidate actions preserve payment and cancellation intent", async () => {
     "getPaymentStatusForCurrentUser",
   );
   assert.match(paymentClick.assistantMessage, /not due/i);
+
+  const lastPayment = await respond("What was my last payment?");
+  assert.equal(lastPayment.route.kind, "candidate_selection");
+  if (lastPayment.route.kind === "candidate_selection") {
+    assert.equal(
+      lastPayment.route.selectionHelper,
+      "getPaymentStatusForCurrentUser",
+    );
+  }
+  assert.equal(
+    lastPayment.response.accountHelperMetadata.helper,
+    "getSupportOrderCandidatesForCurrentUser",
+  );
+  assert.match(lastPayment.response.assistantMessage, /Which order do you mean/i);
+  assert.equal(lastPayment.response.actions?.[0]?.type, "account_candidate_select");
 
   const cancel = await respond("Can I cancel my latest booking?");
   assert.equal(cancel.route.kind, "candidate_selection");
