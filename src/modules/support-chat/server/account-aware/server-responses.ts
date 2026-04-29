@@ -7,7 +7,7 @@ import {
   canCancelOrderForCurrentUser,
   getOrderStatusForCurrentUser,
   getPaymentStatusForCurrentUser,
-  getRecentSupportOrderCandidatesForCurrentUser,
+  getSupportOrderCandidatesForCurrentUser,
 } from "./helpers";
 import {
   createAccountCandidateActionToken,
@@ -20,6 +20,7 @@ import type {
   SupportAccountHelperDTO,
   SupportAccountHelperName,
   SupportOrderCandidateDTO,
+  SupportOrderCandidateStatusFilter,
 } from "./types";
 import { SUPPORT_ACCOUNT_HELPER_VERSION } from "./versioning";
 
@@ -134,6 +135,41 @@ function candidateSelectionMessage(candidates: SupportOrderCandidateDTO[]) {
   return candidates.length === 1
     ? "I found one recent order candidate. Please select it below if it is the order you mean."
     : "I found a few recent order candidates. Which order do you mean?";
+}
+
+function statusFilterLabel(filter: SupportOrderCandidateStatusFilter) {
+  switch (filter) {
+    case "canceled":
+      return "canceled";
+    case "requested":
+      return "requested";
+    case "scheduled":
+      return "scheduled";
+    case "completed_or_accepted":
+      return "completed or accepted";
+    case "payment_not_due":
+      return "payment not due";
+    case "payment_pending":
+      return "payment pending";
+    case "paid":
+      return "paid";
+  }
+}
+
+function filteredCandidateSelectionMessage(
+  candidates: SupportOrderCandidateDTO[],
+  statusFilter: SupportOrderCandidateStatusFilter | undefined,
+) {
+  if (!statusFilter) return candidateSelectionMessage(candidates);
+
+  const label = statusFilterLabel(statusFilter);
+  if (!candidates.length) {
+    return `I could not find recent ${label} booking candidates. This is not a full history check. Please open your Orders page if you need the complete list.`;
+  }
+
+  return candidates.length === 1
+    ? `I found one recent ${label} booking candidate. Please select it below if it is the order you mean.`
+    : `I found recent ${label} booking candidates. Which order do you mean?`;
 }
 
 function missingReferenceMessage(route: Extract<SupportAccountRoute, { kind: "missing_reference" }>) {
@@ -386,7 +422,7 @@ export async function buildAccountAwareServerResponse(input: {
         disposition: "unsupported_account_question",
         needsHumanSupport: true,
         accountHelperMetadata: {
-          helper: "getRecentSupportOrderCandidatesForCurrentUser",
+          helper: "getSupportOrderCandidatesForCurrentUser",
           helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
           authenticated: false,
           requiredInputPresent: false,
@@ -396,9 +432,9 @@ export async function buildAccountAwareServerResponse(input: {
       };
     }
 
-    const result = await getRecentSupportOrderCandidatesForCurrentUser(
-      accountContext,
-    );
+    const result = await getSupportOrderCandidatesForCurrentUser(accountContext, {
+      statusFilter: input.route.statusFilter,
+    });
 
     if (!result.ok) {
       return {
@@ -406,7 +442,7 @@ export async function buildAccountAwareServerResponse(input: {
         disposition: "unsupported_account_question",
         needsHumanSupport: true,
         accountHelperMetadata: {
-          helper: "getRecentSupportOrderCandidatesForCurrentUser",
+          helper: "getSupportOrderCandidatesForCurrentUser",
           helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
           authenticated,
           requiredInputPresent: false,
@@ -417,11 +453,14 @@ export async function buildAccountAwareServerResponse(input: {
     }
 
     return {
-      assistantMessage: candidateSelectionMessage(result.data.candidates),
+      assistantMessage: filteredCandidateSelectionMessage(
+        result.data.candidates,
+        input.route.statusFilter,
+      ),
       disposition: "uncertain",
       needsHumanSupport: false,
       accountHelperMetadata: {
-        helper: "getRecentSupportOrderCandidatesForCurrentUser",
+        helper: "getSupportOrderCandidatesForCurrentUser",
         helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
         resultCategory: result.data.resultCategory,
         authenticated,

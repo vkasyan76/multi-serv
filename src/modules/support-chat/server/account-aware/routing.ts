@@ -5,12 +5,17 @@ import type {
   SupportAccountHelperInput,
   SupportAccountHelperName,
   SupportAccountReferenceType,
+  SupportOrderCandidateStatusFilter,
 } from "./types";
-import { detectCandidateSelectionIntent } from "./intent-normalizer";
+import {
+  detectCandidateSelectionIntent,
+  detectCandidateStatusFilter,
+} from "./intent-normalizer";
 
 type ExactReferenceSupportAccountHelperName = Exclude<
   SupportAccountHelperName,
-  "getRecentSupportOrderCandidatesForCurrentUser"
+  | "getSupportOrderCandidatesForCurrentUser"
+  | "getRecentSupportOrderCandidatesForCurrentUser"
 >;
 
 export type SupportAccountRoute =
@@ -27,6 +32,7 @@ export type SupportAccountRoute =
   | {
       kind: "candidate_selection";
       selectionHelper: AccountCandidateSelectionHelper;
+      statusFilter?: SupportOrderCandidateStatusFilter;
     }
   | { kind: "unsupported_reference" }
   | { kind: "broad_or_deferred" }
@@ -41,6 +47,16 @@ const BROAD_OR_DEFERRED_PATTERNS = [
   /\ball\s+(my\s+)?(orders|payments|invoices|bookings)\b/i,
   /\bcheck\s+my\s+account\b/i,
   /\bshow\s+(me\s+)?(my\s+)?(orders|payments|invoices|bookings)\b/i,
+  /\b(all|every)\s+(of\s+)?(my\s+)?(orders|payments|invoices|bookings)\b/i,
+  /\bpayment\s+history\b/i,
+  /\border\s+history\b/i,
+  /\binvoice\s+history\b/i,
+];
+
+const ALWAYS_BROAD_OR_DEFERRED_PATTERNS = [
+  /\bhistory\b/i,
+  /\bexport\b/i,
+  /\ball\s+(my\s+)?(orders|payments|invoices|bookings)\b/i,
   /\b(all|every)\s+(of\s+)?(my\s+)?(orders|payments|invoices|bookings)\b/i,
   /\bpayment\s+history\b/i,
   /\border\s+history\b/i,
@@ -102,7 +118,15 @@ function helperInput(
 function candidateSelectionHelper(input: {
   hasCancelEligibility: boolean;
   hasPaymentStatus: boolean;
+  statusFilter?: SupportOrderCandidateStatusFilter;
 }): AccountCandidateSelectionHelper {
+  if (
+    input.statusFilter === "payment_not_due" ||
+    input.statusFilter === "payment_pending" ||
+    input.statusFilter === "paid"
+  ) {
+    return "getPaymentStatusForCurrentUser";
+  }
   if (input.hasCancelEligibility) return "canCancelOrderForCurrentUser";
   if (input.hasPaymentStatus) return "getPaymentStatusForCurrentUser";
   return "getOrderStatusForCurrentUser";
@@ -118,10 +142,19 @@ export function routeSupportAccountAwareRequest(
   const hasOrderStatus = hasAny(ORDER_STATUS_PATTERNS, trimmed);
   const hasPaymentStatus = hasAny(PAYMENT_STATUS_PATTERNS, trimmed);
   const hasCancelEligibility = hasAny(CANCEL_ELIGIBILITY_PATTERNS, trimmed);
+  const statusFilter = detectCandidateStatusFilter(trimmed);
   const isAccountAware =
-    hasOrderStatus || hasPaymentStatus || hasCancelEligibility;
+    hasOrderStatus || hasPaymentStatus || hasCancelEligibility || statusFilter;
 
   if (
+    ALWAYS_BROAD_OR_DEFERRED_PATTERNS.some((pattern) => pattern.test(trimmed)) &&
+    /\b(orders?|bookings?|payments?|invoices?|account|provider)\b/i.test(trimmed)
+  ) {
+    return { kind: "broad_or_deferred" };
+  }
+
+  if (
+    !statusFilter &&
     BROAD_OR_DEFERRED_PATTERNS.some((pattern) => pattern.test(trimmed)) &&
     /\b(orders?|bookings?|payments?|invoices?|account|provider)\b/i.test(trimmed)
   ) {
@@ -130,14 +163,16 @@ export function routeSupportAccountAwareRequest(
 
   if (
     ids.length === 0 &&
-    detectCandidateSelectionIntent(trimmed)
+    (statusFilter || detectCandidateSelectionIntent(trimmed))
   ) {
     return {
       kind: "candidate_selection",
       selectionHelper: candidateSelectionHelper({
         hasCancelEligibility,
         hasPaymentStatus,
+        statusFilter,
       }),
+      statusFilter,
     };
   }
 
@@ -186,7 +221,9 @@ export function routeSupportAccountAwareRequest(
       selectionHelper: candidateSelectionHelper({
         hasCancelEligibility,
         hasPaymentStatus,
+        statusFilter,
       }),
+      statusFilter,
     };
   }
 

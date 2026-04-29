@@ -22,6 +22,7 @@ const ORDER_SCHEDULED_A = "100000000000000000000002";
 const ORDER_USER_B = "100000000000000000000005";
 const ORDER_CANCELED_A = "100000000000000000000007";
 const ORDER_OTHER_TENANT = "100000000000000000000008";
+const ORDER_PAID_A = "100000000000000000000009";
 const INVOICE_A = "200000000000000000000001";
 const SLOT_REQUESTED = "300000000000000000000001";
 const SLOT_CANCELED = "300000000000000000000005";
@@ -191,7 +192,6 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         serviceStatus: "requested",
         canceledByRole: "tenant",
         cancelReason: "Provider cannot accommodate this request",
-        lifecycleMode: "legacy",
         slots: [
           booking({
             id: SLOT_CANCELED,
@@ -207,6 +207,18 @@ function makeCtx(userId: string | null = "clerk-user-a") {
           }),
         ],
         createdAt: "2026-04-25T09:00:00.000Z",
+      }),
+    ],
+    [
+      ORDER_PAID_A,
+      order({
+        id: ORDER_PAID_A,
+        status: "paid",
+        serviceStatus: "accepted",
+        invoiceStatus: "paid",
+        lifecycleMode: "legacy",
+        paidAt: "2026-04-21T11:00:00.000Z",
+        createdAt: "2026-04-21T09:00:00.000Z",
       }),
     ],
   ]);
@@ -263,18 +275,33 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         };
       }
 
+      if (args.collection === "tenants") {
+        const userId = clauseEquals(args.where, "user");
+        return {
+          docs: [...tenants.values()].filter((item) => item.user === userId),
+        };
+      }
+
       if (args.collection === "orders") {
         const userId = clauseEquals(args.where, "user");
+        const tenantIds = clauseIn(args.where, "tenant");
         const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
-        assert.equal(args.limit, 3);
+        assert.equal(args.limit, 15);
         assert.equal(args.sort, "-createdAt");
         assert.equal(args.depth, 0);
         assert.equal(args.overrideAccess, true);
-        assert.equal(userId, USER_A);
         assert.equal(lifecycleMode, "slot");
         return {
           docs: [...orders.values()]
-            .filter((item) => item.user === userId)
+            .filter((item) =>
+              userId != null
+                ? item.user === userId
+                : tenantIds.includes(
+                    typeof item.tenant === "string"
+                      ? item.tenant
+                      : item.tenant.id,
+                  ),
+            )
             .filter((item) => item.lifecycleMode === lifecycleMode)
             .sort((left, right) =>
               String(right.createdAt).localeCompare(String(left.createdAt)),
@@ -476,13 +503,34 @@ test("missing, invalid, and wrong-owner references are deterministic and safe", 
 
 test("broad or deferred account prompts do not helper-route", async () => {
   for (const prompt of [
+    "Show all my orders",
     "Show all my payments",
     "Check my account",
     "Show my order history",
+    "Export my orders",
     "Show all my invoices",
   ]) {
     const route = routeSupportAccountAwareRequest(prompt);
     assert.equal(route.kind, "broad_or_deferred", prompt);
+  }
+});
+
+test("status-filtered prompts route to bounded candidate selection", async () => {
+  const cases = [
+    ["Show my canceled orders", "canceled"],
+    ["Which orders are scheduled?", "scheduled"],
+    ["Do I have unpaid bookings?", "payment_pending"],
+    ["Which bookings are awaiting confirmation?", "requested"],
+    ["Show my completed bookings", "completed_or_accepted"],
+    ["Show my paid orders", "paid"],
+  ] as const;
+
+  for (const [prompt, filter] of cases) {
+    const route = routeSupportAccountAwareRequest(prompt);
+    assert.equal(route.kind, "candidate_selection", prompt);
+    if (route.kind === "candidate_selection") {
+      assert.equal(route.statusFilter, filter, prompt);
+    }
   }
 });
 
@@ -520,11 +568,11 @@ test("candidate selection returns clickable actions without exact helper calls",
   assert.equal(response.needsHumanSupport, false);
   assert.equal(
     response.accountHelperMetadata.helper,
-    "getRecentSupportOrderCandidatesForCurrentUser",
+    "getSupportOrderCandidatesForCurrentUser",
   );
   assert.equal(response.accountHelperMetadata.resultCategory, "order_candidates");
   assert.match(response.assistantMessage, /Which order do you mean/i);
-  assert.equal(response.actions?.length, 2);
+  assert.equal(response.actions?.length, 3);
   assert.equal(response.actions?.[0]?.type, "account_candidate_select");
   assert.match(response.actions?.[0]?.label ?? "", /Provider/i);
   assert.match(response.actions?.[0]?.label ?? "", /27 Apr 2026/i);
@@ -538,6 +586,58 @@ test("candidate selection returns clickable actions without exact helper calls",
     db.calls.some((call) => call.method === "findByID"),
     false,
   );
+});
+
+test("filtered candidate selection returns bounded customer candidates", async () => {
+  const { route, response, db } = await respond("Show my canceled orders");
+
+  assert.equal(route.kind, "candidate_selection");
+  if (route.kind === "candidate_selection") {
+    assert.equal(route.statusFilter, "canceled");
+  }
+  assert.equal(response.disposition, "uncertain");
+  assert.equal(
+    response.accountHelperMetadata.helper,
+    "getSupportOrderCandidatesForCurrentUser",
+  );
+  assert.match(response.assistantMessage, /recent canceled booking candidate/i);
+  assert.equal(response.actions?.length, 1);
+  assert.match(response.actions?.[0]?.description ?? "", /canceled/i);
+  assert.equal(
+    db.calls.some((call) => call.method === "findByID" && call.collection === "orders"),
+    false,
+  );
+});
+
+test("filtered candidate selection returns tenant-owned candidates", async () => {
+  const { route, response } = await respond(
+    "Which bookings are awaiting confirmation?",
+    "clerk-user-tenant",
+  );
+
+  assert.equal(route.kind, "candidate_selection");
+  if (route.kind === "candidate_selection") {
+    assert.equal(route.statusFilter, "requested");
+  }
+  assert.equal(response.disposition, "uncertain");
+  assert.match(response.assistantMessage, /recent requested booking candidates/i);
+  assert.equal(response.actions?.length, 2);
+  assert.doesNotMatch(
+    JSON.stringify(response.actions),
+    new RegExp(ORDER_OTHER_TENANT),
+  );
+});
+
+test("empty filtered candidate selection stays bounded and deterministic", async () => {
+  const { response } = await respond(
+    "Show my paid orders",
+    "clerk-user-other-tenant",
+  );
+
+  assert.equal(response.disposition, "uncertain");
+  assert.match(response.assistantMessage, /could not find recent paid booking candidates/i);
+  assert.match(response.assistantMessage, /not a full history check/i);
+  assert.equal(response.actions?.length, 0);
 });
 
 test("candidate action click validates token and calls exact helper", async () => {

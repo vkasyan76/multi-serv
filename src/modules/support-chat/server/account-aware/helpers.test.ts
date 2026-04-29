@@ -7,6 +7,7 @@ import {
   getOrderStatusForCurrentUser,
   getPaymentStatusForCurrentUser,
   getRecentSupportOrderCandidatesForCurrentUser,
+  getSupportOrderCandidatesForCurrentUser,
 } from "./helpers";
 import type { SupportAccountHelperInput } from "./types";
 
@@ -24,6 +25,7 @@ const ORDER_USER_B = "100000000000000000000005";
 const ORDER_LEGACY_A = "100000000000000000000006";
 const ORDER_CANCELED_A = "100000000000000000000007";
 const ORDER_OTHER_TENANT = "100000000000000000000008";
+const ORDER_PAID_A = "100000000000000000000009";
 const ORDER_MISSING = "100000000000000000000099";
 const INVOICE_A = "200000000000000000000001";
 const INVOICE_B = "200000000000000000000002";
@@ -264,6 +266,17 @@ function makeFixtures() {
         createdAt: "2026-04-23T09:00:00.000Z",
       }),
     ],
+    [
+      ORDER_PAID_A,
+      baseOrder({
+        id: ORDER_PAID_A,
+        status: "paid",
+        serviceStatus: "accepted",
+        invoiceStatus: "paid",
+        paidAt: "2026-04-21T11:00:00.000Z",
+        createdAt: "2026-04-21T09:00:00.000Z",
+      }),
+    ],
   ]);
 
   const invoices = new Map<string, Invoice>([
@@ -381,12 +394,30 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         };
       }
 
+      if (args.collection === "tenants") {
+        const userId = clauseEquals(args.where, "user");
+        return {
+          docs: [...fixtures.tenants.values()].filter(
+            (tenant) => tenant.user === userId,
+          ),
+        };
+      }
+
       if (args.collection === "orders") {
         const userId = clauseEquals(args.where, "user");
+        const tenantIds = clauseIn(args.where, "tenant");
         const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
         return {
           docs: [...fixtures.orders.values()]
-            .filter((order) => order.user === userId)
+            .filter((order) =>
+              userId != null
+                ? order.user === userId
+                : tenantIds.includes(
+                    typeof order.tenant === "string"
+                      ? order.tenant
+                      : order.tenant.id,
+                  ),
+            )
             .filter((order) => order.lifecycleMode === lifecycleMode)
             .sort((left, right) =>
               String(right.createdAt).localeCompare(String(left.createdAt)),
@@ -521,7 +552,7 @@ test("recent order candidate helper returns a constrained sanitized list", async
     (call) => call.method === "find" && call.collection === "orders",
   );
   assert.ok(orderFind);
-  assert.equal(orderFind.limit, 3);
+  assert.equal(orderFind.limit, 15);
   assert.equal(orderFind.sort, "-createdAt");
   assert.equal(orderFind.depth, 0);
   assert.equal(orderFind.overrideAccess, true);
@@ -541,6 +572,84 @@ test("recent order candidate helper returns a constrained sanitized list", async
     ),
     false,
   );
+});
+
+test("status-filtered candidate helper returns bounded customer and tenant candidates", async () => {
+  const customer = await getSupportOrderCandidatesForCurrentUser(makeCtx().ctx, {
+    statusFilter: "canceled",
+  });
+
+  assert.equal(customer.ok, true);
+  if (!customer.ok) return;
+
+  assert.equal(customer.data.helper, "getSupportOrderCandidatesForCurrentUser");
+  assert.equal(customer.data.statusFilter, "canceled");
+  assert.deepEqual(
+    customer.data.candidates.map((candidate) => candidate.orderId),
+    [ORDER_CANCELED_A],
+  );
+
+  const tenant = await getSupportOrderCandidatesForCurrentUser(
+    makeCtx("clerk-user-tenant").ctx,
+    { statusFilter: "requested" },
+  );
+
+  assert.equal(tenant.ok, true);
+  if (!tenant.ok) return;
+
+  assert.deepEqual(
+    tenant.data.candidates.map((candidate) => candidate.orderId),
+    [ORDER_USER_B, ORDER_REQUESTED_A],
+  );
+  assert.equal(
+    tenant.data.candidates.some(
+      (candidate) => candidate.orderId === ORDER_OTHER_TENANT,
+    ),
+    false,
+  );
+
+  for (const candidate of tenant.data.candidates) {
+    assert.equal("customerSnapshot" in candidate, false);
+    assert.equal("user" in candidate, false);
+    assert.equal("tenant" in candidate, false);
+    assert.equal("slots" in candidate, false);
+    assert.equal("stripeAccountId" in candidate, false);
+  }
+});
+
+test("payment status filters map to server-owned candidate categories", async () => {
+  const pending = await getSupportOrderCandidatesForCurrentUser(makeCtx().ctx, {
+    statusFilter: "payment_pending",
+  });
+  assert.equal(pending.ok, true);
+  if (pending.ok) {
+    assert.deepEqual(
+      pending.data.candidates.map((candidate) => candidate.orderId),
+      [ORDER_INVOICED_A],
+    );
+  }
+
+  const paid = await getSupportOrderCandidatesForCurrentUser(makeCtx().ctx, {
+    statusFilter: "paid",
+  });
+  assert.equal(paid.ok, true);
+  if (paid.ok) {
+    assert.deepEqual(
+      paid.data.candidates.map((candidate) => candidate.orderId),
+      [ORDER_PAID_A],
+    );
+  }
+
+  const notDue = await getSupportOrderCandidatesForCurrentUser(makeCtx().ctx, {
+    statusFilter: "payment_not_due",
+  });
+  assert.equal(notDue.ok, true);
+  if (notDue.ok) {
+    assert.deepEqual(
+      notDue.data.candidates.map((candidate) => candidate.orderId),
+      [ORDER_REQUESTED_A, ORDER_SCHEDULED_A, ORDER_INSIDE_CUTOFF_A],
+    );
+  }
 });
 
 test("signed-in user can access own requested order status with sanitized DTO", async () => {

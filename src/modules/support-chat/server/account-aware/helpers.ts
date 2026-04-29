@@ -24,6 +24,7 @@ import type {
   SupportOrderStatusDTO,
   SupportOrderCandidateDTO,
   SupportOrderCandidateListDTO,
+  SupportOrderCandidateStatusFilter,
   SupportPaymentStatusDTO,
 } from "./types";
 
@@ -32,6 +33,8 @@ type DocWithId<T> = T & { id: string };
 type HelperCtx = Pick<TRPCContext, "db" | "userId">;
 
 const OBJECT_ID_RE = /^[a-f0-9]{24}$/i;
+const CANDIDATE_FETCH_WINDOW = 15;
+const CANDIDATE_RETURN_LIMIT = 3;
 
 function isPayloadObjectId(value: string) {
   return OBJECT_ID_RE.test(value);
@@ -362,6 +365,59 @@ function orderCandidate(order: DocWithId<Order>): SupportOrderCandidateDTO {
   };
 }
 
+function matchesCandidateStatusFilter(
+  order: Pick<Order, "status" | "serviceStatus" | "invoiceStatus">,
+  filter: SupportOrderCandidateStatusFilter | undefined,
+) {
+  if (!filter) return true;
+
+  const serviceStatus = serviceStatusCategory(order);
+  const paymentStatus = orderPaymentStatusCategory(order);
+  const invoiceStatus = invoiceStatusCategory(order.invoiceStatus);
+
+  // These mappings are intentionally fixed server-side. User text can only
+  // select one of these categories; it never becomes an arbitrary DB filter.
+  switch (filter) {
+    case "canceled":
+      return order.status === "canceled";
+    case "requested":
+      return order.status !== "canceled" && order.serviceStatus === "requested";
+    case "scheduled":
+      return order.status !== "canceled" && order.serviceStatus === "scheduled";
+    case "completed_or_accepted":
+      return serviceStatus === "completed" || serviceStatus === "accepted";
+    case "payment_not_due":
+      return paymentStatus === "not_due";
+    case "payment_pending":
+      return (
+        paymentStatus === "pending" ||
+        invoiceStatus === "issued" ||
+        invoiceStatus === "overdue"
+      );
+    case "paid":
+      return order.status === "paid" || invoiceStatus === "paid";
+  }
+}
+
+function sortOrdersNewestFirst(left: DocWithId<Order>, right: DocWithId<Order>) {
+  return String(right.createdAt).localeCompare(String(left.createdAt));
+}
+
+function mergeUniqueOrders(orderGroups: Array<Array<DocWithId<Order>>>) {
+  const seen = new Set<string>();
+  const merged: Array<DocWithId<Order>> = [];
+
+  for (const group of orderGroups) {
+    for (const order of group) {
+      if (seen.has(order.id)) continue;
+      seen.add(order.id);
+      merged.push(order);
+    }
+  }
+
+  return merged.sort(sortOrdersNewestFirst);
+}
+
 function orderStatusDTO(
   order: DocWithId<Order>,
   accessRole: SupportAccountAccessRole,
@@ -388,6 +444,58 @@ function orderStatusDTO(
     statusReasonKey: statusReasonKey(order),
     publicStatusReason: publicStatusReason(order),
   };
+}
+
+async function loadOwnedTenantIds(ctx: HelperCtx, payloadUserId: string) {
+  const result = (await ctx.db.find({
+    collection: "tenants",
+    where: { user: { equals: payloadUserId } },
+    limit: CANDIDATE_FETCH_WINDOW,
+    depth: 0,
+    overrideAccess: true,
+  })) as { docs: Array<DocWithId<Tenant>> };
+
+  return result.docs.map((tenant) => tenant.id);
+}
+
+async function loadRecentCustomerCandidateOrders(
+  ctx: HelperCtx,
+  payloadUserId: string,
+) {
+  const result = (await ctx.db.find({
+    collection: "orders",
+    where: {
+      user: { equals: payloadUserId },
+      lifecycleMode: { equals: "slot" },
+    },
+    limit: CANDIDATE_FETCH_WINDOW,
+    sort: "-createdAt",
+    depth: 0,
+    overrideAccess: true,
+  })) as { docs: Array<DocWithId<Order>> };
+
+  return result.docs;
+}
+
+async function loadRecentTenantCandidateOrders(
+  ctx: HelperCtx,
+  tenantIds: string[],
+) {
+  if (!tenantIds.length) return [];
+
+  const result = (await ctx.db.find({
+    collection: "orders",
+    where: {
+      tenant: { in: tenantIds },
+      lifecycleMode: { equals: "slot" },
+    },
+    limit: CANDIDATE_FETCH_WINDOW,
+    sort: "-createdAt",
+    depth: 0,
+    overrideAccess: true,
+  })) as { docs: Array<DocWithId<Order>> };
+
+  return result.docs;
 }
 
 export async function getOrderStatusForCurrentUser(
@@ -530,32 +638,49 @@ export async function canCancelOrderForCurrentUser(
   };
 }
 
-export async function getRecentSupportOrderCandidatesForCurrentUser(
+export async function getSupportOrderCandidatesForCurrentUser(
   ctx: HelperCtx,
+  input: { statusFilter?: SupportOrderCandidateStatusFilter } = {},
 ): Promise<SupportAccountHelperResult<SupportOrderCandidateListDTO>> {
   const identity = await resolveCurrentPayloadUserId(ctx);
   if (!identity.ok) return identity;
 
-  // Candidate resolution is intentionally narrow: a fixed recent owned slot-order
-  // list, not a text-derived account search or relationship enrichment path.
-  const result = (await ctx.db.find({
-    collection: "orders",
-    where: {
-      user: { equals: identity.payloadUserId },
-      lifecycleMode: { equals: "slot" },
-    },
-    limit: 3,
-    sort: "-createdAt",
-    depth: 0,
-    overrideAccess: true,
-  })) as { docs: Array<DocWithId<Order>> };
+  // Candidate resolution is bounded and role-aware: a small recent customer
+  // window plus a small recent tenant-owned window. It is not full history,
+  // customer lookup, provider/date lookup, or free-text search.
+  const tenantIds = await loadOwnedTenantIds(ctx, identity.payloadUserId);
+  const [customerOrders, tenantOrders] = await Promise.all([
+    loadRecentCustomerCandidateOrders(ctx, identity.payloadUserId),
+    loadRecentTenantCandidateOrders(ctx, tenantIds),
+  ]);
+
+  const candidates = mergeUniqueOrders([customerOrders, tenantOrders])
+    .filter((order) => matchesCandidateStatusFilter(order, input.statusFilter))
+    .slice(0, CANDIDATE_RETURN_LIMIT)
+    .map(orderCandidate);
 
   return {
     ok: true,
     data: {
-      helper: "getRecentSupportOrderCandidatesForCurrentUser",
+      helper: "getSupportOrderCandidatesForCurrentUser",
       resultCategory: "order_candidates",
-      candidates: result.docs.map(orderCandidate),
+      statusFilter: input.statusFilter,
+      candidates,
+    },
+  };
+}
+
+export async function getRecentSupportOrderCandidatesForCurrentUser(
+  ctx: HelperCtx,
+): Promise<SupportAccountHelperResult<SupportOrderCandidateListDTO>> {
+  const result = await getSupportOrderCandidatesForCurrentUser(ctx);
+  if (!result.ok) return result;
+
+  return {
+    ok: true,
+    data: {
+      ...result.data,
+      helper: "getRecentSupportOrderCandidatesForCurrentUser",
     },
   };
 }

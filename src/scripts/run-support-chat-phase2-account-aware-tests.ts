@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-import type { Booking, Invoice, Order } from "@/payload-types";
+import type { Booking, Invoice, Order, Tenant } from "@/payload-types";
 import type { GenerateSupportResponseResult } from "@/modules/support-chat/server/generate-support-response";
 import {
   PHASE2_ACCOUNT_FIXTURE_IDS,
@@ -47,6 +47,7 @@ type Phase2Result = {
 
 const USER_A = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const USER_B = "bbbbbbbbbbbbbbbbbbbbbbbb";
+const USER_TENANT = "dddddddddddddddddddddddd";
 const TENANT_ID = "cccccccccccccccccccccccc";
 const SLOT_REQUESTED = "300000000000000000000001";
 const SLOT_INVOICED = "300000000000000000000004";
@@ -168,6 +169,21 @@ function booking(overrides: Partial<Booking> & { id: string }): Booking {
   };
 }
 
+function tenant(overrides: Partial<Tenant> & { id: string }): Tenant {
+  const { id, ...rest } = overrides;
+  return {
+    id,
+    name: "Provider",
+    slug: "provider",
+    stripeAccountId: "acct_test",
+    country: "DE",
+    user: USER_TENANT,
+    updatedAt: "2026-04-27T10:00:00.000Z",
+    createdAt: "2026-04-27T09:00:00.000Z",
+    ...rest,
+  };
+}
+
 function clauseEquals(where: unknown, field: string) {
   const value = where as Record<string, unknown> | undefined;
   const clause = value?.[field] as { equals?: unknown } | undefined;
@@ -213,6 +229,9 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
     [SLOT_REQUESTED, booking({ id: SLOT_REQUESTED })],
     [SLOT_INVOICED, booking({ id: SLOT_INVOICED, serviceStatus: "scheduled" })],
   ]);
+  const tenants = new Map<string, Tenant>([
+    [TENANT_ID, tenant({ id: TENANT_ID })],
+  ]);
   const calls: DbCall[] = [];
 
   // The Phase 2 regression fake DB intentionally supports only exact account
@@ -241,6 +260,9 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
         const clerkUserId = clauseEquals(args.where, "clerkUserId");
         if (clerkUserId === "clerk-user-a") return { docs: [{ id: USER_A }] };
         if (clerkUserId === "clerk-user-b") return { docs: [{ id: USER_B }] };
+        if (clerkUserId === "clerk-user-tenant") {
+          return { docs: [{ id: USER_TENANT }] };
+        }
         return { docs: [] };
       }
 
@@ -255,20 +277,28 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
 
       if (args.collection === "orders") {
         const userId = clauseEquals(args.where, "user");
+        const tenantIds = clauseIn(args.where, "tenant");
         const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
         if (
-          args.limit !== 3 ||
+          args.limit !== 15 ||
           args.sort !== "-createdAt" ||
           args.depth !== 0 ||
           args.overrideAccess !== true ||
-          userId !== USER_A ||
           lifecycleMode !== "slot"
         ) {
           throw new Error("Unexpected broad orders lookup");
         }
         return {
           docs: [...orders.values()]
-            .filter((item) => item.user === userId)
+            .filter((item) =>
+              userId != null
+                ? item.user === userId
+                : tenantIds.includes(
+                    typeof item.tenant === "string"
+                      ? item.tenant
+                      : item.tenant.id,
+                  ),
+            )
             .filter((item) => item.lifecycleMode === lifecycleMode)
             .sort((left, right) =>
               String(right.createdAt).localeCompare(String(left.createdAt)),
@@ -281,12 +311,20 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
         throw new Error(`Unexpected broad ${args.collection} lookup`);
       }
 
+      if (args.collection === "tenants") {
+        const userId = clauseEquals(args.where, "user");
+        return {
+          docs: [...tenants.values()].filter((item) => item.user === userId),
+        };
+      }
+
       return { docs: [] };
     },
     async findByID(args: { collection: string; id: string }) {
       calls.push({ method: "findByID", collection: args.collection, id: args.id });
       if (args.collection === "orders") return orders.get(args.id) ?? null;
       if (args.collection === "invoices") return invoices.get(args.id) ?? null;
+      if (args.collection === "tenants") return tenants.get(args.id) ?? null;
       return null;
     },
     create() {
@@ -305,7 +343,12 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
 
   return {
     db,
-    userId: authUser === "signed-out" ? null : "clerk-user-a",
+    userId:
+      authUser === "signed-out"
+        ? null
+        : authUser === "tenant-owner"
+          ? "clerk-user-tenant"
+          : "clerk-user-a",
     calls,
   };
 }
@@ -335,6 +378,7 @@ function hasAccountDbCall(calls: DbCall[]) {
     (call) =>
       (call.method === "find" || call.method === "findByID") &&
       (call.collection === "users" ||
+        call.collection === "tenants" ||
         call.collection === "orders" ||
         call.collection === "invoices" ||
         call.collection === "bookings"),
@@ -347,6 +391,19 @@ function hasBroadLookup(calls: DbCall[]) {
       if (call.method !== "find") return false;
       if (call.collection === "invoices") return true;
       if (call.collection !== "orders") return false;
+      // The status-filtered candidate helper is a bounded, server-defined
+      // lookup. Treat that narrow shape as safe in this regression runner.
+      if (
+        call.limit === 15 &&
+        call.sort === "-createdAt" &&
+        call.depth === 0 &&
+        call.overrideAccess === true &&
+        clauseEquals(call.where, "lifecycleMode") === "slot" &&
+        (clauseEquals(call.where, "user") === USER_A ||
+          clauseIn(call.where, "tenant").includes(TENANT_ID))
+      ) {
+        return false;
+      }
       return !(
         call.limit === 3 &&
         call.sort === "-createdAt" &&

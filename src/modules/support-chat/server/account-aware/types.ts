@@ -4,6 +4,7 @@ export const SUPPORT_ACCOUNT_HELPER_NAMES = [
   "getOrderStatusForCurrentUser",
   "getPaymentStatusForCurrentUser",
   "canCancelOrderForCurrentUser",
+  "getSupportOrderCandidatesForCurrentUser",
   "getRecentSupportOrderCandidatesForCurrentUser",
 ] as const;
 
@@ -118,6 +119,15 @@ export type SupportAccountOrderStatusReasonKey =
   | "disputed"
   | "unknown";
 
+export type SupportOrderCandidateStatusFilter =
+  | "canceled"
+  | "requested"
+  | "scheduled"
+  | "completed_or_accepted"
+  | "payment_not_due"
+  | "payment_pending"
+  | "paid";
+
 export type SupportAccountNextStepKey =
   | "await_provider_confirmation"
   | "view_orders"
@@ -190,8 +200,11 @@ export type SupportOrderCandidateDTO = {
 };
 
 export type SupportOrderCandidateListDTO = {
-  helper: "getRecentSupportOrderCandidatesForCurrentUser";
+  helper:
+    | "getSupportOrderCandidatesForCurrentUser"
+    | "getRecentSupportOrderCandidatesForCurrentUser";
   resultCategory: "order_candidates";
+  statusFilter?: SupportOrderCandidateStatusFilter;
   candidates: SupportOrderCandidateDTO[];
 };
 

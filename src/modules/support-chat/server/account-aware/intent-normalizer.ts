@@ -98,6 +98,27 @@ const PAYMENT_CANDIDATE_PATTERNS = [
   /\bcheck\s+my\s+payment\b/,
 ] as const;
 
+const STATUS_FILTER_PATTERNS = {
+  canceled: [/\bcancel(?:ed|led)\b/, /\bstorniert\b/],
+  requested: [
+    /\brequested\b/,
+    /\bawaiting\s+(provider\s+)?confirmation\b/,
+    /\bpending\s+confirmation\b/,
+  ],
+  scheduled: [/\bscheduled\b/, /\bconfirmed\s+(orders?|bookings?)\b/],
+  completed_or_accepted: [/\bcompleted\b/, /\baccepted\b/, /\bfinished\b/],
+  payment_not_due: [/\bnot\s+due\b/, /\bnot\s+invoiced\b/],
+  payment_pending: [
+    /\bunpaid\b/,
+    /\bnot\s+paid\b/,
+    /\bpayment\s+pending\b/,
+    /\bpending\s+payment\b/,
+    /\binvoice\s+due\b/,
+    /\boverdue\b/,
+  ],
+  paid: [/\bpaid\b/, /\bpaid\s+(orders?|bookings?)\b/],
+} as const;
+
 function normalizeForIntent(message: string) {
   return message
     .toLocaleLowerCase()
@@ -132,4 +153,28 @@ export function detectCandidateSelectionIntent(message: string) {
   // Payment-only phrasing may show order candidates, but only for narrow
   // "my payment" style questions. Broad payment lists remain blocked upstream.
   return hasTerm(text, PAYMENT_TERMS) && hasPattern(text, PAYMENT_CANDIDATE_PATTERNS);
+}
+
+export function detectCandidateStatusFilter(message: string) {
+  const text = normalizeForIntent(message);
+  if (!text) return undefined;
+
+  if (
+    /\bwhat\s+(does|do)\b.*\bmean\b/.test(text) ||
+    /\bmeaning\s+of\b/.test(text)
+  ) {
+    return undefined;
+  }
+
+  const hasOrderOrBooking = hasTerm(text, ORDER_OR_BOOKING_TERMS);
+  const hasPayment = hasTerm(text, PAYMENT_TERMS);
+  if (!hasOrderOrBooking && !hasPayment) return undefined;
+
+  for (const [filter, patterns] of Object.entries(STATUS_FILTER_PATTERNS)) {
+    if (hasPattern(text, patterns)) {
+      return filter as keyof typeof STATUS_FILTER_PATTERNS;
+    }
+  }
+
+  return undefined;
 }
