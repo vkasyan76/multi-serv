@@ -27,6 +27,10 @@ import type {
 import { SUPPORT_ACCOUNT_HELPER_VERSION } from "./versioning";
 
 type AccountCtx = Pick<TRPCContext, "db" | "userId">;
+type AccountResponseIntent = Extract<
+  SupportAccountRoute,
+  { kind: "helper" }
+>["responseIntent"];
 
 export type SupportAccountHelperMetadata = {
   helper?: SupportAccountHelperName;
@@ -340,6 +344,54 @@ function orderStatusMessage(data: Extract<SupportAccountHelperDTO, { resultCateg
   return lines.join("\n\n");
 }
 
+function invoiceLifecycleExplanationMessage(
+  data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>,
+) {
+  const providerSide = data.accessRole === "tenant";
+
+  if (data.invoiceStatusCategory === "issued" || data.invoiceStatusCategory === "overdue") {
+    return providerSide
+      ? "An invoice has already been issued for this customer booking. From the provider side, review the order or invoice in your dashboard for the current payment state."
+      : "An invoice has already been issued for this order. Open your Orders page to review the invoice and current payment state.";
+  }
+
+  if (data.invoiceStatusCategory === "paid") {
+    return providerSide
+      ? "This customer booking is already marked paid in the support-safe order status. Review the order in your dashboard if you need the full order view."
+      : "This order is already marked paid in the support-safe order status. Open your Orders page if you need the full order view.";
+  }
+
+  if (data.invoiceStatusCategory === "void") {
+    return providerSide
+      ? "The invoice for this customer booking is not currently payable. Review the order in your dashboard or contact support if the customer still needs help."
+      : "The invoice for this order is not currently payable. Open your Orders page or contact support if you still need help.";
+  }
+
+  switch (data.serviceStatusCategory) {
+    case "requested":
+      return providerSide
+        ? "An invoice has not been issued yet for this customer booking because it is still awaiting your confirmation. Booking requests do not become payable immediately. From the provider side, confirm or decline the request in your dashboard; after the order later reaches the invoice/payment step, the invoice/payment status can change."
+        : "An invoice has not been issued yet because this booking request is still awaiting provider confirmation. Booking requests do not become payable immediately. Once the provider confirms and the order later reaches the invoice/payment step, the invoice/payment status can change.";
+    case "scheduled":
+      return providerSide
+        ? "An invoice has not been issued yet for this customer booking because this scheduled order has not reached the invoice/payment step. From the provider side, review the order in your dashboard and check whether the service is ready for the next order step."
+        : "An invoice has not been issued yet for this scheduled booking because it has not reached the invoice/payment step. In this flow, payment may be requested later. Please watch your Orders page for invoice or payment updates.";
+    case "completed":
+    case "accepted":
+      return providerSide
+        ? "An invoice has not been issued yet for this customer booking even though the order is past the scheduled/requested stage. Review the order in your dashboard and contact support if the invoice/payment step appears stuck."
+        : "An invoice has not been issued yet for this order even though it is past the scheduled/requested stage. Please check your Orders page and contact support if the invoice/payment step appears stuck.";
+    case "canceled":
+      return providerSide
+        ? "An invoice has not been issued because this customer booking is canceled. A canceled order is not currently expected to move into the invoice/payment step."
+        : "An invoice has not been issued because this order is canceled. A canceled order is not currently expected to move into the invoice/payment step.";
+    default:
+      return providerSide
+        ? "An invoice has not been issued yet for this customer booking because it has not reached a support-safe invoice/payment state. Review the order in your dashboard for the full order view."
+        : "An invoice has not been issued yet because this order has not reached a support-safe invoice/payment state. Open your Orders page for the full order view.";
+  }
+}
+
 function paymentStatusMessage(data: Extract<SupportAccountHelperDTO, { resultCategory: "payment_status" }>) {
   if (data.paymentStatusCategory === "paid") {
     return "This payment is marked paid.";
@@ -404,9 +456,15 @@ function paymentOverviewMessage(data: Extract<SupportAccountHelperDTO, { resultC
   ].join("\n\n");
 }
 
-function successMessage(data: SupportAccountHelperDTO) {
+function successMessage(
+  data: SupportAccountHelperDTO,
+  responseIntent?: AccountResponseIntent,
+) {
   switch (data.resultCategory) {
     case "order_status":
+      if (responseIntent === "invoice_lifecycle_explanation") {
+        return invoiceLifecycleExplanationMessage(data);
+      }
       return orderStatusMessage(data);
     case "payment_status":
       return paymentStatusMessage(data);
@@ -647,7 +705,7 @@ export async function buildAccountAwareServerResponse(input: {
   }
 
   return {
-    assistantMessage: successMessage(result.data),
+    assistantMessage: successMessage(result.data, input.route.responseIntent),
     disposition: "answered",
     needsHumanSupport: false,
     accountHelperMetadata: {

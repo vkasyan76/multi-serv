@@ -19,11 +19,14 @@ type ExactReferenceSupportAccountHelperName = Exclude<
   | "getSupportPaymentOverviewForCurrentUser"
 >;
 
+export type SupportAccountResponseIntent = "invoice_lifecycle_explanation";
+
 export type SupportAccountRoute =
   | {
       kind: "helper";
       helper: ExactReferenceSupportAccountHelperName;
       input: SupportAccountHelperInput;
+      responseIntent?: SupportAccountResponseIntent;
     }
   | {
       kind: "missing_reference";
@@ -148,6 +151,21 @@ const SELECTED_ORDER_PAYMENT_PATTERNS = [
   /\bcharged\b/i,
 ];
 
+const SELECTED_ORDER_INVOICE_LIFECYCLE_PATTERNS = [
+  /\bwhy\b.*\b(invoice|invoiced|not\s+invoiced)\b/i,
+  /\bwhy\b.*\bno\s+invoice\b/i,
+  /\bwhy\b.*\bnot\s+issued\b/i,
+  /\bno\s+invoice\b/i,
+  /\binvoice\b.*\b(not\s+issued|not\s+created|missing|not\s+there)\b/i,
+  /\bnot\s+invoiced\s+yet\b/i,
+  /\bwhat\s+does\s+not\s+invoiced\s+yet\s+mean\b/i,
+  /\bwhy\s+can't\s+i\s+pay\b/i,
+  /\bwhy\s+can\s+i\s+not\s+pay\b/i,
+  /\bwhat\s+needs\s+to\s+happen\s+next\b/i,
+  /\bwhy\s+is\s+it\s+still\s+awaiting\s+confirmation\b/i,
+  /\bwhy\s+is\s+it\s+scheduled\s+but\s+not\s+invoiced\b/i,
+];
+
 const SELECTED_ORDER_CANCEL_PATTERNS = [
   /\bcancel\b/i,
   /\bcancelable\b/i,
@@ -200,34 +218,51 @@ function selectedOrderFollowUpHelper(input: {
   message: string;
   hasCancelEligibility: boolean;
   hasPaymentStatus: boolean;
-}): AccountCandidateSelectionHelper | null {
+}): {
+  helper: AccountCandidateSelectionHelper;
+  responseIntent?: SupportAccountResponseIntent;
+} | null {
   const hasSelectedReference = hasAny(
     SELECTED_ORDER_REFERENCE_PATTERNS,
+    input.message,
+  );
+  const hasInvoiceLifecycleQuestion = hasAny(
+    SELECTED_ORDER_INVOICE_LIFECYCLE_PATTERNS,
     input.message,
   );
   const hasFollowUpShape = hasAny(
     SELECTED_ORDER_FOLLOW_UP_PATTERNS,
     input.message,
-  );
+  ) || hasInvoiceLifecycleQuestion;
 
   if (!hasSelectedReference && !hasFollowUpShape) return null;
   if (
     input.hasCancelEligibility ||
     hasAny(SELECTED_ORDER_CANCEL_PATTERNS, input.message)
   ) {
-    return "canCancelOrderForCurrentUser";
+    return { helper: "canCancelOrderForCurrentUser" };
   }
+
+  // Invoice lifecycle questions need the combined order DTO because invoice,
+  // payment, service status, next step, and access role all affect the answer.
+  if (hasInvoiceLifecycleQuestion) {
+    return {
+      helper: "getOrderStatusForCurrentUser",
+      responseIntent: "invoice_lifecycle_explanation",
+    };
+  }
+
   if (
     input.hasPaymentStatus ||
     hasAny(SELECTED_ORDER_PAYMENT_PATTERNS, input.message)
   ) {
-    return "getPaymentStatusForCurrentUser";
+    return { helper: "getPaymentStatusForCurrentUser" };
   }
   if (hasAny(SELECTED_ORDER_STATUS_PATTERNS, input.message)) {
-    return "getOrderStatusForCurrentUser";
+    return { helper: "getOrderStatusForCurrentUser" };
   }
 
-  return hasSelectedReference ? "getOrderStatusForCurrentUser" : null;
+  return hasSelectedReference ? { helper: "getOrderStatusForCurrentUser" } : null;
 }
 
 export function routeSupportAccountAwareRequest(
@@ -284,8 +319,9 @@ export function routeSupportAccountAwareRequest(
     if (selectedHelper) {
       return {
         kind: "helper",
-        helper: selectedHelper,
+        helper: selectedHelper.helper,
         input: options.selectedOrder,
+        responseIntent: selectedHelper.responseIntent,
       };
     }
   }

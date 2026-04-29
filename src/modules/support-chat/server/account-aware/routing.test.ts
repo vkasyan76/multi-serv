@@ -812,6 +812,104 @@ test("selected order context routes follow-up questions to exact helpers", () =>
     assert.equal(aboutPayment.helper, "getPaymentStatusForCurrentUser");
     assert.deepEqual(aboutPayment.input, selected);
   }
+
+  for (const prompt of [
+    "Why was the invoice not issued yet?",
+    "Why is there no invoice?",
+    "What does not invoiced yet mean?",
+  ]) {
+    const invoiceLifecycle = routeSupportAccountAwareRequest(prompt, {
+      selectedOrder: selected,
+    });
+    assert.equal(invoiceLifecycle.kind, "helper");
+    if (invoiceLifecycle.kind === "helper") {
+      assert.equal(invoiceLifecycle.helper, "getOrderStatusForCurrentUser");
+      assert.equal(
+        invoiceLifecycle.responseIntent,
+        "invoice_lifecycle_explanation",
+      );
+      assert.deepEqual(invoiceLifecycle.input, selected);
+    }
+  }
+});
+
+test("selected order context gives role-aware invoice lifecycle explanations", async () => {
+  const customerSelected = {
+    referenceType: "order_id" as const,
+    reference: ORDER_SCHEDULED_NOT_DUE_A,
+  };
+  const customerRoute = routeSupportAccountAwareRequest(
+    "Why was the invoice not issued yet?",
+    { selectedOrder: customerSelected },
+  );
+  assert.equal(customerRoute.kind, "helper");
+  const customerResponse = await buildAccountAwareServerResponse({
+    route: customerRoute as Exclude<typeof customerRoute, { kind: "none" }>,
+    accountContext: makeCtx().accountContext,
+    locale: "en",
+    threadId: THREAD_ID,
+  });
+
+  assert.equal(customerResponse.disposition, "answered");
+  assert.equal(
+    customerResponse.accountHelperMetadata.helper,
+    "getOrderStatusForCurrentUser",
+  );
+  assert.match(customerResponse.assistantMessage, /scheduled booking/i);
+  assert.match(customerResponse.assistantMessage, /invoice\/payment step/i);
+  assert.match(customerResponse.assistantMessage, /Orders page/i);
+  assert.doesNotMatch(customerResponse.assistantMessage, /Which order do you mean/i);
+
+  const tenantSelected = {
+    referenceType: "order_id" as const,
+    reference: ORDER_USER_B,
+  };
+  const tenantRoute = routeSupportAccountAwareRequest(
+    "Why was the invoice not issued yet?",
+    { selectedOrder: tenantSelected },
+  );
+  assert.equal(tenantRoute.kind, "helper");
+  const tenantResponse = await buildAccountAwareServerResponse({
+    route: tenantRoute as Exclude<typeof tenantRoute, { kind: "none" }>,
+    accountContext: makeCtx("clerk-user-tenant").accountContext,
+    locale: "en",
+    threadId: THREAD_ID,
+  });
+
+  assert.equal(tenantResponse.disposition, "answered");
+  assert.equal(
+    tenantResponse.accountHelperMetadata.helper,
+    "getOrderStatusForCurrentUser",
+  );
+  assert.match(tenantResponse.assistantMessage, /customer booking/i);
+  assert.match(tenantResponse.assistantMessage, /awaiting your confirmation/i);
+  assert.match(tenantResponse.assistantMessage, /provider side/i);
+  assert.doesNotMatch(tenantResponse.assistantMessage, /Which order do you mean/i);
+  assert.doesNotMatch(tenantResponse.assistantMessage, /Ada|Lovelace|stripe/i);
+
+  const wrongTenantRoute = routeSupportAccountAwareRequest(
+    "Why was the invoice not issued yet?",
+    {
+      selectedOrder: {
+        referenceType: "order_id",
+        reference: ORDER_OTHER_TENANT,
+      },
+    },
+  );
+  assert.equal(wrongTenantRoute.kind, "helper");
+  const wrongTenantResponse = await buildAccountAwareServerResponse({
+    route: wrongTenantRoute as Exclude<typeof wrongTenantRoute, { kind: "none" }>,
+    accountContext: makeCtx("clerk-user-tenant").accountContext,
+    locale: "en",
+    threadId: THREAD_ID,
+  });
+
+  assert.equal(wrongTenantResponse.disposition, "unsupported_account_question");
+  assert.equal(
+    wrongTenantResponse.accountHelperMetadata.deniedReason,
+    "not_found_or_not_owned",
+  );
+  assert.doesNotMatch(wrongTenantResponse.assistantMessage, /Other Provider/i);
 });
 
 test("selected order context does not capture unrelated it follow-ups", () => {
