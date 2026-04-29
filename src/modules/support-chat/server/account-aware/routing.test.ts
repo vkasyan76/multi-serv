@@ -350,14 +350,18 @@ function makeCtx(userId: string | null = "clerk-user-a") {
   return { db, accountContext: { db, userId } as never };
 }
 
-async function respond(message: string, userId: string | null = "clerk-user-a") {
+async function respond(
+  message: string,
+  userId: string | null = "clerk-user-a",
+  locale: "en" | "de" | "fr" | "it" | "es" | "pt" | "pl" | "ro" | "uk" = "en",
+) {
   const route = routeSupportAccountAwareRequest(message);
   assert.notEqual(route.kind, "none");
   const { db, accountContext } = makeCtx(userId);
   const response = await buildAccountAwareServerResponse({
     route: route as Exclude<typeof route, { kind: "none" }>,
     accountContext,
-    locale: "en",
+    locale,
     threadId: THREAD_ID,
   });
   return { route, response, db, accountContext };
@@ -910,6 +914,144 @@ test("selected order context gives role-aware invoice lifecycle explanations", a
     "not_found_or_not_owned",
   );
   assert.doesNotMatch(wrongTenantResponse.assistantMessage, /Other Provider/i);
+});
+
+test("localized account-aware responses stay deterministic outside English", async () => {
+  const frenchCandidates = await respond(
+    "Quelle était ma dernière commande ?",
+    "clerk-user-a",
+    "fr",
+  );
+
+  assert.equal(frenchCandidates.response.disposition, "uncertain");
+  assert.equal(
+    frenchCandidates.response.accountHelperMetadata.helper,
+    "getSupportOrderCandidatesForCurrentUser",
+  );
+  assert.match(frenchCandidates.response.assistantMessage, /J'ai trouvé/i);
+  assert.doesNotMatch(
+    frenchCandidates.response.assistantMessage,
+    /I found|Which order do you mean/i,
+  );
+  assert.equal(frenchCandidates.response.actions?.length, 3);
+  assert.match(frenchCandidates.response.actions?.[0]?.description ?? "", /paiement/i);
+  assert.doesNotMatch(
+    frenchCandidates.response.actions?.[0]?.description ?? "",
+    /payment|scheduled|requested/i,
+  );
+
+  const frenchStatus = await respond(
+    `What is my order status ${ORDER_SCHEDULED_NOT_DUE_A}?`,
+    "clerk-user-a",
+    "fr",
+  );
+  assert.equal(frenchStatus.response.disposition, "answered");
+  assert.match(frenchStatus.response.assistantMessage, /Cette commande est planifiée/i);
+  assert.match(frenchStatus.response.assistantMessage, /Prestataire:/i);
+  assert.doesNotMatch(frenchStatus.response.assistantMessage, /This order|Provider:/i);
+
+  const selected = {
+    referenceType: "order_id" as const,
+    reference: ORDER_SCHEDULED_NOT_DUE_A,
+  };
+  const frenchInvoiceRoute = routeSupportAccountAwareRequest(
+    "Pourquoi la facture n'a-t-elle pas encore été émise ?",
+    { selectedOrder: selected },
+  );
+  assert.equal(frenchInvoiceRoute.kind, "helper");
+  if (frenchInvoiceRoute.kind === "helper") {
+    assert.equal(frenchInvoiceRoute.helper, "getOrderStatusForCurrentUser");
+    assert.equal(
+      frenchInvoiceRoute.responseIntent,
+      "invoice_lifecycle_explanation",
+    );
+  }
+  const frenchInvoiceResponse = await buildAccountAwareServerResponse({
+    route: frenchInvoiceRoute as Exclude<typeof frenchInvoiceRoute, { kind: "none" }>,
+    accountContext: makeCtx().accountContext,
+    locale: "fr",
+    threadId: THREAD_ID,
+  });
+  assert.equal(frenchInvoiceResponse.disposition, "answered");
+  assert.equal(
+    frenchInvoiceResponse.accountHelperMetadata.helper,
+    "getOrderStatusForCurrentUser",
+  );
+  assert.match(frenchInvoiceResponse.assistantMessage, /Aucune facture/i);
+  assert.doesNotMatch(
+    frenchInvoiceResponse.assistantMessage,
+    /An invoice|Which order do you mean/i,
+  );
+});
+
+test("candidate prompts use the active locale across launched locales", async () => {
+  const expectations = [
+    ["de", /Ich habe/i, /Diese Bestellung ist geplant/i],
+    ["fr", /J'ai trouvé/i, /Cette commande est planifiée/i],
+    ["it", /Ho trovato/i, /Questo ordine è programmato/i],
+    ["es", /Encontré/i, /Este pedido está programado/i],
+    ["pt", /Encontrei/i, /Este pedido está agendado/i],
+    ["pl", /Znalazłem/i, /To zamówienie jest zaplanowane/i],
+    ["ro", /Am găsit/i, /Această comandă este programată/i],
+    ["uk", /Я знайшов/i, /Це замовлення заплановано/i],
+  ] as const;
+
+  for (const [locale, expectedCandidate, expectedStatus] of expectations) {
+    const response = await respond("What was my last order?", "clerk-user-a", locale);
+    assert.equal(response.response.disposition, "uncertain", locale);
+    assert.match(response.response.assistantMessage, expectedCandidate, locale);
+    assert.doesNotMatch(
+      response.response.assistantMessage,
+      /I found|Which order do you mean/i,
+      locale,
+    );
+
+    const exactStatus = await respond(
+      `What is my order status ${ORDER_SCHEDULED_NOT_DUE_A}?`,
+      "clerk-user-a",
+      locale,
+    );
+    assert.equal(exactStatus.response.disposition, "answered", locale);
+    assert.match(exactStatus.response.assistantMessage, expectedStatus, locale);
+    assert.doesNotMatch(
+      exactStatus.response.assistantMessage,
+      /This order|Provider:/i,
+      locale,
+    );
+    if (locale !== "fr") {
+      assert.doesNotMatch(exactStatus.response.assistantMessage, /Cette commande/i, locale);
+    }
+  }
+});
+
+test("selected invoice lifecycle follow-ups route deterministically across launched locales", () => {
+  const selected = {
+    referenceType: "order_id" as const,
+    reference: ORDER_SCHEDULED_NOT_DUE_A,
+  };
+  const prompts = [
+    "Warum wurde die Rechnung noch nicht ausgestellt?",
+    "Pourquoi la facture n'a-t-elle pas encore été émise ?",
+    "Perché la fattura non è ancora stata emessa?",
+    "¿Por qué no se ha emitido la factura todavía?",
+    "Por que a fatura ainda não foi emitida?",
+    "Dlaczego faktura nie została jeszcze wystawiona?",
+    "De ce factura nu a fost emisă încă?",
+    "Чому рахунок ще не виставлено?",
+  ];
+
+  for (const prompt of prompts) {
+    const route = routeSupportAccountAwareRequest(prompt, {
+      selectedOrder: selected,
+    });
+
+    assert.equal(route.kind, "helper", prompt);
+    if (route.kind === "helper") {
+      assert.equal(route.helper, "getOrderStatusForCurrentUser", prompt);
+      assert.equal(route.responseIntent, "invoice_lifecycle_explanation", prompt);
+      assert.deepEqual(route.input, selected, prompt);
+    }
+  }
 });
 
 test("selected order context does not capture unrelated it follow-ups", () => {

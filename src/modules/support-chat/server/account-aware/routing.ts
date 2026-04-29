@@ -166,6 +166,30 @@ const SELECTED_ORDER_INVOICE_LIFECYCLE_PATTERNS = [
   /\bwhy\s+is\s+it\s+scheduled\s+but\s+not\s+invoiced\b/i,
 ];
 
+const SELECTED_ORDER_INVOICE_LIFECYCLE_NORMALIZED_PATTERNS = [
+  // These patterns only decide whether an existing selected order can be reused.
+  // They must not become broad account search or model-style intent parsing.
+  /\bpourquoi\b.*\bfacture\b/u,
+  /\bfacture\b.*\b(pas\s+encore|pas|non)\b/u,
+  /\bfacture\b.*\b(emise|emise|cree|creee)\b/u,
+  /\bpourquoi\b.*\bpayer\b/u,
+  /\brechnung\b.*\b(nicht|noch\s+nicht|ausgestellt|erstellt)\b/u,
+  /\bwarum\b.*\b(rechnung|bezahlen|zahlen)\b/u,
+  /\bfattura\b.*\b(non|ancora|emessa|creata)\b/u,
+  /\bperche\b.*\b(fattura|pagare)\b/u,
+  /\bfactura\b.*\b(no|todavia|emitida|creada)\b/u,
+  /\bpor\s+que\b.*\b(factura|pagar)\b/u,
+  /\bfatura\b.*\b(nao|ainda|emitida|criada)\b/u,
+  /\bpor\s+que\b.*\b(fatura|pagar)\b/u,
+  /\bfaktura\b.*\b(nie|jeszcze|wystawiona|wystawiono)\b/u,
+  /\bdlaczego\b.*\b(faktura|zaplacic|platnosc)\b/u,
+  /\bfactura\b.*\b(nu|inca|emisa|creata)\b/u,
+  /\bde\s+ce\b.*\b(factura|plati|plata)\b/u,
+  /рахунок.*(не|ще|виставлено|створено)/u,
+  /(не|ще|виставлено|створено).*рахунок/u,
+  /чому.*(рахунок|оплатити|оплата)/u,
+];
+
 const SELECTED_ORDER_CANCEL_PATTERNS = [
   /\bcancel\b/i,
   /\bcancelable\b/i,
@@ -174,6 +198,17 @@ const SELECTED_ORDER_CANCEL_PATTERNS = [
 
 function hasAny(patterns: RegExp[], message: string) {
   return patterns.some((pattern) => pattern.test(message));
+}
+
+function normalizeSelectedOrderText(message: string) {
+  return message
+    .toLocaleLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[’'`]/g, "")
+    .replace(/[^\p{Letter}\p{Number}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function exactObjectIds(message: string) {
@@ -222,6 +257,7 @@ function selectedOrderFollowUpHelper(input: {
   helper: AccountCandidateSelectionHelper;
   responseIntent?: SupportAccountResponseIntent;
 } | null {
+  const normalizedMessage = normalizeSelectedOrderText(input.message);
   const hasSelectedReference = hasAny(
     SELECTED_ORDER_REFERENCE_PATTERNS,
     input.message,
@@ -229,6 +265,9 @@ function selectedOrderFollowUpHelper(input: {
   const hasInvoiceLifecycleQuestion = hasAny(
     SELECTED_ORDER_INVOICE_LIFECYCLE_PATTERNS,
     input.message,
+  ) || hasAny(
+    SELECTED_ORDER_INVOICE_LIFECYCLE_NORMALIZED_PATTERNS,
+    normalizedMessage,
   );
   const hasFollowUpShape = hasAny(
     SELECTED_ORDER_FOLLOW_UP_PATTERNS,

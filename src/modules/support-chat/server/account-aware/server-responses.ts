@@ -24,6 +24,7 @@ import type {
   SupportOrderCandidateDTO,
   SupportOrderCandidateStatusFilter,
 } from "./types";
+import { getAccountAwareCopy, type AccountAwareLocalizedCopy } from "./localized-copy";
 import { SUPPORT_ACCOUNT_HELPER_VERSION } from "./versioning";
 
 type AccountCtx = Pick<TRPCContext, "db" | "userId">;
@@ -70,15 +71,15 @@ function fallback(locale: AppLang) {
   return getSupportChatCopy(locale).serverMessages.unsupportedAccount;
 }
 
-function categoryLabel(value: string) {
-  return value.replaceAll("_", " ");
+function categoryLabel(value: string, copy: AccountAwareLocalizedCopy) {
+  return copy.statusLabels[value] ?? value.replaceAll("_", " ");
 }
 
-function formatCandidateDate(value: string | undefined) {
+function formatCandidateDate(value: string | undefined, locale: AppLang) {
   if (!value) return undefined;
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return undefined;
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : locale, {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -88,36 +89,48 @@ function formatCandidateDate(value: string | undefined) {
 function paymentSummary(input: {
   paymentStatusCategory: string;
   invoiceStatusCategory: string;
-}) {
+}, copy: AccountAwareLocalizedCopy) {
   if (
     input.invoiceStatusCategory === "issued" ||
     input.invoiceStatusCategory === "overdue"
   ) {
-    return `payment ${categoryLabel(input.paymentStatusCategory)}`;
+    return copy.paymentSummary.payment(
+      categoryLabel(input.paymentStatusCategory, copy),
+    );
   }
   if (
     input.invoiceStatusCategory !== "none" &&
     input.invoiceStatusCategory !== "unknown"
   ) {
-    return `invoice ${categoryLabel(input.invoiceStatusCategory)}`;
+    return copy.paymentSummary.invoice(
+      categoryLabel(input.invoiceStatusCategory, copy),
+    );
   }
-  return `payment ${categoryLabel(input.paymentStatusCategory)}`;
+  return copy.paymentSummary.payment(
+    categoryLabel(input.paymentStatusCategory, copy),
+  );
 }
 
-function candidateActionLabel(candidate: SupportOrderCandidateDTO) {
+function candidateActionLabel(
+  candidate: SupportOrderCandidateDTO,
+  locale: AppLang,
+) {
   return [
     candidate.tenantDisplayName,
     ...(candidate.serviceNames ?? []),
-    formatCandidateDate(candidate.firstSlotStart ?? candidate.createdAt),
+    formatCandidateDate(candidate.firstSlotStart ?? candidate.createdAt, locale),
   ]
     .filter((value): value is string => Boolean(value))
     .join(" - ");
 }
 
-function candidateActionDescription(candidate: SupportOrderCandidateDTO) {
+function candidateActionDescription(
+  candidate: SupportOrderCandidateDTO,
+  copy: AccountAwareLocalizedCopy,
+) {
   return [
-    categoryLabel(candidate.serviceStatusCategory),
-    paymentSummary(candidate),
+    categoryLabel(candidate.serviceStatusCategory, copy),
+    paymentSummary(candidate, copy),
   ]
     .filter((value): value is string => Boolean(value))
     .join(" - ");
@@ -127,10 +140,13 @@ function candidateActions(input: {
   candidates: SupportOrderCandidateDTO[];
   helper: AccountCandidateSelectionHelper;
   threadId: string;
+  locale: AppLang;
 }): SupportChatAction[] {
+  const copy = getAccountAwareCopy(input.locale);
   return input.candidates.map((candidate, index) => {
-    const label = candidateActionLabel(candidate) || "Order candidate";
-    const description = candidateActionDescription(candidate);
+    const label =
+      candidateActionLabel(candidate, input.locale) || copy.candidate.fallbackLabel;
+    const description = candidateActionDescription(candidate, copy);
     return {
       id: `${input.helper}:${index}`,
       type: "account_candidate_select",
@@ -147,333 +163,245 @@ function candidateActions(input: {
   });
 }
 
-function candidateSelectionMessage(candidates: SupportOrderCandidateDTO[]) {
+function candidateSelectionMessage(
+  candidates: SupportOrderCandidateDTO[],
+  copy: AccountAwareLocalizedCopy,
+) {
   if (!candidates.length) {
-    return "I can help, but I could not find recent support-safe order candidates. Please open your Orders page or contact support with the exact order ID.";
+    return copy.candidate.none;
   }
 
-  return candidates.length === 1
-    ? "I found one recent order candidate. Please select it below if it is the order you mean."
-    : "I found a few recent order candidates. Which order do you mean?";
+  return candidates.length === 1 ? copy.candidate.one : copy.candidate.many;
 }
 
-function statusFilterLabel(filter: SupportOrderCandidateStatusFilter) {
-  switch (filter) {
-    case "canceled":
-      return "canceled";
-    case "requested":
-      return "requested";
-    case "scheduled":
-      return "scheduled";
-    case "completed_or_accepted":
-      return "completed or accepted";
-    case "payment_not_due":
-      return "payment not due";
-    case "payment_pending":
-      return "payment pending";
-    case "paid":
-      return "paid";
-  }
+function statusFilterLabel(
+  filter: SupportOrderCandidateStatusFilter,
+  copy: AccountAwareLocalizedCopy,
+) {
+  return copy.statusFilterLabels[filter] ?? filter.replaceAll("_", " ");
 }
 
 function filteredCandidateSelectionMessage(
   candidates: SupportOrderCandidateDTO[],
   statusFilter: SupportOrderCandidateStatusFilter | undefined,
+  copy: AccountAwareLocalizedCopy,
 ) {
-  if (!statusFilter) return candidateSelectionMessage(candidates);
+  if (!statusFilter) return candidateSelectionMessage(candidates, copy);
 
-  const label = statusFilterLabel(statusFilter);
+  const label = statusFilterLabel(statusFilter, copy);
   if (!candidates.length) {
-    return `I could not find recent ${label} booking candidates. This is not a full history check. Please open your Orders page if you need the complete list.`;
+    return copy.candidate.filteredNone(label);
   }
 
   return candidates.length === 1
-    ? `I found one recent ${label} booking candidate. Please select it below if it is the order you mean.`
-    : `I found recent ${label} booking candidates. Which order do you mean?`;
+    ? copy.candidate.filteredOne(label)
+    : copy.candidate.filteredMany(label);
 }
 
-function missingReferenceMessage(route: Extract<SupportAccountRoute, { kind: "missing_reference" }>) {
+function missingReferenceMessage(
+  route: Extract<SupportAccountRoute, { kind: "missing_reference" }>,
+  copy: AccountAwareLocalizedCopy,
+) {
   if (route.referenceType === "invoice_id") {
-    return "Please provide the exact invoice ID so I can check that safely.";
+    return copy.missingReference.invoice;
   }
-  return "Please provide the exact order ID so I can check that safely.";
+  return copy.missingReference.order;
 }
 
-function orderStatusHeadline(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
-  if (data.accessRole === "tenant") {
-    switch (data.serviceStatusCategory) {
-      case "requested":
-        return "This customer booking request is awaiting your confirmation.";
-      case "scheduled":
-        return "This customer booking is scheduled.";
-      case "completed":
-        return "This customer order is marked completed and is awaiting the next service-lifecycle step.";
-      case "accepted":
-        return "This customer order has been accepted.";
-      case "disputed":
-        return "This customer order is marked disputed.";
-      case "canceled":
-        return "This customer order is canceled.";
-      default:
-        return "I found the order, but its current service status is not available in a support-safe category.";
-    }
-  }
-
-  switch (data.serviceStatusCategory) {
-    case "requested":
-      return "This order is awaiting provider confirmation. It is a booking request, not a scheduled booking yet.";
-    case "scheduled":
-      return "This order is scheduled.";
-    case "completed":
-      return "This order is marked completed and is awaiting the next service-lifecycle step.";
-    case "accepted":
-      return "This order has been accepted.";
-    case "disputed":
-      return "This order is marked disputed.";
-    case "canceled":
-      return "This order is canceled.";
-    default:
-      return "I found the order, but its current service status is not available in a support-safe category.";
-  }
+function orderStatusHeadline(
+  data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>,
+  copy: AccountAwareLocalizedCopy,
+) {
+  const role = data.accessRole === "tenant" ? "tenant" : "customer";
+  return (
+    copy.orderHeadline[role][
+      data.serviceStatusCategory as keyof typeof copy.orderHeadline.customer
+    ] ?? copy.orderHeadline[role].unknown
+  );
 }
 
-function statusReasonLabel(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
-  if (data.accessRole === "tenant") {
-    switch (data.statusReasonKey) {
-      case "customer_canceled":
-        return "The customer canceled this order.";
-      case "provider_declined":
-        return "You declined this booking request.";
-      case "provider_canceled":
-        return "The provider side canceled this order.";
-      case "awaiting_provider_confirmation":
-        return "This booking request is waiting for your confirmation or decline.";
-      case "provider_confirmed":
-        return "The provider side has confirmed this booking.";
-      case "completed":
-        return "The provider side has marked the service completed.";
-      case "accepted":
-        return "The customer accepted the service completion.";
-      case "disputed":
-        return "The customer disputed the service completion.";
-      default:
-        return undefined;
-    }
-  }
-
-  switch (data.statusReasonKey) {
-    case "customer_canceled":
-      return "The order was canceled by the customer.";
-    case "provider_declined":
-      return "The provider declined this booking request.";
-    case "provider_canceled":
-      return "The provider canceled this order.";
-    case "awaiting_provider_confirmation":
-      return "The provider has not confirmed or declined this booking request yet.";
-    case "provider_confirmed":
-      return "The provider has confirmed this booking.";
-    case "completed":
-      return "The provider has marked the service completed.";
-    case "accepted":
-      return "The service completion has been accepted.";
-    case "disputed":
-      return "The order is currently marked as disputed.";
-    default:
-      return undefined;
-  }
+function statusReasonLabel(
+  data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>,
+  copy: AccountAwareLocalizedCopy,
+) {
+  const role = data.accessRole === "tenant" ? "tenant" : "customer";
+  return copy.statusReason[role][data.statusReasonKey];
 }
 
-function nextStepLabel(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
-  if (data.accessRole === "tenant") {
-    switch (data.nextStepKey) {
-      case "await_provider_confirmation":
-        return "Confirm or decline the request from your dashboard.";
-      case "pay_invoice":
-        return "Review the issued invoice from your dashboard.";
-      case "view_orders":
-        return "Open your dashboard Orders view for the full order view.";
-      case "no_action_needed":
-        return "No payment action is needed right now.";
-      default:
-        return undefined;
-    }
-  }
-
-  switch (data.nextStepKey) {
-    case "await_provider_confirmation":
-      return "Wait for the provider to confirm or decline the request.";
-    case "pay_invoice":
-      return "Open the invoice from your Orders page to pay.";
-    case "view_orders":
-      return "Open your Orders page for the full order view.";
-    case "no_action_needed":
-      return "No payment action is needed right now.";
-    default:
-      return undefined;
-  }
+function nextStepLabel(
+  data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>,
+  copy: AccountAwareLocalizedCopy,
+) {
+  const role = data.accessRole === "tenant" ? "tenant" : "customer";
+  return copy.nextStep[role][data.nextStepKey];
 }
 
-function orderStatusMessage(data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>) {
-  const lines = [orderStatusHeadline(data)];
+function orderStatusMessage(
+  data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>,
+  locale: AppLang,
+  copy: AccountAwareLocalizedCopy,
+) {
+  const lines = [orderStatusHeadline(data, copy)];
 
+  // Account-aware responses are server-authored but still locale-specific.
+  // Keep DTO categories stable; localize only rendered user-facing copy.
   // Keep the summary deterministic and bounded to fields the helper already
   // sanitized; do not expose raw order records, Stripe data, or internal notes.
   const context = [
-    data.providerDisplayName ? `Provider: ${data.providerDisplayName}` : undefined,
-    data.serviceNames?.length ? `Service: ${data.serviceNames.join(", ")}` : undefined,
-    formatCandidateDate(data.firstSlotStart ?? data.createdAt)
-      ? `Date: ${formatCandidateDate(data.firstSlotStart ?? data.createdAt)}`
+    data.providerDisplayName
+      ? `${copy.fieldLabels.provider}: ${data.providerDisplayName}`
       : undefined,
-    `Status: ${categoryLabel(data.serviceStatusCategory)}`,
-    `Payment: ${paymentSummary(data)}`,
+    data.serviceNames?.length
+      ? `${copy.fieldLabels.service}: ${data.serviceNames.join(", ")}`
+      : undefined,
+    formatCandidateDate(data.firstSlotStart ?? data.createdAt, locale)
+      ? `${copy.fieldLabels.date}: ${formatCandidateDate(data.firstSlotStart ?? data.createdAt, locale)}`
+      : undefined,
+    `${copy.fieldLabels.status}: ${categoryLabel(data.serviceStatusCategory, copy)}`,
+    `${copy.fieldLabels.payment}: ${paymentSummary(data, copy)}`,
   ].filter((value): value is string => Boolean(value));
 
   if (context.length) {
     lines.push(context.join("\n"));
   }
 
-  const reason = statusReasonLabel(data);
-  if (reason) lines.push(`Reason: ${reason}`);
+  const reason = statusReasonLabel(data, copy);
+  if (reason) lines.push(`${copy.fieldLabels.reason}: ${reason}`);
   if (data.publicStatusReason) {
-    lines.push(`Provider/customer note: ${data.publicStatusReason}`);
+    lines.push(`${copy.fieldLabels.note}: ${data.publicStatusReason}`);
   }
 
-  const nextStep = nextStepLabel(data);
-  if (nextStep) lines.push(`Next step: ${nextStep}`);
+  const nextStep = nextStepLabel(data, copy);
+  if (nextStep) lines.push(`${copy.fieldLabels.nextStep}: ${nextStep}`);
 
   return lines.join("\n\n");
 }
 
 function invoiceLifecycleExplanationMessage(
   data: Extract<SupportAccountHelperDTO, { resultCategory: "order_status" }>,
+  copy: AccountAwareLocalizedCopy,
 ) {
-  const providerSide = data.accessRole === "tenant";
+  const role = data.accessRole === "tenant" ? "tenant" : "customer";
+  const roleCopy = copy.invoiceLifecycle[role];
 
   if (data.invoiceStatusCategory === "issued" || data.invoiceStatusCategory === "overdue") {
-    return providerSide
-      ? "An invoice has already been issued for this customer booking. From the provider side, review the order or invoice in your dashboard for the current payment state."
-      : "An invoice has already been issued for this order. Open your Orders page to review the invoice and current payment state.";
+    return roleCopy.issued;
   }
 
   if (data.invoiceStatusCategory === "paid") {
-    return providerSide
-      ? "This customer booking is already marked paid in the support-safe order status. Review the order in your dashboard if you need the full order view."
-      : "This order is already marked paid in the support-safe order status. Open your Orders page if you need the full order view.";
+    return roleCopy.paid;
   }
 
   if (data.invoiceStatusCategory === "void") {
-    return providerSide
-      ? "The invoice for this customer booking is not currently payable. Review the order in your dashboard or contact support if the customer still needs help."
-      : "The invoice for this order is not currently payable. Open your Orders page or contact support if you still need help.";
+    return roleCopy.void;
   }
 
   switch (data.serviceStatusCategory) {
     case "requested":
-      return providerSide
-        ? "An invoice has not been issued yet for this customer booking because it is still awaiting your confirmation. Booking requests do not become payable immediately. From the provider side, confirm or decline the request in your dashboard; after the order later reaches the invoice/payment step, the invoice/payment status can change."
-        : "An invoice has not been issued yet because this booking request is still awaiting provider confirmation. Booking requests do not become payable immediately. Once the provider confirms and the order later reaches the invoice/payment step, the invoice/payment status can change.";
+      return roleCopy.requested;
     case "scheduled":
-      return providerSide
-        ? "An invoice has not been issued yet for this customer booking because this scheduled order has not reached the invoice/payment step. From the provider side, review the order in your dashboard and check whether the service is ready for the next order step."
-        : "An invoice has not been issued yet for this scheduled booking because it has not reached the invoice/payment step. In this flow, payment may be requested later. Please watch your Orders page for invoice or payment updates.";
+      return roleCopy.scheduled;
     case "completed":
     case "accepted":
-      return providerSide
-        ? "An invoice has not been issued yet for this customer booking even though the order is past the scheduled/requested stage. Review the order in your dashboard and contact support if the invoice/payment step appears stuck."
-        : "An invoice has not been issued yet for this order even though it is past the scheduled/requested stage. Please check your Orders page and contact support if the invoice/payment step appears stuck.";
+      return roleCopy.completed;
     case "canceled":
-      return providerSide
-        ? "An invoice has not been issued because this customer booking is canceled. A canceled order is not currently expected to move into the invoice/payment step."
-        : "An invoice has not been issued because this order is canceled. A canceled order is not currently expected to move into the invoice/payment step.";
+      return roleCopy.canceled;
     default:
-      return providerSide
-        ? "An invoice has not been issued yet for this customer booking because it has not reached a support-safe invoice/payment state. Review the order in your dashboard for the full order view."
-        : "An invoice has not been issued yet because this order has not reached a support-safe invoice/payment state. Open your Orders page for the full order view.";
+      return roleCopy.unknown;
   }
 }
 
-function paymentStatusMessage(data: Extract<SupportAccountHelperDTO, { resultCategory: "payment_status" }>) {
+function paymentStatusMessage(
+  data: Extract<SupportAccountHelperDTO, { resultCategory: "payment_status" }>,
+  copy: AccountAwareLocalizedCopy,
+) {
   if (data.paymentStatusCategory === "paid") {
-    return "This payment is marked paid.";
+    return copy.paymentStatus.paid;
   }
   if (data.invoiceStatusCategory === "issued" || data.invoiceStatusCategory === "overdue") {
-    return "A payment is pending for this order or invoice. You can open the invoice from your Orders page.";
+    return copy.paymentStatus.pending;
   }
   if (data.invoiceStatusCategory === "none" || data.paymentStatusCategory === "not_due") {
     switch (data.serviceStatusCategory) {
       case "requested":
-        return "Payment is not due yet because this is still a booking request awaiting provider confirmation. Booking requests do not become payable immediately. Once the provider confirms and the order later reaches the invoice/payment step, the payment status can change.";
+        return copy.paymentStatus.notDueRequested;
       case "scheduled":
-        return "Payment is not due yet because no invoice has been issued for this scheduled booking. In this flow, payment is requested later through the invoice/payment step.";
+        return copy.paymentStatus.notDueScheduled;
       case "completed":
       case "accepted":
-        return "Payment is not due yet because no invoice has been issued for this order. Please check your Orders page for invoice or payment status updates.";
+        return copy.paymentStatus.notDueCompleted;
       case "canceled":
-        return "Payment is not due because this order is canceled and no payable invoice is currently associated with it.";
+        return copy.paymentStatus.notDueCanceled;
       default:
-        return "Payment is not due for this order yet. No payable invoice is currently associated with it.";
+        return copy.paymentStatus.notDue;
     }
   }
   if (data.invoiceStatusCategory === "void" || data.paymentStatusCategory === "canceled") {
-    return "This invoice is not currently payable.";
+    return copy.paymentStatus.void;
   }
-  return "I found the payment record, but its current payment status is not available in a support-safe category.";
+  return copy.paymentStatus.unknown;
 }
 
-function cancellationMessage(data: Extract<SupportAccountHelperDTO, { resultCategory: "cancellation_eligibility" }>) {
+function cancellationMessage(
+  data: Extract<SupportAccountHelperDTO, { resultCategory: "cancellation_eligibility" }>,
+  copy: AccountAwareLocalizedCopy,
+) {
   if (data.canCancel) {
-    return "This order currently appears eligible for in-app cancellation. Please use the cancellation option in your Orders page.";
+    return copy.cancellation.eligible;
   }
-  return "This order does not currently appear eligible for in-app cancellation. Please use your Orders page or contact support if you need help.";
+  return copy.cancellation.notEligible;
 }
 
-function countPhrase(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function paymentOverviewMessage(data: Extract<SupportAccountHelperDTO, { resultCategory: "payment_overview" }>) {
+function paymentOverviewMessage(
+  data: Extract<SupportAccountHelperDTO, { resultCategory: "payment_overview" }>,
+  copy: AccountAwareLocalizedCopy,
+) {
   if (data.inspectedOrderCount === 0) {
-    return "I could not find recent support-safe orders to summarize. This is not a full account or payment history check.";
+    return copy.overview.none;
   }
 
   const parts = [
-    countPhrase(data.categories.paid, "paid order"),
-    `${data.categories.paymentPending} with payment pending`,
-    `${data.categories.paymentNotDue} where payment is not due yet`,
-    `${data.categories.paymentCanceled} with payment canceled`,
-    `${data.categories.refunded} refunded`,
+    copy.overview.counts.paidOrders(data.categories.paid),
+    copy.overview.counts.paymentPending(data.categories.paymentPending),
+    copy.overview.counts.paymentNotDue(data.categories.paymentNotDue),
+    copy.overview.counts.paymentCanceled(data.categories.paymentCanceled),
+    copy.overview.counts.refunded(data.categories.refunded),
   ];
 
   if (data.categories.unknown > 0) {
-    parts.push(`${data.categories.unknown} with an unknown payment status`);
+    parts.push(copy.overview.counts.unknown(data.categories.unknown));
   }
 
   // This wording is intentionally deterministic: the helper returns a bounded
   // recent-order summary, not a complete payment ledger or Stripe timeline.
   return [
-    `From the recent orders I can safely check, I found ${parts.join(", ")}.`,
-    `I inspected ${countPhrase(data.inspectedOrderCount, "recent support-safe order")}. This is not a full payment history.`,
+    copy.overview.summary(parts.join(", ")),
+    copy.overview.inspected(
+      copy.overview.counts.inspectedOrders(data.inspectedOrderCount),
+    ),
   ].join("\n\n");
 }
 
 function successMessage(
   data: SupportAccountHelperDTO,
+  locale: AppLang,
   responseIntent?: AccountResponseIntent,
 ) {
+  const copy = getAccountAwareCopy(locale);
   switch (data.resultCategory) {
     case "order_status":
       if (responseIntent === "invoice_lifecycle_explanation") {
-        return invoiceLifecycleExplanationMessage(data);
+        return invoiceLifecycleExplanationMessage(data, copy);
       }
-      return orderStatusMessage(data);
+      return orderStatusMessage(data, locale, copy);
     case "payment_status":
-      return paymentStatusMessage(data);
+      return paymentStatusMessage(data, copy);
     case "cancellation_eligibility":
-      return cancellationMessage(data);
+      return cancellationMessage(data, copy);
     case "payment_overview":
-      return paymentOverviewMessage(data);
+      return paymentOverviewMessage(data, copy);
     default:
-      return "I found the account item, but I cannot safely summarize it yet.";
+      return copy.genericAccountItem;
   }
 }
 
@@ -495,6 +423,7 @@ export async function buildAccountAwareServerResponse(input: {
   threadId: string;
 }): Promise<AccountAwareServerResponse> {
   const authenticated = Boolean(input.accountContext?.userId);
+  const accountCopy = getAccountAwareCopy(input.locale);
 
   if (!authenticated) {
     return {
@@ -520,7 +449,7 @@ export async function buildAccountAwareServerResponse(input: {
 
   if (input.route.kind === "missing_reference") {
     return {
-      assistantMessage: missingReferenceMessage(input.route),
+      assistantMessage: missingReferenceMessage(input.route, accountCopy),
       disposition: "uncertain",
       needsHumanSupport: false,
       accountHelperMetadata: {
@@ -570,7 +499,7 @@ export async function buildAccountAwareServerResponse(input: {
     }
 
     return {
-      assistantMessage: successMessage(result.data),
+      assistantMessage: successMessage(result.data, input.locale),
       disposition: "answered",
       needsHumanSupport: false,
       accountHelperMetadata: {
@@ -626,6 +555,7 @@ export async function buildAccountAwareServerResponse(input: {
       assistantMessage: filteredCandidateSelectionMessage(
         result.data.candidates,
         input.route.statusFilter,
+        accountCopy,
       ),
       disposition: "uncertain",
       needsHumanSupport: false,
@@ -641,6 +571,7 @@ export async function buildAccountAwareServerResponse(input: {
         candidates: result.data.candidates,
         helper: input.route.selectionHelper,
         threadId: input.threadId,
+        locale: input.locale,
       }),
     };
   }
@@ -682,11 +613,14 @@ export async function buildAccountAwareServerResponse(input: {
     return {
       assistantMessage:
         result.reason === "missing_reference"
-          ? missingReferenceMessage({
-              kind: "missing_reference",
-              helper: input.route.helper,
-              referenceType: input.route.input.referenceType,
-            })
+          ? missingReferenceMessage(
+              {
+                kind: "missing_reference",
+                helper: input.route.helper,
+                referenceType: input.route.input.referenceType,
+              },
+              accountCopy,
+            )
           : fallback(input.locale),
       disposition:
         result.reason === "missing_reference"
@@ -705,7 +639,11 @@ export async function buildAccountAwareServerResponse(input: {
   }
 
   return {
-    assistantMessage: successMessage(result.data, input.route.responseIntent),
+    assistantMessage: successMessage(
+      result.data,
+      input.locale,
+      input.route.responseIntent,
+    ),
     disposition: "answered",
     needsHumanSupport: false,
     accountHelperMetadata: {

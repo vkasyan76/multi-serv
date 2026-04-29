@@ -26,6 +26,7 @@
   "send": "Trimite",
   "sending": "Asistența răspunde...",
   "error": "Ceva nu a mers bine. Încearcă din nou sau contactează asistența.",
+  "selectedCandidate": "Selectat",
   "serverMessages": {
     "rateLimit": "Prea multe cereri către chatul de asistență. Așteaptă puțin și încearcă din nou.",
     "outage": "Chatul de asistență este temporar indisponibil. Încearcă din nou mai târziu sau contactează asistența.",

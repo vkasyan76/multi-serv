@@ -26,6 +26,7 @@
   "send": "Senden",
   "sending": "Der Support antwortet...",
   "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.",
+  "selectedCandidate": "Ausgewählt",
   "serverMessages": {
     "rateLimit": "Zu viele Support-Chat-Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
     "outage": "Der Support-Chat ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut oder kontaktieren Sie den Support.",

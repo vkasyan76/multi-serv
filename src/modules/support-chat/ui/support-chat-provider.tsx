@@ -139,7 +139,9 @@ export function SupportChatProvider({
       if (pendingSendRef.current) return;
       pendingSendRef.current = true;
 
-      const message = `Selected: ${action.label}`;
+      // The visible selection label is user-facing only; the server trusts the
+      // signed action token, not this localized text.
+      const message = `${t("selectedCandidate")}: ${action.label}`;
       const userMessage: SupportChatMessage = {
         id: createMessageId(),
         role: "user",

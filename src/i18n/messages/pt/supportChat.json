@@ -26,6 +26,7 @@
   "send": "Enviar",
   "sending": "O suporte está a responder...",
   "error": "Algo correu mal. Tente novamente ou contacte o suporte.",
+  "selectedCandidate": "Selecionado",
   "serverMessages": {
     "rateLimit": "Demasiados pedidos no chat de suporte. Aguarde um momento e tente novamente.",
     "outage": "O chat de suporte está temporariamente indisponível. Tente novamente mais tarde ou contacte o suporte.",

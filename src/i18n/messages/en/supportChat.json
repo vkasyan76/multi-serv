@@ -26,6 +26,7 @@
   "send": "Send",
   "sending": "Support is replying...",
   "error": "Something went wrong. Please try again or contact support.",
+  "selectedCandidate": "Selected",
   "serverMessages": {
     "rateLimit": "Too many support chat requests. Please wait a moment and try again.",
     "outage": "Support chat is temporarily unavailable. Please try again later or contact support.",

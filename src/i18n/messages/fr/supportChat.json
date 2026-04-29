@@ -26,6 +26,7 @@
   "send": "Envoyer",
   "sending": "L'assistance répond...",
   "error": "Une erreur s'est produite. Veuillez réessayer ou contacter l'assistance.",
+  "selectedCandidate": "Sélectionné",
   "serverMessages": {
     "rateLimit": "Trop de demandes d'assistance par chat. Veuillez attendre un instant et réessayer.",
     "outage": "Le chat d'assistance est temporairement indisponible. Veuillez réessayer plus tard ou contacter l'assistance.",

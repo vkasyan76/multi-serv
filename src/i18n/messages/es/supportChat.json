@@ -26,6 +26,7 @@
   "send": "Enviar",
   "sending": "El soporte está respondiendo...",
   "error": "Algo salió mal. Inténtalo de nuevo o contacta con soporte.",
+  "selectedCandidate": "Seleccionado",
   "serverMessages": {
     "rateLimit": "Demasiadas solicitudes al chat de soporte. Espera un momento e inténtalo de nuevo.",
     "outage": "El chat de soporte no está disponible temporalmente. Inténtalo más tarde o contacta con soporte.",
