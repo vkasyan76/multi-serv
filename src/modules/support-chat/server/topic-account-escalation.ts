@@ -6,7 +6,7 @@ import type { SupportTopicContext } from "@/modules/support-chat/server/topics";
 import { isSupportTopicContextValid } from "@/modules/support-chat/server/topics";
 
 export type TopicAccountEscalation = {
-  statusFilter: SupportOrderCandidateStatusFilter;
+  statusFilter?: SupportOrderCandidateStatusFilter;
   selectionHelper: AccountCandidateSelectionHelper;
 };
 
@@ -110,8 +110,13 @@ const STATUS_PATTERNS = {
 
 const PERSONAL_ACCOUNT_OBJECT_PATTERNS = [
   /\b(my|mine)\b.*\b(orders?|bookings?|payments?|invoices?)\b/u,
+  /\bdo\s+i\s+have\b.*\b(orders?|bookings?|payments?|invoices?)\b/u,
+  /\b(orders?|bookings?)\b.*\bi\b.*\bcancel\b/u,
   /\bmeine\b.*\bbuchung\b/u,
   /\bmeine[rmn]?\b.*\b(buchung(en)?|bestellungen?|zahlungen?|rechnungen?)\b/u,
+  /\bbei\s+mir\b.*\b(buchung(en)?|bestellungen?|zahlungen?|rechnungen?)\b/u,
+  /\bhabe\s+ich\b.*\b(buchung(en)?|bestellungen?|zahlungen?|rechnungen?)\b/u,
+  /\b(buchung(en)?|bestellungen?)\b.*\bich\b.*\bstornieren\b/u,
   /\b(ma|mon|mes)\b.*\b(commandes?|reservations?|paiements?|factures?)\b/u,
   /\b(mi|mis)\b.*\b(pedidos?|reservas?|pagos?|facturas?)\b/u,
   /\b(mio|mia|miei|mie)\b.*\b(ordini?|prenotazioni?|pagamenti?|fatture?)\b/u,
@@ -119,6 +124,17 @@ const PERSONAL_ACCOUNT_OBJECT_PATTERNS = [
   /\b(moj|moja|moje|moich)\b.*\b(zamowienia?|rezerwacje?|platnosci|faktury)\b/u,
   /\b(meu|mea|mele)\b.*\b(comenzi|comanda|rezervari|rezervare|plati|facturi)\b/u,
   /(моє|мою|мої|моїх).*(замовлення|бронювання|оплат|платеж|рахунок|рахунки)/u,
+] as const;
+
+const CANCELLATION_LOOKUP_PATTERNS = [
+  /\bcancel\b/u,
+  /\bstornieren\b/u,
+  /\bstornierbar\b/u,
+  /\bannuler\b/u,
+  /\bannull\w+\b/u,
+  /\banular\b/u,
+  /\banul\w+\b/u,
+  /скасувати/u,
 ] as const;
 
 function normalizeEscalationText(value: string) {
@@ -146,10 +162,17 @@ export function detectTopicAccountEscalation(input: {
   context?: SupportTopicContext | null;
 }): TopicAccountEscalation | null {
   if (!isSupportTopicContextValid(input.context)) return null;
-  if (!isShortEscalationMessage(input.message)) return null;
 
   const text = normalizeEscalationText(input.message);
   if (!hasAny(PERSONAL_ACCOUNT_OBJECT_PATTERNS, text)) return null;
+
+  const isExplicitCancellationLookup =
+    input.context.topic === "cancellation" &&
+    hasAny(CANCELLATION_LOOKUP_PATTERNS, text);
+
+  if (!isShortEscalationMessage(input.message) && !isExplicitCancellationLookup) {
+    return null;
+  }
 
   if (input.context.topic === "cancellation") {
     if (hasAny(STATUS_PATTERNS.scheduled, text)) {
@@ -168,6 +191,11 @@ export function detectTopicAccountEscalation(input: {
       return {
         statusFilter: "canceled",
         selectionHelper: "getOrderStatusForCurrentUser",
+      };
+    }
+    if (isExplicitCancellationLookup) {
+      return {
+        selectionHelper: "canCancelOrderForCurrentUser",
       };
     }
     return null;

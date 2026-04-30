@@ -12,6 +12,13 @@ export type SupportTerminology = {
   paymentsArea: string;
   payouts: string;
   stripeOnboarding: string;
+  requestedStatus: string;
+  scheduledStatus: string;
+  canceledStatus: string;
+  paidStatus: string;
+  paymentPendingStatus: string;
+  awaitingProviderConfirmation: string;
+  cancellationCutoff: string;
   avoidTerms?: string[];
 };
 
@@ -23,6 +30,13 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     paymentsArea: "Payments",
     payouts: "Payouts",
     stripeOnboarding: "Stripe Onboarding",
+    requestedStatus: "requested",
+    scheduledStatus: "scheduled",
+    canceledStatus: "canceled",
+    paidStatus: "paid",
+    paymentPendingStatus: "payment pending",
+    awaitingProviderConfirmation: "awaiting provider confirmation",
+    cancellationCutoff: "cancellation cutoff",
   },
   de: {
     providerRole: "Dienstleister",
@@ -31,7 +45,21 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     paymentsArea: "Zahlungen",
     payouts: "Auszahlungen",
     stripeOnboarding: "Stripe-Einrichtung",
-    avoidTerms: ["Provider-Profil", "Provider", "Anbieterprofil"],
+    requestedStatus: "angefragt",
+    scheduledStatus: "geplant",
+    canceledStatus: "storniert",
+    paidStatus: "bezahlt",
+    paymentPendingStatus: "Zahlung ausstehend",
+    awaitingProviderConfirmation: "wartet auf Bestätigung durch den Dienstleister",
+    cancellationCutoff: "Stornofrist",
+    avoidTerms: [
+      "Provider-Profil",
+      "Provider",
+      "Anbieterprofil",
+      "Awaiting provider confirmation",
+      "Requested",
+      "Scheduled",
+    ],
   },
   fr: {
     providerRole: "prestataire",
@@ -40,6 +68,13 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     paymentsArea: "Paiements",
     payouts: "versements",
     stripeOnboarding: "Configuration Stripe",
+    requestedStatus: "demandée",
+    scheduledStatus: "planifiée",
+    canceledStatus: "annulée",
+    paidStatus: "payée",
+    paymentPendingStatus: "paiement en attente",
+    awaitingProviderConfirmation: "en attente de confirmation par le prestataire",
+    cancellationCutoff: "délai d'annulation",
   },
   it: {
     providerRole: "fornitore di servizi",
@@ -48,6 +83,13 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     paymentsArea: "Pagamenti",
     payouts: "accrediti",
     stripeOnboarding: "Configurazione Stripe",
+    requestedStatus: "richiesta",
+    scheduledStatus: "programmata",
+    canceledStatus: "annullata",
+    paidStatus: "pagata",
+    paymentPendingStatus: "pagamento in sospeso",
+    awaitingProviderConfirmation: "in attesa di conferma dal fornitore di servizi",
+    cancellationCutoff: "termine di cancellazione",
   },
   es: {
     providerRole: "proveedor de servicios",
@@ -56,6 +98,13 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     paymentsArea: "Pagos",
     payouts: "retiros",
     stripeOnboarding: "Configuración de Stripe",
+    requestedStatus: "solicitada",
+    scheduledStatus: "programada",
+    canceledStatus: "cancelada",
+    paidStatus: "pagada",
+    paymentPendingStatus: "pago pendiente",
+    awaitingProviderConfirmation: "en espera de confirmación del proveedor de servicios",
+    cancellationCutoff: "plazo de cancelación",
   },
   pt: {
     providerRole: "prestador de serviços",
@@ -64,6 +113,13 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     paymentsArea: "Pagamentos",
     payouts: "levantamentos",
     stripeOnboarding: "Configuração da Stripe",
+    requestedStatus: "solicitada",
+    scheduledStatus: "agendada",
+    canceledStatus: "cancelada",
+    paidStatus: "paga",
+    paymentPendingStatus: "pagamento pendente",
+    awaitingProviderConfirmation: "a aguardar confirmação do prestador de serviços",
+    cancellationCutoff: "prazo de cancelamento",
     avoidTerms: ["fornecedor"],
   },
   pl: {
@@ -73,6 +129,13 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     paymentsArea: "Płatności",
     payouts: "wypłaty",
     stripeOnboarding: "Konfiguracja Stripe",
+    requestedStatus: "oczekująca",
+    scheduledStatus: "zaplanowana",
+    canceledStatus: "anulowana",
+    paidStatus: "opłacona",
+    paymentPendingStatus: "płatność oczekująca",
+    awaitingProviderConfirmation: "oczekuje na potwierdzenie usługodawcy",
+    cancellationCutoff: "termin anulowania",
     avoidTerms: ["dostawca"],
   },
   ro: {
@@ -82,6 +145,13 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     paymentsArea: "Plăți",
     payouts: "retrageri",
     stripeOnboarding: "Configurare Stripe",
+    requestedStatus: "solicitată",
+    scheduledStatus: "programată",
+    canceledStatus: "anulată",
+    paidStatus: "plătită",
+    paymentPendingStatus: "plată în așteptare",
+    awaitingProviderConfirmation: "așteaptă confirmarea prestatorului de servicii",
+    cancellationCutoff: "termen de anulare",
     avoidTerms: ["furnizor"],
   },
   uk: {
@@ -91,6 +161,13 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     paymentsArea: "Платежі",
     payouts: "виплати",
     stripeOnboarding: "Налаштування Stripe",
+    requestedStatus: "запитано",
+    scheduledStatus: "заплановано",
+    canceledStatus: "скасовано",
+    paidStatus: "оплачено",
+    paymentPendingStatus: "очікує оплати",
+    awaitingProviderConfirmation: "очікує підтвердження постачальника послуг",
+    cancellationCutoff: "строк скасування",
     avoidTerms: ["надавач"],
   },
 };
@@ -102,7 +179,7 @@ export function getSupportTerminology(locale: string): SupportTerminology {
 export function formatSupportTerminologyForPrompt(locale: string) {
   const terms = getSupportTerminology(locale);
   const avoid = terms.avoidTerms?.length
-    ? `\n- Avoid these locale terms when referring to app UI concepts: ${terms.avoidTerms.join(
+    ? `\n- Avoid these locale terms when referring to app UI concepts or statuses: ${terms.avoidTerms.join(
         ", "
       )}.`
     : "";
@@ -112,5 +189,10 @@ export function formatSupportTerminologyForPrompt(locale: string) {
 - Use "${terms.providerProfile}" or "${terms.providerSettings}" for provider profile/settings UI.
 - Use "${terms.paymentsArea}" for the payments section.
 - Use "${terms.payouts}" for payouts.
-- Use "${terms.stripeOnboarding}" for Stripe onboarding.${avoid}`;
+- Use "${terms.stripeOnboarding}" for Stripe onboarding.
+- Use localized booking status terms: requested="${terms.requestedStatus}", scheduled="${terms.scheduledStatus}", canceled="${terms.canceledStatus}".
+- Use localized payment status terms: paid="${terms.paidStatus}", payment pending="${terms.paymentPendingStatus}".
+- Use "${terms.awaitingProviderConfirmation}" for "awaiting provider confirmation".
+- Use "${terms.cancellationCutoff}" for the cancellation cutoff/window.
+- Do not quote raw English lifecycle labels such as "Requested", "Scheduled", or "Awaiting provider confirmation" in non-English answers.${avoid}`;
 }

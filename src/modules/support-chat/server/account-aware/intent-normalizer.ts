@@ -224,7 +224,7 @@ const STATUS_FILTER_PATTERNS = {
   canceled: [
     /\bcancel(?:ed|led)\b/,
     /\bstorniert\b/,
-    /\bstornier\w+\b/,
+    /\bstornierte[nrms]?\b/,
     /\bannulees?\b/,
     /\bannullat[ei]\b/,
     /\bcancelad[ao]s?\b/,

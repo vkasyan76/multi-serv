@@ -272,6 +272,7 @@ export async function generateSupportResponse(
           threadId,
         })
       : null;
+  const topicContext = input.supportTopicContext;
 
   const accountRoute = input.accountContext
     ? routeSupportAccountAwareRequest(message, {
@@ -280,6 +281,13 @@ export async function generateSupportResponse(
       })
     : { kind: "none" as const };
   if (accountRoute.kind !== "none") {
+    const accountFollowUpTopic =
+      !supportTopic && topicContext && accountRoute.kind === "candidate_selection"
+        ? {
+            topic: topicContext.topic,
+            source: "follow_up" as const,
+          }
+        : undefined;
     const accountResponse = await buildAccountAwareServerResponse({
       route: accountRoute,
       accountContext: input.accountContext,
@@ -300,13 +308,15 @@ export async function generateSupportResponse(
       accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
       accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
       accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
-      supportTopic: supportTopic ?? undefined,
+      supportTopic: supportTopic ?? accountFollowUpTopic,
+      supportTopicContext: accountFollowUpTopic
+        ? createSupportTopicContext(accountFollowUpTopic)
+        : undefined,
       actions: accountResponse.actions,
       selectedOrderContext: accountResponse.selectedOrderContext,
     });
   }
 
-  const topicContext = input.supportTopicContext;
   const topicEscalation = detectTopicAccountEscalation({
     message,
     context: topicContext,

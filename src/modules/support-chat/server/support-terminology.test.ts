@@ -20,6 +20,9 @@ test("support terminology exists for every launched locale", () => {
     assert.ok(terms.paymentsArea, `${locale}: paymentsArea`);
     assert.ok(terms.payouts, `${locale}: payouts`);
     assert.ok(terms.stripeOnboarding, `${locale}: stripeOnboarding`);
+    assert.ok(terms.requestedStatus, `${locale}: requestedStatus`);
+    assert.ok(terms.scheduledStatus, `${locale}: scheduledStatus`);
+    assert.ok(terms.awaitingProviderConfirmation, `${locale}: awaitingProviderConfirmation`);
   }
 });
 
@@ -27,6 +30,12 @@ test("German support terminology prefers Dienstleister without banning Anbieter 
   const terms = getSupportTerminology("de");
 
   assert.equal(terms.providerRole, "Dienstleister");
+  assert.equal(terms.requestedStatus, "angefragt");
+  assert.equal(terms.scheduledStatus, "geplant");
+  assert.equal(
+    terms.awaitingProviderConfirmation,
+    "wartet auf Bestätigung durch den Dienstleister"
+  );
   assert.ok(terms.avoidTerms?.includes("Provider-Profil"));
   assert.ok(terms.avoidTerms?.includes("Provider"));
   assert.ok(terms.avoidTerms?.includes("Anbieterprofil"));
@@ -74,6 +83,13 @@ test("support prompt includes active locale terminology guidance", () => {
   assert.match(prompt.instructions, /Zahlungen/);
   assert.match(prompt.instructions, /Auszahlungen/);
   assert.match(prompt.instructions, /Stripe-Einrichtung/);
+  assert.match(prompt.instructions, /requested="angefragt"/);
+  assert.match(prompt.instructions, /scheduled="geplant"/);
+  assert.match(prompt.instructions, /wartet auf Bestätigung durch den Dienstleister/);
+  assert.match(
+    prompt.instructions,
+    /Do not quote raw English lifecycle labels such as "Requested", "Scheduled", or "Awaiting provider confirmation"/
+  );
   assert.match(prompt.instructions, /Provider-Profil/);
   assert.doesNotMatch(prompt.instructions, /Avoid.*Anbieter[,.\n]/);
 });

@@ -40,6 +40,42 @@ test("cancellation context escalates scheduled follow-ups only with personal boo
   );
 });
 
+test("cancellation context escalates explicit personal cancellation lookups without status filter", () => {
+  const context = createSupportTopicContext({
+    topic: "cancellation",
+    source: "starter_prompt",
+  });
+
+  for (const message of [
+    "Do I have bookings I can cancel?",
+    "Gibt es bei mir noch Buchungen die ich stornieren kann?",
+    "Habe ich Buchungen, die ich stornieren kann?",
+  ]) {
+    assert.deepEqual(
+      detectTopicAccountEscalation({ message, context }),
+      {
+        selectionHelper: "canCancelOrderForCurrentUser",
+      },
+      message
+    );
+  }
+});
+
+test("cancellation context keeps general help questions non-account", () => {
+  const context = createSupportTopicContext({
+    topic: "cancellation",
+    source: "starter_prompt",
+  });
+
+  for (const message of [
+    "Wie funktioniert Stornierung?",
+    "Kann man eine Buchung stornieren?",
+    "Was passiert bei einer Stornierung?",
+  ]) {
+    assert.equal(detectTopicAccountEscalation({ message, context }), null, message);
+  }
+});
+
 test("cancellation context escalates requested and canceled personal follow-ups", () => {
   const context = createSupportTopicContext({
     topic: "cancellation",

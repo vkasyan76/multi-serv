@@ -604,6 +604,18 @@ test("explicit personal cancellation lookup still routes to candidates", () => {
   }
 });
 
+test("personal cancellation lookup without status uses cancellation candidates", () => {
+  const route = routeSupportAccountAwareRequest(
+    "Gibt es bei mir noch Buchungen die ich stornieren kann?",
+  );
+
+  assert.equal(route.kind, "candidate_selection");
+  if (route.kind === "candidate_selection") {
+    assert.equal(route.selectionHelper, "canCancelOrderForCurrentUser");
+    assert.equal(route.statusFilter, undefined);
+  }
+});
+
 test("explicit account lookup phrases still route to candidates", () => {
   for (const prompt of [
     "Check payment reference pay_123456",
@@ -1162,6 +1174,37 @@ test("topic cancellation follow-up escalates to scheduled cancellation candidate
   assert.ok(response.actions?.length);
   assert.match(response.actions?.[0]?.id ?? "", /canCancelOrderForCurrentUser/);
   assert.doesNotMatch(response.assistantMessage, /недостатньо інформації/i);
+  assert.ok(
+    db.calls.some(
+      (call) => call.method === "find" && call.collection === "orders",
+    ),
+  );
+});
+
+test("topic cancellation follow-up escalates explicit personal cancellation lookup without status filter", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "Gibt es bei mir noch Buchungen die ich stornieren kann?",
+    threadId: THREAD_ID,
+    locale: "de",
+    accountContext,
+    supportTopicContext: createSupportTopicContext({
+      topic: "cancellation",
+      source: "starter_prompt",
+    }),
+  });
+
+  assert.equal(response.disposition, "uncertain");
+  assert.equal(
+    response.accountHelperMetadata?.helper,
+    "getSupportOrderCandidatesForCurrentUser",
+  );
+  assert.equal(response.supportTopic?.topic, "cancellation");
+  assert.ok(response.actions?.length);
+  assert.match(response.actions?.[0]?.id ?? "", /canCancelOrderForCurrentUser/);
   assert.ok(
     db.calls.some(
       (call) => call.method === "find" && call.collection === "orders",
