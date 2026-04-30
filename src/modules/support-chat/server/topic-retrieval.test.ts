@@ -18,6 +18,8 @@ import {
   topicRetrievalQuery,
 } from "@/modules/support-chat/server/topic-retrieval";
 import {
+  createSupportTopicContext,
+  isSupportTopicContextFollowUp,
   detectSupportChatStarterTopic,
   type SupportChatTopic,
 } from "@/modules/support-chat/server/topics";
@@ -131,4 +133,58 @@ test("topic bias leaves matches unchanged without a topic", async () => {
   });
 
   assert.deepEqual(applyTopicRetrievalBias({ matches }), matches);
+});
+
+test("provider follow-up context reuses provider-onboarding retrieval bias", async () => {
+  const context = createSupportTopicContext({
+    topic: "provider_onboarding",
+    source: "starter_prompt",
+  });
+  const message = "what next?";
+  assert.equal(isSupportTopicContextFollowUp({ message, context }), true);
+
+  const topic = { topic: context.topic, source: "follow_up" as const };
+  const matches = applyTopicRetrievalBias({
+    matches: await retrieveSupportKnowledge({
+      query: topicRetrievalQuery({ message, topic }),
+      locale: "en",
+      limit: 10,
+    }),
+    topic,
+  });
+
+  assertPreferredInTop({ locale: "en", key: "provider", matches, top: 3 });
+});
+
+test("Ukrainian cancellation term reuses cancellation retrieval bias only with context", async () => {
+  const message = "скасувати";
+  const context = createSupportTopicContext({
+    topic: "cancellation",
+    source: "starter_prompt",
+  });
+  assert.equal(isSupportTopicContextFollowUp({ message, context }), true);
+
+  const topic = { topic: context.topic, source: "follow_up" as const };
+  const matches = applyTopicRetrievalBias({
+    matches: await retrieveSupportKnowledge({
+      query: topicRetrievalQuery({ message, topic }),
+      locale: "uk",
+      limit: 10,
+    }),
+    topic,
+  });
+  assertPreferredInTop({ locale: "uk", key: "cancel", matches, top: 3 });
+
+  const untopicizedMatches = await retrieveSupportKnowledge({
+    query: topicRetrievalQuery({ message }),
+    locale: "uk",
+    limit: 10,
+  });
+
+  assert.equal(
+    topSectionIds(untopicizedMatches, 3).some((sectionId) =>
+      new Set(getPreferredTopicSectionIds("cancellation")).has(sectionId)
+    ),
+    false
+  );
 });

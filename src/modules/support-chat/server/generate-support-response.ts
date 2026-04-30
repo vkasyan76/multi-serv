@@ -15,7 +15,10 @@ import {
 } from "@/modules/support-chat/server/retrieve-knowledge";
 import { getSupportChatCopy } from "@/modules/support-chat/server/support-chat-copy";
 import {
+  createSupportTopicContext,
   detectSupportChatStarterTopic,
+  isSupportTopicContextFollowUp,
+  type SupportTopicContext,
   type SupportChatTopicDetection,
 } from "@/modules/support-chat/server/topics";
 import {
@@ -60,6 +63,7 @@ export type GenerateSupportResponseInput = {
   locale: AppLang;
   accountContext?: Pick<TRPCContext, "db" | "userId">;
   selectedOrderContext?: Pick<SupportSelectedOrderContext, "token">;
+  supportTopicContext?: SupportTopicContext;
 };
 
 export type GenerateSupportResponseResult = {
@@ -81,6 +85,7 @@ export type GenerateSupportResponseResult = {
   accountRewriteRejectedReason?: SupportAccountRewriteRejectedReason;
   accountRewriteFallbackUsed?: boolean;
   supportTopic?: SupportChatTopicDetection;
+  supportTopicContext?: SupportTopicContext;
   actions?: SupportChatAction[];
   selectedOrderContext?: SupportSelectedOrderContext;
 };
@@ -298,16 +303,36 @@ export async function generateSupportResponse(
     });
   }
 
+  const topicContext = input.supportTopicContext;
+  const activeSupportTopic =
+    supportTopic ??
+    (topicContext &&
+    isSupportTopicContextFollowUp({
+      message,
+      context: topicContext,
+    })
+      ? {
+          topic: topicContext.topic,
+          source: "follow_up" as const,
+        }
+      : null);
+  const refreshedTopicContext = activeSupportTopic
+    ? createSupportTopicContext({
+        topic: activeSupportTopic.topic,
+        source: activeSupportTopic.source,
+      })
+    : undefined;
+
   const isUnsupportedAccountRequest = hasAccountSpecificRequest(message);
   const isAdversarialUngroundedRequest =
     hasAdversarialUngroundedRequest(message);
   const isThinPolicyRequest = hasThinPolicyRequest(message);
   const matches = applyTopicRetrievalBias({
     matches: await retrieveSupportKnowledge({
-      query: topicRetrievalQuery({ message, topic: supportTopic }),
+      query: topicRetrievalQuery({ message, topic: activeSupportTopic }),
       locale: input.locale,
     }),
-    topic: supportTopic,
+    topic: activeSupportTopic,
   });
   const sources = matches.map(toSupportChatSource);
 
@@ -318,7 +343,8 @@ export async function generateSupportResponse(
       sources,
       disposition: "unsupported_account_question",
       responseOrigin: "server",
-      supportTopic: supportTopic ?? undefined,
+      supportTopic: activeSupportTopic ?? undefined,
+      supportTopicContext: refreshedTopicContext,
     });
   }
 
@@ -329,7 +355,8 @@ export async function generateSupportResponse(
       sources,
       disposition: "uncertain",
       responseOrigin: "server",
-      supportTopic: supportTopic ?? undefined,
+      supportTopic: activeSupportTopic ?? undefined,
+      supportTopicContext: refreshedTopicContext,
     });
   }
 
@@ -340,7 +367,8 @@ export async function generateSupportResponse(
       sources,
       disposition: "uncertain",
       responseOrigin: "server",
-      supportTopic: supportTopic ?? undefined,
+      supportTopic: activeSupportTopic ?? undefined,
+      supportTopicContext: refreshedTopicContext,
     });
   }
 
@@ -366,7 +394,8 @@ export async function generateSupportResponse(
       sources,
       disposition: "escalate",
       responseOrigin: "server",
-      supportTopic: supportTopic ?? undefined,
+      supportTopic: activeSupportTopic ?? undefined,
+      supportTopicContext: refreshedTopicContext,
     });
   }
 
@@ -382,6 +411,7 @@ export async function generateSupportResponse(
       modelVersion: modelResult.modelVersion,
       requestId: modelResult.requestId,
     },
-    supportTopic: supportTopic ?? undefined,
+    supportTopic: activeSupportTopic ?? undefined,
+    supportTopicContext: refreshedTopicContext,
   });
 }

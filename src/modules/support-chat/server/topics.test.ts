@@ -12,7 +12,10 @@ import plSupportChat from "@/i18n/messages/pl/supportChat.json";
 import roSupportChat from "@/i18n/messages/ro/supportChat.json";
 import ukSupportChat from "@/i18n/messages/uk/supportChat.json";
 import {
+  createSupportTopicContext,
   detectSupportChatStarterTopic,
+  isSupportTopicContextFollowUp,
+  isSupportTopicContextValid,
   type SupportChatTopic,
 } from "./topics";
 
@@ -131,4 +134,94 @@ test("does not fuzzy-match similar free-form topic questions", () => {
       message
     );
   }
+});
+
+test("creates valid topic context with continuation terms", () => {
+  const now = new Date("2026-04-30T12:00:00.000Z");
+  const context = createSupportTopicContext({
+    topic: "provider_onboarding",
+    source: "starter_prompt",
+    now,
+  });
+
+  assert.equal(context.type, "support_topic");
+  assert.equal(context.topic, "provider_onboarding");
+  assert.equal(context.source, "starter_prompt");
+  assert.equal(context.selectedAt, now.toISOString());
+  assert.ok(context.continuationTerms?.includes("provider"));
+  assert.ok(context.continuationTerms?.includes("stripe"));
+  assert.equal(
+    isSupportTopicContextValid(
+      context,
+      new Date("2026-04-30T12:05:00.000Z")
+    ),
+    true
+  );
+});
+
+test("expired topic context is invalid", () => {
+  const context = createSupportTopicContext({
+    topic: "booking",
+    source: "starter_prompt",
+    now: new Date("2026-04-30T12:00:00.000Z"),
+  });
+
+  assert.equal(
+    isSupportTopicContextValid(
+      context,
+      new Date("2026-04-30T12:31:00.000Z")
+    ),
+    false
+  );
+});
+
+test("generic follow-up phrases reuse valid topic context", () => {
+  const context = createSupportTopicContext({
+    topic: "provider_onboarding",
+    source: "starter_prompt",
+  });
+
+  for (const message of ["what next?", "how?", "where?", "tell me more"]) {
+    assert.equal(
+      isSupportTopicContextFollowUp({ message, context }),
+      true,
+      message
+    );
+  }
+});
+
+test("topic continuation terms only match the active topic", () => {
+  const cancellation = createSupportTopicContext({
+    topic: "cancellation",
+    source: "starter_prompt",
+  });
+  const provider = createSupportTopicContext({
+    topic: "provider_onboarding",
+    source: "starter_prompt",
+  });
+
+  assert.equal(
+    isSupportTopicContextFollowUp({ message: "скасувати", context: cancellation }),
+    true
+  );
+  assert.equal(
+    isSupportTopicContextFollowUp({ message: "скасувати", context: provider }),
+    false
+  );
+});
+
+test("long unrelated messages do not reuse topic context", () => {
+  const context = createSupportTopicContext({
+    topic: "payment",
+    source: "starter_prompt",
+  });
+
+  assert.equal(
+    isSupportTopicContextFollowUp({
+      message:
+        "I want to ask a totally different question about my marketplace account settings",
+      context,
+    }),
+    false
+  );
 });

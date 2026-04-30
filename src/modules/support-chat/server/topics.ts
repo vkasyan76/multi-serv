@@ -19,7 +19,16 @@ export type SupportChatTopic =
 
 export type SupportChatTopicDetection = {
   topic: SupportChatTopic;
-  source: "starter_prompt";
+  source: "starter_prompt" | "follow_up";
+};
+
+export type SupportTopicContext = {
+  type: "support_topic";
+  topic: SupportChatTopic;
+  source: SupportChatTopicDetection["source"];
+  selectedAt: string;
+  expiresAt: string;
+  continuationTerms?: string[];
 };
 
 type SupportChatStarterPromptKey =
@@ -57,8 +66,197 @@ const STARTER_PROMPT_TOPICS: Record<
   provider: "provider_onboarding",
 };
 
+const TOPIC_CONTEXT_TTL_MS = 30 * 60 * 1000;
+const MAX_FOLLOW_UP_CHARS = 60;
+const MAX_FOLLOW_UP_WORDS = 5;
+
+const GENERIC_FOLLOW_UP_PHRASES = [
+  "what next",
+  "what now",
+  "what do i do next",
+  "how",
+  "how do i do that",
+  "where",
+  "where can i find it",
+  "tell me more",
+  "continue",
+  "que sigue",
+  "qué sigue",
+  "como",
+  "cómo",
+  "donde",
+  "dónde",
+  "cuentame mas",
+  "cuéntame más",
+  "ensuite",
+  "comment",
+  "ou",
+  "où",
+  "dites m en plus",
+  "was jetzt",
+  "wie",
+  "wo",
+  "mehr",
+  "cosa devo fare",
+  "come",
+  "dove",
+  "dimmi di piu",
+  "dimmi di più",
+  "o que segue",
+  "como",
+  "onde",
+  "conte me mais",
+  "co dalej",
+  "jak",
+  "gdzie",
+  "powiedz wiecej",
+  "powiedz więcej",
+  "ce urmeaza",
+  "ce urmează",
+  "cum",
+  "unde",
+  "spune mi mai mult",
+  "що далі",
+  "як",
+  "де",
+  "розкажи більше",
+] as const;
+
+const CONTINUATION_TERMS: Record<SupportChatTopic, readonly string[]> = {
+  booking: [
+    "booking",
+    "reservation",
+    "order",
+    "slot",
+    "book",
+    "reserva",
+    "pedido",
+    "reservacion",
+    "réservation",
+    "commande",
+    "buchung",
+    "bestellung",
+    "prenotazione",
+    "ordine",
+    "rezerwacja",
+    "zamowienie",
+    "zamówienie",
+    "rezervare",
+    "comanda",
+    "бронювання",
+    "замовлення",
+  ],
+  payment: [
+    "payment",
+    "invoice",
+    "paid",
+    "pay",
+    "pago",
+    "factura",
+    "pagado",
+    "paiement",
+    "facture",
+    "payé",
+    "zahlung",
+    "rechnung",
+    "bezahlt",
+    "pagamento",
+    "fattura",
+    "pagato",
+    "platnosc",
+    "płatność",
+    "faktura",
+    "zaplacone",
+    "zapłacone",
+    "plata",
+    "plată",
+    "achitat",
+    "оплата",
+    "рахунок",
+    "сплачено",
+  ],
+  cancellation: [
+    "cancel",
+    "cancellation",
+    "cancelar",
+    "cancelacion",
+    "cancelación",
+    "annuler",
+    "annulation",
+    "stornieren",
+    "stornierung",
+    "annullare",
+    "annullamento",
+    "anular",
+    "cancelar",
+    "anulowac",
+    "anulować",
+    "anulowanie",
+    "anuleaza",
+    "anulează",
+    "anulare",
+    "скасувати",
+    "скасування",
+  ],
+  provider_onboarding: [
+    "provider",
+    "profile",
+    "stripe",
+    "availability",
+    "dashboard",
+    "proveedor",
+    "perfil",
+    "disponibilidad",
+    "panel",
+    "prestataire",
+    "profil",
+    "disponibilité",
+    "tableau",
+    "anbieter",
+    "profil",
+    "verfügbarkeit",
+    "dashboard",
+    "fornitore",
+    "professionista",
+    "profilo",
+    "disponibilita",
+    "disponibilità",
+    "fornecedor",
+    "perfil",
+    "disponibilidade",
+    "dostawca",
+    "profil",
+    "dostepnosc",
+    "dostępność",
+    "furnizor",
+    "profil",
+    "disponibilitate",
+    "постачальник",
+    "профіль",
+    "доступність",
+    "панель",
+  ],
+};
+
 function normalizeStarterPrompt(value: string) {
   return value.normalize("NFKC").replace(/\s+/g, " ").trim();
+}
+
+function normalizeFollowUpText(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isShortFollowUpMessage(message: string) {
+  const normalized = normalizeFollowUpText(message);
+  if (!normalized || normalized.length > MAX_FOLLOW_UP_CHARS) return false;
+
+  return normalized.split(/\s+/g).length <= MAX_FOLLOW_UP_WORDS;
 }
 
 function starterPromptEntries(locale: AppLang) {
@@ -87,4 +285,56 @@ export function detectSupportChatStarterTopic(input: {
   );
 
   return match ? { topic: match.topic, source: "starter_prompt" } : null;
+}
+
+export function createSupportTopicContext(input: {
+  topic: SupportChatTopic;
+  source: SupportChatTopicDetection["source"];
+  now?: Date;
+}): SupportTopicContext {
+  const now = input.now ?? new Date();
+
+  return {
+    type: "support_topic",
+    topic: input.topic,
+    source: input.source,
+    selectedAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + TOPIC_CONTEXT_TTL_MS).toISOString(),
+    continuationTerms: [...CONTINUATION_TERMS[input.topic]],
+  };
+}
+
+export function isSupportTopicContextValid(
+  context: SupportTopicContext | null | undefined,
+  now: Date = new Date()
+): context is SupportTopicContext {
+  if (!context || context.type !== "support_topic") return false;
+  if (!context.topic || !context.expiresAt) return false;
+  if (!(context.topic in CONTINUATION_TERMS)) return false;
+
+  return new Date(context.expiresAt).getTime() > now.getTime();
+}
+
+export function isSupportTopicContextFollowUp(input: {
+  message: string;
+  context?: SupportTopicContext | null;
+  now?: Date;
+}) {
+  if (!isSupportTopicContextValid(input.context, input.now)) return false;
+  if (!isShortFollowUpMessage(input.message)) return false;
+
+  const normalized = normalizeFollowUpText(input.message);
+  if (!normalized) return false;
+
+  if (
+    GENERIC_FOLLOW_UP_PHRASES.some(
+      (phrase) => normalizeFollowUpText(phrase) === normalized
+    )
+  ) {
+    return true;
+  }
+
+  return CONTINUATION_TERMS[input.context.topic].some(
+    (term) => normalizeFollowUpText(term) === normalized
+  );
 }

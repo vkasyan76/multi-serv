@@ -17,6 +17,7 @@ import {
   type SupportChatAction,
   type SupportChatMessage,
   type SupportSelectedOrderContext,
+  type SupportTopicContext,
 } from "@/modules/support-chat/ui/types";
 
 type SupportChatContextValue = {
@@ -43,6 +44,11 @@ function createMessageId() {
   );
 }
 
+function isTopicContextFresh(context: SupportTopicContext | null) {
+  if (!context?.expiresAt) return false;
+  return new Date(context.expiresAt).getTime() > Date.now();
+}
+
 export function SupportChatProvider({
   lang,
   initialOpen = false,
@@ -63,6 +69,8 @@ export function SupportChatProvider({
   const [messages, setMessages] = useState<SupportChatMessage[]>([]);
   const [selectedOrderContext, setSelectedOrderContext] =
     useState<SupportSelectedOrderContext | null>(null);
+  const [supportTopicContext, setSupportTopicContext] =
+    useState<SupportTopicContext | null>(null);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,17 +103,23 @@ export function SupportChatProvider({
       }
 
       try {
+        const freshTopicContext =
+          supportTopicContext && isTopicContextFresh(supportTopicContext)
+            ? supportTopicContext
+            : undefined;
         const response = await sendSupportMessage.mutateAsync({
           message,
           threadId,
           locale: lang,
           selectedOrderContext: selectedOrderContext ?? undefined,
+          supportTopicContext: freshTopicContext ?? undefined,
         });
 
         setThreadId(response.threadId);
         if (response.selectedOrderContext) {
           setSelectedOrderContext(response.selectedOrderContext);
         }
+        setSupportTopicContext(response.supportTopicContext ?? null);
         setMessages((current) => [
           ...current,
           {
@@ -131,7 +145,15 @@ export function SupportChatProvider({
         setIsSending(false);
       }
     },
-    [input, lang, selectedOrderContext, sendSupportMessage, t, threadId]
+    [
+      input,
+      lang,
+      selectedOrderContext,
+      sendSupportMessage,
+      supportTopicContext,
+      t,
+      threadId,
+    ]
   );
 
   const sendAction = useCallback(
@@ -169,6 +191,7 @@ export function SupportChatProvider({
         if (response.selectedOrderContext) {
           setSelectedOrderContext(response.selectedOrderContext);
         }
+        setSupportTopicContext(response.supportTopicContext ?? null);
         setMessages((current) => [
           ...current,
           {

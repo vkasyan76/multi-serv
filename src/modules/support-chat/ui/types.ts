@@ -19,6 +19,15 @@ export type SupportSelectedOrderContext = {
   description?: string;
 };
 
+export type SupportTopicContext = {
+  type: "support_topic";
+  topic: "booking" | "payment" | "cancellation" | "provider_onboarding";
+  source: "starter_prompt" | "follow_up";
+  selectedAt: string;
+  expiresAt: string;
+  continuationTerms?: string[];
+};
+
 export type SupportChatMessage = {
   id: string;
   role: "user" | "assistant";
