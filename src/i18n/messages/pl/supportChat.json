@@ -13,13 +13,13 @@
     "booking": "Pomoc z rezerwacją",
     "payment": "Pytanie o płatność",
     "cancel": "Anuluj rezerwację",
-    "provider": "Zostań dostawcą"
+    "provider": "Zostań usługodawcą"
   },
   "suggestionPrompts": {
     "booking": "Potrzebuję pomocy z rezerwacją.",
     "payment": "Mam pytanie dotyczące płatności.",
     "cancel": "Potrzebuję pomocy przy anulowaniu rezerwacji.",
-    "provider": "Chcę zostać dostawcą."
+    "provider": "Chcę zostać usługodawcą."
   },
   "disclaimer": "Wsparcie AI może popełniać błędy. Nie ma dostępu do bieżących danych zamówień, płatności ani kont.",
   "contactSupport": "Skontaktuj się ze wsparciem",

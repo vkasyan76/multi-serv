@@ -13,13 +13,13 @@
     "booking": "Ajuda com reservas",
     "payment": "Pergunta de pagamento",
     "cancel": "Cancelar uma reserva",
-    "provider": "Tornar-se fornecedor"
+    "provider": "Tornar-se prestador de serviços"
   },
   "suggestionPrompts": {
     "booking": "Preciso de ajuda com uma reserva.",
     "payment": "Tenho uma pergunta sobre um pagamento.",
     "cancel": "Preciso de ajuda para cancelar uma reserva.",
-    "provider": "Quero tornar-me fornecedor."
+    "provider": "Quero tornar-me prestador de serviços."
   },
   "disclaimer": "O suporte com IA pode cometer erros. Não pode aceder a dados em tempo real de encomendas, pagamentos ou contas.",
   "contactSupport": "Contactar suporte",
