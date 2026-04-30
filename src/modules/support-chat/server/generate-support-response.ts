@@ -19,6 +19,10 @@ import {
   type SupportChatTopicDetection,
 } from "@/modules/support-chat/server/topics";
 import {
+  applyTopicRetrievalBias,
+  topicRetrievalQuery,
+} from "@/modules/support-chat/server/topic-retrieval";
+import {
   buildAccountAwareServerResponse,
   type SupportAccountHelperMetadata,
   type SupportChatAction,
@@ -298,9 +302,12 @@ export async function generateSupportResponse(
   const isAdversarialUngroundedRequest =
     hasAdversarialUngroundedRequest(message);
   const isThinPolicyRequest = hasThinPolicyRequest(message);
-  const matches = await retrieveSupportKnowledge({
-    query: message,
-    locale: input.locale,
+  const matches = applyTopicRetrievalBias({
+    matches: await retrieveSupportKnowledge({
+      query: topicRetrievalQuery({ message, topic: supportTopic }),
+      locale: input.locale,
+    }),
+    topic: supportTopic,
   });
   const sources = matches.map(toSupportChatSource);
 
