@@ -1,0 +1,200 @@
+import "server-only";
+
+import type { AccountCandidateSelectionHelper } from "@/modules/support-chat/server/account-aware/action-tokens";
+import type { SupportOrderCandidateStatusFilter } from "@/modules/support-chat/server/account-aware/types";
+import type { SupportTopicContext } from "@/modules/support-chat/server/topics";
+import { isSupportTopicContextValid } from "@/modules/support-chat/server/topics";
+
+export type TopicAccountEscalation = {
+  statusFilter: SupportOrderCandidateStatusFilter;
+  selectionHelper: AccountCandidateSelectionHelper;
+};
+
+const MAX_ESCALATION_CHARS = 80;
+const MAX_ESCALATION_WORDS = 6;
+
+const STATUS_PATTERNS = {
+  requested: [
+    /\brequested\b/u,
+    /\bawaiting\s+(provider\s+)?confirmation\b/u,
+    /\bsolicitad[ao]\b/u,
+    /\bpendiente\s+de\s+confirmacion\b/u,
+    /\bdemandee?\b/u,
+    /\ben\s+attente\s+de\s+confirmation\b/u,
+    /\bangefragt\b/u,
+    /\bwartet\s+auf\s+bestatigung\b/u,
+    /\brichiesta\b/u,
+    /\bin\s+attesa\s+di\s+conferma\b/u,
+    /\baguardando\s+confirmacao\b/u,
+    /\boczekuje\s+na\s+potwierdzenie\b/u,
+    /\bsolicitata\b/u,
+    /\bin\s+asteptarea\s+confirmarii\b/u,
+    /очікує\s+підтвердження/u,
+    /запит/u,
+  ],
+  scheduled: [
+    /\bscheduled\b/u,
+    /\bconfirmed\b/u,
+    /\balready\s+scheduled\b/u,
+    /\bprogramad[ao]\b/u,
+    /\bconfirmad[ao]\b/u,
+    /\bya\s+programad[ao]\b/u,
+    /\bplanifiee?\b/u,
+    /\bconfirmee?\b/u,
+    /\bgeplant\b/u,
+    /\bbestatigt\b/u,
+    /\bprogrammata\b/u,
+    /\bconfermata\b/u,
+    /\bagendad[ao]\b/u,
+    /\bzaplanowan[ae]\b/u,
+    /\bpotwierdzon[ae]\b/u,
+    /\bprogramata\b/u,
+    /\bconfirmata\b/u,
+    /запланован[ае]/u,
+    /підтверджен[ае]/u,
+    /вже\s+запланован[ае]/u,
+  ],
+  canceled: [
+    /\bcancell?ed\b/u,
+    /\bcancelad[ao]\b/u,
+    /\bannulee?\b/u,
+    /\bstorniert\b/u,
+    /\bannullata\b/u,
+    /\banulad[ao]\b/u,
+    /\banulowan[ae]\b/u,
+    /\banulata\b/u,
+    /скасован[ае]/u,
+  ],
+  paid: [
+    /\bpaid\b/u,
+    /\bpagad[ao]\b/u,
+    /\bpaye[e]?\b/u,
+    /\bbezahlt\b/u,
+    /\bpagato\b/u,
+    /\bzaplacon[ey]\b/u,
+    /\bachitat[ae]?\b/u,
+    /сплачен[ое]/u,
+  ],
+  paymentPending: [
+    /\bpending\b/u,
+    /\bunpaid\b/u,
+    /\bdue\b/u,
+    /\bpendiente\b/u,
+    /\bsin\s+pagar\b/u,
+    /\bimpagado\b/u,
+    /\ben\s+attente\b/u,
+    /\bnon\s+paye\b/u,
+    /\bausstehend\b/u,
+    /\bunbezahlt\b/u,
+    /\bin\s+attesa\b/u,
+    /\bnon\s+pagato\b/u,
+    /\bpendente\b/u,
+    /\bnao\s+pago\b/u,
+    /\boczekuje\b/u,
+    /\bniezaplacone\b/u,
+    /неоплачен[ое]/u,
+    /очікує\s+оплати/u,
+  ],
+  paymentNotDue: [
+    /\bnot\s+due\b/u,
+    /\bno\s+vence\b/u,
+    /\bpas\s+encore\s+du\b/u,
+    /\bnoch\s+nicht\s+fallig\b/u,
+    /\bnon\s+ancora\s+dovuto\b/u,
+    /\bainda\s+nao\s+vence\b/u,
+    /\bjeszcze\s+nie\s+wymagalne\b/u,
+    /\bnu\s+este\s+inca\s+scadent\b/u,
+    /ще\s+не\s+настав/u,
+  ],
+} as const;
+
+function normalizeEscalationText(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasAny(patterns: readonly RegExp[], value: string) {
+  return patterns.some((pattern) => pattern.test(value));
+}
+
+function isShortEscalationMessage(message: string) {
+  const normalized = normalizeEscalationText(message);
+  if (!normalized || normalized.length > MAX_ESCALATION_CHARS) return false;
+  return normalized.split(/\s+/g).length <= MAX_ESCALATION_WORDS;
+}
+
+export function detectTopicAccountEscalation(input: {
+  message: string;
+  context?: SupportTopicContext | null;
+}): TopicAccountEscalation | null {
+  if (!isSupportTopicContextValid(input.context)) return null;
+  if (!isShortEscalationMessage(input.message)) return null;
+
+  const text = normalizeEscalationText(input.message);
+
+  if (input.context.topic === "cancellation") {
+    if (hasAny(STATUS_PATTERNS.scheduled, text)) {
+      return {
+        statusFilter: "scheduled",
+        selectionHelper: "canCancelOrderForCurrentUser",
+      };
+    }
+    if (hasAny(STATUS_PATTERNS.requested, text)) {
+      return {
+        statusFilter: "requested",
+        selectionHelper: "canCancelOrderForCurrentUser",
+      };
+    }
+    if (hasAny(STATUS_PATTERNS.canceled, text)) {
+      return {
+        statusFilter: "canceled",
+        selectionHelper: "getOrderStatusForCurrentUser",
+      };
+    }
+    return null;
+  }
+
+  if (input.context.topic === "payment") {
+    if (hasAny(STATUS_PATTERNS.paid, text)) {
+      return {
+        statusFilter: "paid",
+        selectionHelper: "getPaymentStatusForCurrentUser",
+      };
+    }
+    if (hasAny(STATUS_PATTERNS.paymentNotDue, text)) {
+      return {
+        statusFilter: "payment_not_due",
+        selectionHelper: "getPaymentStatusForCurrentUser",
+      };
+    }
+    if (hasAny(STATUS_PATTERNS.paymentPending, text)) {
+      return {
+        statusFilter: "payment_pending",
+        selectionHelper: "getPaymentStatusForCurrentUser",
+      };
+    }
+    return null;
+  }
+
+  if (input.context.topic === "booking") {
+    if (hasAny(STATUS_PATTERNS.scheduled, text)) {
+      return {
+        statusFilter: "scheduled",
+        selectionHelper: "getOrderStatusForCurrentUser",
+      };
+    }
+    if (hasAny(STATUS_PATTERNS.requested, text)) {
+      return {
+        statusFilter: "requested",
+        selectionHelper: "getOrderStatusForCurrentUser",
+      };
+    }
+  }
+
+  return null;
+}

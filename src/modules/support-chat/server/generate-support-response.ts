@@ -25,6 +25,7 @@ import {
   applyTopicRetrievalBias,
   topicRetrievalQuery,
 } from "@/modules/support-chat/server/topic-retrieval";
+import { detectTopicAccountEscalation } from "@/modules/support-chat/server/topic-account-escalation";
 import {
   buildAccountAwareServerResponse,
   type SupportAccountHelperMetadata,
@@ -304,6 +305,49 @@ export async function generateSupportResponse(
   }
 
   const topicContext = input.supportTopicContext;
+  const topicEscalation = detectTopicAccountEscalation({
+    message,
+    context: topicContext,
+  });
+
+  if (topicEscalation && input.accountContext && topicContext) {
+    const accountResponse = await buildAccountAwareServerResponse({
+      route: {
+        kind: "candidate_selection",
+        selectionHelper: topicEscalation.selectionHelper,
+        statusFilter: topicEscalation.statusFilter,
+      },
+      accountContext: input.accountContext,
+      locale: input.locale,
+      threadId,
+    });
+
+    return supportResponse({
+      threadId,
+      assistantMessage: accountResponse.assistantMessage,
+      sources: [],
+      disposition: accountResponse.disposition,
+      responseOrigin: "server",
+      needsHumanSupport: accountResponse.needsHumanSupport,
+      accountHelperMetadata: accountResponse.accountHelperMetadata,
+      accountAnswerMode: accountResponse.accountAnswerMode,
+      accountRewriteModel: accountResponse.accountRewriteModel,
+      accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
+      accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
+      accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
+      supportTopic: {
+        topic: topicContext.topic,
+        source: "follow_up",
+      },
+      supportTopicContext: createSupportTopicContext({
+        topic: topicContext.topic,
+        source: "follow_up",
+      }),
+      actions: accountResponse.actions,
+      selectedOrderContext: accountResponse.selectedOrderContext,
+    });
+  }
+
   const activeSupportTopic =
     supportTopic ??
     (topicContext &&

@@ -13,6 +13,7 @@ import {
   createSelectedOrderContextToken,
   verifySelectedOrderContextToken,
 } from "./action-tokens";
+import { createSupportTopicContext } from "../topics";
 
 process.env.PAYLOAD_SECRET ??= "support-chat-action-test-secret";
 
@@ -1083,6 +1084,40 @@ test("candidate action click validates token and calls exact helper", async () =
       (call) => call.method === "findByID" && call.collection === "orders",
     ),
     true,
+  );
+});
+
+test("topic cancellation follow-up escalates to scheduled cancellation candidates", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "вже заплановане",
+    threadId: THREAD_ID,
+    locale: "uk",
+    accountContext,
+    supportTopicContext: createSupportTopicContext({
+      topic: "cancellation",
+      source: "starter_prompt",
+    }),
+  });
+
+  assert.equal(response.disposition, "uncertain");
+  assert.equal(
+    response.accountHelperMetadata?.helper,
+    "getSupportOrderCandidatesForCurrentUser",
+  );
+  assert.equal(response.supportTopic?.topic, "cancellation");
+  assert.equal(response.supportTopic?.source, "follow_up");
+  assert.ok(response.supportTopicContext);
+  assert.ok(response.actions?.length);
+  assert.match(response.actions?.[0]?.id ?? "", /canCancelOrderForCurrentUser/);
+  assert.doesNotMatch(response.assistantMessage, /недостатньо інформації/i);
+  assert.ok(
+    db.calls.some(
+      (call) => call.method === "find" && call.collection === "orders",
+    ),
   );
 });
 
