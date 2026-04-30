@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { AppLang } from "@/lib/i18n/app-lang";
+import type { SupportAccountCancellationBlockReason } from "./types";
 
 type AccountRole = "customer" | "tenant";
 type ServiceStatusCopyKey =
@@ -81,6 +82,7 @@ export type AccountAwareLocalizedCopy = {
   cancellation: {
     eligible: string;
     notEligible: string;
+    blockReasons: Record<SupportAccountCancellationBlockReason, string>;
   };
   overview: {
     none: string;
@@ -272,6 +274,28 @@ const EN: AccountAwareLocalizedCopy = {
       "This order currently appears eligible for in-app cancellation. Please use the cancellation option in your Orders page.",
     notEligible:
       "This order does not currently appear eligible for in-app cancellation. Please use your Orders page or contact support if you need help.",
+    blockReasons: {
+      already_canceled:
+        "This order is already canceled, so it cannot be canceled again in the app.",
+      order_paid:
+        "This order is already marked paid, so in-app cancellation is currently blocked.",
+      not_slot_order:
+        "This order is not in the booking flow that supports in-app cancellation.",
+      wrong_service_status:
+        "This order is not currently in a booking status that supports in-app cancellation.",
+      invoice_exists:
+        "An invoice already exists for this order, so in-app cancellation is currently blocked.",
+      missing_slots:
+        "I cannot confirm the booking slots for this order from the support-safe data, so I cannot mark it eligible for in-app cancellation.",
+      invalid_slot_dates:
+        "The booking time for this order is not available in a support-safe form, so I cannot confirm cancellation eligibility.",
+      cutoff_passed:
+        "The cancellation window for this booking has already passed, so in-app cancellation is currently blocked.",
+      slot_paid:
+        "At least one booking slot is already marked paid, so in-app cancellation is currently blocked.",
+      unknown:
+        "I cannot identify the exact blocking reason from the support-safe data. Please check your Orders page for the available next steps.",
+    },
   },
   overview: {
     none: "I could not find recent support-safe orders to summarize. This is not a full account or payment history check.",
@@ -479,6 +503,28 @@ const DE: AccountAwareLocalizedCopy = {
       "Diese Bestellung scheint derzeit für eine In-App-Stornierung berechtigt zu sein. Bitte nutze die Stornierungsoption auf deiner Bestellseite.",
     notEligible:
       "Diese Bestellung scheint derzeit nicht für eine In-App-Stornierung berechtigt zu sein. Nutze bitte deine Bestellseite oder kontaktiere den Support, wenn du Hilfe brauchst.",
+    blockReasons: {
+      already_canceled:
+        "Diese Bestellung ist bereits storniert und kann deshalb nicht erneut in der App storniert werden.",
+      order_paid:
+        "Diese Bestellung ist bereits als bezahlt markiert. Deshalb ist die In-App-Stornierung derzeit blockiert.",
+      not_slot_order:
+        "Diese Bestellung gehört nicht zu dem Buchungsablauf, der eine In-App-Stornierung unterstützt.",
+      wrong_service_status:
+        "Diese Bestellung ist derzeit nicht in einem Buchungsstatus, der eine In-App-Stornierung unterstützt.",
+      invoice_exists:
+        "Für diese Bestellung existiert bereits eine Rechnung. Deshalb ist die In-App-Stornierung derzeit blockiert.",
+      missing_slots:
+        "Ich kann die Buchungszeiten dieser Bestellung aus den support-sicheren Daten nicht bestätigen und sie deshalb nicht als stornierbar einstufen.",
+      invalid_slot_dates:
+        "Die Buchungszeit dieser Bestellung ist nicht in einer support-sicheren Form verfügbar. Deshalb kann ich die Stornierbarkeit nicht sicher bestätigen.",
+      cutoff_passed:
+        "Das Stornierungsfenster für diese Buchung ist bereits abgelaufen. Deshalb ist die In-App-Stornierung derzeit blockiert.",
+      slot_paid:
+        "Mindestens ein Buchungszeitraum ist bereits als bezahlt markiert. Deshalb ist die In-App-Stornierung derzeit blockiert.",
+      unknown:
+        "Ich kann den genauen Blockierungsgrund aus den support-sicheren Daten nicht sicher erkennen. Prüfe bitte deine Bestellseite für die verfügbaren nächsten Schritte.",
+    },
   },
   overview: {
     none: "Ich konnte keine aktuellen support-sicheren Bestellungen zum Zusammenfassen finden. Das ist keine vollständige Konto- oder Zahlungshistorie.",
@@ -686,6 +732,28 @@ const FR: AccountAwareLocalizedCopy = {
       "Cette commande semble actuellement éligible à une annulation dans l'application. Utilisez l'option d'annulation sur votre page Commandes.",
     notEligible:
       "Cette commande ne semble pas actuellement éligible à une annulation dans l'application. Utilisez votre page Commandes ou contactez l'assistance si vous avez besoin d'aide.",
+    blockReasons: {
+      already_canceled:
+        "Cette commande est déjà annulée, elle ne peut donc pas être annulée à nouveau dans l'application.",
+      order_paid:
+        "Cette commande est déjà marquée comme payée. L'annulation dans l'application est donc actuellement bloquée.",
+      not_slot_order:
+        "Cette commande ne fait pas partie du flux de réservation qui prend en charge l'annulation dans l'application.",
+      wrong_service_status:
+        "Cette commande n'est pas actuellement dans un statut de réservation qui prend en charge l'annulation dans l'application.",
+      invoice_exists:
+        "Une facture existe déjà pour cette commande. L'annulation dans l'application est donc actuellement bloquée.",
+      missing_slots:
+        "Je ne peux pas confirmer les créneaux de réservation de cette commande à partir des données sûres pour l'assistance, donc je ne peux pas la marquer comme annulable.",
+      invalid_slot_dates:
+        "L'heure de réservation de cette commande n'est pas disponible dans un format sûr pour l'assistance, donc je ne peux pas confirmer l'éligibilité à l'annulation.",
+      cutoff_passed:
+        "La fenêtre d'annulation de cette réservation est déjà dépassée. L'annulation dans l'application est donc actuellement bloquée.",
+      slot_paid:
+        "Au moins un créneau de réservation est déjà marqué comme payé. L'annulation dans l'application est donc actuellement bloquée.",
+      unknown:
+        "Je ne peux pas identifier le motif exact du blocage à partir des données sûres pour l'assistance. Veuillez vérifier votre page Commandes pour les prochaines étapes disponibles.",
+    },
   },
   overview: {
     none: "Je n'ai trouvé aucune commande récente sûre à résumer. Ceci n'est pas une vérification complète du compte ou de l'historique des paiements.",
@@ -737,7 +805,14 @@ function withRomanceCopy(overrides: Partial<AccountAwareLocalizedCopy>): Account
       tenant: { ...FR.invoiceLifecycle.tenant, ...overrides.invoiceLifecycle?.tenant },
     },
     paymentStatus: { ...FR.paymentStatus, ...overrides.paymentStatus },
-    cancellation: { ...FR.cancellation, ...overrides.cancellation },
+    cancellation: {
+      ...FR.cancellation,
+      ...overrides.cancellation,
+      blockReasons: {
+        ...FR.cancellation.blockReasons,
+        ...overrides.cancellation?.blockReasons,
+      },
+    },
     overview: { ...FR.overview, ...overrides.overview },
   };
 }
@@ -894,6 +969,28 @@ const IT = withRomanceCopy({
   cancellation: {
     eligible: "Questo ordine sembra attualmente idoneo all'annullamento in-app. Usa l'opzione di annullamento nella pagina Ordini.",
     notEligible: "Questo ordine non sembra attualmente idoneo all'annullamento in-app. Usa la pagina Ordini o contatta l'assistenza se hai bisogno di aiuto.",
+    blockReasons: {
+      already_canceled:
+        "Questo ordine è già annullato, quindi non può essere annullato di nuovo nell'app.",
+      order_paid:
+        "Questo ordine è già contrassegnato come pagato, quindi l'annullamento in-app è attualmente bloccato.",
+      not_slot_order:
+        "Questo ordine non appartiene al flusso di prenotazione che supporta l'annullamento in-app.",
+      wrong_service_status:
+        "Questo ordine non è attualmente in uno stato di prenotazione che supporta l'annullamento in-app.",
+      invoice_exists:
+        "Esiste già una fattura per questo ordine, quindi l'annullamento in-app è attualmente bloccato.",
+      missing_slots:
+        "Non posso confermare gli slot di prenotazione di questo ordine dai dati sicuri per l'assistenza, quindi non posso indicarlo come annullabile.",
+      invalid_slot_dates:
+        "L'orario di prenotazione di questo ordine non è disponibile in forma sicura per l'assistenza, quindi non posso confermare l'idoneità all'annullamento.",
+      cutoff_passed:
+        "La finestra di annullamento per questa prenotazione è già scaduta, quindi l'annullamento in-app è attualmente bloccato.",
+      slot_paid:
+        "Almeno uno slot di prenotazione è già contrassegnato come pagato, quindi l'annullamento in-app è attualmente bloccato.",
+      unknown:
+        "Non posso identificare il motivo esatto del blocco dai dati sicuri per l'assistenza. Controlla la pagina Ordini per i prossimi passaggi disponibili.",
+    },
   },
   overview: {
     none: "Non ho trovato ordini recenti sicuri da riassumere. Questa non è una verifica completa dell'account o della cronologia pagamenti.",
@@ -1065,6 +1162,28 @@ const ES = withRomanceCopy({
   cancellation: {
     eligible: "Este pedido parece estar disponible para cancelación dentro de la app. Usa la opción de cancelación en tu página de Pedidos.",
     notEligible: "Este pedido no parece estar disponible para cancelación dentro de la app. Usa tu página de Pedidos o contacta con soporte si necesitas ayuda.",
+    blockReasons: {
+      already_canceled:
+        "Este pedido ya está cancelado, así que no se puede cancelar de nuevo dentro de la app.",
+      order_paid:
+        "Este pedido ya está marcado como pagado, así que la cancelación dentro de la app está bloqueada actualmente.",
+      not_slot_order:
+        "Este pedido no pertenece al flujo de reservas que admite cancelación dentro de la app.",
+      wrong_service_status:
+        "Este pedido no está actualmente en un estado de reserva que admita cancelación dentro de la app.",
+      invoice_exists:
+        "Ya existe una factura para este pedido, así que la cancelación dentro de la app está bloqueada actualmente.",
+      missing_slots:
+        "No puedo confirmar los horarios de reserva de este pedido con los datos seguros para soporte, así que no puedo marcarlo como cancelable.",
+      invalid_slot_dates:
+        "La hora de reserva de este pedido no está disponible en un formato seguro para soporte, así que no puedo confirmar si se puede cancelar.",
+      cutoff_passed:
+        "La ventana de cancelación de esta reserva ya ha pasado, así que la cancelación dentro de la app está bloqueada actualmente.",
+      slot_paid:
+        "Al menos un horario de reserva ya está marcado como pagado, así que la cancelación dentro de la app está bloqueada actualmente.",
+      unknown:
+        "No puedo identificar el motivo exacto del bloqueo con los datos seguros para soporte. Revisa tu página de Pedidos para ver los siguientes pasos disponibles.",
+    },
   },
   overview: {
     none: "No encontré pedidos recientes seguros para resumir. Esto no es una revisión completa de la cuenta ni del historial de pagos.",
@@ -1236,6 +1355,28 @@ const PT = withRomanceCopy({
   cancellation: {
     eligible: "Este pedido parece atualmente elegível para cancelamento na aplicação. Use a opção de cancelamento na página Pedidos.",
     notEligible: "Este pedido não parece atualmente elegível para cancelamento na aplicação. Use a página Pedidos ou contacte o suporte se precisar de ajuda.",
+    blockReasons: {
+      already_canceled:
+        "Este pedido já está cancelado, por isso não pode ser cancelado novamente na aplicação.",
+      order_paid:
+        "Este pedido já está marcado como pago, por isso o cancelamento na aplicação está atualmente bloqueado.",
+      not_slot_order:
+        "Este pedido não pertence ao fluxo de reservas que suporta cancelamento na aplicação.",
+      wrong_service_status:
+        "Este pedido não está atualmente num estado de reserva que suporte cancelamento na aplicação.",
+      invoice_exists:
+        "Já existe uma fatura para este pedido, por isso o cancelamento na aplicação está atualmente bloqueado.",
+      missing_slots:
+        "Não consigo confirmar os horários da reserva deste pedido a partir dos dados seguros para suporte, por isso não consigo marcá-lo como cancelável.",
+      invalid_slot_dates:
+        "O horário da reserva deste pedido não está disponível num formato seguro para suporte, por isso não consigo confirmar a elegibilidade para cancelamento.",
+      cutoff_passed:
+        "A janela de cancelamento desta reserva já passou, por isso o cancelamento na aplicação está atualmente bloqueado.",
+      slot_paid:
+        "Pelo menos um horário de reserva já está marcado como pago, por isso o cancelamento na aplicação está atualmente bloqueado.",
+      unknown:
+        "Não consigo identificar o motivo exato do bloqueio a partir dos dados seguros para suporte. Verifique a página Pedidos para os próximos passos disponíveis.",
+    },
   },
   overview: {
     none: "Não encontrei pedidos recentes seguros para resumir. Isto não é uma verificação completa da conta ou do histórico de pagamentos.",
@@ -1407,6 +1548,28 @@ const PL = withRomanceCopy({
   cancellation: {
     eligible: "To zamówienie wygląda obecnie na kwalifikujące się do anulowania w aplikacji. Użyj opcji anulowania na stronie Zamówienia.",
     notEligible: "To zamówienie nie wygląda obecnie na kwalifikujące się do anulowania w aplikacji. Użyj strony Zamówienia lub skontaktuj się ze wsparciem, jeśli potrzebujesz pomocy.",
+    blockReasons: {
+      already_canceled:
+        "To zamówienie jest już anulowane, więc nie można go anulować ponownie w aplikacji.",
+      order_paid:
+        "To zamówienie jest już oznaczone jako opłacone, więc anulowanie w aplikacji jest obecnie zablokowane.",
+      not_slot_order:
+        "To zamówienie nie należy do przepływu rezerwacji, który obsługuje anulowanie w aplikacji.",
+      wrong_service_status:
+        "To zamówienie nie jest obecnie w statusie rezerwacji, który obsługuje anulowanie w aplikacji.",
+      invoice_exists:
+        "Dla tego zamówienia istnieje już faktura, więc anulowanie w aplikacji jest obecnie zablokowane.",
+      missing_slots:
+        "Nie mogę potwierdzić terminów rezerwacji tego zamówienia na podstawie danych bezpiecznych dla wsparcia, więc nie mogę oznaczyć go jako możliwe do anulowania.",
+      invalid_slot_dates:
+        "Termin rezerwacji tego zamówienia nie jest dostępny w formie bezpiecznej dla wsparcia, więc nie mogę potwierdzić możliwości anulowania.",
+      cutoff_passed:
+        "Okno anulowania tej rezerwacji już minęło, więc anulowanie w aplikacji jest obecnie zablokowane.",
+      slot_paid:
+        "Co najmniej jeden termin rezerwacji jest już oznaczony jako opłacony, więc anulowanie w aplikacji jest obecnie zablokowane.",
+      unknown:
+        "Nie mogę określić dokładnego powodu blokady na podstawie danych bezpiecznych dla wsparcia. Sprawdź stronę Zamówienia, aby zobaczyć dostępne następne kroki.",
+    },
   },
   overview: {
     none: "Nie znalazłem ostatnich bezpiecznych zamówień do podsumowania. To nie jest pełna historia konta ani płatności.",
@@ -1578,6 +1741,28 @@ const RO = withRomanceCopy({
   cancellation: {
     eligible: "Această comandă pare eligibilă pentru anulare în aplicație. Folosește opțiunea de anulare din pagina Comenzi.",
     notEligible: "Această comandă nu pare eligibilă pentru anulare în aplicație. Folosește pagina Comenzi sau contactează suportul dacă ai nevoie de ajutor.",
+    blockReasons: {
+      already_canceled:
+        "Această comandă este deja anulată, deci nu poate fi anulată din nou în aplicație.",
+      order_paid:
+        "Această comandă este deja marcată ca plătită, deci anularea în aplicație este blocată în prezent.",
+      not_slot_order:
+        "Această comandă nu face parte din fluxul de rezervări care permite anularea în aplicație.",
+      wrong_service_status:
+        "Această comandă nu este momentan într-un status de rezervare care permite anularea în aplicație.",
+      invoice_exists:
+        "Există deja o factură pentru această comandă, deci anularea în aplicație este blocată în prezent.",
+      missing_slots:
+        "Nu pot confirma intervalele rezervării pentru această comandă din datele sigure pentru suport, deci nu o pot marca drept anulabilă.",
+      invalid_slot_dates:
+        "Ora rezervării pentru această comandă nu este disponibilă într-o formă sigură pentru suport, deci nu pot confirma eligibilitatea pentru anulare.",
+      cutoff_passed:
+        "Fereastra de anulare pentru această rezervare a trecut deja, deci anularea în aplicație este blocată în prezent.",
+      slot_paid:
+        "Cel puțin un interval de rezervare este deja marcat ca plătit, deci anularea în aplicație este blocată în prezent.",
+      unknown:
+        "Nu pot identifica motivul exact al blocării din datele sigure pentru suport. Verifică pagina Comenzi pentru pașii următori disponibili.",
+    },
   },
   overview: {
     none: "Nu am găsit comenzi recente sigure pentru rezumat. Aceasta nu este o verificare completă a contului sau a istoricului plăților.",
@@ -1749,6 +1934,28 @@ const UK = withRomanceCopy({
   cancellation: {
     eligible: "Це замовлення зараз виглядає придатним для скасування в застосунку. Скористайтеся опцією скасування на сторінці замовлень.",
     notEligible: "Це замовлення зараз не виглядає придатним для скасування в застосунку. Скористайтеся сторінкою замовлень або зверніться до підтримки, якщо потрібна допомога.",
+    blockReasons: {
+      already_canceled:
+        "Це замовлення вже скасовано, тому його не можна скасувати повторно в застосунку.",
+      order_paid:
+        "Це замовлення вже позначено як оплачене, тому скасування в застосунку наразі заблоковане.",
+      not_slot_order:
+        "Це замовлення не належить до потоку бронювань, який підтримує скасування в застосунку.",
+      wrong_service_status:
+        "Це замовлення зараз не має статусу бронювання, який підтримує скасування в застосунку.",
+      invoice_exists:
+        "Для цього замовлення вже існує рахунок, тому скасування в застосунку наразі заблоковане.",
+      missing_slots:
+        "Я не можу підтвердити часові слоти цього замовлення з безпечних для підтримки даних, тому не можу позначити його як доступне для скасування.",
+      invalid_slot_dates:
+        "Час бронювання цього замовлення недоступний у безпечній для підтримки формі, тому я не можу підтвердити можливість скасування.",
+      cutoff_passed:
+        "Вікно скасування для цього бронювання вже минуло, тому скасування в застосунку наразі заблоковане.",
+      slot_paid:
+        "Принаймні один часовий слот бронювання вже позначено як оплачений, тому скасування в застосунку наразі заблоковане.",
+      unknown:
+        "Я не можу визначити точну причину блокування з безпечних для підтримки даних. Перевірте сторінку замовлень, щоб побачити доступні наступні кроки.",
+    },
   },
   overview: {
     none: "Я не знайшов нещодавніх безпечних замовлень для підсумку. Це не повна перевірка облікового запису або історії оплат.",

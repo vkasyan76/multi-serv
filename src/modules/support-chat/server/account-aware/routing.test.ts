@@ -1283,6 +1283,43 @@ test("selected order context routes follow-up questions to exact helpers", () =>
   }
 });
 
+test("selected order cancellation why follow-ups explain safe block reasons", async () => {
+  const selected = {
+    referenceType: "order_id" as const,
+    reference: ORDER_CANCELED_A,
+  };
+  const route = routeSupportAccountAwareRequest(
+    "Warum kann ich diese Buchung nicht stornieren?",
+    { selectedOrder: selected },
+  );
+  assert.equal(route.kind, "helper");
+  if (route.kind === "helper") {
+    assert.equal(route.helper, "canCancelOrderForCurrentUser");
+    assert.deepEqual(route.input, selected);
+  }
+
+  const { accountContext } = makeCtx();
+  const response = await buildAccountAwareServerResponse({
+    route: route as Exclude<typeof route, { kind: "none" }>,
+    accountContext,
+    locale: "de",
+    threadId: THREAD_ID,
+  });
+
+  assert.equal(response.disposition, "answered");
+  assert.equal(
+    response.accountHelperMetadata.helper,
+    "canCancelOrderForCurrentUser",
+  );
+  assert.match(response.assistantMessage, /bereits storniert/i);
+  assert.doesNotMatch(response.assistantMessage, /kontaktiere den Support/i);
+
+  const genericPolicyQuestion = routeSupportAccountAwareRequest(
+    "Warum kann ich eine Buchung nicht stornieren?",
+  );
+  assert.equal(genericPolicyQuestion.kind, "none");
+});
+
 test("selected order context gives role-aware invoice lifecycle explanations", async () => {
   const customerSelected = {
     referenceType: "order_id" as const,

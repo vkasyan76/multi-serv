@@ -367,7 +367,12 @@ function cancellationMessage(
   if (data.canCancel) {
     return copy.cancellation.eligible;
   }
-  return copy.cancellation.notEligible;
+  // Cancellation denial can be more helpful than a generic fallback when the
+  // helper exposes a support-safe block reason. Unknown reasons stay cautious.
+  return (
+    copy.cancellation.blockReasons[data.blockReason ?? "unknown"] ??
+    copy.cancellation.notEligible
+  );
 }
 
 function paymentOverviewMessage(
