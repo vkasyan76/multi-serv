@@ -271,7 +271,7 @@ function makeFixtures() {
       ORDER_PAID_A,
       baseOrder({
         id: ORDER_PAID_A,
-        status: "paid",
+        status: "pending",
         serviceStatus: "accepted",
         invoiceStatus: "paid",
         paidAt: "2026-04-21T11:00:00.000Z",
@@ -933,6 +933,23 @@ test("order-id payment status reflects pay-later invoice cache fields", async ()
   assert.equal(result.data.nextStepKey, "pay_invoice");
   assert.equal(result.data.issuedAt, "2026-04-27T11:00:00.000Z");
   assert.equal(result.data.paymentDueAt, "2026-05-11T11:00:00.000Z");
+});
+
+test("order-id payment status treats paid invoice cache as paid", async () => {
+  const { ctx } = makeCtx();
+  const result = await getPaymentStatusForCurrentUser(
+    ctx,
+    orderInput(ORDER_PAID_A),
+  );
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.equal(result.data.paymentStatusCategory, "paid");
+  assert.equal(result.data.invoiceStatusCategory, "paid");
+  assert.equal(result.data.serviceStatusCategory, "accepted");
+  assert.equal(result.data.nextStepKey, "no_action_needed");
+  assert.equal(result.data.paidAt, "2026-04-21T11:00:00.000Z");
 });
 
 test("signed-in user can access own invoice payment status", async () => {

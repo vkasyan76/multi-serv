@@ -219,7 +219,7 @@ function makeCtx(userId: string | null = "clerk-user-a") {
       ORDER_PAID_A,
       order({
         id: ORDER_PAID_A,
-        status: "paid",
+        status: "pending",
         serviceStatus: "accepted",
         invoiceStatus: "paid",
         paidAt: "2026-04-21T11:00:00.000Z",
@@ -460,6 +460,13 @@ test("routes exact payment requests by order and invoice reference", async () =>
   }
   assert.equal(byInvoice.response.disposition, "answered");
   assert.match(byInvoice.response.assistantMessage, /payment is pending/i);
+
+  const paidByOrder = await respond(
+    `Did my payment go through for order ${ORDER_PAID_A}?`,
+  );
+  assert.equal(paidByOrder.response.disposition, "answered");
+  assert.match(paidByOrder.response.assistantMessage, /payment is marked paid/i);
+  assert.doesNotMatch(paidByOrder.response.assistantMessage, /not due/i);
 
   const explicitPaymentStatus = routeSupportAccountAwareRequest(
     `Payment status for order ${ORDER_REQUESTED_A}`,
@@ -952,6 +959,30 @@ test("empty filtered candidate selection stays bounded and deterministic", async
   assert.equal(response.actions?.length, 0);
 });
 
+test("paid candidate click answers paid status from invoice cache", async () => {
+  const { route, response, accountContext } = await respond("Show my paid orders");
+
+  assert.equal(route.kind, "candidate_selection");
+  if (route.kind === "candidate_selection") {
+    assert.equal(route.statusFilter, "paid");
+    assert.equal(route.selectionHelper, "getPaymentStatusForCurrentUser");
+  }
+  assert.equal(response.actions?.length, 1);
+  assert.match(response.actions?.[0]?.description ?? "", /invoice paid/i);
+
+  const click = await buildAccountAwareActionResponse({
+    token: response.actions?.[0]?.token ?? "",
+    threadId: THREAD_ID,
+    accountContext,
+    locale: "en",
+  });
+
+  assert.equal(click.disposition, "answered");
+  assert.equal(click.accountHelperMetadata.helper, "getPaymentStatusForCurrentUser");
+  assert.match(click.assistantMessage, /payment is marked paid/i);
+  assert.doesNotMatch(click.assistantMessage, /not due/i);
+});
+
 test("payment overview returns bounded deterministic summary", async () => {
   const { route, response, db } = await respond("Did I pay already for any order?");
 
@@ -1057,6 +1088,17 @@ test("candidate action click validates token and calls exact helper", async () =
 
 test("selected order context routes follow-up questions to exact helpers", () => {
   const selected = { referenceType: "order_id" as const, reference: ORDER_SCHEDULED_A };
+
+  for (const prompt of ["Did I pay already?", "Have I paid?"]) {
+    const route = routeSupportAccountAwareRequest(prompt, {
+      selectedOrder: selected,
+    });
+    assert.equal(route.kind, "helper", prompt);
+    if (route.kind === "helper") {
+      assert.equal(route.helper, "getPaymentStatusForCurrentUser", prompt);
+      assert.deepEqual(route.input, selected, prompt);
+    }
+  }
 
   const payment = routeSupportAccountAwareRequest(
     "Why is payment not due for this order yet?",
@@ -1746,6 +1788,30 @@ test("account rewrite detects not-due contradictions from the helper DTO", async
   assert.equal(response.accountRewriteFallbackUsed, true);
 });
 
+test("account rewrite accepts negative paid wording for non-paid DTOs", async () => {
+  for (const text of ["This order is not paid yet.", "This order is unpaid."]) {
+    const response = await withRewriteFlag(true, () =>
+      rewriteAccountAwareServerResponse({
+        response: rewriteBaseResponse(),
+        helperResult: rewritePaymentDTO,
+        locale: "en",
+        threadId: THREAD_ID,
+        createModelResponse: async () => ({
+          ok: true,
+          text,
+          model: "rewrite-model",
+          modelVersion: "rewrite-v1",
+          requestId: "req_not_paid",
+        }),
+      }),
+    );
+
+    assert.equal(response.accountAnswerMode, "model_rewritten", text);
+    assert.equal(response.accountRewriteFallbackUsed, false, text);
+    assert.equal(response.assistantMessage, text, text);
+  }
+});
+
 test("account rewrite falls back on model errors and empty output", async () => {
   const modelError = await withRewriteFlag(true, () =>
     rewriteAccountAwareServerResponse({
@@ -1818,6 +1884,16 @@ test("account rewrite guardrails reject unsafe drafts", async () => {
     {
       text: "This order is definitely paid.",
       reason: "unsupported_fact",
+      locale: "en" as const,
+    },
+    {
+      text: "This order is already paid.",
+      reason: "contradicts_fallback",
+      locale: "en" as const,
+    },
+    {
+      text: "This order is paid.",
+      reason: "contradicts_fallback",
       locale: "en" as const,
     },
     {

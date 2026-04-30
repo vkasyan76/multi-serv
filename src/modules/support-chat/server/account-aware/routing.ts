@@ -368,13 +368,6 @@ export function routeSupportAccountAwareRequest(
     return { kind: "broad_or_deferred" };
   }
 
-  if (
-    ids.length === 0 &&
-    hasPaymentOverview
-  ) {
-    return { kind: "payment_overview" };
-  }
-
   if (ids.length === 0 && options?.selectedOrder) {
     const selectedHelper = selectedOrderFollowUpHelper({
       message: trimmed,
@@ -390,6 +383,13 @@ export function routeSupportAccountAwareRequest(
         responseIntent: selectedHelper.responseIntent,
       };
     }
+  }
+
+  if (
+    ids.length === 0 &&
+    hasPaymentOverview
+  ) {
+    return { kind: "payment_overview" };
   }
 
   if (

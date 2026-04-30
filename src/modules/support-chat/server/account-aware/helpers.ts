@@ -198,22 +198,19 @@ function invoiceStatusCategory(
 function orderPaymentStatusCategory(
   order: Pick<Order, "status" | "invoiceStatus">,
 ): SupportAccountPaymentStatusCategory {
-  switch (order.status) {
-    case "paid":
-      return "paid";
-    case "canceled":
-      return "canceled";
-    case "refunded":
-      return "refunded";
-    case "pending":
-      return order.invoiceStatus === "issued" ||
-        order.invoiceStatus === "overdue" ||
-        order.invoiceStatus === "draft"
-        ? "pending"
-        : "not_due";
-    default:
-      return "unknown";
+  if (order.status === "refunded") return "refunded";
+  if (order.status === "canceled") return "canceled";
+  if (order.status === "paid" || order.invoiceStatus === "paid") return "paid";
+
+  if (order.status === "pending") {
+    return order.invoiceStatus === "issued" ||
+      order.invoiceStatus === "overdue" ||
+      order.invoiceStatus === "draft"
+      ? "pending"
+      : "not_due";
   }
+
+  return "unknown";
 }
 
 function invoicePaymentStatusCategory(
@@ -398,7 +395,7 @@ function matchesCandidateStatusFilter(
         invoiceStatus === "overdue"
       );
     case "paid":
-      return order.status === "paid" || invoiceStatus === "paid";
+      return paymentStatus === "paid";
   }
 }
 

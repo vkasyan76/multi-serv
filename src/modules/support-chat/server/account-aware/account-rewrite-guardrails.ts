@@ -36,6 +36,14 @@ function hasAny(text: string, patterns: RegExp[]) {
   return patterns.some((pattern) => pattern.test(text));
 }
 
+function claimsPaid(text: string) {
+  if (/\bnot\s+paid\b/i.test(text) || /\bunpaid\b/i.test(text)) return false;
+
+  return /\b(already\s+paid|paid\s+already|payment\s+(is|was|has\s+been)\s+paid|order\s+(is|was|has\s+been)\s+paid|this\s+(order|payment)\s+is\s+paid)\b/i.test(
+    text,
+  );
+}
+
 function contradictsFallback(input: {
   text: string;
   fallbackAnswer: string;
@@ -47,7 +55,7 @@ function contradictsFallback(input: {
   if (
     input.helperResult.resultCategory === "payment_status" &&
     input.helperResult.paymentStatusCategory !== "paid" &&
-    /\b(already\s+)?paid\b/i.test(text)
+    claimsPaid(text)
   ) {
     return true;
   }
@@ -61,7 +69,8 @@ function contradictsFallback(input: {
   if (
     (helperSaysPaymentNotDue || fallbackSaysPaymentNotDue) &&
     !/\bnot\s+due\b/i.test(text) &&
-    /\b(payment\s+)?(is\s+)?(due|paid|charged|payable)\b/i.test(text)
+    (/\b(payment\s+)?(is\s+)?(due|charged|payable)\b/i.test(text) ||
+      claimsPaid(text))
   ) {
     return true;
   }
