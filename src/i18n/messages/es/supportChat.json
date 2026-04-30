@@ -21,7 +21,7 @@
     "cancel": "Necesito ayuda para cancelar una reserva.",
     "provider": "Quiero convertirme en proveedor."
   },
-  "disclaimer": "El soporte con IA puede cometer errores. No puede acceder a datos en vivo de pedidos, pagos o cuentas.",
+  "disclaimer": "El soporte con IA puede cometer errores. Solo puede revisar detalles limitados y seguros de pedidos o pagos que selecciones o indiques.",
   "contactSupport": "Contactar soporte",
   "send": "Enviar",
   "sending": "El soporte está respondiendo...",
@@ -34,7 +34,7 @@
     "abusive": "Puedo ayudar con preguntas de soporte, pero no puedo responder a mensajes abusivos. Contacta con soporte si necesitas ayuda.",
     "nonsense": "No he podido entender esa solicitud. Reformula tu pregunta de soporte o contacta con soporte.",
     "clarify": "¿Qué intentas hacer: registrarte, reservar un servicio, gestionar un perfil de proveedor, pagar un pedido, cancelar o disputar algo?",
-    "unsupportedAccount": "Todavía no puedo comprobar en este chat datos en vivo de pedidos, pagos, facturas, reembolsos o cuentas. Puedo explicar la política general o los pasos habituales a partir del material de soporte de Infinisimo. Para tu cuenta o pedido concreto, utiliza las páginas de tu cuenta o contacta con soporte.",
+    "unsupportedAccount": "Solo puedo revisar detalles limitados y seguros de pedidos, pagos o facturas cuando seleccionas o indicas un elemento específico que puedo verificar. No puedo recorrer todo el historial de la cuenta, pedidos no relacionados, Stripe ni registros internos de la cuenta.",
     "uncertain": "No tengo suficiente información de soporte para responder con fiabilidad. Puedo ayudar con preguntas generales sobre registro, configuración de proveedor, reservas, pagos, cancelaciones, disputas y uso del marketplace. Para este problema concreto, contacta con soporte."
   },
   "handoffAccount": "Para ayuda específica de tu cuenta, contacta con soporte e incluye los datos de tu pedido, factura o cuenta.",

@@ -335,13 +335,13 @@ const DE: AccountAwareLocalizedCopy = {
       `Ich habe aktuelle Buchungskandidaten mit Status ${filter} gefunden. Welche Bestellung meinst du?`,
   },
   fieldLabels: {
-    provider: "Anbieter",
+    provider: "Dienstleister",
     service: "Leistung",
     date: "Datum",
     status: "Status",
     payment: "Zahlung",
     reason: "Grund",
-    note: "Hinweis von Anbieter/Kunde",
+    note: "Hinweis von Dienstleister/Kunde",
     nextStep: "Nächster Schritt",
   },
   missingReference: {

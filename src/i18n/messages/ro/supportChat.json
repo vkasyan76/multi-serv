@@ -21,7 +21,7 @@
     "cancel": "Am nevoie de ajutor pentru anularea unei rezervări.",
     "provider": "Vreau să devin prestator de servicii."
   },
-  "disclaimer": "Asistența AI poate face greșeli. Nu poate accesa date live despre comenzi, plăți sau cont.",
+  "disclaimer": "Asistența AI poate face greșeli. Poate verifica doar detalii limitate și sigure despre comenzi sau plăți pe care le selectezi ori le indici.",
   "contactSupport": "Contactează asistența",
   "send": "Trimite",
   "sending": "Asistența răspunde...",
@@ -34,7 +34,7 @@
     "abusive": "Pot ajuta cu întrebări de asistență, dar nu pot răspunde la mesaje abuzive. Contactează asistența dacă ai nevoie de ajutor.",
     "nonsense": "Nu am putut înțelege această cerere. Reformulează întrebarea de asistență sau contactează asistența.",
     "clarify": "Ce încerci să faci: să te înregistrezi, să rezervi un serviciu, să gestionezi un profil de prestator, să plătești o comandă, să anulezi sau să contești ceva?",
-    "unsupportedAccount": "Încă nu pot verifica în acest chat detalii live despre comenzi, plăți, facturi, rambursări sau conturi. Pot explica politica generală sau pașii obișnuiți următori pe baza materialului de suport Infinisimo. Pentru contul sau comanda ta concretă, folosește paginile contului tău sau contactează asistența.",
+    "unsupportedAccount": "Pot verifica doar detalii limitate și sigure despre comenzi, plăți sau facturi atunci când selectezi ori indici un element concret pe care îl pot verifica. Nu pot parcurge istoricul complet al contului, comenzi fără legătură, Stripe sau date brute ale contului.",
     "uncertain": "Nu am suficiente informații de suport pentru a răspunde în mod fiabil. Pot ajuta cu întrebări generale despre înregistrare, configurarea prestatorului, rezervări, plăți, anulări, dispute și folosirea marketplace-ului. Pentru această problemă concretă, contactează asistența."
   },
   "handoffAccount": "Pentru ajutor specific contului, contactează asistența cu detaliile comenzii, facturii sau contului.",

@@ -351,6 +351,45 @@ const SELECTED_ORDER_STATUS_FOLLOW_UP_PATTERNS = [
   /статус|причин|далі/u,
 ] as const;
 
+const SELECTED_ORDER_DETAIL_FOLLOW_UP_PATTERNS = [
+  /\bwho\b.*\b(provider|service\s+provider|vendor|professional)\b/,
+  /\b(provider|service\s+provider|vendor|professional)\b.*\b(who|name)\b/,
+  /\bwhat\b.*\b(service|date|time)\b.*\b(this|that|selected|order|booking|appointment|it)\b/,
+  /\bwhen\b.*\b(order|booking|appointment|service|it)\b/,
+  /\bwer\b.*\b(anbieter|dienstleister|profi|professionell)\b/,
+  /\b(anbieter|dienstleister|profi|professionell)\b.*\b(wer|name)\b/,
+  /\bwelche\b.*\b(leistung|dienstleistung)\b.*\b(diese|dieser|buchung|bestellung|termin|sie|es)\b/,
+  /\bwann\b.*\b(buchung|bestellung|termin|leistung|sie|es)\b/,
+  /\bqui\b.*\b(prestataire|fournisseur|professionnel)\b/,
+  /\b(prestataire|fournisseur|professionnel)\b.*\b(qui|nom)\b/,
+  /\bquel(le)?\b.*\b(service|date|heure)\b.*\b(cette|ce|commande|reservation|rendez\s+vous)\b/,
+  /\bquand\b.*\b(commande|reservation|rendez\s+vous|service)\b/,
+  /\bchi\b.*\b(fornitore|prestatore|professionista)\b/,
+  /\b(fornitore|prestatore|professionista)\b.*\b(chi|nome)\b/,
+  /\bquale\b.*\b(servizio|data|ora)\b.*\b(questo|questa|ordine|prenotazione|appuntamento)\b/,
+  /\bquando\b.*\b(ordine|prenotazione|appuntamento|servizio)\b/,
+  /\bquien\b.*\b(proveedor|prestador|profesional)\b/,
+  /\b(proveedor|prestador|profesional)\b.*\b(quien|nombre)\b/,
+  /\bque\b.*\b(servicio|fecha|hora)\b.*\b(este|esta|pedido|reserva|cita)\b/,
+  /\bcuando\b.*\b(pedido|reserva|cita|servicio)\b/,
+  /\bquem\b.*\b(prestador\w*|fornecedor\w*|profissional\w*)\b/,
+  /\b(prestador\w*|fornecedor\w*|profissional\w*)\b.*\b(quem|nome)\b/,
+  /\bqual\b.*\b(servico|data|hora)\b.*\b(este|esta|pedido|reserva|marcacao)\b/,
+  /\bquando\b.*\b(pedido|reserva|marcacao|servico)\b/,
+  /\bkto\b.*\b(uslugodawc\w*|dostawc\w*|profesjonalist\w*)\b/,
+  /\b(uslugodawc\w*|dostawc\w*|profesjonalist\w*)\b.*\b(kto|nazwa)\b/,
+  /\bjaka\b.*\b(usluga|data|godzina)\b.*\b(tego|tej|zamowienie|rezerwacja|termin)\b/,
+  /\bkiedy\b.*\b(zamowienie|rezerwacja|termin|usluga)\b/,
+  /\bcine\b.*\b(prestator\w*|furnizor\w*|profesionist\w*)\b/,
+  /\b(prestator\w*|furnizor\w*|profesionist\w*)\b.*\b(cine|nume)\b/,
+  /\bce\b.*\b(serviciu|data|ora)\b.*\b(acest|aceasta|comanda|rezervare|programare)\b/,
+  /\bcand\b.*\b(comanda|rezervare|programare|serviciu)\b/,
+  /хто.*(постачальник|надавач|виконавець|професіонал)/u,
+  /(постачальник|надавач|виконавець|професіонал).*(хто|назва|ім'?я)/u,
+  /яка.*(послуга|дата|година)/u,
+  /коли.*(замовлення|бронювання|зустріч|послуга)/u,
+] as const;
+
 const SELECTED_ORDER_CANCEL_FOLLOW_UP_PATTERNS = [
   /\bcancel\b/,
   /\bstornier\w+\b/,
@@ -455,6 +494,12 @@ export function detectSelectedOrderStatusFollowUpIntent(message: string) {
   const text = normalizeForIntent(message);
   if (!text) return false;
   return hasPattern(text, SELECTED_ORDER_STATUS_FOLLOW_UP_PATTERNS);
+}
+
+export function detectSelectedOrderDetailFollowUpIntent(message: string) {
+  const text = normalizeForIntent(message);
+  if (!text) return false;
+  return hasPattern(text, SELECTED_ORDER_DETAIL_FOLLOW_UP_PATTERNS);
 }
 
 export function detectSelectedOrderCancelFollowUpIntent(message: string) {

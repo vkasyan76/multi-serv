@@ -132,7 +132,7 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedDeniedReason: "unauthenticated",
       expectNoBroadLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["cannot check live order"],
+      expectedAnswerPatterns: ["limited support-safe"],
     },
     {
       id: "candidate-order-status-vague",
@@ -235,7 +235,7 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedDeniedReason: "invalid_reference",
       expectNoBroadLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["cannot check live order"],
+      expectedAnswerPatterns: ["limited support-safe"],
     },
     {
       id: "candidate-unsupported-payment-reference",
@@ -378,7 +378,7 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedResponseOrigin: "server",
       expectNoBroadLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["cannot check live order"],
+      expectedAnswerPatterns: ["limited support-safe"],
     },
     {
       id: "candidate-provider-date-order",
@@ -579,7 +579,7 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectedDeniedReason: "not_found_or_not_owned",
       expectNoBroadLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["cannot check live order"],
+      expectedAnswerPatterns: ["limited support-safe"],
       forbiddenAnswerPatterns: ["belongs to another"],
       expectedActionCount: 0,
     },
@@ -614,7 +614,7 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectNoBroadLookup: true,
       expectNoExactLookup: true,
       expectNoMutation: true,
-      expectedAnswerPatterns: ["cannot check live order"],
+      expectedAnswerPatterns: ["limited support-safe"],
     },
     {
       id: "policy-booking-statuses",

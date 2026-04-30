@@ -21,7 +21,7 @@
     "cancel": "J'ai besoin d'aide pour annuler une réservation.",
     "provider": "Je veux devenir prestataire."
   },
-  "disclaimer": "L'assistance IA peut faire des erreurs. Elle ne peut pas accéder aux données en direct des commandes, paiements ou comptes.",
+  "disclaimer": "L'assistance IA peut faire des erreurs. Elle ne peut vérifier que des détails limités et sûrs des commandes ou paiements que vous sélectionnez ou indiquez.",
   "contactSupport": "Contacter l'assistance",
   "send": "Envoyer",
   "sending": "L'assistance répond...",
@@ -34,7 +34,7 @@
     "abusive": "Je peux aider pour les questions d'assistance, mais je ne peux pas répondre aux messages abusifs. Veuillez contacter l'assistance si vous avez besoin d'aide.",
     "nonsense": "Je n'ai pas compris cette demande. Veuillez reformuler votre question d'assistance ou contacter l'assistance.",
     "clarify": "Que cherchez-vous à faire : vous inscrire, réserver un service, gérer un profil prestataire, payer une commande, annuler ou contester quelque chose ?",
-    "unsupportedAccount": "Je ne peux pas encore vérifier dans ce chat les détails en direct d'une commande, d'un paiement, d'une facture, d'un remboursement ou d'un compte. Je peux expliquer la politique générale ou les étapes habituelles à partir du support Infinisimo. Pour votre commande ou votre compte précis, veuillez utiliser vos pages de compte ou contacter l'assistance.",
+    "unsupportedAccount": "Je peux seulement vérifier des détails limités et sûrs d'une commande, d'un paiement ou d'une facture lorsque vous sélectionnez ou indiquez un élément précis que je peux vérifier. Je ne peux pas parcourir tout l'historique du compte, les commandes sans rapport, Stripe ou les données brutes du compte.",
     "uncertain": "Je n'ai pas assez d'informations d'assistance pour répondre de manière fiable. Je peux aider sur les questions générales d'inscription, de configuration prestataire, de réservation, de paiement, d'annulation, de litige et d'utilisation de la marketplace. Pour ce problème précis, veuillez contacter l'assistance."
   },
   "handoffAccount": "Pour une aide propre à votre compte, contactez l'assistance avec les détails de votre commande, facture ou compte.",

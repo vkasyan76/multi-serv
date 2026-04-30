@@ -16,6 +16,7 @@ import {
   detectPaymentOverviewIntent,
   detectPaymentStatusIntent,
   detectSelectedOrderCancelFollowUpIntent,
+  detectSelectedOrderDetailFollowUpIntent,
   detectSelectedOrderPaymentFollowUpIntent,
   detectSelectedOrderStatusFollowUpIntent,
 } from "./intent-normalizer";
@@ -366,6 +367,7 @@ function selectedOrderFollowUpHelper(input: {
   ) ||
     hasInvoiceLifecycleQuestion ||
     detectSelectedOrderCancelFollowUpIntent(input.message) ||
+    detectSelectedOrderDetailFollowUpIntent(input.message) ||
     detectSelectedOrderPaymentFollowUpIntent(input.message) ||
     detectSelectedOrderStatusFollowUpIntent(input.message);
 
@@ -396,6 +398,7 @@ function selectedOrderFollowUpHelper(input: {
   }
   if (
     hasAny(SELECTED_ORDER_STATUS_PATTERNS, input.message) ||
+    detectSelectedOrderDetailFollowUpIntent(input.message) ||
     detectSelectedOrderStatusFollowUpIntent(input.message)
   ) {
     return { helper: "getOrderStatusForCurrentUser" };

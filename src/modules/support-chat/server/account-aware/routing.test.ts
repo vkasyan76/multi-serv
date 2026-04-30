@@ -30,6 +30,7 @@ const ORDER_CANCELED_A = "100000000000000000000007";
 const ORDER_OTHER_TENANT = "100000000000000000000008";
 const ORDER_PAID_A = "100000000000000000000009";
 const ORDER_SCHEDULED_NOT_DUE_A = "100000000000000000000010";
+const ORDER_DETAIL_A = "100000000000000000000011";
 const INVOICE_A = "200000000000000000000001";
 const SLOT_REQUESTED = "300000000000000000000001";
 const SLOT_CANCELED = "300000000000000000000005";
@@ -234,6 +235,20 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         serviceStatus: "scheduled",
         invoiceStatus: "none",
         createdAt: "2026-04-20T09:00:00.000Z",
+      }),
+    ],
+    [
+      ORDER_DETAIL_A,
+      order({
+        id: ORDER_DETAIL_A,
+        serviceStatus: "scheduled",
+        invoiceStatus: "none",
+        vendorSnapshot: {
+          tenantName: "react_jedi",
+          tenantSlug: "react-jedi",
+        },
+        lifecycleMode: "detail-test" as never,
+        createdAt: "2026-01-10T09:00:00.000Z",
       }),
     ],
   ]);
@@ -504,7 +519,7 @@ test("signed-out exact account request returns safe handoff", async () => {
   assert.equal(response.disposition, "unsupported_account_question");
   assert.equal(response.needsHumanSupport, true);
   assert.equal(response.accountHelperMetadata.deniedReason, "unauthenticated");
-  assert.match(response.assistantMessage, /cannot check live order/i);
+  assert.match(response.assistantMessage, /limited support-safe/i);
 });
 
 test("signed-out candidate-selection account request returns safe handoff", async () => {
@@ -524,7 +539,7 @@ test("signed-out candidate-selection account request returns safe handoff", asyn
   assert.equal(response.accountHelperMetadata.deniedReason, "unauthenticated");
   assert.equal(response.accountHelperMetadata.authenticated, false);
   assert.equal(response.accountHelperMetadata.requiredInputPresent, false);
-  assert.match(response.assistantMessage, /cannot check live order/i);
+  assert.match(response.assistantMessage, /limited support-safe/i);
   assert.equal(
     db.calls.some((call) => call.collection === "orders"),
     false,
@@ -840,6 +855,17 @@ test("selected-order follow-ups route across launched locales", () => {
       "Jaki jest status?",
       "Care este statusul?",
       "Який статус?",
+    ]],
+    ["details", "helper:getOrderStatusForCurrentUser", [
+      "Who is the provider for this booking?",
+      "Wer ist der Dienstleister für diese Buchung?",
+      "Qui est le prestataire pour cette réservation ?",
+      "Chi è il fornitore per questa prenotazione?",
+      "¿Quién es el proveedor de esta reserva?",
+      "Quem é o prestador desta reserva?",
+      "Kto jest usługodawcą dla tej rezerwacji?",
+      "Cine este prestatorul pentru această rezervare?",
+      "Хто постачальник для цього бронювання?",
     ]],
     ["cancel", "helper:canCancelOrderForCurrentUser", [
       "Can I cancel it?",
@@ -1320,6 +1346,39 @@ test("selected order cancellation why follow-ups explain safe block reasons", as
   assert.equal(genericPolicyQuestion.kind, "none");
 });
 
+test("selected order detail follow-ups use support-safe order context", async () => {
+  const selected = {
+    referenceType: "order_id" as const,
+    reference: ORDER_DETAIL_A,
+  };
+  const route = routeSupportAccountAwareRequest(
+    "Wer ist der Anbieter für diese Buchung?",
+    { selectedOrder: selected },
+  );
+  assert.equal(route.kind, "helper");
+  if (route.kind === "helper") {
+    assert.equal(route.helper, "getOrderStatusForCurrentUser");
+    assert.deepEqual(route.input, selected);
+  }
+
+  const { accountContext } = makeCtx();
+  const response = await buildAccountAwareServerResponse({
+    route: route as Exclude<typeof route, { kind: "none" }>,
+    accountContext,
+    locale: "de",
+    threadId: THREAD_ID,
+  });
+
+  assert.equal(response.disposition, "answered");
+  assert.equal(
+    response.accountHelperMetadata.helper,
+    "getOrderStatusForCurrentUser",
+  );
+  assert.match(response.assistantMessage, /Dienstleister: react_jedi/i);
+  assert.doesNotMatch(response.assistantMessage, /\bAnbieter:/i);
+  assert.doesNotMatch(response.assistantMessage, /keinen Zugriff/i);
+});
+
 test("selected order context gives role-aware invoice lifecycle explanations", async () => {
   const customerSelected = {
     referenceType: "order_id" as const,
@@ -1545,6 +1604,8 @@ test("selected order context does not capture unrelated it follow-ups", () => {
     "Is it possible?",
     "I don't understand it",
     "It is confusing",
+    "What date?",
+    "What time?",
   ]) {
     const route = routeSupportAccountAwareRequest(prompt, {
       selectedOrder: selected,
@@ -1707,7 +1768,7 @@ test("tampered and wrong-thread action tokens fail safely", async () => {
     locale: "en",
   });
   assert.equal(tampered.disposition, "unsupported_account_question");
-  assert.match(tampered.assistantMessage, /cannot check live order/i);
+  assert.match(tampered.assistantMessage, /limited support-safe/i);
 
   const wrongThread = await buildAccountAwareActionResponse({
     token: action.token,

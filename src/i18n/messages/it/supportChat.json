@@ -21,7 +21,7 @@
     "cancel": "Ho bisogno di aiuto per annullare una prenotazione.",
     "provider": "Voglio diventare fornitore."
   },
-  "disclaimer": "Il supporto IA può commettere errori. Non può accedere ai dati live di ordini, pagamenti o account.",
+  "disclaimer": "Il supporto IA può commettere errori. Può verificare solo dettagli limitati e sicuri di ordini o pagamenti che selezioni o indichi.",
   "contactSupport": "Contatta il supporto",
   "send": "Invia",
   "sending": "Il supporto sta rispondendo...",
@@ -34,7 +34,7 @@
     "abusive": "Posso aiutare con domande di supporto, ma non posso rispondere a messaggi offensivi. Contatta il supporto se hai bisogno di aiuto.",
     "nonsense": "Non sono riuscito a capire questa richiesta. Riformula la tua domanda di supporto oppure contatta il supporto.",
     "clarify": "Che cosa stai cercando di fare: registrarti, prenotare un servizio, gestire un profilo fornitore, pagare un ordine, annullare o contestare qualcosa?",
-    "unsupportedAccount": "In questa chat non posso ancora controllare dettagli live di ordini, pagamenti, fatture, rimborsi o account. Posso spiegare la policy generale o i passaggi abituali usando il materiale di supporto Infinisimo. Per il tuo account o ordine specifico, usa le pagine del tuo account oppure contatta il supporto.",
+    "unsupportedAccount": "Posso verificare solo dettagli limitati e sicuri di ordini, pagamenti o fatture quando selezioni o indichi un elemento specifico che posso verificare. Non posso consultare tutta la cronologia dell'account, ordini non correlati, Stripe o dati grezzi dell'account.",
     "uncertain": "Non ho abbastanza informazioni di supporto per rispondere in modo affidabile. Posso aiutare con domande generali su registrazione, configurazione fornitore, prenotazione, pagamento, cancellazione, contestazioni e uso del marketplace. Per questo problema specifico, contatta il supporto."
   },
   "handoffAccount": "Per assistenza specifica sull'account, contatta il supporto con i dettagli di ordine, fattura o account.",
