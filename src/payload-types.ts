@@ -971,6 +971,25 @@ export interface SupportChatMessage {
   needsHumanSupport?: boolean | null;
   model?: string | null;
   modelVersion?: string | null;
+  accountAnswerMode?:
+    | ('server_deterministic' | 'model_rewritten' | 'model_rewrite_rejected' | 'model_rewrite_disabled')
+    | null;
+  accountRewriteModel?: string | null;
+  accountRewriteModelVersion?: string | null;
+  accountRewriteRejectedReason?:
+    | (
+        | 'feature_disabled'
+        | 'model_error'
+        | 'empty_output'
+        | 'wrong_locale'
+        | 'unsafe_system_claim'
+        | 'unsupported_fact'
+        | 'contradicts_fallback'
+        | 'mutation_claim'
+        | 'missing_required_limitation'
+      )
+    | null;
+  accountRewriteFallbackUsed?: boolean | null;
   promptVersion?: string | null;
   guardrailVersion?: string | null;
   retrievalVersion?: string | null;
@@ -1621,6 +1640,11 @@ export interface SupportChatMessagesSelect<T extends boolean = true> {
   needsHumanSupport?: T;
   model?: T;
   modelVersion?: T;
+  accountAnswerMode?: T;
+  accountRewriteModel?: T;
+  accountRewriteModelVersion?: T;
+  accountRewriteRejectedReason?: T;
+  accountRewriteFallbackUsed?: T;
   promptVersion?: T;
   guardrailVersion?: T;
   retrievalVersion?: T;

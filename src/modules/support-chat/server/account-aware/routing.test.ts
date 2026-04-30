@@ -6,6 +6,7 @@ import {
   buildAccountAwareActionResponse,
   buildAccountAwareServerResponse,
 } from "./server-responses";
+import { rewriteAccountAwareServerResponse } from "./account-rewrite";
 import { routeSupportAccountAwareRequest } from "./routing";
 import {
   createAccountCandidateActionToken,
@@ -1294,4 +1295,307 @@ test("policy-only status language does not route to account helpers", () => {
   assert.deepEqual(routeSupportAccountAwareRequest("When do I pay?"), {
     kind: "none",
   });
+});
+
+function rewriteBaseResponse(resultCategory = "payment_status") {
+  return {
+    assistantMessage:
+      "Payment is not due yet because this booking request is still awaiting provider confirmation.",
+    disposition: "answered" as const,
+    needsHumanSupport: false,
+    accountHelperMetadata: {
+      helper: "getPaymentStatusForCurrentUser" as const,
+      helperVersion: "support-account-helpers-v1",
+      resultCategory,
+      authenticated: true,
+      requiredInputPresent: true,
+      serverAuthored: true as const,
+    },
+  };
+}
+
+const rewritePaymentDTO = {
+  helper: "getPaymentStatusForCurrentUser" as const,
+  referenceType: "order_id" as const,
+  resultCategory: "payment_status" as const,
+  nextStepKey: "wait_for_provider" as const,
+  paymentStatusCategory: "not_due" as const,
+  invoiceStatusCategory: "none" as const,
+  serviceStatusCategory: "requested" as const,
+  accessRole: "customer" as const,
+};
+
+const rewritePaymentOverviewDTO = {
+  helper: "getSupportPaymentOverviewForCurrentUser" as const,
+  resultCategory: "payment_overview" as const,
+  inspectedOrderCount: 2,
+  limitDescription: "recent_support_orders" as const,
+  categories: {
+    paid: 0,
+    paymentPending: 1,
+    paymentNotDue: 1,
+    paymentCanceled: 0,
+    refunded: 0,
+    unknown: 0,
+  },
+  recentExamples: [],
+  nextStepKey: "view_orders" as const,
+};
+
+async function withRewriteFlag<T>(enabled: boolean, callback: () => Promise<T>) {
+  const previous = process.env.SUPPORT_CHAT_ACCOUNT_REWRITE_ENABLED;
+  process.env.SUPPORT_CHAT_ACCOUNT_REWRITE_ENABLED = enabled ? "true" : "false";
+  try {
+    return await callback();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.SUPPORT_CHAT_ACCOUNT_REWRITE_ENABLED;
+    } else {
+      process.env.SUPPORT_CHAT_ACCOUNT_REWRITE_ENABLED = previous;
+    }
+  }
+}
+
+test("account rewrite disabled keeps deterministic account answer without model call", async () => {
+  let calls = 0;
+  const response = await withRewriteFlag(false, () =>
+    rewriteAccountAwareServerResponse({
+      response: rewriteBaseResponse(),
+      helperResult: rewritePaymentDTO,
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse: async () => {
+        calls += 1;
+        throw new Error("disabled rewrite should not call model");
+      },
+    }),
+  );
+
+  assert.equal(calls, 0);
+  assert.equal(response.accountAnswerMode, "model_rewrite_disabled");
+  assert.equal(response.accountRewriteRejectedReason, "feature_disabled");
+  assert.equal(response.accountRewriteFallbackUsed, true);
+  assert.match(response.assistantMessage, /Payment is not due yet/i);
+});
+
+test("account rewrite accepts safe model wording from sanitized DTOs", async () => {
+  const response = await withRewriteFlag(true, () =>
+    rewriteAccountAwareServerResponse({
+      response: rewriteBaseResponse(),
+      helperResult: rewritePaymentDTO,
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse: async () => ({
+        ok: true,
+        text:
+          "You have not been asked to pay yet because this booking is still waiting for provider confirmation.",
+        model: "rewrite-model",
+        modelVersion: "rewrite-v1",
+        requestId: "req_rewrite",
+      }),
+    }),
+  );
+
+  assert.equal(response.accountAnswerMode, "model_rewritten");
+  assert.equal(response.accountRewriteModel, "rewrite-model");
+  assert.equal(response.accountRewriteModelVersion, "rewrite-v1");
+  assert.equal(response.accountRewriteFallbackUsed, false);
+  assert.match(response.assistantMessage, /not been asked to pay yet/i);
+});
+
+test("account rewrite accepts explicit payment not due wording", async () => {
+  const response = await withRewriteFlag(true, () =>
+    rewriteAccountAwareServerResponse({
+      response: rewriteBaseResponse(),
+      helperResult: rewritePaymentDTO,
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse: async () => ({
+        ok: true,
+        text:
+          "Payment is not due yet because this booking is still awaiting provider confirmation.",
+        model: "rewrite-model",
+        modelVersion: "rewrite-v1",
+        requestId: "req_not_due",
+      }),
+    }),
+  );
+
+  assert.equal(response.accountAnswerMode, "model_rewritten");
+  assert.equal(response.accountRewriteFallbackUsed, false);
+  assert.match(response.assistantMessage, /Payment is not due yet/i);
+});
+
+test("account rewrite falls back on model errors and empty output", async () => {
+  const modelError = await withRewriteFlag(true, () =>
+    rewriteAccountAwareServerResponse({
+      response: rewriteBaseResponse(),
+      helperResult: rewritePaymentDTO,
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse: async () => ({
+        ok: false,
+        reason: "openai_unavailable",
+        fallbackMessage: "unused",
+        model: "rewrite-model",
+        modelVersion: "rewrite-v1",
+        requestId: null,
+      }),
+    }),
+  );
+  assert.equal(modelError.accountAnswerMode, "model_rewrite_rejected");
+  assert.equal(modelError.accountRewriteRejectedReason, "model_error");
+  assert.equal(modelError.accountRewriteFallbackUsed, true);
+
+  const empty = await withRewriteFlag(true, () =>
+    rewriteAccountAwareServerResponse({
+      response: rewriteBaseResponse(),
+      helperResult: rewritePaymentDTO,
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse: async () => ({
+        ok: false,
+        reason: "empty_output",
+        fallbackMessage: "unused",
+        model: "rewrite-model",
+        modelVersion: "rewrite-v1",
+        requestId: null,
+      }),
+    }),
+  );
+  assert.equal(empty.accountRewriteRejectedReason, "empty_output");
+  assert.match(empty.assistantMessage, /Payment is not due yet/i);
+});
+
+test("account rewrite guardrails reject unsafe drafts", async () => {
+  const cases = [
+    {
+      text: "I checked your Stripe account and payment is not due.",
+      reason: "unsafe_system_claim",
+      locale: "en" as const,
+    },
+    {
+      text: "I canceled the order for you.",
+      reason: "mutation_claim",
+      locale: "en" as const,
+    },
+    {
+      text: "This order is definitely paid.",
+      reason: "unsupported_fact",
+      locale: "en" as const,
+    },
+    {
+      text: "This order is still waiting for payment.",
+      reason: "wrong_locale",
+      locale: "fr" as const,
+    },
+  ];
+
+  for (const item of cases) {
+    const response = await withRewriteFlag(true, () =>
+      rewriteAccountAwareServerResponse({
+        response: rewriteBaseResponse(),
+        helperResult: rewritePaymentDTO,
+        locale: item.locale,
+        threadId: THREAD_ID,
+        createModelResponse: async () => ({
+          ok: true,
+          text: item.text,
+          model: "rewrite-model",
+          modelVersion: "rewrite-v1",
+          requestId: null,
+        }),
+      }),
+    );
+
+    assert.equal(response.accountAnswerMode, "model_rewrite_rejected", item.text);
+    assert.equal(response.accountRewriteRejectedReason, item.reason, item.text);
+    assert.equal(response.accountRewriteFallbackUsed, true, item.text);
+  }
+});
+
+test("payment overview rewrite must preserve bounded-history limitation", async () => {
+  const response = await withRewriteFlag(true, () =>
+    rewriteAccountAwareServerResponse({
+      response: {
+        ...rewriteBaseResponse("payment_overview"),
+        assistantMessage:
+          "From the recent orders I can safely check, I found 0 paid orders.\n\nI inspected 2 recent support-safe orders. This is not a full payment history.",
+        accountHelperMetadata: {
+          ...rewriteBaseResponse("payment_overview").accountHelperMetadata,
+          helper: "getSupportPaymentOverviewForCurrentUser",
+          requiredInputPresent: false,
+        },
+      },
+      helperResult: rewritePaymentOverviewDTO,
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse: async () => ({
+        ok: true,
+        text: "You have 0 paid orders and 1 pending payment.",
+        model: "rewrite-model",
+        modelVersion: "rewrite-v1",
+        requestId: null,
+      }),
+    }),
+  );
+
+  assert.equal(response.accountAnswerMode, "model_rewrite_rejected");
+  assert.equal(response.accountRewriteRejectedReason, "missing_required_limitation");
+  assert.match(response.assistantMessage, /not a full payment history/i);
+});
+
+test("account rewrite is not attempted for candidate or denied responses", async () => {
+  let calls = 0;
+  const createModelResponse = async () => {
+    calls += 1;
+    throw new Error("ineligible responses should not call model");
+  };
+
+  const candidate = await withRewriteFlag(true, () =>
+    rewriteAccountAwareServerResponse({
+      response: {
+        assistantMessage: "I found a few recent order candidates. Which order do you mean?",
+        disposition: "uncertain",
+        needsHumanSupport: false,
+        accountHelperMetadata: {
+          helper: "getSupportOrderCandidatesForCurrentUser",
+          helperVersion: "support-account-helpers-v1",
+          resultCategory: "order_candidates",
+          authenticated: true,
+          requiredInputPresent: false,
+          serverAuthored: true,
+        },
+      },
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse,
+    }),
+  );
+
+  const denied = await withRewriteFlag(true, () =>
+    rewriteAccountAwareServerResponse({
+      response: {
+        assistantMessage: "I cannot check live order details in this chat yet.",
+        disposition: "unsupported_account_question",
+        needsHumanSupport: true,
+        accountHelperMetadata: {
+          helper: "getOrderStatusForCurrentUser",
+          helperVersion: "support-account-helpers-v1",
+          deniedReason: "not_found_or_not_owned",
+          authenticated: true,
+          requiredInputPresent: true,
+          serverAuthored: true,
+        },
+      },
+      helperResult: rewritePaymentDTO,
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse,
+    }),
+  );
+
+  assert.equal(calls, 0);
+  assert.equal(candidate.accountAnswerMode, "server_deterministic");
+  assert.equal(denied.accountAnswerMode, "server_deterministic");
 });

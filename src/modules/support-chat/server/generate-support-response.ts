@@ -20,6 +20,10 @@ import {
   type SupportChatAction,
   type SupportSelectedOrderContext,
 } from "@/modules/support-chat/server/account-aware/server-responses";
+import type {
+  SupportAccountAnswerMode,
+  SupportAccountRewriteRejectedReason,
+} from "@/modules/support-chat/server/account-aware/types";
 import { verifySelectedOrderContextToken } from "@/modules/support-chat/server/account-aware/action-tokens";
 import { routeSupportAccountAwareRequest } from "@/modules/support-chat/server/account-aware/routing";
 import type { TRPCContext } from "@/trpc/init";
@@ -63,6 +67,11 @@ export type GenerateSupportResponseResult = {
     requestId?: string | null;
   };
   accountHelperMetadata?: SupportAccountHelperMetadata;
+  accountAnswerMode?: SupportAccountAnswerMode;
+  accountRewriteModel?: string;
+  accountRewriteModelVersion?: string;
+  accountRewriteRejectedReason?: SupportAccountRewriteRejectedReason;
+  accountRewriteFallbackUsed?: boolean;
   actions?: SupportChatAction[];
   selectedOrderContext?: SupportSelectedOrderContext;
 };
@@ -264,6 +273,11 @@ export async function generateSupportResponse(
       responseOrigin: "server",
       needsHumanSupport: accountResponse.needsHumanSupport,
       accountHelperMetadata: accountResponse.accountHelperMetadata,
+      accountAnswerMode: accountResponse.accountAnswerMode,
+      accountRewriteModel: accountResponse.accountRewriteModel,
+      accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
+      accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
+      accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
       actions: accountResponse.actions,
       selectedOrderContext: accountResponse.selectedOrderContext,
     });

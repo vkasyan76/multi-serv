@@ -18,14 +18,17 @@ import {
 } from "./action-tokens";
 import type { SupportAccountRoute } from "./routing";
 import type {
+  SupportAccountAnswerMode,
   SupportAccountHelperDeniedReason,
   SupportAccountHelperDTO,
   SupportAccountHelperName,
+  SupportAccountRewriteRejectedReason,
   SupportOrderCandidateDTO,
   SupportOrderCandidateStatusFilter,
 } from "./types";
 import { getAccountAwareCopy, type AccountAwareLocalizedCopy } from "./localized-copy";
 import { SUPPORT_ACCOUNT_HELPER_VERSION } from "./versioning";
+import { rewriteAccountAwareServerResponse } from "./account-rewrite";
 
 type AccountCtx = Pick<TRPCContext, "db" | "userId">;
 type AccountResponseIntent = Extract<
@@ -50,6 +53,11 @@ export type AccountAwareServerResponse = {
   accountHelperMetadata: SupportAccountHelperMetadata;
   actions?: SupportChatAction[];
   selectedOrderContext?: SupportSelectedOrderContext;
+  accountAnswerMode?: SupportAccountAnswerMode;
+  accountRewriteModel?: string;
+  accountRewriteModelVersion?: string;
+  accountRewriteRejectedReason?: SupportAccountRewriteRejectedReason;
+  accountRewriteFallbackUsed?: boolean;
 };
 
 export type SupportChatAction = {
@@ -69,6 +77,15 @@ export type SupportSelectedOrderContext = {
 
 function fallback(locale: AppLang) {
   return getSupportChatCopy(locale).serverMessages.unsupportedAccount;
+}
+
+function deterministicResponse(
+  response: AccountAwareServerResponse,
+): AccountAwareServerResponse {
+  return {
+    accountAnswerMode: "server_deterministic",
+    ...response,
+  };
 }
 
 function categoryLabel(value: string, copy: AccountAwareLocalizedCopy) {
@@ -426,7 +443,7 @@ export async function buildAccountAwareServerResponse(input: {
   const accountCopy = getAccountAwareCopy(input.locale);
 
   if (!authenticated) {
-    return {
+    return deterministicResponse({
       assistantMessage: fallback(input.locale),
       disposition: "unsupported_account_question",
       needsHumanSupport: true,
@@ -444,11 +461,11 @@ export async function buildAccountAwareServerResponse(input: {
         deniedReason: "unauthenticated",
         serverAuthored: true,
       },
-    };
+    });
   }
 
   if (input.route.kind === "missing_reference") {
-    return {
+    return deterministicResponse({
       assistantMessage: missingReferenceMessage(input.route, accountCopy),
       disposition: "uncertain",
       needsHumanSupport: false,
@@ -459,13 +476,13 @@ export async function buildAccountAwareServerResponse(input: {
         requiredInputPresent: false,
         serverAuthored: true,
       },
-    };
+    });
   }
 
   if (input.route.kind === "payment_overview") {
     const accountContext = input.accountContext;
     if (!accountContext) {
-      return {
+      return deterministicResponse({
         assistantMessage: fallback(input.locale),
         disposition: "unsupported_account_question",
         needsHumanSupport: true,
@@ -477,13 +494,13 @@ export async function buildAccountAwareServerResponse(input: {
           deniedReason: "unauthenticated",
           serverAuthored: true,
         },
-      };
+      });
     }
 
     const result = await getSupportPaymentOverviewForCurrentUser(accountContext);
 
     if (!result.ok) {
-      return {
+      return deterministicResponse({
         assistantMessage: fallback(input.locale),
         disposition: "unsupported_account_question",
         needsHumanSupport: true,
@@ -495,28 +512,33 @@ export async function buildAccountAwareServerResponse(input: {
           deniedReason: result.reason,
           serverAuthored: true,
         },
-      };
+      });
     }
 
-    return {
-      assistantMessage: successMessage(result.data, input.locale),
-      disposition: "answered",
-      needsHumanSupport: false,
-      accountHelperMetadata: {
-        helper: "getSupportPaymentOverviewForCurrentUser",
-        helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
-        resultCategory: result.data.resultCategory,
-        authenticated,
-        requiredInputPresent: false,
-        serverAuthored: true,
-      },
-    };
+    return rewriteAccountAwareServerResponse({
+      response: deterministicResponse({
+        assistantMessage: successMessage(result.data, input.locale),
+        disposition: "answered",
+        needsHumanSupport: false,
+        accountHelperMetadata: {
+          helper: "getSupportPaymentOverviewForCurrentUser",
+          helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+          resultCategory: result.data.resultCategory,
+          authenticated,
+          requiredInputPresent: false,
+          serverAuthored: true,
+        },
+      }),
+      helperResult: result.data,
+      locale: input.locale,
+      threadId: input.threadId,
+    });
   }
 
   if (input.route.kind === "candidate_selection") {
     const accountContext = input.accountContext;
     if (!accountContext) {
-      return {
+      return deterministicResponse({
         assistantMessage: fallback(input.locale),
         disposition: "unsupported_account_question",
         needsHumanSupport: true,
@@ -528,7 +550,7 @@ export async function buildAccountAwareServerResponse(input: {
           deniedReason: "unauthenticated",
           serverAuthored: true,
         },
-      };
+      });
     }
 
     const result = await getSupportOrderCandidatesForCurrentUser(accountContext, {
@@ -536,7 +558,7 @@ export async function buildAccountAwareServerResponse(input: {
     });
 
     if (!result.ok) {
-      return {
+      return deterministicResponse({
         assistantMessage: fallback(input.locale),
         disposition: "unsupported_account_question",
         needsHumanSupport: true,
@@ -548,10 +570,10 @@ export async function buildAccountAwareServerResponse(input: {
           deniedReason: result.reason,
           serverAuthored: true,
         },
-      };
+      });
     }
 
-    return {
+    return deterministicResponse({
       assistantMessage: filteredCandidateSelectionMessage(
         result.data.candidates,
         input.route.statusFilter,
@@ -573,11 +595,11 @@ export async function buildAccountAwareServerResponse(input: {
         threadId: input.threadId,
         locale: input.locale,
       }),
-    };
+    });
   }
 
   if (input.route.kind === "broad_or_deferred" || input.route.kind === "unsupported_reference") {
-    return {
+    return deterministicResponse({
       assistantMessage: fallback(input.locale),
       disposition: "unsupported_account_question",
       needsHumanSupport: true,
@@ -587,12 +609,12 @@ export async function buildAccountAwareServerResponse(input: {
         requiredInputPresent: false,
         serverAuthored: true,
       },
-    };
+    });
   }
 
   const accountContext = input.accountContext;
   if (!accountContext) {
-    return {
+    return deterministicResponse({
       assistantMessage: fallback(input.locale),
       disposition: "unsupported_account_question",
       needsHumanSupport: true,
@@ -604,13 +626,13 @@ export async function buildAccountAwareServerResponse(input: {
         deniedReason: "unauthenticated",
         serverAuthored: true,
       },
-    };
+    });
   }
 
   const result = await callHelper(accountContext, input.route);
 
   if (!result.ok) {
-    return {
+    return deterministicResponse({
       assistantMessage:
         result.reason === "missing_reference"
           ? missingReferenceMessage(
@@ -635,26 +657,31 @@ export async function buildAccountAwareServerResponse(input: {
         requiredInputPresent: result.reason !== "missing_reference",
         serverAuthored: true,
       },
-    };
+    });
   }
 
-  return {
-    assistantMessage: successMessage(
-      result.data,
-      input.locale,
-      input.route.responseIntent,
-    ),
-    disposition: "answered",
-    needsHumanSupport: false,
-    accountHelperMetadata: {
-      helper: input.route.helper,
-      helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
-      resultCategory: result.data.resultCategory,
-      authenticated,
-      requiredInputPresent: true,
-      serverAuthored: true,
-    },
-  };
+  return rewriteAccountAwareServerResponse({
+    response: deterministicResponse({
+      assistantMessage: successMessage(
+        result.data,
+        input.locale,
+        input.route.responseIntent,
+      ),
+      disposition: "answered",
+      needsHumanSupport: false,
+      accountHelperMetadata: {
+        helper: input.route.helper,
+        helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+        resultCategory: result.data.resultCategory,
+        authenticated,
+        requiredInputPresent: true,
+        serverAuthored: true,
+      },
+    }),
+    helperResult: result.data,
+    locale: input.locale,
+    threadId: input.threadId,
+  });
 }
 
 export async function buildAccountAwareActionResponse(input: {
@@ -670,7 +697,7 @@ export async function buildAccountAwareActionResponse(input: {
   });
 
   if (!verified.ok) {
-    return {
+    return deterministicResponse({
       assistantMessage: fallback(input.locale),
       disposition: "unsupported_account_question",
       needsHumanSupport: true,
@@ -680,7 +707,7 @@ export async function buildAccountAwareActionResponse(input: {
         requiredInputPresent: true,
         serverAuthored: true,
       },
-    };
+    });
   }
 
   const response = await buildAccountAwareServerResponse({

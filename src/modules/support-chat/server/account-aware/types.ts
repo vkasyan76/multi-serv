@@ -27,6 +27,31 @@ export type SupportAccountHelperResult<T> =
   | { ok: true; data: T }
   | { ok: false; reason: SupportAccountHelperDeniedReason };
 
+export const SUPPORT_ACCOUNT_ANSWER_MODES = [
+  "server_deterministic",
+  "model_rewritten",
+  "model_rewrite_rejected",
+  "model_rewrite_disabled",
+] as const;
+
+export type SupportAccountAnswerMode =
+  (typeof SUPPORT_ACCOUNT_ANSWER_MODES)[number];
+
+export const SUPPORT_ACCOUNT_REWRITE_REJECTED_REASONS = [
+  "feature_disabled",
+  "model_error",
+  "empty_output",
+  "wrong_locale",
+  "unsafe_system_claim",
+  "unsupported_fact",
+  "contradicts_fallback",
+  "mutation_claim",
+  "missing_required_limitation",
+] as const;
+
+export type SupportAccountRewriteRejectedReason =
+  (typeof SUPPORT_ACCOUNT_REWRITE_REJECTED_REASONS)[number];
+
 export const SUPPORT_ACCOUNT_REFERENCE_TYPES = [
   "order_id",
   "invoice_id",
