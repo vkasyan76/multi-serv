@@ -15,6 +15,10 @@ import {
 } from "@/modules/support-chat/server/retrieve-knowledge";
 import { getSupportChatCopy } from "@/modules/support-chat/server/support-chat-copy";
 import {
+  detectSupportChatStarterTopic,
+  type SupportChatTopicDetection,
+} from "@/modules/support-chat/server/topics";
+import {
   buildAccountAwareServerResponse,
   type SupportAccountHelperMetadata,
   type SupportChatAction,
@@ -72,6 +76,7 @@ export type GenerateSupportResponseResult = {
   accountRewriteModelVersion?: string;
   accountRewriteRejectedReason?: SupportAccountRewriteRejectedReason;
   accountRewriteFallbackUsed?: boolean;
+  supportTopic?: SupportChatTopicDetection;
   actions?: SupportChatAction[];
   selectedOrderContext?: SupportSelectedOrderContext;
 };
@@ -244,6 +249,11 @@ export async function generateSupportResponse(
     });
   }
 
+  const supportTopic = detectSupportChatStarterTopic({
+    message,
+    locale: input.locale,
+  });
+
   const selectedOrder =
     input.accountContext && input.selectedOrderContext
       ? verifySelectedOrderContextToken({
@@ -278,6 +288,7 @@ export async function generateSupportResponse(
       accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
       accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
       accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
+      supportTopic: supportTopic ?? undefined,
       actions: accountResponse.actions,
       selectedOrderContext: accountResponse.selectedOrderContext,
     });
@@ -300,6 +311,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "unsupported_account_question",
       responseOrigin: "server",
+      supportTopic: supportTopic ?? undefined,
     });
   }
 
@@ -310,6 +322,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "uncertain",
       responseOrigin: "server",
+      supportTopic: supportTopic ?? undefined,
     });
   }
 
@@ -320,6 +333,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "uncertain",
       responseOrigin: "server",
+      supportTopic: supportTopic ?? undefined,
     });
   }
 
@@ -345,6 +359,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "escalate",
       responseOrigin: "server",
+      supportTopic: supportTopic ?? undefined,
     });
   }
 
@@ -360,5 +375,6 @@ export async function generateSupportResponse(
       modelVersion: modelResult.modelVersion,
       requestId: modelResult.requestId,
     },
+    supportTopic: supportTopic ?? undefined,
   });
 }
