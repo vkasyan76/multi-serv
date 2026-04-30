@@ -4,50 +4,51 @@ import assert from "node:assert/strict";
 import { createSupportTopicContext } from "@/modules/support-chat/server/topics";
 import { detectTopicAccountEscalation } from "@/modules/support-chat/server/topic-account-escalation";
 
-test("cancellation context escalates scheduled follow-ups to cancellation candidates", () => {
+test("cancellation context escalates scheduled follow-ups only with personal booking intent", () => {
   const context = createSupportTopicContext({
     topic: "cancellation",
     source: "starter_prompt",
   });
 
-  for (const message of [
-    "already scheduled",
-    "ya programado",
-    "déjà planifiée",
-    "già programmata",
-    "bereits geplant",
-    "już zaplanowane",
-    "já agendado",
-    "deja programata",
-    "вже заплановане",
-  ]) {
-    assert.deepEqual(
-      detectTopicAccountEscalation({ message, context }),
-      {
-        statusFilter: "scheduled",
-        selectionHelper: "canCancelOrderForCurrentUser",
-      },
-      message
-    );
-  }
+  assert.equal(
+    detectTopicAccountEscalation({ message: "already scheduled", context }),
+    null
+  );
+  assert.equal(
+    detectTopicAccountEscalation({ message: "schon geplant", context }),
+    null
+  );
+  assert.deepEqual(
+    detectTopicAccountEscalation({
+      message: "my already scheduled booking",
+      context,
+    }),
+    {
+      statusFilter: "scheduled",
+      selectionHelper: "canCancelOrderForCurrentUser",
+    }
+  );
+  assert.deepEqual(
+    detectTopicAccountEscalation({
+      message: "meine geplante Buchung",
+      context,
+    }),
+    {
+      statusFilter: "scheduled",
+      selectionHelper: "canCancelOrderForCurrentUser",
+    }
+  );
 });
 
-test("cancellation context escalates requested and canceled follow-ups", () => {
+test("cancellation context escalates requested and canceled personal follow-ups", () => {
   const context = createSupportTopicContext({
     topic: "cancellation",
     source: "starter_prompt",
   });
 
   for (const message of [
-    "awaiting confirmation",
-    "solicitado",
-    "demandée",
-    "richiesta",
-    "angefragt",
-    "oczekuje na potwierdzenie",
-    "aguardando confirmação",
-    "in asteptarea confirmarii",
-    "очікує підтвердження",
+    "my requested booking",
+    "my booking awaiting confirmation",
   ]) {
     assert.deepEqual(
       detectTopicAccountEscalation({
@@ -62,17 +63,7 @@ test("cancellation context escalates requested and canceled follow-ups", () => {
     );
   }
 
-  for (const message of [
-    "canceled",
-    "cancelado",
-    "annulée",
-    "annullata",
-    "storniert",
-    "anulowane",
-    "anulado",
-    "anulata",
-    "скасоване",
-  ]) {
+  for (const message of ["my canceled booking", "my canceled order"]) {
     assert.deepEqual(
       detectTopicAccountEscalation({ message, context }),
       {
@@ -84,25 +75,29 @@ test("cancellation context escalates requested and canceled follow-ups", () => {
   }
 });
 
-test("payment context escalates paid and unpaid follow-ups to payment candidates", () => {
+test("payment context escalates paid and unpaid personal follow-ups to payment candidates", () => {
   const context = createSupportTopicContext({
     topic: "payment",
     source: "starter_prompt",
   });
 
-  assert.deepEqual(detectTopicAccountEscalation({ message: "paid", context }), {
-    statusFilter: "paid",
-    selectionHelper: "getPaymentStatusForCurrentUser",
-  });
+  assert.equal(detectTopicAccountEscalation({ message: "paid", context }), null);
   assert.deepEqual(
-    detectTopicAccountEscalation({ message: "unpaid", context }),
+    detectTopicAccountEscalation({ message: "my paid order", context }),
+    {
+      statusFilter: "paid",
+      selectionHelper: "getPaymentStatusForCurrentUser",
+    }
+  );
+  assert.deepEqual(
+    detectTopicAccountEscalation({ message: "my unpaid booking", context }),
     {
       statusFilter: "payment_pending",
       selectionHelper: "getPaymentStatusForCurrentUser",
     }
   );
   assert.deepEqual(
-    detectTopicAccountEscalation({ message: "not due", context }),
+    detectTopicAccountEscalation({ message: "my payment not due", context }),
     {
       statusFilter: "payment_not_due",
       selectionHelper: "getPaymentStatusForCurrentUser",
@@ -110,21 +105,21 @@ test("payment context escalates paid and unpaid follow-ups to payment candidates
   );
 });
 
-test("booking context escalates service-state follow-ups to order candidates", () => {
+test("booking context escalates service-state personal follow-ups to order candidates", () => {
   const context = createSupportTopicContext({
     topic: "booking",
     source: "starter_prompt",
   });
 
   assert.deepEqual(
-    detectTopicAccountEscalation({ message: "scheduled", context }),
+    detectTopicAccountEscalation({ message: "my scheduled booking", context }),
     {
       statusFilter: "scheduled",
       selectionHelper: "getOrderStatusForCurrentUser",
     }
   );
   assert.deepEqual(
-    detectTopicAccountEscalation({ message: "requested", context }),
+    detectTopicAccountEscalation({ message: "my requested booking", context }),
     {
       statusFilter: "requested",
       selectionHelper: "getOrderStatusForCurrentUser",
@@ -143,11 +138,14 @@ test("provider context, missing context, and long messages do not escalate", () 
   });
 
   assert.equal(
-    detectTopicAccountEscalation({ message: "scheduled", context: provider }),
+    detectTopicAccountEscalation({
+      message: "my scheduled booking",
+      context: provider,
+    }),
     null
   );
   assert.equal(
-    detectTopicAccountEscalation({ message: "вже заплановане" }),
+    detectTopicAccountEscalation({ message: "my already scheduled booking" }),
     null
   );
   assert.equal(

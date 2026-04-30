@@ -51,6 +51,11 @@ export type SupportAccountRoute =
   | { kind: "broad_or_deferred" }
   | { kind: "none" };
 
+type RouteSupportAccountAwareOptions = {
+  selectedOrder?: SupportAccountHelperInput & { referenceType: "order_id" };
+  suppressCandidateSelection?: boolean;
+};
+
 const OBJECT_ID_RE = /\b[a-f0-9]{24}\b/gi;
 const EXPLICIT_BAD_REF_RE =
   /\b(?:order|booking|invoice)\s*(?:id|#|number|reference|ref)\s*[:#-]?\s*([a-z0-9_-]{6,})\b/i;
@@ -115,6 +120,50 @@ const CANCEL_ELIGIBILITY_PATTERNS = [
   /\bcancelable\b/i,
   /\bcancellation\s+eligibility\b/i,
 ];
+
+const DIRECT_MUTATION_PATTERNS = [
+  /\bcancel\s+my\s+(order|booking)\s+now\b/i,
+  /\bcancel\s+(this|the)\s+(order|booking)\s+now\b/i,
+  /\bstorniere?\s+meine\s+(buchung|bestellung)\s+(jetzt|sofort)\b/i,
+  /\bannule\s+(ma|mon|mes)\s+(commande|reservation)\b/i,
+  /\b(cancela|anula)\s+(mi|mis)\s+(pedido|pedidos|reserva|reservas)\b/i,
+  /\banuluj\s+(moje|moja|moj)\s+(zamowienie|rezerwacje?)\b/u,
+  /\banuleaza\s+(comanda|rezervarea)\s+mea\b/u,
+  /скасуй\s+(моє|мою|мої)\s+(замовлення|бронювання)/u,
+] as const;
+
+const PERSONAL_ACCOUNT_OBJECT_PATTERNS = [
+  /\b(my|mine)\b.*\b(orders?|bookings?|payments?|invoices?)\b/u,
+  /\b(orders?|bookings?|payments?|invoices?)\b.*\b(my|mine)\b/u,
+  /\bmeine\b.*\bbuchung\b/u,
+  /\bmeine[rmn]?\b.*\b(buchungen?|bestellungen?|zahlungen?|rechnungen?)\b/u,
+  /\b(buchungen?|bestellungen?|zahlungen?|rechnungen?)\b.*\bmeine[rmn]?\b/u,
+  /\b(ma|mon|mes)\b.*\b(commandes?|reservations?|paiements?|factures?)\b/u,
+  /\b(mi|mis)\b.*\b(pedidos?|reservas?|pagos?|facturas?)\b/u,
+  /\b(mio|mia|miei|mie)\b.*\b(ordini?|prenotazioni?|pagamenti?|fatture?)\b/u,
+  /\b(meu|minha|meus|minhas)\b.*\b(pedidos?|reservas?|pagamentos?|faturas?)\b/u,
+  /\b(moj|moja|moje|moich)\b.*\b(zamowienia?|rezerwacje?|platnosci|faktury)\b/u,
+  /\b(meu|mea|mele)\b.*\b(comenzi|comanda|rezervari|rezervare|plati|facturi)\b/u,
+  /(моє|мою|мої|моїх).*(замовлення|бронювання|оплат|платеж|рахунок|рахунки)/u,
+] as const;
+
+const LIST_ACCOUNT_OBJECT_PATTERNS = [
+  /\b(show|list|find|which)\b.*\b(orders?|bookings?|payments?|invoices?)\b/u,
+  /\b(zeige|zeig|liste|finde|welche)\b.*\b(buchungen?|bestellungen?|zahlungen?|rechnungen?)\b/u,
+  /\b(afficher|quelles?|quels?)\b.*\b(commandes?|reservations?|paiements?|factures?)\b/u,
+  /\b(mostra|quali)\b.*\b(ordini?|prenotazioni?|pagamenti?|fatture?)\b/u,
+  /\b(mostrar|que)\b.*\b(pedidos?|reservas?|pagos?|facturas?)\b/u,
+  /\b(mostrar|quais)\b.*\b(pedidos?|reservas?|pagamentos?|faturas?)\b/u,
+  /\b(pokaz|ktore)\b.*\b(zamowienia?|rezerwacje?|platnosci|faktury)\b/u,
+  /\b(arata|ce)\b.*\b(comenzi|comanda|rezervari|rezervarile|rezervare|plati|facturi)\b/u,
+  /(показати|які).*(замовлення|бронювання|оплат|платеж|рахунок|рахунки)/u,
+] as const;
+
+const EXPLICIT_ACCOUNT_LOOKUP_PATTERNS = [
+  /\bcheck\b.*\bpayment\s+reference\b/u,
+  /\bpayment\s+reference\b.*\bpay\b/u,
+  /\bcheck\b.*\b(orders?|bookings?)\b.*\b(provider|last\s+week|last\s+month|recent|latest|date)\b/u,
+] as const;
 
 const SELECTED_ORDER_REFERENCE_PATTERNS = [
   /\b(this|that|selected)\s+(order|booking)\b/i,
@@ -204,7 +253,7 @@ const SELECTED_ORDER_CANCEL_PATTERNS = [
   /\bcancellation\b/i,
 ];
 
-function hasAny(patterns: RegExp[], message: string) {
+function hasAny(patterns: readonly RegExp[], message: string) {
   return patterns.some((pattern) => pattern.test(message));
 }
 
@@ -217,6 +266,35 @@ function normalizeSelectedOrderText(message: string) {
     .replace(/[^\p{Letter}\p{Number}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function hasDirectMutationRequest(message: string) {
+  const normalizedMessage = normalizeSelectedOrderText(message);
+  return (
+    hasAny(DIRECT_MUTATION_PATTERNS, message) ||
+    hasAny(DIRECT_MUTATION_PATTERNS, normalizedMessage)
+  );
+}
+
+function hasExplicitCandidateLookupIntent(message: string) {
+  const normalizedMessage = normalizeSelectedOrderText(message).replace(
+    /[łŁ]/g,
+    "l",
+  );
+
+  return (
+    hasAny(EXPLICIT_ACCOUNT_LOOKUP_PATTERNS, message.toLocaleLowerCase()) ||
+    hasAny(EXPLICIT_ACCOUNT_LOOKUP_PATTERNS, normalizedMessage) ||
+    hasAny(PERSONAL_ACCOUNT_OBJECT_PATTERNS, normalizedMessage) ||
+    hasAny(LIST_ACCOUNT_OBJECT_PATTERNS, normalizedMessage)
+  );
+}
+
+function hasCancelLookupVerb(message: string) {
+  const normalizedMessage = normalizeSelectedOrderText(message);
+  return /\b(cancel|cancelable|stornier\w+|annuler|annul\w+|anular|anul\w+)\b/u.test(
+    normalizedMessage,
+  );
 }
 
 function exactObjectIds(message: string) {
@@ -323,9 +401,7 @@ function selectedOrderFollowUpHelper(input: {
 
 export function routeSupportAccountAwareRequest(
   message: string,
-  options?: {
-    selectedOrder?: SupportAccountHelperInput & { referenceType: "order_id" };
-  },
+  options?: RouteSupportAccountAwareOptions,
 ): SupportAccountRoute {
   const trimmed = message.trim();
   if (!trimmed) return { kind: "none" };
@@ -342,6 +418,9 @@ export function routeSupportAccountAwareRequest(
     hasAny(PAYMENT_OVERVIEW_PATTERNS, trimmed) ||
     detectPaymentOverviewIntent(trimmed);
   const statusFilter = detectCandidateStatusFilter(trimmed);
+  const hasCandidateLookup = hasExplicitCandidateLookupIntent(trimmed);
+  const hasDirectMutation = hasDirectMutationRequest(trimmed);
+  const suppressCandidateSelection = options?.suppressCandidateSelection;
   const isAccountAware =
     hasOrderStatus ||
     hasPaymentStatus ||
@@ -387,6 +466,7 @@ export function routeSupportAccountAwareRequest(
 
   if (
     ids.length === 0 &&
+    !suppressCandidateSelection &&
     hasPaymentOverview
   ) {
     return { kind: "payment_overview" };
@@ -394,7 +474,15 @@ export function routeSupportAccountAwareRequest(
 
   if (
     ids.length === 0 &&
-    (statusFilter || detectCandidateSelectionIntent(trimmed))
+    !hasDirectMutation &&
+    !suppressCandidateSelection &&
+    hasCandidateLookup &&
+    (
+      statusFilter ||
+      detectCandidateSelectionIntent(trimmed) ||
+      hasCancelEligibility ||
+      hasCancelLookupVerb(trimmed)
+    )
   ) {
     return {
       kind: "candidate_selection",
@@ -447,14 +535,20 @@ export function routeSupportAccountAwareRequest(
           );
     }
 
-    return {
-      kind: "candidate_selection",
-      selectionHelper: candidateSelectionHelper({
-        hasCancelEligibility,
-        hasPaymentStatus,
+    if (!hasDirectMutation && !suppressCandidateSelection && hasCandidateLookup) {
+      return {
+        kind: "candidate_selection",
+        selectionHelper: candidateSelectionHelper({
+          hasCancelEligibility,
+          hasPaymentStatus,
+          statusFilter,
+        }),
         statusFilter,
-      }),
-      statusFilter,
+      };
+    }
+
+    return {
+      kind: "none",
     };
   }
 

@@ -41,7 +41,7 @@ const STATUS_PATTERNS = {
     /\bya\s+programad[ao]\b/u,
     /\bplanifiee?\b/u,
     /\bconfirmee?\b/u,
-    /\bgeplant\b/u,
+    /\bgeplante?\b/u,
     /\bbestatigt\b/u,
     /\bprogrammata\b/u,
     /\bconfermata\b/u,
@@ -108,6 +108,19 @@ const STATUS_PATTERNS = {
   ],
 } as const;
 
+const PERSONAL_ACCOUNT_OBJECT_PATTERNS = [
+  /\b(my|mine)\b.*\b(orders?|bookings?|payments?|invoices?)\b/u,
+  /\bmeine\b.*\bbuchung\b/u,
+  /\bmeine[rmn]?\b.*\b(buchung(en)?|bestellungen?|zahlungen?|rechnungen?)\b/u,
+  /\b(ma|mon|mes)\b.*\b(commandes?|reservations?|paiements?|factures?)\b/u,
+  /\b(mi|mis)\b.*\b(pedidos?|reservas?|pagos?|facturas?)\b/u,
+  /\b(mio|mia|miei|mie)\b.*\b(ordini?|prenotazioni?|pagamenti?|fatture?)\b/u,
+  /\b(meu|minha|meus|minhas)\b.*\b(pedidos?|reservas?|pagamentos?|faturas?)\b/u,
+  /\b(moj|moja|moje|moich)\b.*\b(zamowienia?|rezerwacje?|platnosci|faktury)\b/u,
+  /\b(meu|mea|mele)\b.*\b(comenzi|comanda|rezervari|rezervare|plati|facturi)\b/u,
+  /(моє|мою|мої|моїх).*(замовлення|бронювання|оплат|платеж|рахунок|рахунки)/u,
+] as const;
+
 function normalizeEscalationText(value: string) {
   return value
     .normalize("NFKD")
@@ -136,6 +149,7 @@ export function detectTopicAccountEscalation(input: {
   if (!isShortEscalationMessage(input.message)) return null;
 
   const text = normalizeEscalationText(input.message);
+  if (!hasAny(PERSONAL_ACCOUNT_OBJECT_PATTERNS, text)) return null;
 
   if (input.context.topic === "cancellation") {
     if (hasAny(STATUS_PATTERNS.scheduled, text)) {

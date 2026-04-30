@@ -578,6 +578,54 @@ test("status-filtered prompts route to bounded candidate selection", async () =>
   }
 });
 
+test("general cancellation help does not route to account candidates", () => {
+  for (const prompt of [
+    "Ich brauche Hilfe beim Stornieren einer Buchung.",
+    "Wie funktioniert Stornierung?",
+    "Can a booking be canceled?",
+    "What happens when a booking is canceled?",
+    "schon geplant",
+  ]) {
+    assert.equal(routeSupportAccountAwareRequest(prompt).kind, "none", prompt);
+  }
+});
+
+test("explicit personal cancellation lookup still routes to candidates", () => {
+  for (const prompt of [
+    "Which of my bookings can I cancel?",
+    "Welche meiner Buchungen kann ich stornieren?",
+    "Show my cancelable bookings",
+  ]) {
+    assert.equal(
+      routeSupportAccountAwareRequest(prompt).kind,
+      "candidate_selection",
+      prompt,
+    );
+  }
+});
+
+test("explicit account lookup phrases still route to candidates", () => {
+  for (const prompt of [
+    "Check payment reference pay_123456",
+    "Check the order with this provider from last week",
+  ]) {
+    assert.equal(
+      routeSupportAccountAwareRequest(prompt).kind,
+      "candidate_selection",
+      prompt,
+    );
+  }
+});
+
+test("direct cancellation mutation commands do not route to candidate lookup", () => {
+  for (const prompt of [
+    "Cancel my booking now.",
+    "Storniere meine Buchung jetzt.",
+  ]) {
+    assert.equal(routeSupportAccountAwareRequest(prompt).kind, "none", prompt);
+  }
+});
+
 test("payment overview prompts route to bounded overview helper", async () => {
   for (const prompt of [
     "Did I pay already for any order?",
@@ -1087,15 +1135,15 @@ test("candidate action click validates token and calls exact helper", async () =
   );
 });
 
-test("topic cancellation follow-up escalates to scheduled cancellation candidates", async () => {
+test("topic cancellation follow-up escalates to scheduled cancellation candidates with personal booking intent", async () => {
   process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
   process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
   const response = await generateSupportResponse({
-    message: "вже заплановане",
+    message: "meine geplante Buchung",
     threadId: THREAD_ID,
-    locale: "uk",
+    locale: "de",
     accountContext,
     supportTopicContext: createSupportTopicContext({
       topic: "cancellation",

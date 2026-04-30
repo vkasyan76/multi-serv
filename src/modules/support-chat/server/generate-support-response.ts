@@ -128,6 +128,7 @@ const ACCOUNT_SPECIFIC_PATTERNS = [
   /\bcancel\s+my\s+(booking|order)\b/i,
   /\bcancel\s+(this|the)\s+(booking|order)\b/i,
   /\bcancel\s+it\s+now\b/i,
+  /\bstorniere?\s+meine\s+(buchung|bestellung)\s+(jetzt|sofort)\b/i,
   /\bcheck\s+my\s+invoice\b/i,
   /\brefund\s+(this|my)\s+(payment|order|booking)\b/i,
   /\bmy\s+refund\b/i,
@@ -275,6 +276,7 @@ export async function generateSupportResponse(
   const accountRoute = input.accountContext
     ? routeSupportAccountAwareRequest(message, {
         selectedOrder: selectedOrder?.ok ? selectedOrder.input : undefined,
+        suppressCandidateSelection: Boolean(supportTopic),
       })
     : { kind: "none" as const };
   if (accountRoute.kind !== "none") {
