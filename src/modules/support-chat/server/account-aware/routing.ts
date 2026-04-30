@@ -8,9 +8,16 @@ import type {
   SupportOrderCandidateStatusFilter,
 } from "./types";
 import {
+  detectBroadOrDeferredIntent,
   detectCandidateSelectionIntent,
   detectCandidateStatusFilter,
+  detectCancelEligibilityIntent,
+  detectOrderStatusIntent,
   detectPaymentOverviewIntent,
+  detectPaymentStatusIntent,
+  detectSelectedOrderCancelFollowUpIntent,
+  detectSelectedOrderPaymentFollowUpIntent,
+  detectSelectedOrderStatusFollowUpIntent,
 } from "./intent-normalizer";
 
 type ExactReferenceSupportAccountHelperName = Exclude<
@@ -273,12 +280,17 @@ function selectedOrderFollowUpHelper(input: {
   const hasFollowUpShape = hasAny(
     SELECTED_ORDER_FOLLOW_UP_PATTERNS,
     input.message,
-  ) || hasInvoiceLifecycleQuestion;
+  ) ||
+    hasInvoiceLifecycleQuestion ||
+    detectSelectedOrderCancelFollowUpIntent(input.message) ||
+    detectSelectedOrderPaymentFollowUpIntent(input.message) ||
+    detectSelectedOrderStatusFollowUpIntent(input.message);
 
   if (!hasSelectedReference && !hasFollowUpShape) return null;
   if (
     input.hasCancelEligibility ||
-    hasAny(SELECTED_ORDER_CANCEL_PATTERNS, input.message)
+    hasAny(SELECTED_ORDER_CANCEL_PATTERNS, input.message) ||
+    detectSelectedOrderCancelFollowUpIntent(input.message)
   ) {
     return { helper: "canCancelOrderForCurrentUser" };
   }
@@ -294,11 +306,15 @@ function selectedOrderFollowUpHelper(input: {
 
   if (
     input.hasPaymentStatus ||
-    hasAny(SELECTED_ORDER_PAYMENT_PATTERNS, input.message)
+    hasAny(SELECTED_ORDER_PAYMENT_PATTERNS, input.message) ||
+    detectSelectedOrderPaymentFollowUpIntent(input.message)
   ) {
     return { helper: "getPaymentStatusForCurrentUser" };
   }
-  if (hasAny(SELECTED_ORDER_STATUS_PATTERNS, input.message)) {
+  if (
+    hasAny(SELECTED_ORDER_STATUS_PATTERNS, input.message) ||
+    detectSelectedOrderStatusFollowUpIntent(input.message)
+  ) {
     return { helper: "getOrderStatusForCurrentUser" };
   }
 
@@ -315,9 +331,13 @@ export function routeSupportAccountAwareRequest(
   if (!trimmed) return { kind: "none" };
 
   const ids = exactObjectIds(trimmed);
-  const hasOrderStatus = hasAny(ORDER_STATUS_PATTERNS, trimmed);
-  const hasPaymentStatus = hasAny(PAYMENT_STATUS_PATTERNS, trimmed);
-  const hasCancelEligibility = hasAny(CANCEL_ELIGIBILITY_PATTERNS, trimmed);
+  const hasOrderStatus =
+    hasAny(ORDER_STATUS_PATTERNS, trimmed) || detectOrderStatusIntent(trimmed);
+  const hasPaymentStatus =
+    hasAny(PAYMENT_STATUS_PATTERNS, trimmed) || detectPaymentStatusIntent(trimmed);
+  const hasCancelEligibility =
+    hasAny(CANCEL_ELIGIBILITY_PATTERNS, trimmed) ||
+    detectCancelEligibilityIntent(trimmed);
   const hasPaymentOverview =
     hasAny(PAYMENT_OVERVIEW_PATTERNS, trimmed) ||
     detectPaymentOverviewIntent(trimmed);
@@ -328,6 +348,10 @@ export function routeSupportAccountAwareRequest(
     hasCancelEligibility ||
     hasPaymentOverview ||
     statusFilter;
+
+  if (detectBroadOrDeferredIntent(trimmed)) {
+    return { kind: "broad_or_deferred" };
+  }
 
   if (
     ALWAYS_BROAD_OR_DEFERRED_PATTERNS.some((pattern) => pattern.test(trimmed)) &&

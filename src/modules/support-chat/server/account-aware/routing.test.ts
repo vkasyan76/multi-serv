@@ -624,6 +624,227 @@ test("payment overview prompts route across launched locales", () => {
   }
 });
 
+function routeSummary(route: ReturnType<typeof routeSupportAccountAwareRequest>) {
+  if (route.kind === "helper") return `helper:${route.helper}`;
+  if (route.kind === "candidate_selection") {
+    return `candidate_selection:${route.statusFilter ?? ""}`;
+  }
+  return route.kind;
+}
+
+test("exact account helper prompts route across launched locales", () => {
+  const cases = [
+    [
+      "order",
+      "helper:getOrderStatusForCurrentUser",
+      [
+        `What is my order status ${ORDER_REQUESTED_A}?`,
+        `Wie ist der Status meiner Bestellung ${ORDER_REQUESTED_A}?`,
+        `Quel est le statut de ma commande ${ORDER_REQUESTED_A} ?`,
+        `Qual è lo stato del mio ordine ${ORDER_REQUESTED_A}?`,
+        `¿Cuál es el estado de mi pedido ${ORDER_REQUESTED_A}?`,
+        `Qual é o estado do meu pedido ${ORDER_REQUESTED_A}?`,
+        `Jaki jest status mojego zamówienia ${ORDER_REQUESTED_A}?`,
+        `Care este statusul comenzii mele ${ORDER_REQUESTED_A}?`,
+        `Який статус мого замовлення ${ORDER_REQUESTED_A}?`,
+      ],
+    ],
+    [
+      "payment",
+      "helper:getPaymentStatusForCurrentUser",
+      [
+        `Payment status for order ${ORDER_REQUESTED_A}`,
+        `Wie ist der Zahlungsstatus für Bestellung ${ORDER_REQUESTED_A}?`,
+        `Quel est le statut du paiement pour la commande ${ORDER_REQUESTED_A} ?`,
+        `Qual è lo stato del pagamento per l'ordine ${ORDER_REQUESTED_A}?`,
+        `¿Cuál es el estado del pago del pedido ${ORDER_REQUESTED_A}?`,
+        `Qual é o estado do pagamento do pedido ${ORDER_REQUESTED_A}?`,
+        `Jaki jest status płatności za zamówienie ${ORDER_REQUESTED_A}?`,
+        `Care este statusul plății pentru comanda ${ORDER_REQUESTED_A}?`,
+        `Який статус оплати замовлення ${ORDER_REQUESTED_A}?`,
+      ],
+    ],
+    [
+      "cancel",
+      "helper:canCancelOrderForCurrentUser",
+      [
+        `Can I cancel order ${ORDER_REQUESTED_A}?`,
+        `Kann ich Buchung ${ORDER_REQUESTED_A} stornieren?`,
+        `Puis-je annuler la réservation ${ORDER_REQUESTED_A} ?`,
+        `Posso annullare la prenotazione ${ORDER_REQUESTED_A}?`,
+        `¿Puedo cancelar la reserva ${ORDER_REQUESTED_A}?`,
+        `Posso cancelar a reserva ${ORDER_REQUESTED_A}?`,
+        `Czy mogę anulować rezerwację ${ORDER_REQUESTED_A}?`,
+        `Pot anula rezervarea ${ORDER_REQUESTED_A}?`,
+        `Чи можу я скасувати бронювання ${ORDER_REQUESTED_A}?`,
+      ],
+    ],
+  ] as const;
+
+  for (const [label, expected, prompts] of cases) {
+    for (const prompt of prompts) {
+      assert.equal(routeSummary(routeSupportAccountAwareRequest(prompt)), expected, `${label}: ${prompt}`);
+    }
+  }
+});
+
+test("status-filtered candidate prompts route across launched locales", () => {
+  const cases = [
+    ["scheduled", "candidate_selection:scheduled", [
+      "Which orders are scheduled?",
+      "Welche Buchungen sind geplant?",
+      "Quelles réservations sont programmées ?",
+      "Quali prenotazioni sono programmate?",
+      "¿Qué pedidos están programados?",
+      "Quais reservas estão agendadas?",
+      "Które rezerwacje są zaplanowane?",
+      "Ce rezervări sunt programate?",
+      "Які бронювання заплановані?",
+    ]],
+    ["canceled", "candidate_selection:canceled", [
+      "Show my canceled orders",
+      "Zeige meine stornierten Buchungen",
+      "Afficher mes réservations annulées",
+      "Mostra le mie prenotazioni annullate",
+      "Mostrar mis pedidos cancelados",
+      "Mostrar minhas reservas canceladas",
+      "Pokaż moje anulowane rezerwacje",
+      "Arată rezervările anulate",
+      "Показати мої скасовані бронювання",
+    ]],
+    ["unpaid", "candidate_selection:payment_pending", [
+      "Show unpaid bookings",
+      "Zeige unbezahlte Buchungen",
+      "Afficher les réservations impayées",
+      "Mostra prenotazioni non pagate",
+      "Mostrar reservas sin pagar",
+      "Mostrar reservas por pagar",
+      "Pokaż nieopłacone rezerwacje",
+      "Arată rezervările neplătite",
+      "Показати неоплачені бронювання",
+    ]],
+  ] as const;
+
+  for (const [label, expected, prompts] of cases) {
+    for (const prompt of prompts) {
+      assert.equal(routeSummary(routeSupportAccountAwareRequest(prompt)), expected, `${label}: ${prompt}`);
+    }
+  }
+});
+
+test("broad account blockers route across launched locales", () => {
+  for (const prompt of [
+    "Show all my orders",
+    "Zeige alle meine Buchungen",
+    "Afficher toutes mes commandes",
+    "Mostra tutti i miei ordini",
+    "Mostrar todos mis pedidos",
+    "Mostrar todos os meus pedidos",
+    "Pokaż wszystkie moje zamówienia",
+    "Arată toate comenzile mele",
+    "Показати всі мої замовлення",
+  ]) {
+    assert.equal(routeSummary(routeSupportAccountAwareRequest(prompt)), "broad_or_deferred", prompt);
+  }
+});
+
+test("selected-order follow-ups route across launched locales", () => {
+  const selected = { referenceType: "order_id" as const, reference: ORDER_REQUESTED_A };
+  const cases = [
+    ["payment", "helper:getPaymentStatusForCurrentUser", [
+      "What about payment?",
+      "Was ist mit der Zahlung?",
+      "Et le paiement ?",
+      "E il pagamento?",
+      "¿Y el pago?",
+      "E o pagamento?",
+      "A płatność?",
+      "Dar plata?",
+      "А що з оплатою?",
+    ]],
+    ["status", "helper:getOrderStatusForCurrentUser", [
+      "What is its status?",
+      "Wie ist der Status?",
+      "Quel est son statut ?",
+      "Qual è il suo stato?",
+      "¿Cuál es su estado?",
+      "Qual é o estado?",
+      "Jaki jest status?",
+      "Care este statusul?",
+      "Який статус?",
+    ]],
+    ["cancel", "helper:canCancelOrderForCurrentUser", [
+      "Can I cancel it?",
+      "Kann ich sie stornieren?",
+      "Puis-je l’annuler ?",
+      "Posso annullarla?",
+      "¿Puedo cancelarlo?",
+      "Posso cancelá-la?",
+      "Czy mogę ją anulować?",
+      "Pot să o anulez?",
+      "Чи можу я його скасувати?",
+    ]],
+  ] as const;
+
+  for (const [label, expected, prompts] of cases) {
+    for (const prompt of prompts) {
+      assert.equal(
+        routeSummary(routeSupportAccountAwareRequest(prompt, { selectedOrder: selected })),
+        expected,
+        `${label}: ${prompt}`,
+      );
+    }
+  }
+});
+
+test("tenant awaiting-confirmation prompts route across launched locales", () => {
+  for (const prompt of [
+    "Which bookings are awaiting confirmation?",
+    "Welche Buchungen warten auf Bestätigung?",
+    "Quelles réservations attendent une confirmation ?",
+    "Quali prenotazioni attendono conferma?",
+    "¿Qué reservas esperan confirmación?",
+    "Quais reservas aguardam confirmação?",
+    "Które rezerwacje czekają na potwierdzenie?",
+    "Ce rezervări așteaptă confirmarea?",
+    "Які бронювання очікують підтвердження?",
+  ]) {
+    assert.equal(
+      routeSummary(routeSupportAccountAwareRequest(prompt)),
+      "candidate_selection:requested",
+      prompt,
+    );
+  }
+});
+
+test("localized policy-only status questions stay out of account routing", () => {
+  for (const prompt of [
+    "What do booking statuses mean?",
+    "Que signifient les statuts de réservation ?",
+    "¿Qué significan los estados de reserva?",
+  ]) {
+    assert.equal(routeSupportAccountAwareRequest(prompt).kind, "none", prompt);
+  }
+});
+
+test("generic cancellation prompts do not route to order cancellation helper", () => {
+  for (const prompt of [
+    "Can I cancel my account?",
+    "Can I cancel my subscription?",
+  ]) {
+    assert.equal(routeSupportAccountAwareRequest(prompt).kind, "none", prompt);
+  }
+});
+
+test("generic history and export prompts do not route to account broad blocker", () => {
+  for (const prompt of [
+    "What is the history of your platform?",
+    "Can I export this chat?",
+  ]) {
+    assert.equal(routeSupportAccountAwareRequest(prompt).kind, "none", prompt);
+  }
+});
+
 test("vague account prompts route to candidate selection", () => {
   for (const prompt of [
     "What is my order status?",
