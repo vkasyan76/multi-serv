@@ -116,17 +116,29 @@ export async function rewriteAccountAwareServerResponse(input: {
   const createModelResponse =
     input.createModelResponse ?? createDefaultRewriteModelResponse;
 
-  const result = await createModelResponse({
-    instructions: prompt.instructions,
-    input: prompt.input,
-    locale: input.locale,
-    metadata: {
-      threadId: input.threadId,
+  let result: SupportChatModelResult;
+  try {
+    result = await createModelResponse({
+      instructions: prompt.instructions,
+      input: prompt.input,
       locale: input.locale,
-      accountAnswerMode: "rewrite",
-      resultCategory: input.helperResult.resultCategory,
-    },
-  });
+      metadata: {
+        threadId: input.threadId,
+        locale: input.locale,
+        accountAnswerMode: "rewrite",
+        resultCategory: input.helperResult.resultCategory,
+      },
+    });
+  } catch {
+    return withRewriteMetadata(
+      input.response,
+      metadata({
+        accountAnswerMode: "model_rewrite_rejected",
+        accountRewriteRejectedReason: "model_error",
+        accountRewriteFallbackUsed: true,
+      }),
+    );
+  }
 
   if (!result.ok) {
     return withRewriteMetadata(

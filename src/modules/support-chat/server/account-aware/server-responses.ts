@@ -41,6 +41,7 @@ export type SupportAccountHelperMetadata = {
   helperVersion: string;
   resultCategory?: string;
   deniedReason?: SupportAccountHelperDeniedReason;
+  actionTokenReason?: "invalid_token" | "expired_token";
   authenticated: boolean;
   requiredInputPresent: boolean;
   serverAuthored: true;
@@ -697,6 +698,21 @@ export async function buildAccountAwareActionResponse(input: {
   });
 
   if (!verified.ok) {
+    if (verified.reason === "expired_token") {
+      return deterministicResponse({
+        assistantMessage: getAccountAwareCopy(input.locale).actionTokenExpired,
+        disposition: "uncertain",
+        needsHumanSupport: false,
+        accountHelperMetadata: {
+          helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+          authenticated,
+          requiredInputPresent: true,
+          actionTokenReason: verified.reason,
+          serverAuthored: true,
+        },
+      });
+    }
+
     return deterministicResponse({
       assistantMessage: fallback(input.locale),
       disposition: "unsupported_account_question",
@@ -705,6 +721,7 @@ export async function buildAccountAwareActionResponse(input: {
         helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
         authenticated,
         requiredInputPresent: true,
+        actionTokenReason: verified.reason,
         serverAuthored: true,
       },
     });

@@ -1354,6 +1354,13 @@ test("selected order context does not capture unrelated it follow-ups", () => {
 });
 
 test("selected order context tokens validate thread and expiry", () => {
+  assert.throws(() =>
+    createSelectedOrderContextToken({
+      reference: "not-an-order-id",
+      threadId: THREAD_ID,
+    }),
+  );
+
   const token = createSelectedOrderContextToken({
     reference: ORDER_SCHEDULED_A,
     threadId: THREAD_ID,
@@ -1392,6 +1399,14 @@ test("selected order context tokens validate thread and expiry", () => {
 });
 
 test("candidate action token is re-authorized for tenant order access", async () => {
+  assert.throws(() =>
+    createAccountCandidateActionToken({
+      helper: "getOrderStatusForCurrentUser",
+      reference: "not-an-order-id",
+      threadId: THREAD_ID,
+    }),
+  );
+
   const token = createAccountCandidateActionToken({
     helper: "getOrderStatusForCurrentUser",
     reference: ORDER_USER_B,
@@ -1513,7 +1528,10 @@ test("expired and signed-out candidate action clicks fail safely", async () => {
     accountContext,
     locale: "en",
   });
-  assert.equal(expired.disposition, "unsupported_account_question");
+  assert.equal(expired.disposition, "uncertain");
+  assert.equal(expired.needsHumanSupport, false);
+  assert.equal(expired.accountHelperMetadata.actionTokenReason, "expired_token");
+  assert.match(expired.assistantMessage, /selection expired/i);
 
   const { response } = await respond("What was my last order?");
   const action = response.actions?.[0];
@@ -1703,6 +1721,31 @@ test("account rewrite accepts explicit payment not due wording", async () => {
   assert.match(response.assistantMessage, /Payment is not due yet/i);
 });
 
+test("account rewrite detects not-due contradictions from the helper DTO", async () => {
+  const response = await withRewriteFlag(true, () =>
+    rewriteAccountAwareServerResponse({
+      response: {
+        ...rewriteBaseResponse(),
+        assistantMessage: "El pago todavia no vence para este pedido.",
+      },
+      helperResult: rewritePaymentDTO,
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse: async () => ({
+        ok: true,
+        text: "Payment is due now for this order.",
+        model: "rewrite-model",
+        modelVersion: "rewrite-v1",
+        requestId: "req_due_now",
+      }),
+    }),
+  );
+
+  assert.equal(response.accountAnswerMode, "model_rewrite_rejected");
+  assert.equal(response.accountRewriteRejectedReason, "contradicts_fallback");
+  assert.equal(response.accountRewriteFallbackUsed, true);
+});
+
 test("account rewrite falls back on model errors and empty output", async () => {
   const modelError = await withRewriteFlag(true, () =>
     rewriteAccountAwareServerResponse({
@@ -1723,6 +1766,22 @@ test("account rewrite falls back on model errors and empty output", async () => 
   assert.equal(modelError.accountAnswerMode, "model_rewrite_rejected");
   assert.equal(modelError.accountRewriteRejectedReason, "model_error");
   assert.equal(modelError.accountRewriteFallbackUsed, true);
+
+  const thrown = await withRewriteFlag(true, () =>
+    rewriteAccountAwareServerResponse({
+      response: rewriteBaseResponse(),
+      helperResult: rewritePaymentDTO,
+      locale: "en",
+      threadId: THREAD_ID,
+      createModelResponse: async () => {
+        throw new Error("rewrite model unavailable");
+      },
+    }),
+  );
+  assert.equal(thrown.accountAnswerMode, "model_rewrite_rejected");
+  assert.equal(thrown.accountRewriteRejectedReason, "model_error");
+  assert.equal(thrown.accountRewriteFallbackUsed, true);
+  assert.match(thrown.assistantMessage, /Payment is not due yet/i);
 
   const empty = await withRewriteFlag(true, () =>
     rewriteAccountAwareServerResponse({
@@ -1759,6 +1818,11 @@ test("account rewrite guardrails reject unsafe drafts", async () => {
     {
       text: "This order is definitely paid.",
       reason: "unsupported_fact",
+      locale: "en" as const,
+    },
+    {
+      text: "Payment is due now for this order.",
+      reason: "contradicts_fallback",
       locale: "en" as const,
     },
     {

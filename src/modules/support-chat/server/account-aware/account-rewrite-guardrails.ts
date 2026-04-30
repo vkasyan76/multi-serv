@@ -52,8 +52,14 @@ function contradictsFallback(input: {
     return true;
   }
 
+  const helperSaysPaymentNotDue =
+    input.helperResult.resultCategory === "payment_status" &&
+    input.helperResult.paymentStatusCategory === "not_due";
+  const fallbackSaysPaymentNotDue =
+    fallback.includes("payment not due") || fallback.includes("payment is not due");
+
   if (
-    fallback.includes("payment not due") &&
+    (helperSaysPaymentNotDue || fallbackSaysPaymentNotDue) &&
     !/\bnot\s+due\b/i.test(text) &&
     /\b(payment\s+)?(is\s+)?(due|paid|charged|payable)\b/i.test(text)
   ) {

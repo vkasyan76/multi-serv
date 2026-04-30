@@ -88,6 +88,7 @@ export type AccountAwareLocalizedCopy = {
     inspected: (countText: string) => string;
     counts: CountCopy;
   };
+  actionTokenExpired: string;
   genericAccountItem: string;
 };
 
@@ -289,6 +290,8 @@ const EN: AccountAwareLocalizedCopy = {
         `${count} recent support-safe ${count === 1 ? "order" : "orders"}`,
     },
   },
+  actionTokenExpired:
+    "That order selection expired. Please select the order again so I can check it safely.",
   genericAccountItem:
     "I found the account item, but I cannot safely summarize it yet.",
 };
@@ -494,6 +497,8 @@ const DE: AccountAwareLocalizedCopy = {
         `${count} aktuelle support-sichere Bestellung${count === 1 ? "" : "en"}`,
     },
   },
+  actionTokenExpired:
+    "Diese Bestellauswahl ist abgelaufen. Wähle die Bestellung bitte erneut aus, damit ich sie sicher prüfen kann.",
   genericAccountItem:
     "Ich habe das Kontoelement gefunden, kann es aber noch nicht sicher zusammenfassen.",
 };
@@ -701,6 +706,8 @@ const FR: AccountAwareLocalizedCopy = {
   },
   genericAccountItem:
     "J'ai trouvé l'élément du compte, mais je ne peux pas encore le résumer en toute sécurité.",
+  actionTokenExpired:
+    "Cette sélection de commande a expiré. Sélectionnez à nouveau la commande pour que je puisse la vérifier en toute sécurité.",
 };
 
 function withRomanceCopy(overrides: Partial<AccountAwareLocalizedCopy>): AccountAwareLocalizedCopy {
@@ -736,6 +743,8 @@ function withRomanceCopy(overrides: Partial<AccountAwareLocalizedCopy>): Account
 }
 
 const IT = withRomanceCopy({
+  actionTokenExpired:
+    "Questa selezione dell'ordine è scaduta. Seleziona di nuovo l'ordine così posso verificarlo in modo sicuro.",
   candidate: {
     fallbackLabel: "Ordine candidato",
     none: "Posso aiutarti, ma non ho trovato ordini recenti sicuri da mostrare. Apri la pagina Ordini o contatta l'assistenza con l'ID esatto dell'ordine.",
@@ -905,6 +914,8 @@ const IT = withRomanceCopy({
 });
 
 const ES = withRomanceCopy({
+  actionTokenExpired:
+    "Esta selección de pedido ha caducado. Selecciona de nuevo el pedido para que pueda revisarlo de forma segura.",
   candidate: {
     fallbackLabel: "Pedido candidato",
     none: "Puedo ayudar, pero no encontré pedidos recientes que pueda mostrar de forma segura. Abre tu página de Pedidos o contacta con soporte con el ID exacto del pedido.",
@@ -1074,6 +1085,8 @@ const ES = withRomanceCopy({
 });
 
 const PT = withRomanceCopy({
+  actionTokenExpired:
+    "Esta seleção de pedido expirou. Selecione novamente o pedido para que eu possa verificá-lo com segurança.",
   candidate: {
     fallbackLabel: "Pedido candidato",
     none: "Posso ajudar, mas não encontrei pedidos recentes que possa mostrar com segurança. Abra a página Pedidos ou contacte o suporte com o ID exato do pedido.",
@@ -1243,6 +1256,8 @@ const PT = withRomanceCopy({
 });
 
 const PL = withRomanceCopy({
+  actionTokenExpired:
+    "Ten wybór zamówienia wygasł. Wybierz zamówienie ponownie, abym mógł je bezpiecznie sprawdzić.",
   candidate: {
     fallbackLabel: "Kandydat zamówienia",
     none: "Mogę pomóc, ale nie znalazłem ostatnich zamówień, które można bezpiecznie pokazać. Otwórz stronę Zamówienia albo skontaktuj się z pomocą, podając dokładny identyfikator zamówienia.",
@@ -1412,6 +1427,8 @@ const PL = withRomanceCopy({
 });
 
 const RO = withRomanceCopy({
+  actionTokenExpired:
+    "Această selecție a comenzii a expirat. Selectează din nou comanda ca să o pot verifica în siguranță.",
   candidate: {
     fallbackLabel: "Comandă candidată",
     none: "Pot ajuta, dar nu am găsit comenzi recente care pot fi afișate în siguranță. Deschide pagina Comenzi sau contactează suportul cu ID-ul exact al comenzii.",
@@ -1581,6 +1598,8 @@ const RO = withRomanceCopy({
 });
 
 const UK = withRomanceCopy({
+  actionTokenExpired:
+    "Цей вибір замовлення застарів. Виберіть замовлення ще раз, щоб я міг безпечно його перевірити.",
   candidate: {
     fallbackLabel: "Можливе замовлення",
     none: "Я можу допомогти, але не знайшов останніх замовлень, які можна безпечно показати. Відкрийте сторінку замовлень або зверніться до підтримки з точним ID замовлення.",

@@ -97,6 +97,12 @@ function isPayloadObjectId(value: unknown) {
   return typeof value === "string" && OBJECT_ID_RE.test(value);
 }
 
+function assertPayloadObjectId(value: string) {
+  if (!isPayloadObjectId(value)) {
+    throw new Error("Support-chat account action reference must be a valid order id.");
+  }
+}
+
 function parsePayload(value: unknown): AccountCandidateActionTokenPayload | null {
   const payload = value as Partial<AccountCandidateActionTokenPayload> | null;
   if (!payload || payload.type !== "account_candidate_select") return null;
@@ -133,6 +139,7 @@ export function createAccountCandidateActionToken(input: {
   displayDescription?: string;
   now?: Date;
 }) {
+  assertPayloadObjectId(input.reference);
   const now = input.now ?? new Date();
   const payload: AccountCandidateActionTokenPayload = {
     type: "account_candidate_select",
@@ -156,6 +163,7 @@ export function createSelectedOrderContextToken(input: {
   displayDescription?: string;
   now?: Date;
 }) {
+  assertPayloadObjectId(input.reference);
   const now = input.now ?? new Date();
   const payload: SelectedOrderContextTokenPayload = {
     type: "selected_order_context",
