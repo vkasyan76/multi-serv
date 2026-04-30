@@ -100,6 +100,41 @@ const PAYMENT_CANDIDATE_PATTERNS = [
   /\b(payment|payments)\s+(last|latest|recent)\b/,
 ] as const;
 
+const PAYMENT_OVERVIEW_PATTERNS = [
+  /\bdid\s+i\s+pay\s+already\b/,
+  /\bhave\s+i\s+paid\b/,
+  /\bpaid\s+already\b/,
+  /\bdo\s+i\s+have\s+(any\s+)?paid\s+(orders|bookings)\b/,
+  /\bany\s+paid\s+(orders|bookings)\b/,
+  /\bdo\s+i\s+have\s+unpaid\s+(orders|bookings)\b/,
+  /\bwhat\s+payments\s+are\s+still\s+pending\b/,
+  /\bwhich\s+payments\s+are\s+still\s+pending\b/,
+  /\bhabe\s+ich\b.*\b(schon|bereits)\b.*\b(bezahlt|gezahlt)\b/,
+  /\bhabe\s+ich\b.*\bunbezahlte\b.*\b(buchungen|auftrage|auftraege)\b/,
+  /\bwelche\b.*\bzahlungen\b.*\b(ausstehend|offen)\b/,
+  /\bai\s+je\b.*\b(deja\s+)?paye\b.*\b(commandes?|reservations?)\b/,
+  /\bai\s+je\b.*\b(commandes|reservations)\b.*\b(impayees|non\s+payees)\b/,
+  /\bquels?\b.*\bpaiements\b.*\b(en\s+attente|pendants)\b/,
+  /\bho\s+gia\b.*\bpagato\b.*\b(ordine|ordini|prenotazione|prenotazioni)\b/,
+  /\bho\b.*\b(ordini|prenotazioni)\b.*\b(non\s+pagat[ei])\b/,
+  /\bquali\b.*\bpagamenti\b.*\b(in\s+attesa|pendenti)\b/,
+  /\b(ya\s+)?he\s+pagado\b.*\b(pedidos?|reservas?)\b/,
+  /\btengo\b.*\b(pedidos|reservas)\b.*\bsin\s+pagar\b/,
+  /\bque\b.*\bpagos\b.*\b(pendientes|estan\s+pendientes)\b/,
+  /\bja\b.*\bpaguei\b.*\b(pedidos?|reservas?)\b/,
+  /\btenho\b.*\b(pedidos|reservas)\b.*\b(por\s+pagar|nao\s+pag[oa]s?)\b/,
+  /\bquais\b.*\bpagamentos\b.*\b(pendentes|em\s+aberto)\b/,
+  /\bczy\b.*\b(zaplacilem|zapłaciłem|zaplacilam|zapłaciłam|zaplacone|zapłacone)\b.*\b(zamowienie|zamówienie|zamowienia|zamówienia|rezerwacje?)\b/u,
+  /\bczy\b.*\b(mam|posiadam)\b.*\b(nieoplacone|nieopłacone|nie\s+oplacone|nie\s+opłacone)\b.*\b(zamowienia|zamówienia|rezerwacje)\b/u,
+  /\bktore\b.*\b(platnosci|płatności)\b.*\b(oczekuja|oczekują|sa\s+oczekujace|są\s+oczekujące|w\s+toku)\b/u,
+  /\bam\b.*\bplatit\b.*\b(comanda|comenzi|rezervare|rezervari)\b/,
+  /\bam\b.*\b(comenzi|rezervari)\b.*\b(neplatite|neachitate)\b/,
+  /\bce\b.*\bplati\b.*\b(in\s+asteptare|pendente)\b/,
+  /чи.*(вже|уже).*оплат.*(замовлення|бронювання)/u,
+  /чи.*(маю|є).*неоплач.*(замовлення|бронювання)/u,
+  /як.*оплат.*(очіку|в\s+очікуванні)/u,
+] as const;
+
 const STATUS_FILTER_PATTERNS = {
   canceled: [/\bcancel(?:ed|led)\b/, /\bstorniert\b/],
   requested: [
@@ -155,6 +190,15 @@ export function detectCandidateSelectionIntent(message: string) {
   // Payment-only phrasing may show order candidates, but only for narrow
   // "my payment" style questions. Broad payment lists remain blocked upstream.
   return hasTerm(text, PAYMENT_TERMS) && hasPattern(text, PAYMENT_CANDIDATE_PATTERNS);
+}
+
+export function detectPaymentOverviewIntent(message: string) {
+  const text = normalizeForIntent(message);
+  if (!text) return false;
+
+  // These are bounded overview questions only. Imperatives such as
+  // "show unpaid bookings" stay in status-filtered candidate routing.
+  return hasPattern(text, PAYMENT_OVERVIEW_PATTERNS);
 }
 
 export function detectCandidateStatusFilter(message: string) {

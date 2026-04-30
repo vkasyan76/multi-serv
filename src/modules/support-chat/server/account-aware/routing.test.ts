@@ -587,6 +587,43 @@ test("payment overview prompts route to bounded overview helper", async () => {
   }
 });
 
+test("payment overview prompts route across launched locales", () => {
+  const prompts = [
+    "Did I pay already for any order?",
+    "Do I have unpaid orders?",
+    "Habe ich schon eine Buchung bezahlt?",
+    "Habe ich unbezahlte Buchungen?",
+    "Ai-je déjà payé une commande ?",
+    "Ai-je déjà payé des commandes ?",
+    "Ai-je des réservations impayées ?",
+    "Ho già pagato qualche ordine?",
+    "Ho già pagato ordini?",
+    "Ho prenotazioni non pagate?",
+    "¿Ya he pagado algún pedido?",
+    "¿Ya he pagado pedidos?",
+    "¿Tengo pedidos sin pagar?",
+    "Já paguei algum pedido?",
+    "Já paguei pedidos?",
+    "Tenho reservas por pagar?",
+    "Czy zapłaciłem już za jakieś zamówienie?",
+    "Czy zapłaciłem już za zamówienia?",
+    "Czy mam nieopłacone rezerwacje?",
+    "Am plătit deja vreo comandă?",
+    "Am plătit comenzi?",
+    "Am comenzi neplătite?",
+    "Чи я вже оплатив якесь замовлення?",
+    "Чи маю неоплачені бронювання?",
+  ];
+
+  for (const prompt of prompts) {
+    assert.deepEqual(
+      routeSupportAccountAwareRequest(prompt),
+      { kind: "payment_overview" },
+      prompt,
+    );
+  }
+});
+
 test("vague account prompts route to candidate selection", () => {
   for (const prompt of [
     "What is my order status?",
@@ -720,6 +757,25 @@ test("payment overview returns bounded deterministic summary", async () => {
     db.calls.some((call) => call.method === "findByID"),
     false,
   );
+});
+
+test("Spanish payment overview returns localized deterministic summary", async () => {
+  const { route, response } = await respond(
+    "¿Ya he pagado algún pedido?",
+    "clerk-user-a",
+    "es",
+  );
+
+  assert.equal(route.kind, "payment_overview");
+  assert.equal(response.disposition, "answered");
+  assert.equal(
+    response.accountHelperMetadata.helper,
+    "getSupportPaymentOverviewForCurrentUser",
+  );
+  assert.equal(response.accountHelperMetadata.resultCategory, "payment_overview");
+  assert.match(response.assistantMessage, /pedidos recientes/i);
+  assert.match(response.assistantMessage, /historial completo de pagos/i);
+  assert.doesNotMatch(response.assistantMessage, /No puedo ver tu cuenta/i);
 });
 
 test("signed-out payment overview returns safe handoff without account reads", async () => {

@@ -10,6 +10,7 @@ import type {
 import {
   detectCandidateSelectionIntent,
   detectCandidateStatusFilter,
+  detectPaymentOverviewIntent,
 } from "./intent-normalizer";
 
 type ExactReferenceSupportAccountHelperName = Exclude<
@@ -317,7 +318,9 @@ export function routeSupportAccountAwareRequest(
   const hasOrderStatus = hasAny(ORDER_STATUS_PATTERNS, trimmed);
   const hasPaymentStatus = hasAny(PAYMENT_STATUS_PATTERNS, trimmed);
   const hasCancelEligibility = hasAny(CANCEL_ELIGIBILITY_PATTERNS, trimmed);
-  const hasPaymentOverview = hasAny(PAYMENT_OVERVIEW_PATTERNS, trimmed);
+  const hasPaymentOverview =
+    hasAny(PAYMENT_OVERVIEW_PATTERNS, trimmed) ||
+    detectPaymentOverviewIntent(trimmed);
   const statusFilter = detectCandidateStatusFilter(trimmed);
   const isAccountAware =
     hasOrderStatus ||
