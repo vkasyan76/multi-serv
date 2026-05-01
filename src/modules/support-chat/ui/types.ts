@@ -21,11 +21,11 @@ export type SupportSelectedOrderContext = {
 
 export type SupportTopicContext = {
   type: "support_topic";
+  token: string;
   topic: "booking" | "payment" | "cancellation" | "provider_onboarding";
   source: "starter_prompt" | "follow_up";
   selectedAt: string;
   expiresAt: string;
-  continuationTerms?: string[];
 };
 
 export type SupportChatMessage = {

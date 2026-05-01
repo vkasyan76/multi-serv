@@ -7,7 +7,10 @@ import {
   buildAccountAwareServerResponse,
 } from "./server-responses";
 import { rewriteAccountAwareServerResponse } from "./account-rewrite";
-import { routeSupportAccountAwareRequest } from "./routing";
+import {
+  isSelectedOrderFollowUpMessage,
+  routeSupportAccountAwareRequest,
+} from "./routing";
 import {
   createAccountCandidateActionToken,
   createSelectedOrderContextToken,
@@ -1569,6 +1572,7 @@ test("intent triage can recover selected-order follow-up typos", async () => {
     locale: "de",
     accountContext,
     selectedOrderContext: {
+      type: "selected_order",
       token,
     },
     intentTriageOverride: {
@@ -1967,6 +1971,16 @@ test("selected order context does not capture unrelated it follow-ups", () => {
   }
 });
 
+test("selected order follow-up predicate only captures selected-order references", () => {
+  assert.equal(isSelectedOrderFollowUpMessage("What about payment?"), true);
+  assert.equal(
+    isSelectedOrderFollowUpMessage("Who is the provider for this booking?"),
+    true,
+  );
+  assert.equal(isSelectedOrderFollowUpMessage("Can I cancel it?"), true);
+  assert.equal(isSelectedOrderFollowUpMessage("How does cancellation work?"), false);
+});
+
 test("selected order context tokens validate thread and expiry", () => {
   assert.throws(() =>
     createSelectedOrderContextToken({
@@ -2010,6 +2024,90 @@ test("selected order context tokens validate thread and expiry", () => {
     threadId: THREAD_ID,
   });
   assert.deepEqual(expired, { ok: false, reason: "expired_token" });
+});
+
+test("expired selected order context returns deterministic reselect copy", async () => {
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const expiredToken = createSelectedOrderContextToken({
+    reference: ORDER_SCHEDULED_A,
+    threadId: THREAD_ID,
+    now: new Date(Date.now() - 60 * 60 * 1000),
+  });
+
+  const response = await generateSupportResponse({
+    message: "What about payment?",
+    threadId: THREAD_ID,
+    locale: "en",
+    accountContext,
+    selectedOrderContext: {
+      type: "selected_order",
+      token: expiredToken,
+    },
+  });
+
+  assert.equal(response.disposition, "uncertain");
+  assert.equal(response.needsHumanSupport, false);
+  assert.equal(response.responseOrigin, "server");
+  assert.equal(response.accountHelperMetadata?.actionTokenReason, "expired_token");
+  assert.match(response.assistantMessage, /selection expired/i);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
+});
+
+test("invalid selected order context returns safe fallback without account lookup", async () => {
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+
+  const response = await generateSupportResponse({
+    message: "What about payment?",
+    threadId: THREAD_ID,
+    locale: "en",
+    accountContext,
+    selectedOrderContext: {
+      type: "selected_order",
+      token: "not-a-token",
+    },
+  });
+
+  assert.equal(response.disposition, "unsupported_account_question");
+  assert.equal(response.responseOrigin, "server");
+  assert.equal(response.accountHelperMetadata?.actionTokenReason, "invalid_token");
+  assert.match(response.assistantMessage, /limited support-safe/i);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
+});
+
+test("expired selected order context does not block unrelated general questions", async () => {
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const expiredToken = createSelectedOrderContextToken({
+    reference: ORDER_SCHEDULED_A,
+    threadId: THREAD_ID,
+    now: new Date(Date.now() - 60 * 60 * 1000),
+  });
+
+  const response = await generateSupportResponse({
+    message: "How does cancellation work?",
+    threadId: THREAD_ID,
+    locale: "en",
+    accountContext,
+    selectedOrderContext: {
+      type: "selected_order",
+      token: expiredToken,
+    },
+  });
+
+  assert.notEqual(response.accountHelperMetadata?.actionTokenReason, "expired_token");
+  assert.doesNotMatch(response.assistantMessage, /selection expired/i);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
 });
 
 test("candidate action token is re-authorized for tenant order access", async () => {

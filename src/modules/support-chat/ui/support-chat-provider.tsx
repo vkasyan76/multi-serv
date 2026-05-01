@@ -112,7 +112,9 @@ export function SupportChatProvider({
           threadId,
           locale: lang,
           selectedOrderContext: selectedOrderContext ?? undefined,
-          supportTopicContext: freshTopicContext ?? undefined,
+          supportTopicContext: freshTopicContext
+            ? { type: freshTopicContext.type, token: freshTopicContext.token }
+            : undefined,
         });
 
         setThreadId(response.threadId);

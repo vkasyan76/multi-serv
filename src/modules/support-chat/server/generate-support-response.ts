@@ -18,6 +18,7 @@ import {
   createSupportTopicContext,
   detectSupportChatStarterTopic,
   isSupportTopicContextFollowUp,
+  verifySupportTopicContextToken,
   type SupportTopicContext,
   type SupportChatTopicDetection,
 } from "@/modules/support-chat/server/topics";
@@ -36,12 +37,17 @@ import {
   type SupportChatAction,
   type SupportSelectedOrderContext,
 } from "@/modules/support-chat/server/account-aware/server-responses";
+import { getAccountAwareCopy } from "@/modules/support-chat/server/account-aware/localized-copy";
 import type {
   SupportAccountAnswerMode,
   SupportAccountRewriteRejectedReason,
 } from "@/modules/support-chat/server/account-aware/types";
 import { verifySelectedOrderContextToken } from "@/modules/support-chat/server/account-aware/action-tokens";
-import { routeSupportAccountAwareRequest } from "@/modules/support-chat/server/account-aware/routing";
+import {
+  isSelectedOrderFollowUpMessage,
+  routeSupportAccountAwareRequest,
+} from "@/modules/support-chat/server/account-aware/routing";
+import { SUPPORT_ACCOUNT_HELPER_VERSION } from "@/modules/support-chat/server/account-aware/versioning";
 import type { TRPCContext } from "@/trpc/init";
 
 export type SupportChatDisposition =
@@ -67,8 +73,8 @@ export type GenerateSupportResponseInput = {
   threadId?: string;
   locale: AppLang;
   accountContext?: Pick<TRPCContext, "db" | "userId">;
-  selectedOrderContext?: Pick<SupportSelectedOrderContext, "token">;
-  supportTopicContext?: SupportTopicContext;
+  selectedOrderContext?: Pick<SupportSelectedOrderContext, "type" | "token">;
+  supportTopicContext?: Pick<SupportTopicContext, "type" | "token">;
   intentTriageOverride?: SupportIntentTriageResult;
 };
 
@@ -306,7 +312,59 @@ export async function generateSupportResponse(
           threadId,
         })
       : null;
-  const topicContext = input.supportTopicContext;
+  const shouldReportInvalidSelectedOrderContext =
+    input.accountContext &&
+    input.selectedOrderContext &&
+    selectedOrder &&
+    !selectedOrder.ok &&
+    isSelectedOrderFollowUpMessage(message);
+
+  if (
+    input.selectedOrderContext &&
+    selectedOrder &&
+    !selectedOrder.ok &&
+    shouldReportInvalidSelectedOrderContext
+  ) {
+    const authenticated = Boolean(input.accountContext?.userId);
+    if (selectedOrder.reason === "expired_token") {
+      return supportResponse({
+        threadId,
+        assistantMessage: getAccountAwareCopy(input.locale).actionTokenExpired,
+        sources: [],
+        disposition: "uncertain",
+        responseOrigin: "server",
+        needsHumanSupport: false,
+        accountHelperMetadata: {
+          helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+          authenticated,
+          requiredInputPresent: true,
+          actionTokenReason: selectedOrder.reason,
+          serverAuthored: true,
+        },
+      });
+    }
+
+    return supportResponse({
+      threadId,
+      assistantMessage: copy.unsupportedAccount,
+      sources: [],
+      disposition: "unsupported_account_question",
+      responseOrigin: "server",
+      accountHelperMetadata: {
+        helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+        authenticated,
+        requiredInputPresent: true,
+        actionTokenReason: selectedOrder.reason,
+        serverAuthored: true,
+      },
+    });
+  }
+
+  const verifiedTopicContext = input.supportTopicContext
+    ? verifySupportTopicContextToken({ token: input.supportTopicContext.token })
+    : null;
+  const topicContext =
+    verifiedTopicContext?.ok ? verifiedTopicContext.context : null;
 
   const accountRoute = input.accountContext
     ? routeSupportAccountAwareRequest(message, {

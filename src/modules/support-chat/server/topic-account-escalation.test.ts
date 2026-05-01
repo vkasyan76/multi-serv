@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { createSupportTopicContext } from "@/modules/support-chat/server/topics";
 import { detectTopicAccountEscalation } from "@/modules/support-chat/server/topic-account-escalation";
 
+process.env.PAYLOAD_SECRET ??= "support-chat-topic-test-secret";
+
 test("cancellation context escalates scheduled follow-ups only with personal booking intent", () => {
   const context = createSupportTopicContext({
     topic: "cancellation",

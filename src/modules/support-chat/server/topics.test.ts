@@ -16,8 +16,11 @@ import {
   detectSupportChatStarterTopic,
   isSupportTopicContextFollowUp,
   isSupportTopicContextValid,
+  verifySupportTopicContextToken,
   type SupportChatTopic,
 } from "./topics";
+
+process.env.PAYLOAD_SECRET ??= "support-chat-topic-test-secret";
 
 type StarterPromptKey = "booking" | "payment" | "cancel" | "provider";
 
@@ -136,7 +139,7 @@ test("does not fuzzy-match similar free-form topic questions", () => {
   }
 });
 
-test("creates valid topic context with continuation terms", () => {
+test("creates valid signed topic context", () => {
   const now = new Date("2026-04-30T12:00:00.000Z");
   const context = createSupportTopicContext({
     topic: "provider_onboarding",
@@ -148,8 +151,8 @@ test("creates valid topic context with continuation terms", () => {
   assert.equal(context.topic, "provider_onboarding");
   assert.equal(context.source, "starter_prompt");
   assert.equal(context.selectedAt, now.toISOString());
-  assert.ok(context.continuationTerms?.includes("provider"));
-  assert.ok(context.continuationTerms?.includes("stripe"));
+  assert.ok(context.token);
+  assert.equal("continuationTerms" in context, false);
   assert.equal(
     isSupportTopicContextValid(
       context,
@@ -157,6 +160,47 @@ test("creates valid topic context with continuation terms", () => {
     ),
     true
   );
+});
+
+test("verifies signed topic context tokens", () => {
+  const now = new Date("2026-04-30T12:00:00.000Z");
+  const context = createSupportTopicContext({
+    topic: "payment",
+    source: "starter_prompt",
+    now,
+  });
+
+  const verified = verifySupportTopicContextToken({
+    token: context.token,
+    now: new Date("2026-04-30T12:05:00.000Z"),
+  });
+
+  assert.equal(verified.ok, true);
+  if (!verified.ok) return;
+  assert.equal(verified.context.topic, "payment");
+  assert.equal(verified.context.source, "starter_prompt");
+  assert.equal(verified.context.token, context.token);
+  assert.equal("continuationTerms" in verified.context, false);
+});
+
+test("expired and invalid topic context tokens fail closed", () => {
+  const context = createSupportTopicContext({
+    topic: "booking",
+    source: "starter_prompt",
+    now: new Date("2026-04-30T12:00:00.000Z"),
+  });
+
+  assert.deepEqual(
+    verifySupportTopicContextToken({
+      token: context.token,
+      now: new Date("2026-04-30T12:31:00.000Z"),
+    }),
+    { ok: false, reason: "expired_token" },
+  );
+  assert.deepEqual(verifySupportTopicContextToken({ token: "not-a-token" }), {
+    ok: false,
+    reason: "invalid_token",
+  });
 });
 
 test("expired topic context is invalid", () => {

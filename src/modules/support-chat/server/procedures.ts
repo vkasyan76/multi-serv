@@ -59,16 +59,7 @@ export const supportChatRouter = createTRPCRouter({
         supportTopicContext: z
           .object({
             type: z.literal("support_topic"),
-            topic: z.enum([
-              "booking",
-              "payment",
-              "cancellation",
-              "provider_onboarding",
-            ]),
-            source: z.enum(["starter_prompt", "follow_up"]),
-            selectedAt: z.string().datetime(),
-            expiresAt: z.string().datetime(),
-            continuationTerms: z.array(z.string().max(80)).max(100).optional(),
+            token: z.string().min(1).max(4000),
           })
           .optional(),
       })

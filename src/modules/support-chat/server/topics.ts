@@ -1,5 +1,6 @@
 import "server-only";
 
+import crypto from "node:crypto";
 import type { AppLang } from "@/lib/i18n/app-lang";
 import enSupportChat from "@/i18n/messages/en/supportChat.json";
 import deSupportChat from "@/i18n/messages/de/supportChat.json";
@@ -24,11 +25,20 @@ export type SupportChatTopicDetection = {
 
 export type SupportTopicContext = {
   type: "support_topic";
+  token: string;
   topic: SupportChatTopic;
   source: SupportChatTopicDetection["source"];
   selectedAt: string;
   expiresAt: string;
-  continuationTerms?: string[];
+};
+
+type SupportTopicContextTokenPayload = {
+  type: "support_topic_context";
+  version: typeof TOPIC_CONTEXT_TOKEN_VERSION;
+  topic: SupportChatTopic;
+  source: SupportChatTopicDetection["source"];
+  selectedAt: string;
+  expiresAt: string;
 };
 
 type SupportChatStarterPromptKey =
@@ -67,6 +77,7 @@ const STARTER_PROMPT_TOPICS: Record<
 };
 
 const TOPIC_CONTEXT_TTL_MS = 30 * 60 * 1000;
+const TOPIC_CONTEXT_TOKEN_VERSION = "support-topic-context-v1";
 const MAX_FOLLOW_UP_CHARS = 60;
 const MAX_FOLLOW_UP_WORDS = 5;
 
@@ -248,6 +259,88 @@ const CONTINUATION_TERMS: Record<SupportChatTopic, readonly string[]> = {
   ],
 };
 
+function signingSecret() {
+  const secret = process.env.PAYLOAD_SECRET;
+  if (!secret) {
+    throw new Error("PAYLOAD_SECRET is required for support-chat topic context tokens.");
+  }
+  return secret;
+}
+
+function encryptionKey() {
+  return crypto.createHash("sha256").update(signingSecret()).digest();
+}
+
+function encryptTopicPayload(payload: SupportTopicContextTokenPayload) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", encryptionKey(), iv);
+  const encrypted = Buffer.concat([
+    cipher.update(JSON.stringify(payload), "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+  return `${iv.toString("base64url")}.${encrypted.toString("base64url")}.${tag.toString("base64url")}`;
+}
+
+function decryptTopicPayload(token: string) {
+  const [ivValue, encryptedValue, tagValue] = token.split(".");
+  if (!ivValue || !encryptedValue || !tagValue) return null;
+
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    encryptionKey(),
+    Buffer.from(ivValue, "base64url"),
+  );
+  decipher.setAuthTag(Buffer.from(tagValue, "base64url"));
+  const decrypted = Buffer.concat([
+    decipher.update(Buffer.from(encryptedValue, "base64url")),
+    decipher.final(),
+  ]);
+  return JSON.parse(decrypted.toString("utf8")) as unknown;
+}
+
+function isSupportChatTopic(value: unknown): value is SupportChatTopic {
+  return (
+    value === "booking" ||
+    value === "payment" ||
+    value === "cancellation" ||
+    value === "provider_onboarding"
+  );
+}
+
+function isTopicSource(
+  value: unknown,
+): value is SupportChatTopicDetection["source"] {
+  return value === "starter_prompt" || value === "follow_up";
+}
+
+function parseTopicPayload(
+  value: unknown,
+): SupportTopicContextTokenPayload | null {
+  const payload = value as Partial<SupportTopicContextTokenPayload> | null;
+  if (!payload || payload.type !== "support_topic_context") return null;
+  if (payload.version !== TOPIC_CONTEXT_TOKEN_VERSION) return null;
+  if (!isSupportChatTopic(payload.topic)) return null;
+  if (!isTopicSource(payload.source)) return null;
+  if (typeof payload.selectedAt !== "string") return null;
+  if (typeof payload.expiresAt !== "string") return null;
+  return payload as SupportTopicContextTokenPayload;
+}
+
+function contextFromPayload(
+  payload: SupportTopicContextTokenPayload,
+  token: string,
+): SupportTopicContext {
+  return {
+    type: "support_topic",
+    token,
+    topic: payload.topic,
+    source: payload.source,
+    selectedAt: payload.selectedAt,
+    expiresAt: payload.expiresAt,
+  };
+}
+
 function normalizeStarterPrompt(value: string) {
   return value.normalize("NFKC").replace(/\s+/g, " ").trim();
 }
@@ -303,14 +396,43 @@ export function createSupportTopicContext(input: {
   now?: Date;
 }): SupportTopicContext {
   const now = input.now ?? new Date();
-
-  return {
-    type: "support_topic",
+  const payload: SupportTopicContextTokenPayload = {
+    type: "support_topic_context",
+    version: TOPIC_CONTEXT_TOKEN_VERSION,
     topic: input.topic,
     source: input.source,
     selectedAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + TOPIC_CONTEXT_TTL_MS).toISOString(),
-    continuationTerms: [...CONTINUATION_TERMS[input.topic]],
+  };
+
+  return {
+    ...contextFromPayload(payload, encryptTopicPayload(payload)),
+  };
+}
+
+export function verifySupportTopicContextToken(input: {
+  token: string;
+  now?: Date;
+}):
+  | { ok: true; context: SupportTopicContext }
+  | { ok: false; reason: "invalid_token" | "expired_token" } {
+  let payload: SupportTopicContextTokenPayload | null = null;
+  try {
+    payload = parseTopicPayload(decryptTopicPayload(input.token));
+  } catch {
+    return { ok: false, reason: "invalid_token" };
+  }
+
+  if (!payload) return { ok: false, reason: "invalid_token" };
+
+  const expiresAt = Date.parse(payload.expiresAt);
+  if (!Number.isFinite(expiresAt) || expiresAt <= (input.now ?? new Date()).getTime()) {
+    return { ok: false, reason: "expired_token" };
+  }
+
+  return {
+    ok: true,
+    context: contextFromPayload(payload, input.token),
   };
 }
 

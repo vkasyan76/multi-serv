@@ -342,6 +342,24 @@ function candidateSelectionHelper(input: {
   return "getOrderStatusForCurrentUser";
 }
 
+function hasSelectedOrderInvoiceLifecycleIntent(message: string) {
+  const normalizedMessage = normalizeSelectedOrderText(message);
+  return (
+    hasAny(SELECTED_ORDER_INVOICE_LIFECYCLE_PATTERNS, message) ||
+    hasAny(SELECTED_ORDER_INVOICE_LIFECYCLE_NORMALIZED_PATTERNS, normalizedMessage)
+  );
+}
+
+export function isSelectedOrderFollowUpMessage(message: string) {
+  return (
+    hasAny(SELECTED_ORDER_REFERENCE_PATTERNS, message) ||
+    hasAny(SELECTED_ORDER_FOLLOW_UP_PATTERNS, message) ||
+    hasSelectedOrderInvoiceLifecycleIntent(message) ||
+    detectSelectedOrderDetailFollowUpIntent(message) ||
+    detectSelectedOrderPaymentFollowUpIntent(message)
+  );
+}
+
 function selectedOrderFollowUpHelper(input: {
   message: string;
   hasCancelEligibility: boolean;
@@ -350,26 +368,15 @@ function selectedOrderFollowUpHelper(input: {
   helper: AccountCandidateSelectionHelper;
   responseIntent?: SupportAccountResponseIntent;
 } | null {
-  const normalizedMessage = normalizeSelectedOrderText(input.message);
   const hasSelectedReference = hasAny(
     SELECTED_ORDER_REFERENCE_PATTERNS,
     input.message,
   );
-  const hasInvoiceLifecycleQuestion = hasAny(
-    SELECTED_ORDER_INVOICE_LIFECYCLE_PATTERNS,
-    input.message,
-  ) || hasAny(
-    SELECTED_ORDER_INVOICE_LIFECYCLE_NORMALIZED_PATTERNS,
-    normalizedMessage,
-  );
-  const hasFollowUpShape = hasAny(
-    SELECTED_ORDER_FOLLOW_UP_PATTERNS,
-    input.message,
-  ) ||
-    hasInvoiceLifecycleQuestion ||
+  const hasInvoiceLifecycleQuestion =
+    hasSelectedOrderInvoiceLifecycleIntent(input.message);
+  const hasFollowUpShape =
+    isSelectedOrderFollowUpMessage(input.message) ||
     detectSelectedOrderCancelFollowUpIntent(input.message) ||
-    detectSelectedOrderDetailFollowUpIntent(input.message) ||
-    detectSelectedOrderPaymentFollowUpIntent(input.message) ||
     detectSelectedOrderStatusFollowUpIntent(input.message);
 
   if (!hasSelectedReference && !hasFollowUpShape) return null;

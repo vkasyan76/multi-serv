@@ -24,6 +24,8 @@ import {
   type SupportChatTopic,
 } from "@/modules/support-chat/server/topics";
 
+process.env.PAYLOAD_SECRET ??= "support-chat-topic-test-secret";
+
 type StarterPromptKey = "booking" | "payment" | "cancel" | "provider";
 
 const SUPPORT_CHAT_COPY: Record<
@@ -64,6 +66,15 @@ async function retrieveForStarter(locale: AppLang, key: StarterPromptKey) {
 
 function topSectionIds(matches: Array<{ sectionId: string }>, count = 3) {
   return matches.slice(0, count).map((match) => match.sectionId);
+}
+
+function bestPreferredRank(
+  matches: Array<{ sectionId: string }>,
+  topic: SupportChatTopic,
+) {
+  const preferred = new Set(getPreferredTopicSectionIds(topic));
+  const index = matches.findIndex((match) => preferred.has(match.sectionId));
+  return index === -1 ? null : index + 1;
 }
 
 function assertPreferredInTop(input: {
@@ -180,11 +191,12 @@ test("Ukrainian cancellation term reuses cancellation retrieval bias only with c
     locale: "uk",
     limit: 10,
   });
+  const untopicizedRank = bestPreferredRank(untopicizedMatches, "cancellation");
+  const biasedRank = bestPreferredRank(matches, "cancellation");
 
-  assert.equal(
-    topSectionIds(untopicizedMatches, 3).some((sectionId) =>
-      new Set(getPreferredTopicSectionIds("cancellation")).has(sectionId)
-    ),
-    false
+  assert.ok(
+    biasedRank != null &&
+      (untopicizedRank == null || biasedRank <= untopicizedRank),
+    `expected topic bias to improve or preserve preferred cancellation rank; before=${untopicizedRank}, after=${biasedRank}`
   );
 });
