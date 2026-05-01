@@ -634,7 +634,8 @@ test("payment status filters map to server-owned candidate categories", async ()
     );
   }
 
-  const paid = await getSupportOrderCandidatesForCurrentUser(makeCtx().ctx, {
+  const { ctx: paidCtx, db: paidDb } = makeCtx();
+  const paid = await getSupportOrderCandidatesForCurrentUser(paidCtx, {
     statusFilter: "paid",
   });
   assert.equal(paid.ok, true);
@@ -644,6 +645,10 @@ test("payment status filters map to server-owned candidate categories", async ()
       [ORDER_PAID_A],
     );
   }
+  assert.equal(
+    paidDb.calls.find((call) => call.collection === "orders")?.limit,
+    50,
+  );
 
   const notDue = await getSupportOrderCandidatesForCurrentUser(makeCtx().ctx, {
     statusFilter: "payment_not_due",

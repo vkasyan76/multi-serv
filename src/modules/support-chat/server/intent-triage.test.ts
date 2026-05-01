@@ -56,3 +56,25 @@ test("parseSupportIntentTriageResult accepts embedded JSON intentionally", () =>
     },
   );
 });
+
+test("parseSupportIntentTriageResult rejects helper names as intents", () => {
+  assert.equal(
+    parseSupportIntentTriageResult(
+      '{"intent":"canCancelOrderForCurrentUser","topic":"cancellation","confidence":"high"}',
+    ),
+    null,
+  );
+});
+
+test("parseSupportIntentTriageResult ignores extra helper fields", () => {
+  assert.deepEqual(
+    parseSupportIntentTriageResult(
+      '{"intent":"account_candidate_lookup","topic":"cancellation","confidence":"high","helper":"canCancelOrderForCurrentUser"}',
+    ),
+    {
+      intent: "account_candidate_lookup",
+      topic: "cancellation",
+      confidence: "high",
+    },
+  );
+});

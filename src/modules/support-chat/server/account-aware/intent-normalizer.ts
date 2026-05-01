@@ -220,6 +220,36 @@ const PAYMENT_OVERVIEW_PATTERNS = [
   /як.*оплат.*(очіку|в\s+очікуванні)/u,
 ] as const;
 
+const PAID_ORDER_LOOKUP_PATTERNS = [
+  /\bdid\s+i\s+pay\s+already\b.*\b(orders?|bookings?)\b/,
+  /\bhave\s+i\s+paid\b.*\b(orders?|bookings?)\b/,
+  /\bany\s+paid\s+(orders?|bookings?)\b/,
+  /\bwhich\s+(orders?|bookings?)\b.*\b(i\s+)?paid\b/,
+  /\b(show|list|find)\b.*\bpaid\s+(orders?|bookings?)\b/,
+  /\bhabe\s+ich\b.*\b(schon|bereits)\b.*\b(bezahlt|gezahlt)\b.*\b(buchung(?:en)?|bestellung(?:en)?)\b/,
+  /\bhabe\s+ich\b.*\b(buchung(?:en)?|bestellung(?:en)?)\b.*\b(bezahlt|gezahlt)\b/,
+  /\bwelche\b.*\b(buchung(?:en)?|bestellung(?:en)?)\b.*\b(bezahlt|gezahlt)\b/,
+  /\b(zeige|zeig|liste|finde)\b.*\bbezahlte\b.*\b(buchung(?:en)?|bestellung(?:en)?)\b/,
+  /\bai\s+je\b.*\b(deja\s+)?paye\b.*\b(commandes?|reservations?)\b/,
+  /\bquelles?\b.*\b(commandes?|reservations?)\b.*\bpayees?\b/,
+  /\bafficher\b.*\b(commandes?|reservations?)\b.*\bpayees?\b/,
+  /\bho\s+gia\b.*\bpagato\b.*\b(ordine|ordini|prenotazione|prenotazioni)\b/,
+  /\bquali\b.*\b(ordine|ordini|prenotazione|prenotazioni)\b.*\bpagat[ei]\b/,
+  /\bmostra\b.*\b(ordine|ordini|prenotazione|prenotazioni)\b.*\bpagat[ei]\b/,
+  /\b(ya\s+)?he\s+pagado\b.*\b(pedidos?|reservas?)\b/,
+  /\bque\b.*\b(pedidos?|reservas?)\b.*\bpagad[ao]s?\b/,
+  /\bmostrar\b.*\b(pedidos?|reservas?)\b.*\bpagad[ao]s?\b/,
+  /\bja\b.*\bpaguei\b.*\b(pedidos?|reservas?)\b/,
+  /\bquais\b.*\b(pedidos?|reservas?)\b.*\bpagos?\b/,
+  /\bmostrar\b.*\b(pedidos?|reservas?)\b.*\bpagos?\b/,
+  /\bczy\b.*\b(zaplacilem|zaplacilam|zaplacone)\b.*\b(zamowienia?|rezerwacje?)\b/u,
+  /\bktore\b.*\b(zamowienia?|rezerwacje?)\b.*\b(zaplacone|oplacone)\b/u,
+  /\bpokaz\b.*\b(zaplacone|oplacone)\b.*\b(zamowienia?|rezerwacje?)\b/u,
+  /\bam\b.*\bplatit\b.*\b(comenzi|comanda|rezervari|rezervare)\b/,
+  /\bce\b.*\b(comenzi|rezervari)\b.*\b(platite|achitate)\b/,
+  /\barata\b.*\b(comenzi|rezervari)\b.*\b(platite|achitate)\b/,
+] as const;
+
 const STATUS_FILTER_PATTERNS = {
   canceled: [
     /\bcancel(?:ed|led)\b/,
@@ -482,6 +512,19 @@ export function detectPaymentOverviewIntent(message: string) {
   // These are bounded overview questions only. Imperatives such as
   // "show unpaid bookings" stay in status-filtered candidate routing.
   return hasPattern(text, PAYMENT_OVERVIEW_PATTERNS);
+}
+
+export function detectPaidOrderCandidateLookupIntent(message: string) {
+  const text = normalizeForIntent(message);
+  if (!text) return false;
+  if (
+    /\b(unpaid|not\s+paid|unbezahlt|impayees?|non\s+payees?|non\s+pagat[ei]|sin\s+pagar|por\s+pagar|nieoplacone|nie\s+oplacone|neplatite|neachitate)\b/u.test(
+      text,
+    )
+  ) {
+    return false;
+  }
+  return hasPattern(text, PAID_ORDER_LOOKUP_PATTERNS);
 }
 
 export function detectSelectedOrderPaymentFollowUpIntent(message: string) {

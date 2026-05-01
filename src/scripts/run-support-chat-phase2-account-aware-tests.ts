@@ -280,7 +280,7 @@ function makeAccountContext(authUser: SupportChatPhase2AccountAwareCase["authUse
         const tenantIds = clauseIn(args.where, "tenant");
         const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
         if (
-          (args.limit !== 10 && args.limit !== 15) ||
+          (args.limit !== 10 && args.limit !== 15 && args.limit !== 50) ||
           args.sort !== "-createdAt" ||
           args.depth !== 0 ||
           args.overrideAccess !== true ||

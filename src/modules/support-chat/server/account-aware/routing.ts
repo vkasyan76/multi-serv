@@ -13,6 +13,7 @@ import {
   detectCandidateStatusFilter,
   detectCancelEligibilityIntent,
   detectOrderStatusIntent,
+  detectPaidOrderCandidateLookupIntent,
   detectPaymentOverviewIntent,
   detectPaymentStatusIntent,
   detectSelectedOrderCancelFollowUpIntent,
@@ -425,6 +426,8 @@ export function routeSupportAccountAwareRequest(
   const hasPaymentOverview =
     hasAny(PAYMENT_OVERVIEW_PATTERNS, trimmed) ||
     detectPaymentOverviewIntent(trimmed);
+  const hasPaidOrderCandidateLookup =
+    detectPaidOrderCandidateLookupIntent(trimmed);
   const statusFilter = detectCandidateStatusFilter(trimmed);
   const hasCandidateLookup = hasExplicitCandidateLookupIntent(trimmed);
   const hasDirectMutation = hasDirectMutationRequest(trimmed);
@@ -470,6 +473,19 @@ export function routeSupportAccountAwareRequest(
         responseIntent: selectedHelper.responseIntent,
       };
     }
+  }
+
+  if (
+    ids.length === 0 &&
+    !hasDirectMutation &&
+    !suppressCandidateSelection &&
+    hasPaidOrderCandidateLookup
+  ) {
+    return {
+      kind: "candidate_selection",
+      selectionHelper: "getPaymentStatusForCurrentUser",
+      statusFilter: "paid",
+    };
   }
 
   if (

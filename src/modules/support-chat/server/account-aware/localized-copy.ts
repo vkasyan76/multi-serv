@@ -300,7 +300,7 @@ const EN: AccountAwareLocalizedCopy = {
   overview: {
     none: "I could not find recent support-safe orders to summarize. This is not a full account or payment history check.",
     summary: (parts) =>
-      `From the recent orders I can safely check, I found ${parts}.`,
+      `In the recent support-safe order window I checked, I found ${parts}.`,
     inspected: (countText) =>
       `I inspected ${countText}. This is not a full payment history.`,
     counts: {

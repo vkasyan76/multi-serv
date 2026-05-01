@@ -170,7 +170,10 @@ function clauseIn(where: unknown, field: string) {
   return Array.isArray(clause?.in) ? clause.in : [];
 }
 
-function makeCtx(userId: string | null = "clerk-user-a") {
+function makeCtx(
+  userId: string | null = "clerk-user-a",
+  options: { extraOrders?: Order[] } = {},
+) {
   const orders = new Map<string, Order>([
     [ORDER_REQUESTED_A, order({ id: ORDER_REQUESTED_A })],
     [
@@ -272,6 +275,10 @@ function makeCtx(userId: string | null = "clerk-user-a") {
     ],
   ]);
 
+  for (const extraOrder of options.extraOrders ?? []) {
+    orders.set(extraOrder.id, extraOrder);
+  }
+
   const db: FakeDb = {
     calls: [],
     async find(args) {
@@ -317,7 +324,7 @@ function makeCtx(userId: string | null = "clerk-user-a") {
         const userId = clauseEquals(args.where, "user");
         const tenantIds = clauseIn(args.where, "tenant");
         const lifecycleMode = clauseEquals(args.where, "lifecycleMode");
-        assert.ok(args.limit === 10 || args.limit === 15);
+        assert.ok(args.limit === 10 || args.limit === 15 || args.limit === 50);
         assert.equal(args.sort, "-createdAt");
         assert.equal(args.depth, 0);
         assert.equal(args.overrideAccess, true);
@@ -372,10 +379,11 @@ async function respond(
   message: string,
   userId: string | null = "clerk-user-a",
   locale: "en" | "de" | "fr" | "it" | "es" | "pt" | "pl" | "ro" | "uk" = "en",
+  options: { extraOrders?: Order[] } = {},
 ) {
   const route = routeSupportAccountAwareRequest(message);
   assert.notEqual(route.kind, "none");
-  const { db, accountContext } = makeCtx(userId);
+  const { db, accountContext } = makeCtx(userId, options);
   const response = await buildAccountAwareServerResponse({
     route: route as Exclude<typeof route, { kind: "none" }>,
     accountContext,
@@ -656,16 +664,43 @@ test("direct cancellation mutation commands do not route to candidate lookup", (
 
 test("payment overview prompts route to bounded overview helper", async () => {
   for (const prompt of [
-    "Did I pay already for any order?",
     "Have I paid for anything?",
     "Do I have unpaid orders?",
     "Do I have unpaid bookings?",
-    "Any paid orders?",
     "What payments are still pending?",
   ]) {
     assert.deepEqual(
       routeSupportAccountAwareRequest(prompt),
       { kind: "payment_overview" },
+      prompt,
+    );
+  }
+});
+
+test("explicit paid-order lookup routes to paid payment candidates", () => {
+  const prompts = [
+    "Did I pay already for any order?",
+    "Have I paid for any booking?",
+    "Any paid orders?",
+    "Which orders have I paid?",
+    "Habe ich schon eine Buchung bezahlt?",
+    "Ai-je deja paye des commandes ?",
+    "Ho già pagato qualche ordine?",
+    "Ho gia pagato ordini?",
+    "Ya he pagado pedidos?",
+    "Ja paguei pedidos?",
+    "Czy zaplacilem za zamowienia?",
+    "Am platit comenzi?",
+  ];
+
+  for (const prompt of prompts) {
+    assert.deepEqual(
+      routeSupportAccountAwareRequest(prompt),
+      {
+        kind: "candidate_selection",
+        selectionHelper: "getPaymentStatusForCurrentUser",
+        statusFilter: "paid",
+      },
       prompt,
     );
   }
@@ -683,7 +718,7 @@ test("payment overview prompts route across launched locales", () => {
     "Ho già pagato qualche ordine?",
     "Ho già pagato ordini?",
     "Ho prenotazioni non pagate?",
-    "¿Ya he pagado algún pedido?",
+    "Tengo pedidos sin pagar?",
     "¿Ya he pagado pedidos?",
     "¿Tengo pedidos sin pagar?",
     "Já paguei algum pedido?",
@@ -700,11 +735,11 @@ test("payment overview prompts route across launched locales", () => {
   ];
 
   for (const prompt of prompts) {
-    assert.deepEqual(
-      routeSupportAccountAwareRequest(prompt),
-      { kind: "payment_overview" },
-      prompt,
-    );
+    const route = routeSupportAccountAwareRequest(prompt);
+    if (route.kind === "candidate_selection" && route.statusFilter === "paid") {
+      continue;
+    }
+    assert.deepEqual(route, { kind: "payment_overview" }, prompt);
   }
 });
 
@@ -1048,7 +1083,9 @@ test("empty filtered candidate selection stays bounded and deterministic", async
 });
 
 test("paid candidate click answers paid status from invoice cache", async () => {
-  const { route, response, accountContext } = await respond("Show my paid orders");
+  const { route, response, accountContext, db } = await respond(
+    "Did I pay already for any order?",
+  );
 
   assert.equal(route.kind, "candidate_selection");
   if (route.kind === "candidate_selection") {
@@ -1057,6 +1094,10 @@ test("paid candidate click answers paid status from invoice cache", async () => 
   }
   assert.equal(response.actions?.length, 1);
   assert.match(response.actions?.[0]?.description ?? "", /invoice paid/i);
+  assert.equal(
+    db.calls.find((call) => call.collection === "orders")?.limit,
+    50,
+  );
 
   const click = await buildAccountAwareActionResponse({
     token: response.actions?.[0]?.token ?? "",
@@ -1071,8 +1112,39 @@ test("paid candidate click answers paid status from invoice cache", async () => 
   assert.doesNotMatch(click.assistantMessage, /not due/i);
 });
 
+test("paid candidate lookup finds paid orders outside the old recent window", async () => {
+  const newerUnpaidOrders = Array.from({ length: 16 }, (_, index) =>
+    order({
+      id: `10000000000000000000${(0x100 + index).toString(16).padStart(4, "0")}`,
+      serviceStatus: "scheduled",
+      invoiceStatus: "none",
+      createdAt: `2026-04-22T${String(index).padStart(2, "0")}:00:00.000Z`,
+    }),
+  );
+
+  const { route, response, db } = await respond(
+    "Did I pay already for any order?",
+    "clerk-user-a",
+    "en",
+    { extraOrders: newerUnpaidOrders },
+  );
+
+  assert.equal(route.kind, "candidate_selection");
+  if (route.kind === "candidate_selection") {
+    assert.equal(route.selectionHelper, "getPaymentStatusForCurrentUser");
+    assert.equal(route.statusFilter, "paid");
+  }
+  assert.equal(
+    db.calls.find((call) => call.collection === "orders")?.limit,
+    50,
+  );
+  assert.ok(response.actions?.length);
+  assert.match(response.actions?.[0]?.id ?? "", /getPaymentStatusForCurrentUser/);
+  assert.match(response.actions?.[0]?.description ?? "", /invoice paid/i);
+});
+
 test("payment overview returns bounded deterministic summary", async () => {
-  const { route, response, db } = await respond("Did I pay already for any order?");
+  const { route, response, db } = await respond("Have I paid for anything?");
 
   assert.equal(route.kind, "payment_overview");
   assert.equal(response.disposition, "answered");
@@ -1082,7 +1154,7 @@ test("payment overview returns bounded deterministic summary", async () => {
     "getSupportPaymentOverviewForCurrentUser",
   );
   assert.equal(response.accountHelperMetadata.resultCategory, "payment_overview");
-  assert.match(response.assistantMessage, /From the recent orders I can safely check/i);
+  assert.match(response.assistantMessage, /recent support-safe order window/i);
   assert.match(response.assistantMessage, /1 paid order/i);
   assert.match(response.assistantMessage, /1 with payment pending/i);
   assert.match(response.assistantMessage, /2 where payment is not due yet/i);
@@ -1101,7 +1173,7 @@ test("payment overview returns bounded deterministic summary", async () => {
 
 test("Spanish payment overview returns localized deterministic summary", async () => {
   const { route, response } = await respond(
-    "¿Ya he pagado algún pedido?",
+    "Tengo pedidos sin pagar?",
     "clerk-user-a",
     "es",
   );
@@ -1119,7 +1191,7 @@ test("Spanish payment overview returns localized deterministic summary", async (
 });
 
 test("signed-out payment overview returns safe handoff without account reads", async () => {
-  const route = routeSupportAccountAwareRequest("Did I pay already for any order?");
+  const route = routeSupportAccountAwareRequest("Have I paid for anything?");
   assert.equal(route.kind, "payment_overview");
 
   const { accountContext, db } = makeCtx(null);
@@ -1303,6 +1375,126 @@ test("intent triage recovers typoed account follow-ups without broad lookup", as
       (call) => call.method === "find" && call.collection === "orders",
     ),
   );
+});
+
+test("intent triage maps broad support topics through server-owned helpers", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+
+  const cases = [
+    {
+      message: "reservation anuler typo maybe",
+      locale: "fr" as const,
+      triage: {
+        intent: "account_candidate_lookup" as const,
+        topic: "cancellation" as const,
+        confidence: "high" as const,
+      },
+      expectedAction: /canCancelOrderForCurrentUser/,
+    },
+    {
+      message: "paymnt thing maybe",
+      locale: "en" as const,
+      triage: {
+        intent: "account_candidate_lookup" as const,
+        topic: "payment" as const,
+        confidence: "high" as const,
+      },
+      expectedAction: /getPaymentStatusForCurrentUser/,
+    },
+    {
+      message: "bookng thing maybe",
+      locale: "en" as const,
+      triage: {
+        intent: "account_candidate_lookup" as const,
+        topic: "booking" as const,
+        confidence: "high" as const,
+      },
+      expectedAction: /getOrderStatusForCurrentUser/,
+    },
+  ];
+
+  for (const item of cases) {
+    const { db, accountContext } = makeCtx("clerk-user-a");
+    const response = await generateSupportResponse({
+      message: item.message,
+      threadId: THREAD_ID,
+      locale: item.locale,
+      accountContext,
+      supportTopicContext: createSupportTopicContext({
+        topic: item.triage.topic,
+        source: "starter_prompt",
+      }),
+      intentTriageOverride: item.triage,
+    });
+
+    assert.equal(response.disposition, "uncertain", item.message);
+    assert.equal(
+      response.accountHelperMetadata?.helper,
+      "getSupportOrderCandidatesForCurrentUser",
+      item.message,
+    );
+    assert.match(response.actions?.[0]?.id ?? "", item.expectedAction, item.message);
+    assert.ok(
+      db.calls.some(
+        (call) => call.method === "find" && call.collection === "orders",
+      ),
+      item.message,
+    );
+  }
+});
+
+test("intent triage does not route unsupported provider account lookup to helpers", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "thing maybe",
+    threadId: THREAD_ID,
+    locale: "en",
+    accountContext,
+    supportTopicContext: createSupportTopicContext({
+      topic: "provider_onboarding",
+      source: "starter_prompt",
+    }),
+    intentTriageOverride: {
+      intent: "account_candidate_lookup",
+      topic: "provider_onboarding",
+      confidence: "high",
+    },
+  });
+
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
+});
+
+test("intent triage cannot route account helpers without account context", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const response = await generateSupportResponse({
+    message: "thing maybe",
+    threadId: THREAD_ID,
+    locale: "en",
+    supportTopicContext: createSupportTopicContext({
+      topic: "cancellation",
+      source: "starter_prompt",
+    }),
+    intentTriageOverride: {
+      intent: "account_candidate_lookup",
+      topic: "cancellation",
+      confidence: "high",
+    },
+  });
+
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
 });
 
 test("intent triage asks for clarification on low confidence instead of support handoff", async () => {

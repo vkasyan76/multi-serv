@@ -35,6 +35,7 @@ type HelperCtx = Pick<TRPCContext, "db" | "userId">;
 
 const OBJECT_ID_RE = /^[a-f0-9]{24}$/i;
 const CANDIDATE_FETCH_WINDOW = 15;
+const FILTERED_CANDIDATE_FETCH_WINDOW = 50;
 const CANDIDATE_RETURN_LIMIT = 3;
 const OVERVIEW_FETCH_WINDOW = 10;
 const OVERVIEW_EXAMPLE_LIMIT = 3;
@@ -688,10 +689,17 @@ export async function getSupportOrderCandidatesForCurrentUser(
   // Candidate resolution is bounded and role-aware: a small recent customer
   // window plus a small recent tenant-owned window. It is not full history,
   // customer lookup, provider/date lookup, or free-text search.
+  //
+  // Filtered questions such as "which orders have I paid?" need a wider fixed
+  // support window before filtering; otherwise a few newer not-due orders can
+  // hide recent paid candidates that are still visible on the Orders page.
   const tenantIds = await loadOwnedTenantIds(ctx, identity.payloadUserId);
+  const fetchWindow = input.statusFilter
+    ? FILTERED_CANDIDATE_FETCH_WINDOW
+    : CANDIDATE_FETCH_WINDOW;
   const [customerOrders, tenantOrders] = await Promise.all([
-    loadRecentCustomerCandidateOrders(ctx, identity.payloadUserId),
-    loadRecentTenantCandidateOrders(ctx, tenantIds),
+    loadRecentCustomerCandidateOrders(ctx, identity.payloadUserId, fetchWindow),
+    loadRecentTenantCandidateOrders(ctx, tenantIds, fetchWindow),
   ]);
 
   const candidates = mergeUniqueOrders([customerOrders, tenantOrders])

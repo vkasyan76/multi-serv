@@ -453,7 +453,11 @@ export async function generateSupportResponse(
     }
 
     if (
-      triage.intent === "selected_order_follow_up" &&
+      canUseTriageForSelectedOrder({
+        triage,
+        hasAccountContext: Boolean(input.accountContext),
+        hasSelectedOrderContext: Boolean(selectedOrder?.ok),
+      }) &&
       input.accountContext &&
       selectedOrder?.ok
     ) {
@@ -490,7 +494,13 @@ export async function generateSupportResponse(
       });
     }
 
-    if (triage.intent === "account_candidate_lookup" && input.accountContext) {
+    if (
+      canUseTriageForCandidateLookup({
+        triage,
+        hasAccountContext: Boolean(input.accountContext),
+      }) &&
+      input.accountContext
+    ) {
       const accountResponse = await buildAccountAwareServerResponse({
         route: {
           kind: "candidate_selection",
@@ -523,7 +533,7 @@ export async function generateSupportResponse(
       });
     }
 
-    if (triage.intent === "unsafe_mutation") {
+    if (canUseTriageForUnsafeAction({ triage })) {
       return supportResponse({
         threadId,
         assistantMessage: copy.unsupportedAction,
@@ -678,6 +688,43 @@ function topicDetectionFromTriage(
     topic: triage.topic,
     source: "follow_up",
   };
+}
+
+function canUseTriageForCandidateLookup(input: {
+  triage: SupportIntentTriageResult;
+  hasAccountContext: boolean;
+}) {
+  if (!input.hasAccountContext) return false;
+  if (input.triage.confidence !== "high") return false;
+  if (input.triage.intent !== "account_candidate_lookup") return false;
+
+  return (
+    input.triage.topic === "booking" ||
+    input.triage.topic === "payment" ||
+    input.triage.topic === "cancellation"
+  );
+}
+
+function canUseTriageForSelectedOrder(input: {
+  triage: SupportIntentTriageResult;
+  hasAccountContext: boolean;
+  hasSelectedOrderContext: boolean;
+}) {
+  return (
+    input.hasAccountContext &&
+    input.hasSelectedOrderContext &&
+    input.triage.confidence === "high" &&
+    input.triage.intent === "selected_order_follow_up"
+  );
+}
+
+function canUseTriageForUnsafeAction(input: {
+  triage: SupportIntentTriageResult;
+}) {
+  return (
+    input.triage.confidence === "high" &&
+    input.triage.intent === "unsafe_mutation"
+  );
 }
 
 function selectedOrderTriageHelper(

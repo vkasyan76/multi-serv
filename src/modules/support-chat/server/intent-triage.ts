@@ -57,6 +57,119 @@ const CONFIDENCES = new Set<SupportIntentTriageConfidence>([
   "low",
 ]);
 
+const TRIAGE_EXAMPLES = [
+  {
+    message: "How does booking work?",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "general_topic_help",
+      topic: "booking",
+      confidence: "high",
+    },
+  },
+  {
+    message: "Which of my bookings are scheduled?",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "account_candidate_lookup",
+      topic: "booking",
+      confidence: "high",
+    },
+  },
+  {
+    message: "When do I pay?",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "general_topic_help",
+      topic: "payment",
+      confidence: "high",
+    },
+  },
+  {
+    message: "Have I paid for any order?",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "account_candidate_lookup",
+      topic: "payment",
+      confidence: "high",
+    },
+  },
+  {
+    message: "How does cancellation work?",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "general_topic_help",
+      topic: "cancellation",
+      confidence: "high",
+    },
+  },
+  {
+    message: "Quelles reservation je peux anuler ?",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "account_candidate_lookup",
+      topic: "cancellation",
+      confidence: "high",
+    },
+  },
+  {
+    message: "Cancel my booking now",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "unsafe_mutation",
+      topic: "cancellation",
+      confidence: "high",
+    },
+  },
+  {
+    message: "How do I become a service provider?",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "general_topic_help",
+      topic: "provider_onboarding",
+      confidence: "high",
+    },
+  },
+  {
+    message: "Why can't I cancel this?",
+    hasSelectedOrderContext: true,
+    result: {
+      intent: "selected_order_follow_up",
+      topic: "cancellation",
+      confidence: "high",
+    },
+  },
+  {
+    message: "what about payment?",
+    hasSelectedOrderContext: true,
+    result: {
+      intent: "selected_order_follow_up",
+      topic: "payment",
+      confidence: "high",
+    },
+  },
+  {
+    message: "storno thing maybe",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "clarify",
+      topic: "cancellation",
+      confidence: "low",
+    },
+  },
+] satisfies ReadonlyArray<{
+  message: string;
+  hasSelectedOrderContext: boolean;
+  result: SupportIntentTriageResult;
+}>;
+
+function formatTriageExamples() {
+  return TRIAGE_EXAMPLES.map(
+    (example) =>
+      `- message=${JSON.stringify(example.message)}, hasSelectedOrderContext=${example.hasSelectedOrderContext} -> ${JSON.stringify(example.result)}`,
+  ).join("\n");
+}
+
 function extractJsonObject(text: string) {
   const trimmed = text.trim();
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) return trimmed;
@@ -131,6 +244,8 @@ export async function classifySupportIntent(input: {
       "Use unsafe_mutation when the user asks the chat to perform an action such as cancel, refund, charge, or update something.",
       "Use clarify for ambiguous messages that need one short question.",
       'Return shape: {"intent":"...","topic":"...","confidence":"high|medium|low"}',
+      "Examples:",
+      formatTriageExamples(),
     ].join("\n");
 
     const result = await createSupportChatModelResponse({
