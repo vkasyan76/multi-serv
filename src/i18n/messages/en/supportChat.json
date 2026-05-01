@@ -35,6 +35,7 @@
     "nonsense": "I could not understand that request. Please rephrase your support question or contact support.",
     "clarify": "What are you trying to do: register, book a service, manage a provider profile, pay for an order, cancel, or dispute something?",
     "unsupportedAccount": "I can only check limited support-safe order, payment, or invoice details when you provide or select a specific item I can verify. I cannot browse full account history, unrelated orders, Stripe, or raw account records.",
+    "unsupportedAction": "I can’t perform actions like canceling, refunding, charging, or updating an order from this chat. I can explain the rules or help you check support-safe eligibility for a selected order.",
     "uncertain": "I do not have enough support information to answer that reliably. I can help with general registration, provider setup, booking, payment, cancellation, dispute, and marketplace usage questions. For this specific issue, please contact support."
   },
   "handoffAccount": "For account-specific help, contact support with your order, invoice, or account details.",

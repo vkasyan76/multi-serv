@@ -35,6 +35,7 @@
     "nonsense": "Nie udało mi się zrozumieć tej prośby. Przeformułuj pytanie do wsparcia albo skontaktuj się ze wsparciem.",
     "clarify": "Co próbujesz zrobić: zarejestrować się, zarezerwować usługę, zarządzać profilem usługodawcy, opłacić zamówienie, anulować coś czy zgłosić spór?",
     "unsupportedAccount": "Mogę sprawdzać tylko ograniczone, bezpieczne szczegóły zamówień, płatności lub faktur, gdy wybierzesz albo wskażesz konkretny element, który mogę zweryfikować. Nie mogę przeglądać pełnej historii konta, niepowiązanych zamówień, Stripe ani surowych danych konta.",
+    "unsupportedAction": "Nie mogę wykonywać z tego czatu działań takich jak anulowanie, zwrot, obciążenie lub zmiana zamówienia. Mogę wyjaśnić zasady albo pomóc bezpiecznie sprawdzić kwalifikowalność wybranego zamówienia.",
     "uncertain": "Nie mam wystarczających informacji wsparcia, aby odpowiedzieć wiarygodnie. Mogę pomóc w ogólnych pytaniach dotyczących rejestracji, konfiguracji usługodawcy, rezerwacji, płatności, anulowania, sporów i korzystania z marketplace. W sprawie tego konkretnego problemu skontaktuj się ze wsparciem."
   },
   "handoffAccount": "Aby uzyskać pomoc dotyczącą konta, skontaktuj się ze wsparciem i podaj dane zamówienia, faktury lub konta.",

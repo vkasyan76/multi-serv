@@ -48,8 +48,18 @@ test("cancellation context escalates explicit personal cancellation lookups with
 
   for (const message of [
     "Do I have bookings I can cancel?",
+    "Which bookings can I cancel?",
     "Gibt es bei mir noch Buchungen die ich stornieren kann?",
     "Habe ich Buchungen, die ich stornieren kann?",
+    "Welche Buchungen kann ich stornieren?",
+    "Quelles réservations puis-je annuler ?",
+    "Quelles commandes puis-je annuler ?",
+    "Qué reservas puedo cancelar?",
+    "Quali prenotazioni posso annullare?",
+    "Quais reservas posso cancelar?",
+    "Które rezerwacje mogę anulować?",
+    "Ce rezervări pot anula?",
+    "Які бронювання можна скасувати?",
   ]) {
     assert.deepEqual(
       detectTopicAccountEscalation({ message, context }),

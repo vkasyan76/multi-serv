@@ -35,6 +35,7 @@
     "nonsense": "Je n'ai pas compris cette demande. Veuillez reformuler votre question d'assistance ou contacter l'assistance.",
     "clarify": "Que cherchez-vous à faire : vous inscrire, réserver un service, gérer un profil prestataire, payer une commande, annuler ou contester quelque chose ?",
     "unsupportedAccount": "Je peux seulement vérifier des détails limités et sûrs d'une commande, d'un paiement ou d'une facture lorsque vous sélectionnez ou indiquez un élément précis que je peux vérifier. Je ne peux pas parcourir tout l'historique du compte, les commandes sans rapport, Stripe ou les données brutes du compte.",
+    "unsupportedAction": "Je ne peux pas effectuer d’actions comme annuler, rembourser, débiter ou modifier une commande depuis ce chat. Je peux expliquer les règles ou vous aider à vérifier, de façon sûre pour l’assistance, l’éligibilité d’une commande sélectionnée.",
     "uncertain": "Je n'ai pas assez d'informations d'assistance pour répondre de manière fiable. Je peux aider sur les questions générales d'inscription, de configuration prestataire, de réservation, de paiement, d'annulation, de litige et d'utilisation de la marketplace. Pour ce problème précis, veuillez contacter l'assistance."
   },
   "handoffAccount": "Pour une aide propre à votre compte, contactez l'assistance avec les détails de votre commande, facture ou compte.",

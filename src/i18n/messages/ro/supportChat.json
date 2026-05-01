@@ -35,6 +35,7 @@
     "nonsense": "Nu am putut înțelege această cerere. Reformulează întrebarea de asistență sau contactează asistența.",
     "clarify": "Ce încerci să faci: să te înregistrezi, să rezervi un serviciu, să gestionezi un profil de prestator, să plătești o comandă, să anulezi sau să contești ceva?",
     "unsupportedAccount": "Pot verifica doar detalii limitate și sigure despre comenzi, plăți sau facturi atunci când selectezi ori indici un element concret pe care îl pot verifica. Nu pot parcurge istoricul complet al contului, comenzi fără legătură, Stripe sau date brute ale contului.",
+    "unsupportedAction": "Nu pot efectua acțiuni precum anularea, rambursarea, debitarea sau modificarea unei comenzi din acest chat. Pot explica regulile sau te pot ajuta să verifici în siguranță eligibilitatea unei comenzi selectate.",
     "uncertain": "Nu am suficiente informații de suport pentru a răspunde în mod fiabil. Pot ajuta cu întrebări generale despre înregistrare, configurarea prestatorului, rezervări, plăți, anulări, dispute și folosirea marketplace-ului. Pentru această problemă concretă, contactează asistența."
   },
   "handoffAccount": "Pentru ajutor specific contului, contactează asistența cu detaliile comenzii, facturii sau contului.",

@@ -35,6 +35,7 @@
     "nonsense": "No he podido entender esa solicitud. Reformula tu pregunta de soporte o contacta con soporte.",
     "clarify": "¿Qué intentas hacer: registrarte, reservar un servicio, gestionar un perfil de proveedor, pagar un pedido, cancelar o disputar algo?",
     "unsupportedAccount": "Solo puedo revisar detalles limitados y seguros de pedidos, pagos o facturas cuando seleccionas o indicas un elemento específico que puedo verificar. No puedo recorrer todo el historial de la cuenta, pedidos no relacionados, Stripe ni registros internos de la cuenta.",
+    "unsupportedAction": "No puedo realizar acciones como cancelar, reembolsar, cobrar o actualizar un pedido desde este chat. Puedo explicar las reglas o ayudarte a comprobar de forma segura si un pedido seleccionado cumple los requisitos.",
     "uncertain": "No tengo suficiente información de soporte para responder con fiabilidad. Puedo ayudar con preguntas generales sobre registro, configuración de proveedor, reservas, pagos, cancelaciones, disputas y uso del marketplace. Para este problema concreto, contacta con soporte."
   },
   "handoffAccount": "Para ayuda específica de tu cuenta, contacta con soporte e incluye los datos de tu pedido, factura o cuenta.",

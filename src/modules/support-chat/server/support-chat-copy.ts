@@ -20,6 +20,7 @@ type SupportChatServerCopy = {
     nonsense: string;
     clarify: string;
     unsupportedAccount: string;
+    unsupportedAction: string;
     uncertain: string;
   };
 };

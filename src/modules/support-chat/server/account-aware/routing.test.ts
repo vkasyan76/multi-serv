@@ -14,6 +14,7 @@ import {
   verifySelectedOrderContextToken,
 } from "./action-tokens";
 import { createSupportTopicContext } from "../topics";
+import { getSupportChatCopy } from "../support-chat-copy";
 
 process.env.PAYLOAD_SECRET ??= "support-chat-action-test-secret";
 
@@ -1236,6 +1237,161 @@ test("topic cancellation follow-up escalates explicit personal cancellation look
       (call) => call.method === "find" && call.collection === "orders",
     ),
   );
+});
+
+test("French cancellation topic follow-up routes to cancellable candidates", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "Quelles réservations puis-je annuler ?",
+    threadId: THREAD_ID,
+    locale: "fr",
+    accountContext,
+    supportTopicContext: createSupportTopicContext({
+      topic: "cancellation",
+      source: "starter_prompt",
+    }),
+  });
+
+  assert.equal(response.disposition, "uncertain");
+  assert.equal(
+    response.accountHelperMetadata?.helper,
+    "getSupportOrderCandidatesForCurrentUser",
+  );
+  assert.equal(response.supportTopic?.topic, "cancellation");
+  assert.ok(response.actions?.length);
+  assert.match(response.actions?.[0]?.id ?? "", /canCancelOrderForCurrentUser/);
+  assert.ok(
+    db.calls.some(
+      (call) => call.method === "find" && call.collection === "orders",
+    ),
+  );
+});
+
+test("intent triage recovers typoed account follow-ups without broad lookup", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "Welche Buchungen kann ich stornorenen?",
+    threadId: THREAD_ID,
+    locale: "de",
+    accountContext,
+    supportTopicContext: createSupportTopicContext({
+      topic: "cancellation",
+      source: "starter_prompt",
+    }),
+    intentTriageOverride: {
+      intent: "account_candidate_lookup",
+      topic: "cancellation",
+      confidence: "high",
+    },
+  });
+
+  assert.equal(response.disposition, "uncertain");
+  assert.equal(
+    response.accountHelperMetadata?.helper,
+    "getSupportOrderCandidatesForCurrentUser",
+  );
+  assert.equal(response.supportTopic?.topic, "cancellation");
+  assert.match(response.actions?.[0]?.id ?? "", /canCancelOrderForCurrentUser/);
+  assert.ok(
+    db.calls.some(
+      (call) => call.method === "find" && call.collection === "orders",
+    ),
+  );
+});
+
+test("intent triage asks for clarification on low confidence instead of support handoff", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "storno thing maybe",
+    threadId: THREAD_ID,
+    locale: "en",
+    accountContext,
+    intentTriageOverride: {
+      intent: "account_candidate_lookup",
+      topic: "cancellation",
+      confidence: "low",
+    },
+  });
+
+  assert.equal(response.disposition, "uncertain");
+  assert.equal(response.needsHumanSupport, false);
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
+});
+
+test("intent triage unsafe mutation returns no-action boundary copy", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "Cancel this booking now",
+    threadId: THREAD_ID,
+    locale: "en",
+    accountContext,
+    intentTriageOverride: {
+      intent: "unsafe_mutation",
+      topic: "cancellation",
+      confidence: "high",
+    },
+  });
+
+  assert.equal(response.disposition, "unsupported_account_question");
+  assert.equal(
+    response.assistantMessage,
+    getSupportChatCopy("en").serverMessages.unsupportedAction,
+  );
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
+});
+
+test("intent triage can recover selected-order follow-up typos", async () => {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { accountContext } = makeCtx("clerk-user-a");
+  const token = createSelectedOrderContextToken({
+    reference: ORDER_SCHEDULED_A,
+    threadId: THREAD_ID,
+  });
+  const response = await generateSupportResponse({
+    message: "was mit zahlun?",
+    threadId: THREAD_ID,
+    locale: "de",
+    accountContext,
+    selectedOrderContext: {
+      token,
+    },
+    intentTriageOverride: {
+      intent: "selected_order_follow_up",
+      topic: "payment",
+      confidence: "high",
+    },
+  });
+
+  assert.equal(response.disposition, "answered");
+  assert.equal(
+    response.accountHelperMetadata?.helper,
+    "getPaymentStatusForCurrentUser",
+  );
+  assert.doesNotMatch(response.assistantMessage, /Welche Bestellung meinst du/i);
 });
 
 test("selected order context routes follow-up questions to exact helpers", () => {

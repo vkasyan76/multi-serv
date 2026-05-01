@@ -27,6 +27,10 @@ import {
 } from "@/modules/support-chat/server/topic-retrieval";
 import { detectTopicAccountEscalation } from "@/modules/support-chat/server/topic-account-escalation";
 import {
+  classifySupportIntent,
+  type SupportIntentTriageResult,
+} from "@/modules/support-chat/server/intent-triage";
+import {
   buildAccountAwareServerResponse,
   type SupportAccountHelperMetadata,
   type SupportChatAction,
@@ -65,6 +69,7 @@ export type GenerateSupportResponseInput = {
   accountContext?: Pick<TRPCContext, "db" | "userId">;
   selectedOrderContext?: Pick<SupportSelectedOrderContext, "token">;
   supportTopicContext?: SupportTopicContext;
+  intentTriageOverride?: SupportIntentTriageResult;
 };
 
 export type GenerateSupportResponseResult = {
@@ -159,6 +164,25 @@ const THIN_POLICY_PATTERNS = [
   /\bmove\s+(my\s+)?booking\s+to\s+another\s+person\b/i,
 ];
 
+const POLICY_DEFINITION_PATTERNS = [
+  /\bwhat\s+do(?:es)?\b.*\b(mean|status|statuses)\b/i,
+  /\bwhat\s+is\b.*\b(requested|scheduled|canceled|cancelled|paid|unpaid)\b/i,
+  /\bwhen\s+do\s+i\s+pay\b/i,
+  /\bhow\s+does\b.*\b(work|payment|cancellation|booking)\b/i,
+];
+
+const ACCOUNT_ACTION_HINT_PATTERNS = [
+  /\b(order|orders|booking|bookings|payment|payments|invoice|invoices|refund|refunds|status|cancel|canceled|cancelled|pay|paid|charge|charged)\b/i,
+  /\b(buchung|buchungen|bestellung|bestellungen|zahlung|zahlungen|rechnung|rechnungen|status|storn\w*|bezahlen|bezahlt|erstatt\w*)\b/i,
+  /\b(commande|commandes|reservation|reservations|paiement|paiements|facture|factures|statut|annul\w*|payer|paye\w*|rembours\w*)\b/i,
+  /\b(ordine|ordini|prenotazione|prenotazioni|pagamento|pagamenti|fattura|fatture|stato|annull\w*|pagare|pagato|rimbor\w*)\b/i,
+  /\b(pedido|pedidos|reserva|reservas|pago|pagos|factura|facturas|estado|cancel\w*|anular|pagado|reembolso)\b/i,
+  /\b(pagamento|pagamentos|fatura|faturas|cancelar|pagar|pago|reembolso)\b/i,
+  /\b(zamowienie|zamowienia|rezerwacja|rezerwacje|platnosc|platnosci|faktura|faktury|status|anul\w*|zaplac\w*|zwrot)\b/i,
+  /\b(comanda|comenzi|rezervare|rezervari|plata|plati|factura|facturi|status|anul\w*|platit|ramburs\w*)\b/i,
+  /(замовлення|бронювання|оплата|платіж|рахунок|статус|скас\w*|сплач\w*|повернення)/iu,
+];
+
 function normalizeSupportMessage(message: string) {
   return message.toLowerCase().replace(/\s+/g, " ").trim();
 }
@@ -181,6 +205,16 @@ function hasAdversarialUngroundedRequest(message: string) {
 
 function hasThinPolicyRequest(message: string) {
   return THIN_POLICY_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+function hasPolicyDefinitionRequest(message: string) {
+  return POLICY_DEFINITION_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+function looksLikeAccountOrActionFollowUp(message: string) {
+  // Cheap eligibility gate only: the model still classifies the intent, and the
+  // server still owns every helper/action mapping.
+  return ACCOUNT_ACTION_HINT_PATTERNS.some((pattern) => pattern.test(message));
 }
 
 function hasStrongSource(matches: SupportKnowledgeMatch[]) {
@@ -360,8 +394,176 @@ export async function generateSupportResponse(
     });
   }
 
+  const isUnsupportedAccountRequest = hasAccountSpecificRequest(message);
+  const isAdversarialUngroundedRequest =
+    hasAdversarialUngroundedRequest(message);
+  const isThinPolicyRequest = hasThinPolicyRequest(message);
+
+  if (isUnsupportedAccountRequest && isAdversarialUngroundedRequest) {
+    return supportResponse({
+      threadId,
+      assistantMessage: copy.unsupportedAccount,
+      sources: [],
+      disposition: "unsupported_account_question",
+      responseOrigin: "server",
+    });
+  }
+
+  const triageActiveTopic =
+    topicContext && isSupportTopicContextFollowUp({ message, context: topicContext })
+      ? topicContext.topic
+      : null;
+  const shouldRunIntentTriage =
+    !supportTopic &&
+    !hasPolicyDefinitionRequest(message) &&
+    Boolean(input.accountContext) &&
+    (Boolean(topicContext) ||
+      Boolean(selectedOrder?.ok) ||
+      hasAccountSpecificRequest(message) ||
+      looksLikeAccountOrActionFollowUp(message));
+  const triageOutcome = shouldRunIntentTriage
+    ? input.intentTriageOverride
+      ? ({ ok: true, result: input.intentTriageOverride } as const)
+      : await classifySupportIntent({
+          message,
+          locale: input.locale,
+          threadId,
+          activeTopic: triageActiveTopic,
+          hasSelectedOrderContext: Boolean(selectedOrder?.ok),
+        })
+    : null;
+
+  if (triageOutcome?.ok) {
+    const triage = triageOutcome.result;
+    const triageTopic = topicDetectionFromTriage(triage);
+
+    if (triage.confidence !== "high") {
+      return supportResponse({
+        threadId,
+        assistantMessage: copy.clarify,
+        sources: [],
+        disposition: "uncertain",
+        responseOrigin: "server",
+        needsHumanSupport: false,
+        supportTopic: triageTopic ?? undefined,
+        supportTopicContext: triageTopic
+          ? createSupportTopicContext(triageTopic)
+          : undefined,
+      });
+    }
+
+    if (
+      triage.intent === "selected_order_follow_up" &&
+      input.accountContext &&
+      selectedOrder?.ok
+    ) {
+      const accountResponse = await buildAccountAwareServerResponse({
+        route: {
+          kind: "helper",
+          helper: selectedOrderTriageHelper(triage),
+          input: selectedOrder.input,
+        },
+        accountContext: input.accountContext,
+        locale: input.locale,
+        threadId,
+      });
+
+      return supportResponse({
+        threadId,
+        assistantMessage: accountResponse.assistantMessage,
+        sources: [],
+        disposition: accountResponse.disposition,
+        responseOrigin: "server",
+        needsHumanSupport: accountResponse.needsHumanSupport,
+        accountHelperMetadata: accountResponse.accountHelperMetadata,
+        accountAnswerMode: accountResponse.accountAnswerMode,
+        accountRewriteModel: accountResponse.accountRewriteModel,
+        accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
+        accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
+        accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
+        supportTopic: triageTopic ?? undefined,
+        supportTopicContext: triageTopic
+          ? createSupportTopicContext(triageTopic)
+          : undefined,
+        actions: accountResponse.actions,
+        selectedOrderContext: accountResponse.selectedOrderContext,
+      });
+    }
+
+    if (triage.intent === "account_candidate_lookup" && input.accountContext) {
+      const accountResponse = await buildAccountAwareServerResponse({
+        route: {
+          kind: "candidate_selection",
+          selectionHelper: candidateTriageHelper(triage),
+        },
+        accountContext: input.accountContext,
+        locale: input.locale,
+        threadId,
+      });
+
+      return supportResponse({
+        threadId,
+        assistantMessage: accountResponse.assistantMessage,
+        sources: [],
+        disposition: accountResponse.disposition,
+        responseOrigin: "server",
+        needsHumanSupport: accountResponse.needsHumanSupport,
+        accountHelperMetadata: accountResponse.accountHelperMetadata,
+        accountAnswerMode: accountResponse.accountAnswerMode,
+        accountRewriteModel: accountResponse.accountRewriteModel,
+        accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
+        accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
+        accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
+        supportTopic: triageTopic ?? undefined,
+        supportTopicContext: triageTopic
+          ? createSupportTopicContext(triageTopic)
+          : undefined,
+        actions: accountResponse.actions,
+        selectedOrderContext: accountResponse.selectedOrderContext,
+      });
+    }
+
+    if (triage.intent === "unsafe_mutation") {
+      return supportResponse({
+        threadId,
+        assistantMessage: copy.unsupportedAction,
+        sources: [],
+        disposition: "unsupported_account_question",
+        responseOrigin: "server",
+        supportTopic: triageTopic ?? undefined,
+        supportTopicContext: triageTopic
+          ? createSupportTopicContext(triageTopic)
+          : undefined,
+      });
+    }
+
+    if (triage.intent === "clarify") {
+      return supportResponse({
+        threadId,
+        assistantMessage: copy.clarify,
+        sources: [],
+        disposition: "uncertain",
+        responseOrigin: "server",
+        needsHumanSupport: false,
+        supportTopic: triageTopic ?? undefined,
+        supportTopicContext: triageTopic
+          ? createSupportTopicContext(triageTopic)
+          : undefined,
+      });
+    }
+  }
+
   const activeSupportTopic =
     supportTopic ??
+    (triageOutcome?.ok &&
+    triageOutcome.result.confidence === "high" &&
+    triageOutcome.result.intent === "general_topic_help" &&
+    triageOutcome.result.topic
+      ? {
+          topic: triageOutcome.result.topic,
+          source: "follow_up" as const,
+        }
+      : null) ??
     (topicContext &&
     isSupportTopicContextFollowUp({
       message,
@@ -379,10 +581,6 @@ export async function generateSupportResponse(
       })
     : undefined;
 
-  const isUnsupportedAccountRequest = hasAccountSpecificRequest(message);
-  const isAdversarialUngroundedRequest =
-    hasAdversarialUngroundedRequest(message);
-  const isThinPolicyRequest = hasThinPolicyRequest(message);
   const matches = applyTopicRetrievalBias({
     matches: await retrieveSupportKnowledge({
       query: topicRetrievalQuery({ message, topic: activeSupportTopic }),
@@ -470,4 +668,30 @@ export async function generateSupportResponse(
     supportTopic: activeSupportTopic ?? undefined,
     supportTopicContext: refreshedTopicContext,
   });
+}
+
+function topicDetectionFromTriage(
+  triage: SupportIntentTriageResult,
+): SupportChatTopicDetection | null {
+  if (!triage.topic) return null;
+  return {
+    topic: triage.topic,
+    source: "follow_up",
+  };
+}
+
+function selectedOrderTriageHelper(
+  triage: SupportIntentTriageResult,
+): "getOrderStatusForCurrentUser" | "getPaymentStatusForCurrentUser" | "canCancelOrderForCurrentUser" {
+  if (triage.topic === "payment") return "getPaymentStatusForCurrentUser";
+  if (triage.topic === "cancellation") return "canCancelOrderForCurrentUser";
+  return "getOrderStatusForCurrentUser";
+}
+
+function candidateTriageHelper(
+  triage: SupportIntentTriageResult,
+): "getOrderStatusForCurrentUser" | "getPaymentStatusForCurrentUser" | "canCancelOrderForCurrentUser" {
+  if (triage.topic === "payment") return "getPaymentStatusForCurrentUser";
+  if (triage.topic === "cancellation") return "canCancelOrderForCurrentUser";
+  return "getOrderStatusForCurrentUser";
 }
