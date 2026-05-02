@@ -33,6 +33,7 @@ type SupportChatContextValue = {
   error: string | null;
   sendMessage: (message?: string) => Promise<void>;
   sendAction: (action: SupportChatAction) => Promise<void>;
+  clearChat: () => void;
 };
 
 const SupportChatContext = createContext<SupportChatContextValue | null>(null);
@@ -78,6 +79,14 @@ export function SupportChatProvider({
 
   const openChat = useCallback(() => setOpen(true), []);
   const closeChat = useCallback(() => setOpen(false), []);
+  const clearChat = useCallback(() => {
+    setThreadId(undefined);
+    setMessages([]);
+    setSelectedOrderContext(null);
+    setSupportTopicContext(null);
+    setInput("");
+    setError(null);
+  }, []);
 
   const sendMessage = useCallback(
     async (messageOverride?: string) => {
@@ -233,8 +242,10 @@ export function SupportChatProvider({
       error,
       sendMessage,
       sendAction,
+      clearChat,
     }),
     [
+      clearChat,
       closeChat,
       error,
       input,

@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircle, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { withLocalePrefix } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SupportChatAiIcon } from "@/modules/support-chat/ui/support-chat-ai-icon";
 import { SupportChatComposer } from "@/modules/support-chat/ui/support-chat-composer";
 import {
   type SupportChatSuggestion,
@@ -47,10 +48,12 @@ export function SupportChatPanel({ className }: { className?: string }) {
     error,
     sendMessage,
     sendAction,
+    clearChat,
   } = useSupportChat();
 
   const contactHref = withLocalePrefix("/contact", lang);
   const hasUserMessage = messages.some((message) => message.role === "user");
+  const hasMessages = messages.length > 0;
   const suggestions: SupportChatSuggestion[] = [
     {
       id: "booking",
@@ -86,9 +89,12 @@ export function SupportChatPanel({ className }: { className?: string }) {
       )}
     >
       <header className="flex items-center gap-3 border-b px-4 py-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white">
-          <MessageCircle className="h-4 w-4" />
-        </div>
+        <SupportChatAiIcon
+          className="h-9 w-9"
+          iconClassName="h-5 w-5"
+          sparkleClassName="right-1 top-1 h-3.5 w-3.5"
+          variant="solid"
+        />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-sm font-semibold">{t("panelTitle")}</h2>
           <p className="truncate text-xs text-muted-foreground">
@@ -110,10 +116,7 @@ export function SupportChatPanel({ className }: { className?: string }) {
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-3 px-4 py-4">
           {!hasUserMessage ? (
-            <div className="space-y-3 py-5 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                <MessageCircle className="h-6 w-6" />
-              </div>
+            <div className="space-y-3 py-4 text-center">
               <div className="space-y-1">
                 <h3 className="text-lg font-semibold">{t("emptyTitle")}</h3>
                 <p className="text-sm text-muted-foreground">
@@ -160,14 +163,29 @@ export function SupportChatPanel({ className }: { className?: string }) {
           sendLabel={t("send")}
         />
 
-        <div className="flex flex-col gap-1 text-[11px] leading-4 text-muted-foreground sm:flex-row sm:items-start sm:justify-between">
-          <p className="max-w-[280px]">{t("disclaimer")}</p>
+        <div className="flex items-center justify-between gap-2">
+          {hasMessages ? (
+            <button
+              type="button"
+              className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+              onClick={clearChat}
+              disabled={isSending}
+            >
+              {t("clearChat")}
+            </button>
+          ) : (
+            <span aria-hidden="true" />
+          )}
           <Link
             href={contactHref}
-            className="shrink-0 font-medium text-foreground underline underline-offset-4"
+            className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-foreground transition hover:bg-muted"
           >
             {t("contactSupport")}
           </Link>
+        </div>
+
+        <div className="text-[11px] leading-4 text-muted-foreground">
+          <p>{t("disclaimer")}</p>
         </div>
       </footer>
     </aside>
