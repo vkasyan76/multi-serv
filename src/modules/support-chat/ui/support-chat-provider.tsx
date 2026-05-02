@@ -26,6 +26,9 @@ type SupportChatContextValue = {
   setOpen: (open: boolean) => void;
   openChat: () => void;
   closeChat: () => void;
+  mode: "chat" | "email";
+  openEmailMode: () => void;
+  backToChat: () => void;
   messages: SupportChatMessage[];
   input: string;
   setInput: (value: string) => void;
@@ -66,6 +69,7 @@ export function SupportChatProvider({
   );
 
   const [open, setOpen] = useState(initialOpen);
+  const [mode, setMode] = useState<"chat" | "email">("chat");
   const [threadId, setThreadId] = useState<string | undefined>();
   const [messages, setMessages] = useState<SupportChatMessage[]>([]);
   const [selectedOrderContext, setSelectedOrderContext] =
@@ -79,6 +83,8 @@ export function SupportChatProvider({
 
   const openChat = useCallback(() => setOpen(true), []);
   const closeChat = useCallback(() => setOpen(false), []);
+  const openEmailMode = useCallback(() => setMode("email"), []);
+  const backToChat = useCallback(() => setMode("chat"), []);
   const clearChat = useCallback(() => {
     setThreadId(undefined);
     setMessages([]);
@@ -86,6 +92,7 @@ export function SupportChatProvider({
     setSupportTopicContext(null);
     setInput("");
     setError(null);
+    setMode("chat");
   }, []);
 
   const sendMessage = useCallback(
@@ -235,6 +242,9 @@ export function SupportChatProvider({
       setOpen,
       openChat,
       closeChat,
+      mode,
+      openEmailMode,
+      backToChat,
       messages,
       input,
       setInput,
@@ -246,14 +256,17 @@ export function SupportChatProvider({
     }),
     [
       clearChat,
+      backToChat,
       closeChat,
       error,
       input,
       isSending,
       lang,
       messages,
+      mode,
       open,
       openChat,
+      openEmailMode,
       sendMessage,
       sendAction,
     ]

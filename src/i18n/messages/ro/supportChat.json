@@ -23,6 +23,18 @@
   },
   "disclaimer": "Asistența AI poate face greșeli. Poate verifica doar detalii limitate și sigure despre comenzi sau plăți pe care le selectezi ori le indici.",
   "contactSupport": "Contactează asistența",
+  "writeEmail": "Scrie un e-mail",
+  "emailMode": {
+    "title": "Scrie către asistență",
+    "description": "Vom răspunde la e-mailul contului tău înregistrat.",
+    "accountEmailLabel": "E-mail cont",
+    "accountEmailFallback": "Vom folosi e-mailul asociat contului tău.",
+    "messageLabel": "Mesaj",
+    "messagePlaceholder": "Descrie cu ce ai nevoie de ajutor...",
+    "backToChat": "Înapoi la chat",
+    "sendMessage": "Trimite mesajul",
+    "notConnected": "Trimiterea e-mailului va fi conectată în pasul următor."
+  },
   "clearChat": "Șterge chatul",
   "send": "Trimite",
   "sending": "Asistența răspunde...",

@@ -23,6 +23,18 @@
   },
   "disclaimer": "KI-Support kann Fehler machen. Er kann nur begrenzte support-sichere Bestell- oder Zahlungsdetails prüfen, die Sie auswählen oder angeben.",
   "contactSupport": "Support kontaktieren",
+  "writeEmail": "E-Mail schreiben",
+  "emailMode": {
+    "title": "An den Support schreiben",
+    "description": "Wir antworten an die E-Mail-Adresse Ihres registrierten Kontos.",
+    "accountEmailLabel": "Konto-E-Mail",
+    "accountEmailFallback": "Wir verwenden die E-Mail-Adresse, die mit Ihrem Konto verknüpft ist.",
+    "messageLabel": "Nachricht",
+    "messagePlaceholder": "Beschreiben Sie, wobei Sie Hilfe benötigen...",
+    "backToChat": "Zurück zum Chat",
+    "sendMessage": "Nachricht senden",
+    "notConnected": "Der E-Mail-Versand wird als Nächstes verbunden."
+  },
   "clearChat": "Chat löschen",
   "send": "Senden",
   "sending": "Der Support antwortet...",

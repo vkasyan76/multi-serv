@@ -23,6 +23,18 @@
   },
   "disclaimer": "L'assistance IA peut faire des erreurs. Elle ne peut vérifier que des détails limités et sûrs des commandes ou paiements que vous sélectionnez ou indiquez.",
   "contactSupport": "Contacter l'assistance",
+  "writeEmail": "Écrire un e-mail",
+  "emailMode": {
+    "title": "Écrire à l'assistance",
+    "description": "Nous répondrons à l'adresse e-mail de votre compte enregistré.",
+    "accountEmailLabel": "E-mail du compte",
+    "accountEmailFallback": "Nous utiliserons l'adresse e-mail liée à votre compte.",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Décrivez ce pour quoi vous avez besoin d'aide...",
+    "backToChat": "Retour au chat",
+    "sendMessage": "Envoyer le message",
+    "notConnected": "L'envoi d'e-mail sera connecté ensuite."
+  },
   "clearChat": "Effacer le chat",
   "send": "Envoyer",
   "sending": "L'assistance répond...",

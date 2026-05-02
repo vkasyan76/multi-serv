@@ -23,6 +23,18 @@
   },
   "disclaimer": "AI support may make mistakes. It can check only limited support-safe order or payment details you select or reference.",
   "contactSupport": "Contact support",
+  "writeEmail": "Write email",
+  "emailMode": {
+    "title": "Write to support",
+    "description": "We will reply to your registered account email.",
+    "accountEmailLabel": "Account email",
+    "accountEmailFallback": "We will use the email address linked to your account.",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Describe what you need help with...",
+    "backToChat": "Back to chat",
+    "sendMessage": "Send message",
+    "notConnected": "Email sending will be connected next."
+  },
   "clearChat": "Clear chat",
   "send": "Send",
   "sending": "Support is replying...",

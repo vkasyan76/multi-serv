@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { withLocalePrefix } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -37,10 +37,13 @@ function getHandoffText(
 
 export function SupportChatPanel({ className }: { className?: string }) {
   const t = useTranslations("supportChat");
+  const { user } = useUser();
   const {
-    lang,
     open,
     closeChat,
+    mode,
+    openEmailMode,
+    backToChat,
     messages,
     input,
     setInput,
@@ -50,8 +53,15 @@ export function SupportChatPanel({ className }: { className?: string }) {
     sendAction,
     clearChat,
   } = useSupportChat();
+  const [emailDraft, setEmailDraft] = useState("");
 
-  const contactHref = withLocalePrefix("/contact", lang);
+  const accountEmail =
+    user?.primaryEmailAddress?.emailAddress ??
+    user?.emailAddresses?.[0]?.emailAddress;
+  const handleClearChat = () => {
+    setEmailDraft("");
+    clearChat();
+  };
   const hasUserMessage = messages.some((message) => message.role === "user");
   const hasMessages = messages.length > 0;
   const suggestions: SupportChatSuggestion[] = [
@@ -115,34 +125,82 @@ export function SupportChatPanel({ className }: { className?: string }) {
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-3 px-4 py-4">
-          {!hasUserMessage ? (
-            <div className="space-y-3 py-4 text-center">
-              <div className="space-y-1">
-                <h3 className="text-lg font-semibold">{t("emptyTitle")}</h3>
+          {mode === "chat" ? (
+            <>
+              {!hasUserMessage ? (
+                <div className="space-y-3 py-4 text-center">
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-semibold">
+                      {t("emptyTitle")}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {t("emptySubtitle")}
+                    </p>
+                  </div>
+                  <SupportChatSuggestions
+                    suggestions={suggestions}
+                    disabled={isSending}
+                    onSelect={(suggestion) => sendMessage(suggestion.prompt)}
+                  />
+                </div>
+              ) : null}
+
+              <SupportChatThread
+                messages={messages}
+                isSending={isSending}
+                sendingText={t("sending")}
+                onActionSelect={sendAction}
+                getHandoffText={(message) =>
+                  getHandoffText(message, {
+                    account: t("handoffAccount"),
+                    general: t("handoffGeneral"),
+                  })
+                }
+              />
+            </>
+          ) : (
+            <div className="space-y-5 py-3">
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-semibold">
+                  {t("emailMode.title")}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  {t("emptySubtitle")}
+                  {t("emailMode.description")}
                 </p>
               </div>
-              <SupportChatSuggestions
-                suggestions={suggestions}
-                disabled={isSending}
-                onSelect={(suggestion) => sendMessage(suggestion.prompt)}
-              />
-            </div>
-          ) : null}
 
-          <SupportChatThread
-            messages={messages}
-            isSending={isSending}
-            sendingText={t("sending")}
-            onActionSelect={sendAction}
-            getHandoffText={(message) =>
-              getHandoffText(message, {
-                account: t("handoffAccount"),
-                general: t("handoffGeneral"),
-              })
-            }
-          />
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-muted-foreground">
+                  {t("emailMode.accountEmailLabel")}
+                </div>
+                {accountEmail ? (
+                  <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                    {accountEmail}
+                  </div>
+                ) : (
+                  <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                    {t("emailMode.accountEmailFallback")}
+                  </p>
+                )}
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t("emailMode.messageLabel")}
+                </span>
+                <textarea
+                  value={emailDraft}
+                  onChange={(event) => setEmailDraft(event.target.value)}
+                  placeholder={t("emailMode.messagePlaceholder")}
+                  className="min-h-40 w-full resize-none rounded-xl border bg-white px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
+                />
+              </label>
+
+              <p className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                {t("emailMode.notConnected")}
+              </p>
+            </div>
+          )}
         </div>
       </ScrollArea>
 
@@ -153,36 +211,57 @@ export function SupportChatPanel({ className }: { className?: string }) {
           </p>
         ) : null}
 
-        <SupportChatComposer
-          value={input}
-          onChange={setInput}
-          onSubmit={() => sendMessage()}
-          disabled={isSending}
-          isSending={isSending}
-          placeholder={t("composerPlaceholder")}
-          sendLabel={t("send")}
-        />
-
-        <div className="flex items-center justify-between gap-2">
-          {hasMessages ? (
-            <button
-              type="button"
-              className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-              onClick={clearChat}
+        {mode === "chat" ? (
+          <>
+            <SupportChatComposer
+              value={input}
+              onChange={setInput}
+              onSubmit={() => sendMessage()}
               disabled={isSending}
-            >
-              {t("clearChat")}
-            </button>
-          ) : (
-            <span aria-hidden="true" />
-          )}
-          <Link
-            href={contactHref}
-            className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-foreground transition hover:bg-muted"
-          >
-            {t("contactSupport")}
-          </Link>
-        </div>
+              isSending={isSending}
+              placeholder={t("composerPlaceholder")}
+              sendLabel={t("send")}
+            />
+
+            <div className="flex items-center justify-between gap-2">
+              {hasMessages ? (
+                <button
+                  type="button"
+                  className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                  onClick={handleClearChat}
+                  disabled={isSending}
+                >
+                  {t("clearChat")}
+                </button>
+              ) : (
+                <span aria-hidden="true" />
+              )}
+              <button
+                type="button"
+                className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-foreground transition hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                onClick={openEmailMode}
+                disabled={isSending}
+              >
+                {t("writeEmail")}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                onClick={backToChat}
+              >
+                {t("emailMode.backToChat")}
+              </button>
+              <Button type="button" size="sm" disabled>
+                {t("emailMode.sendMessage")}
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="text-[11px] leading-4 text-muted-foreground">
           <p>{t("disclaimer")}</p>

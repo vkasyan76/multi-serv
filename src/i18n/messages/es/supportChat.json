@@ -23,6 +23,18 @@
   },
   "disclaimer": "El soporte con IA puede cometer errores. Solo puede revisar detalles limitados y seguros de pedidos o pagos que selecciones o indiques.",
   "contactSupport": "Contactar soporte",
+  "writeEmail": "Escribir un correo",
+  "emailMode": {
+    "title": "Escribir a soporte",
+    "description": "Responderemos al correo electrónico de tu cuenta registrada.",
+    "accountEmailLabel": "Correo de la cuenta",
+    "accountEmailFallback": "Usaremos el correo electrónico vinculado a tu cuenta.",
+    "messageLabel": "Mensaje",
+    "messagePlaceholder": "Describe con qué necesitas ayuda...",
+    "backToChat": "Volver al chat",
+    "sendMessage": "Enviar mensaje",
+    "notConnected": "El envío de correo se conectará a continuación."
+  },
   "clearChat": "Borrar chat",
   "send": "Enviar",
   "sending": "El soporte está respondiendo...",

@@ -23,6 +23,18 @@
   },
   "disclaimer": "Wsparcie AI może popełniać błędy. Może sprawdzać tylko ograniczone, bezpieczne szczegóły zamówień lub płatności, które wybierzesz albo wskażesz.",
   "contactSupport": "Skontaktuj się ze wsparciem",
+  "writeEmail": "Napisz e-mail",
+  "emailMode": {
+    "title": "Napisz do wsparcia",
+    "description": "Odpowiemy na adres e-mail przypisany do Twojego konta.",
+    "accountEmailLabel": "E-mail konta",
+    "accountEmailFallback": "Użyjemy adresu e-mail powiązanego z Twoim kontem.",
+    "messageLabel": "Wiadomość",
+    "messagePlaceholder": "Opisz, w czym potrzebujesz pomocy...",
+    "backToChat": "Wróć do czatu",
+    "sendMessage": "Wyślij wiadomość",
+    "notConnected": "Wysyłanie e-maili zostanie podłączone w następnym kroku."
+  },
   "clearChat": "Wyczyść czat",
   "send": "Wyślij",
   "sending": "Wsparcie odpowiada...",
