@@ -439,6 +439,25 @@ export function routeSupportAccountAwareRequest(
   const hasCandidateLookup = hasExplicitCandidateLookupIntent(trimmed);
   const hasDirectMutation = hasDirectMutationRequest(trimmed);
   const suppressCandidateSelection = options?.suppressCandidateSelection;
+  const hasCandidateSelectionRoute =
+    ids.length === 0 &&
+    !hasDirectMutation &&
+    !suppressCandidateSelection &&
+    hasCandidateLookup &&
+    (
+      statusFilter ||
+      detectCandidateSelectionIntent(trimmed) ||
+      hasCancelEligibility ||
+      hasCancelLookupVerb(trimmed)
+    );
+  const shouldPreferAccountWideRoute =
+    ids.length === 0 &&
+    !suppressCandidateSelection &&
+    (
+      (!hasDirectMutation && hasPaidOrderCandidateLookup) ||
+      (hasPaymentOverview && /\b(orders?|bookings?|payments?)\b/i.test(trimmed)) ||
+      hasCandidateSelectionRoute
+    );
   const isAccountAware =
     hasOrderStatus ||
     hasPaymentStatus ||
@@ -465,7 +484,11 @@ export function routeSupportAccountAwareRequest(
     return { kind: "broad_or_deferred" };
   }
 
-  if (ids.length === 0 && options?.selectedOrder) {
+  if (
+    ids.length === 0 &&
+    options?.selectedOrder &&
+    !shouldPreferAccountWideRoute
+  ) {
     const selectedHelper = selectedOrderFollowUpHelper({
       message: trimmed,
       hasCancelEligibility,
@@ -504,16 +527,7 @@ export function routeSupportAccountAwareRequest(
   }
 
   if (
-    ids.length === 0 &&
-    !hasDirectMutation &&
-    !suppressCandidateSelection &&
-    hasCandidateLookup &&
-    (
-      statusFilter ||
-      detectCandidateSelectionIntent(trimmed) ||
-      hasCancelEligibility ||
-      hasCancelLookupVerb(trimmed)
-    )
+    hasCandidateSelectionRoute
   ) {
     return {
       kind: "candidate_selection",

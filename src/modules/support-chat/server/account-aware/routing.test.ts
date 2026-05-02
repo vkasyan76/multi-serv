@@ -1,4 +1,4 @@
-import test from "node:test";
+import test, { afterEach } from "node:test";
 import assert from "node:assert/strict";
 
 import type { Booking, Invoice, Order, Tenant } from "@/payload-types";
@@ -20,6 +20,31 @@ import { createSupportTopicContext } from "../topics";
 import { getSupportChatCopy } from "../support-chat-copy";
 
 process.env.PAYLOAD_SECRET ??= "support-chat-action-test-secret";
+const ORIGINAL_SUPPORT_MODEL = process.env.OPENAI_SUPPORT_CHAT_MODEL;
+const ORIGINAL_SUPPORT_MODEL_VERSION =
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION;
+
+afterEach(() => {
+  if (ORIGINAL_SUPPORT_MODEL === undefined) {
+    delete process.env.OPENAI_SUPPORT_CHAT_MODEL;
+  } else {
+    process.env.OPENAI_SUPPORT_CHAT_MODEL = ORIGINAL_SUPPORT_MODEL;
+  }
+
+  if (ORIGINAL_SUPPORT_MODEL_VERSION === undefined) {
+    delete process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION;
+  } else {
+    process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION =
+      ORIGINAL_SUPPORT_MODEL_VERSION;
+  }
+});
+
+function useSupportModelEnv() {
+  process.env.OPENAI_SUPPORT_CHAT_MODEL =
+    process.env.OPENAI_SUPPORT_CHAT_MODEL ?? "test-model";
+  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION =
+    process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ?? "test-model-version";
+}
 
 const USER_A = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const USER_B = "bbbbbbbbbbbbbbbbbbbbbbbb";
@@ -1250,8 +1275,7 @@ test("candidate action click validates token and calls exact helper", async () =
 });
 
 test("topic cancellation follow-up escalates to scheduled cancellation candidates with personal booking intent", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
   const response = await generateSupportResponse({
@@ -1284,8 +1308,7 @@ test("topic cancellation follow-up escalates to scheduled cancellation candidate
 });
 
 test("topic cancellation follow-up escalates explicit personal cancellation lookup without status filter", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
   const response = await generateSupportResponse({
@@ -1315,8 +1338,7 @@ test("topic cancellation follow-up escalates explicit personal cancellation look
 });
 
 test("French cancellation topic follow-up routes to cancellable candidates", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
   const response = await generateSupportResponse({
@@ -1346,8 +1368,7 @@ test("French cancellation topic follow-up routes to cancellable candidates", asy
 });
 
 test("intent triage recovers typoed account follow-ups without broad lookup", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
   const response = await generateSupportResponse({
@@ -1381,8 +1402,7 @@ test("intent triage recovers typoed account follow-ups without broad lookup", as
 });
 
 test("intent triage maps broad support topics through server-owned helpers", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
 
   const cases = [
@@ -1449,8 +1469,7 @@ test("intent triage maps broad support topics through server-owned helpers", asy
 });
 
 test("intent triage does not route unsupported provider account lookup to helpers", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
   const response = await generateSupportResponse({
@@ -1478,8 +1497,7 @@ test("intent triage does not route unsupported provider account lookup to helper
 });
 
 test("intent triage cannot route account helpers without account context", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const response = await generateSupportResponse({
     message: "thing maybe",
@@ -1501,8 +1519,7 @@ test("intent triage cannot route account helpers without account context", async
 });
 
 test("intent triage asks for clarification on low confidence instead of support handoff", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
   const response = await generateSupportResponse({
@@ -1528,8 +1545,7 @@ test("intent triage asks for clarification on low confidence instead of support 
 });
 
 test("intent triage unsafe mutation returns no-action boundary copy", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
   const response = await generateSupportResponse({
@@ -1558,8 +1574,7 @@ test("intent triage unsafe mutation returns no-action boundary copy", async () =
 });
 
 test("intent triage can recover selected-order follow-up typos", async () => {
-  process.env.OPENAI_SUPPORT_CHAT_MODEL ??= "test-model";
-  process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION ??= "test-model-version";
+  useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { accountContext } = makeCtx("clerk-user-a");
   const token = createSelectedOrderContextToken({
@@ -1640,6 +1655,31 @@ test("selected order context routes follow-up questions to exact helpers", () =>
     assert.equal(aboutPayment.helper, "getPaymentStatusForCurrentUser");
     assert.deepEqual(aboutPayment.input, selected);
   }
+
+  const paidOrders = routeSupportAccountAwareRequest(
+    "Do I have any paid orders?",
+    { selectedOrder: selected },
+  );
+  assert.equal(paidOrders.kind, "candidate_selection");
+  if (paidOrders.kind === "candidate_selection") {
+    assert.equal(paidOrders.selectionHelper, "getPaymentStatusForCurrentUser");
+    assert.equal(paidOrders.statusFilter, "paid");
+  }
+
+  const showPaidOrders = routeSupportAccountAwareRequest("Show my paid orders", {
+    selectedOrder: selected,
+  });
+  assert.equal(showPaidOrders.kind, "candidate_selection");
+  if (showPaidOrders.kind === "candidate_selection") {
+    assert.equal(showPaidOrders.selectionHelper, "getPaymentStatusForCurrentUser");
+    assert.equal(showPaidOrders.statusFilter, "paid");
+  }
+
+  const pendingPayments = routeSupportAccountAwareRequest(
+    "Which payments are still pending?",
+    { selectedOrder: selected },
+  );
+  assert.equal(pendingPayments.kind, "payment_overview");
 
   for (const prompt of [
     "Why was the invoice not issued yet?",

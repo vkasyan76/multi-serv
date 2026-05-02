@@ -380,6 +380,7 @@ export async function generateSupportResponse(
             source: "follow_up" as const,
           }
         : undefined;
+    const responseTopic = supportTopic ?? accountFollowUpTopic;
     const accountResponse = await buildAccountAwareServerResponse({
       route: accountRoute,
       accountContext: input.accountContext,
@@ -400,9 +401,9 @@ export async function generateSupportResponse(
       accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
       accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
       accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
-      supportTopic: supportTopic ?? accountFollowUpTopic,
-      supportTopicContext: accountFollowUpTopic
-        ? createSupportTopicContext(accountFollowUpTopic)
+      supportTopic: responseTopic ?? undefined,
+      supportTopicContext: responseTopic
+        ? createSupportTopicContext(responseTopic)
         : undefined,
       actions: accountResponse.actions,
       selectedOrderContext: accountResponse.selectedOrderContext,

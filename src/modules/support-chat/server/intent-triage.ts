@@ -309,7 +309,10 @@ export async function classifySupportIntent(input: {
       requestId: result.requestId,
     };
   } catch (error) {
-    console.warn("[support-chat] Intent triage failed", error);
+    console.warn("[support-chat] Intent triage failed", {
+      reason: "model_error",
+      errorName: error instanceof Error ? error.name : typeof error,
+    });
     return {
       ok: false,
       reason: "model_error",

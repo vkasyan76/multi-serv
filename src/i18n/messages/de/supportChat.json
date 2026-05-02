@@ -21,7 +21,7 @@
     "cancel": "Ich brauche Hilfe beim Stornieren einer Buchung.",
     "provider": "Ich möchte Dienstleister werden."
   },
-  "disclaimer": "KI-Support kann Fehler machen. Er kann nur begrenzte support-sichere Bestell- oder Zahlungsdetails prüfen, die du auswählst oder angibst.",
+  "disclaimer": "KI-Support kann Fehler machen. Er kann nur begrenzte support-sichere Bestell- oder Zahlungsdetails prüfen, die Sie auswählen oder angeben.",
   "contactSupport": "Support kontaktieren",
   "send": "Senden",
   "sending": "Der Support antwortet...",
@@ -34,8 +34,8 @@
     "abusive": "Ich kann bei Supportfragen helfen, aber nicht auf beleidigende Nachrichten reagieren. Bitte kontaktieren Sie den Support, wenn Sie Hilfe benötigen.",
     "nonsense": "Ich konnte diese Anfrage nicht verstehen. Bitte formulieren Sie Ihre Supportfrage neu oder kontaktieren Sie den Support.",
     "clarify": "Worum geht es: Registrierung, eine Buchung, ein Dienstleisterprofil, eine Zahlung, eine Stornierung oder einen Streitfall?",
-    "unsupportedAccount": "Ich kann nur begrenzte support-sichere Bestell-, Zahlungs- oder Rechnungsdetails prüfen, wenn du eine konkrete Bestellung oder Rechnung auswählst oder angibst, die ich verifizieren darf. Ich kann keine vollständige Konto-Historie, fremde Bestellungen, Stripe-Daten oder Rohdaten durchsuchen.",
-    "unsupportedAction": "Ich kann in diesem Chat keine Aktionen wie Stornieren, Erstatten, Abbuchen oder Ändern einer Bestellung ausführen. Ich kann die Regeln erklären oder dir helfen, support-sicher die Berechtigung für eine ausgewählte Bestellung zu prüfen.",
+    "unsupportedAccount": "Ich kann nur begrenzte support-sichere Bestell-, Zahlungs- oder Rechnungsdetails prüfen, wenn Sie eine konkrete Bestellung oder Rechnung auswählen oder angeben, die ich verifizieren darf. Ich kann keine vollständige Konto-Historie, fremde Bestellungen, Stripe-Daten oder Rohdaten durchsuchen.",
+    "unsupportedAction": "Ich kann in diesem Chat keine Aktionen wie Stornieren, Erstatten, Abbuchen oder Ändern einer Bestellung ausführen. Ich kann die Regeln erklären oder Ihnen helfen, support-sicher die Berechtigung für eine ausgewählte Bestellung zu prüfen.",
     "uncertain": "Ich habe nicht genug Supportinformationen, um das zuverlässig zu beantworten. Ich kann bei allgemeinen Fragen zu Registrierung, Dienstleister-Setup, Buchung, Zahlung, Stornierung, Streitfällen und der Nutzung des Marktplatzes helfen. Für dieses konkrete Problem kontaktieren Sie bitte den Support."
   },
   "handoffAccount": "Für kontospezifische Hilfe kontaktieren Sie den Support mit Ihren Bestell-, Rechnungs- oder Kontodaten.",
