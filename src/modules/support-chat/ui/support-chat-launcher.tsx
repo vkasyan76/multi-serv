@@ -39,7 +39,7 @@ export function SupportChatLauncher({
       {showIcon ? (
         <SupportChatAiIcon
           className="h-6 w-6"
-          iconClassName="h-5 w-5"
+          iconClassName="h-[23px] w-[23px]"
           sparkleClassName="h-2.5 w-2.5"
           variant="plain"
         />
