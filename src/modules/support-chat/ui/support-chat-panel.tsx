@@ -50,8 +50,13 @@ export function SupportChatPanel({ className }: { className?: string }) {
     setInput,
     isSending,
     error,
+    isSendingEmail,
+    emailError,
+    emailSent,
     sendMessage,
     sendAction,
+    sendSupportEmail,
+    resetEmailState,
     clearChat,
   } = useSupportChat();
   const [emailDraft, setEmailDraft] = useState("");
@@ -71,6 +76,19 @@ export function SupportChatPanel({ className }: { className?: string }) {
 
     openEmailMode();
   };
+  const handleEmailDraftChange = (value: string) => {
+    setEmailDraft(value);
+    if (emailError || emailSent) {
+      resetEmailState();
+    }
+  };
+  const handleSendSupportEmail = async () => {
+    const sent = await sendSupportEmail(emailDraft);
+    if (sent) {
+      setEmailDraft("");
+    }
+  };
+  const canSendEmail = emailDraft.trim().length >= 10 && !isSendingEmail;
   const hasUserMessage = messages.some((message) => message.role === "user");
   const hasMessages = messages.length > 0;
   const suggestions: SupportChatSuggestion[] = [
@@ -102,7 +120,7 @@ export function SupportChatPanel({ className }: { className?: string }) {
     <aside
       aria-label={t("panelTitle")}
       className={cn(
-        "fixed inset-x-3 bottom-3 z-50 flex h-[78vh] flex-col overflow-hidden rounded-2xl border bg-white shadow-2xl",
+        "fixed inset-x-4 bottom-3 top-20 z-50 flex flex-col overflow-hidden rounded-2xl border bg-white shadow-2xl",
         "sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-20 sm:h-auto sm:w-[450px]",
         className
       )}
@@ -168,7 +186,7 @@ export function SupportChatPanel({ className }: { className?: string }) {
               />
             </>
           ) : (
-            <div className="space-y-5 py-3">
+            <div className="space-y-3 py-3">
               <div className="space-y-1.5">
                 <h3 className="text-lg font-semibold">
                   {t("emailMode.title")}
@@ -199,15 +217,24 @@ export function SupportChatPanel({ className }: { className?: string }) {
                 </span>
                 <textarea
                   value={emailDraft}
-                  onChange={(event) => setEmailDraft(event.target.value)}
+                  onChange={(event) =>
+                    handleEmailDraftChange(event.target.value)
+                  }
                   placeholder={t("emailMode.messagePlaceholder")}
-                  className="min-h-40 w-full resize-none rounded-xl border bg-white px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
+                  className="min-h-[clamp(9rem,24dvh,14rem)] w-full resize-none rounded-xl border bg-white px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 sm:min-h-48"
                 />
               </label>
 
-              <p className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
-                {t("emailMode.notConnected")}
-              </p>
+              {emailSent ? (
+                <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+                  {t("emailMode.sendSuccess")}
+                </p>
+              ) : null}
+              {emailError ? (
+                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {emailError}
+                </p>
+              ) : null}
             </div>
           )}
         </div>
@@ -256,7 +283,7 @@ export function SupportChatPanel({ className }: { className?: string }) {
             </div>
           </>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <button
                 type="button"
@@ -265,16 +292,30 @@ export function SupportChatPanel({ className }: { className?: string }) {
               >
                 {t("emailMode.backToChat")}
               </button>
-              <Button type="button" size="sm" disabled>
-                {t("emailMode.sendMessage")}
+              <Button
+                type="button"
+                size="sm"
+                disabled={!canSendEmail}
+                onClick={handleSendSupportEmail}
+              >
+                {isSendingEmail
+                  ? t("emailMode.sendingMessage")
+                  : t("emailMode.sendMessage")}
               </Button>
             </div>
+            {emailDraft.trim().length > 0 && emailDraft.trim().length < 10 ? (
+              <p className="px-2 text-xs text-muted-foreground">
+                {t("emailMode.messageTooShort")}
+              </p>
+            ) : null}
           </div>
         )}
 
-        <div className="text-[11px] leading-4 text-muted-foreground">
-          <p>{t("disclaimer")}</p>
-        </div>
+        {mode === "chat" ? (
+          <div className="text-[11px] leading-4 text-muted-foreground">
+            <p>{t("disclaimer")}</p>
+          </div>
+        ) : null}
       </footer>
     </aside>
   );

@@ -33,6 +33,10 @@
     "messagePlaceholder": "Describe your request...",
     "backToChat": "Back to chat",
     "sendMessage": "Send message",
+    "sendingMessage": "Sending...",
+    "sendSuccess": "Your message was sent. Support will reply to your registered email address.",
+    "sendError": "We could not send your message. Please try again.",
+    "messageTooShort": "Please enter a message before sending.",
     "notConnected": "Email sending will be connected next.",
     "loginRequired": "Please log in to contact support by email."
   },

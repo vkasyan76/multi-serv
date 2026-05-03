@@ -33,6 +33,10 @@
     "messagePlaceholder": "Descrivi la tua richiesta...",
     "backToChat": "Torna alla chat",
     "sendMessage": "Invia messaggio",
+    "sendingMessage": "Invio...",
+    "sendSuccess": "Il tuo messaggio è stato inviato. Il supporto risponderà all'e-mail del tuo account registrato.",
+    "sendError": "Non è stato possibile inviare il messaggio. Riprova.",
+    "messageTooShort": "Inserisci un messaggio prima dell'invio.",
     "notConnected": "L'invio dell'e-mail sarà collegato nel prossimo passaggio.",
     "loginRequired": "Accedi per contattare il supporto via e-mail."
   },

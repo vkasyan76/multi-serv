@@ -33,6 +33,10 @@
     "messagePlaceholder": "Descrie solicitarea ta...",
     "backToChat": "Înapoi la chat",
     "sendMessage": "Trimite mesajul",
+    "sendingMessage": "Se trimite...",
+    "sendSuccess": "Mesajul tău a fost trimis. Asistența va răspunde la e-mailul contului tău înregistrat.",
+    "sendError": "Nu am putut trimite mesajul. Încearcă din nou.",
+    "messageTooShort": "Introdu un mesaj înainte de trimitere.",
     "notConnected": "Trimiterea e-mailului va fi conectată în pasul următor.",
     "loginRequired": "Autentifică-te pentru a contacta asistența prin e-mail."
   },

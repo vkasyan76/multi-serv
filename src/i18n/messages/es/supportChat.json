@@ -33,6 +33,10 @@
     "messagePlaceholder": "Describe tu consulta...",
     "backToChat": "Volver al chat",
     "sendMessage": "Enviar mensaje",
+    "sendingMessage": "Enviando...",
+    "sendSuccess": "Tu mensaje se ha enviado. Soporte responderá al correo electrónico de tu cuenta registrada.",
+    "sendError": "No pudimos enviar tu mensaje. Inténtalo de nuevo.",
+    "messageTooShort": "Escribe un mensaje antes de enviarlo.",
     "notConnected": "El envío de correo se conectará a continuación.",
     "loginRequired": "Inicia sesión para contactar con soporte por correo."
   },

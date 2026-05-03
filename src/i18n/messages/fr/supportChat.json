@@ -33,6 +33,10 @@
     "messagePlaceholder": "Décrivez votre demande...",
     "backToChat": "Retour au chat",
     "sendMessage": "Envoyer le message",
+    "sendingMessage": "Envoi...",
+    "sendSuccess": "Votre message a été envoyé. L'assistance répondra à l'adresse e-mail de votre compte enregistré.",
+    "sendError": "Nous n'avons pas pu envoyer votre message. Veuillez réessayer.",
+    "messageTooShort": "Veuillez saisir un message avant l'envoi.",
     "notConnected": "L'envoi d'e-mail sera connecté ensuite.",
     "loginRequired": "Veuillez vous connecter pour contacter l'assistance par e-mail."
   },

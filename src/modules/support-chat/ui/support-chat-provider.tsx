@@ -34,8 +34,13 @@ type SupportChatContextValue = {
   setInput: (value: string) => void;
   isSending: boolean;
   error: string | null;
+  isSendingEmail: boolean;
+  emailError: string | null;
+  emailSent: boolean;
   sendMessage: (message?: string) => Promise<void>;
   sendAction: (action: SupportChatAction) => Promise<void>;
+  sendSupportEmail: (message: string) => Promise<boolean>;
+  resetEmailState: () => void;
   clearChat: () => void;
 };
 
@@ -67,6 +72,9 @@ export function SupportChatProvider({
   const sendSupportMessage = useMutation(
     trpc.supportChat.sendMessage.mutationOptions()
   );
+  const sendSupportEmailMutation = useMutation(
+    trpc.supportChat.sendSupportEmail.mutationOptions()
+  );
 
   const [open, setOpen] = useState(initialOpen);
   const [mode, setMode] = useState<"chat" | "email">("chat");
@@ -79,12 +87,18 @@ export function SupportChatProvider({
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const pendingSendRef = useRef(false);
 
   const openChat = useCallback(() => setOpen(true), []);
   const closeChat = useCallback(() => setOpen(false), []);
   const openEmailMode = useCallback(() => setMode("email"), []);
   const backToChat = useCallback(() => setMode("chat"), []);
+  const resetEmailState = useCallback(() => {
+    setEmailError(null);
+    setEmailSent(false);
+  }, []);
   const clearChat = useCallback(() => {
     setThreadId(undefined);
     setMessages([]);
@@ -92,6 +106,8 @@ export function SupportChatProvider({
     setSupportTopicContext(null);
     setInput("");
     setError(null);
+    setEmailError(null);
+    setEmailSent(false);
     setMode("chat");
   }, []);
 
@@ -235,6 +251,33 @@ export function SupportChatProvider({
     [lang, sendSupportMessage, t, threadId]
   );
 
+  const sendSupportEmail = useCallback(
+    async (message: string) => {
+      const trimmed = message.trim();
+      if (trimmed.length < 10) return false;
+
+      setEmailError(null);
+      setEmailSent(false);
+
+      try {
+        await sendSupportEmailMutation.mutateAsync({
+          message: trimmed,
+          locale: lang,
+          threadId,
+          currentUrl:
+            typeof window === "undefined" ? undefined : window.location.href,
+          selectedOrderContext: selectedOrderContext ?? undefined,
+        });
+        setEmailSent(true);
+        return true;
+      } catch {
+        setEmailError(t("emailMode.sendError"));
+        return false;
+      }
+    },
+    [lang, selectedOrderContext, sendSupportEmailMutation, t, threadId],
+  );
+
   const value = useMemo<SupportChatContextValue>(
     () => ({
       lang,
@@ -250,14 +293,21 @@ export function SupportChatProvider({
       setInput,
       isSending,
       error,
+      isSendingEmail: sendSupportEmailMutation.isPending,
+      emailError,
+      emailSent,
       sendMessage,
       sendAction,
+      sendSupportEmail,
+      resetEmailState,
       clearChat,
     }),
     [
       clearChat,
       backToChat,
       closeChat,
+      emailError,
+      emailSent,
       error,
       input,
       isSending,
@@ -267,8 +317,11 @@ export function SupportChatProvider({
       open,
       openChat,
       openEmailMode,
+      resetEmailState,
       sendMessage,
       sendAction,
+      sendSupportEmail,
+      sendSupportEmailMutation.isPending,
     ]
   );
 

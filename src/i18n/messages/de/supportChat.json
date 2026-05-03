@@ -33,6 +33,10 @@
     "messagePlaceholder": "Beschreiben Sie Ihr Anliegen...",
     "backToChat": "Zurück zum Chat",
     "sendMessage": "Nachricht senden",
+    "sendingMessage": "Wird gesendet...",
+    "sendSuccess": "Ihre Nachricht wurde gesendet. Der Support antwortet an die E-Mail-Adresse Ihres registrierten Kontos.",
+    "sendError": "Ihre Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+    "messageTooShort": "Bitte geben Sie vor dem Senden eine Nachricht ein.",
     "notConnected": "Der E-Mail-Versand wird als Nächstes verbunden.",
     "loginRequired": "Bitte melden Sie sich an, um den Support per E-Mail zu kontaktieren."
   },

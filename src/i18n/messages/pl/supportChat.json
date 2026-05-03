@@ -33,6 +33,10 @@
     "messagePlaceholder": "Opisz swoją sprawę...",
     "backToChat": "Wróć do czatu",
     "sendMessage": "Wyślij wiadomość",
+    "sendingMessage": "Wysyłanie...",
+    "sendSuccess": "Twoja wiadomość została wysłana. Wsparcie odpowie na adres e-mail przypisany do Twojego konta.",
+    "sendError": "Nie udało się wysłać wiadomości. Spróbuj ponownie.",
+    "messageTooShort": "Wpisz wiadomość przed wysłaniem.",
     "notConnected": "Wysyłanie e-maili zostanie podłączone w następnym kroku.",
     "loginRequired": "Zaloguj się, aby skontaktować się ze wsparciem przez e-mail."
   },

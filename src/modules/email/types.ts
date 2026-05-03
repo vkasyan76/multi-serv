@@ -50,6 +50,7 @@ export type SendEmailArgs = {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
   deliverability?: EmailDeliverability;
   headers?: Record<string, string>;
 };

@@ -77,6 +77,7 @@ export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
     subject: args.subject,
     html: args.html,
     text: args.text,
+    replyTo: args.replyTo,
     headers: args.headers,
   });
 
