@@ -108,14 +108,40 @@ export type AdminSupportThreadRow = {
   id: string;
   threadId: string;
   locale: AppLang;
-  userId: string | null;
+  user: AdminSupportUserSummary;
   status: SupportChatThread["status"];
-  lastDisposition: Exclude<SupportChatThread["lastDisposition"], undefined> | null;
+  reviewState: AdminSupportReviewState;
+  lastAssistantOutcome: AdminSupportAssistantOutcome;
   lastNeedsHumanSupport: boolean;
   messageCount: number;
+  latestUserMessagePreview: string | null;
   lastMessageAt: string | null;
   retentionUntil: string;
+  createdAt: string;
 };
+
+export type AdminSupportUserSummary = {
+  id: string;
+  email: string | null;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  roles: string[];
+  language: AppLang | null;
+  country: string | null;
+} | null;
+
+export type AdminSupportReviewState =
+  | "needs_review"
+  | "answered"
+  | "closed";
+
+export type AdminSupportAssistantOutcome =
+  | "answered"
+  | "uncertain"
+  | "escalated"
+  | "unsupported_account_question"
+  | null;
 
 export type AdminSupportMessageRow = {
   id: string;

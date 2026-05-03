@@ -74,94 +74,96 @@ export function SupportChatAdminView() {
         <SupportChatReviewSummary summary={summaryQ.data} />
       )}
 
-      <div className="rounded-lg border bg-white p-4 flex flex-col gap-3 lg:flex-row lg:items-end">
-        <div className="grid gap-2">
-          <label className="text-sm text-muted-foreground">{t("filters.locale")}</label>
-          <select
-            className="h-10 rounded-md border bg-white px-3 text-sm"
-            value={locale}
-            onChange={(event) => {
-              setLocale(
-                event.target.value === "all"
-                  ? "all"
-                  : normalizeToSupported(event.target.value)
-              );
-              setPage(1);
-            }}
-          >
-            <option value="all">{t("filters.all")}</option>
-            {SUPPORTED_APP_LANGS.map((item) => (
-              <option key={item} value={item}>
-                {item.toUpperCase()}
+      <div className="rounded-lg border bg-white p-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-2">
+            <label className="text-sm text-muted-foreground">{t("filters.locale")}</label>
+            <select
+              className="h-10 rounded-md border bg-white px-3 text-sm"
+              value={locale}
+              onChange={(event) => {
+                setLocale(
+                  event.target.value === "all"
+                    ? "all"
+                    : normalizeToSupported(event.target.value)
+                );
+                setPage(1);
+              }}
+            >
+              <option value="all">{t("filters.all")}</option>
+              {SUPPORTED_APP_LANGS.map((item) => (
+                <option key={item} value={item}>
+                  {item.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid gap-2">
+            <label className="text-sm text-muted-foreground">{t("filters.status")}</label>
+            <select
+              className="h-10 rounded-md border bg-white px-3 text-sm"
+              value={status}
+              onChange={(event) => {
+                setStatus(
+                  event.target.value as AdminFilterValue<
+                    "open" | "escalated" | "closed"
+                  >
+                );
+                setPage(1);
+              }}
+            >
+              <option value="all">{t("filters.all")}</option>
+              <option value="open">{t("status.open")}</option>
+              <option value="escalated">{t("status.escalated")}</option>
+              <option value="closed">{t("status.closed")}</option>
+            </select>
+          </div>
+
+          <div className="grid gap-2">
+            <label className="text-sm text-muted-foreground">{t("filters.lastDisposition")}</label>
+            <select
+              className="h-10 rounded-md border bg-white px-3 text-sm"
+              value={lastDisposition}
+              onChange={(event) => {
+                setLastDisposition(
+                  event.target.value as AdminFilterValue<AdminDisposition>
+                );
+                setPage(1);
+              }}
+            >
+              <option value="all">{t("filters.all")}</option>
+              <option value="answered">{t("disposition.answered")}</option>
+              <option value="uncertain">{t("disposition.uncertain")}</option>
+              <option value="escalate">{t("disposition.escalated")}</option>
+              <option value="unsupported_account_question">
+                {t("disposition.unsupported_account_question")}
               </option>
-            ))}
-          </select>
-        </div>
+            </select>
+          </div>
 
-        <div className="grid gap-2">
-          <label className="text-sm text-muted-foreground">{t("filters.status")}</label>
-          <select
-            className="h-10 rounded-md border bg-white px-3 text-sm"
-            value={status}
-            onChange={(event) => {
-              setStatus(
-                event.target.value as AdminFilterValue<
-                  "open" | "escalated" | "closed"
-                >
-              );
-              setPage(1);
-            }}
-          >
-            <option value="all">{t("filters.all")}</option>
-            <option value="open">{t("status.open")}</option>
-            <option value="escalated">{t("status.escalated")}</option>
-            <option value="closed">{t("status.closed")}</option>
-          </select>
-        </div>
-
-        <div className="grid gap-2">
-          <label className="text-sm text-muted-foreground">{t("filters.lastDisposition")}</label>
-          <select
-            className="h-10 rounded-md border bg-white px-3 text-sm"
-            value={lastDisposition}
-            onChange={(event) => {
-              setLastDisposition(
-                event.target.value as AdminFilterValue<AdminDisposition>
-              );
-              setPage(1);
-            }}
-          >
-            <option value="all">{t("filters.all")}</option>
-            <option value="answered">{t("disposition.answered")}</option>
-            <option value="uncertain">{t("disposition.uncertain")}</option>
-            <option value="escalate">{t("disposition.escalate")}</option>
-            <option value="unsupported_account_question">
-              {t("disposition.unsupported_account_question")}
-            </option>
-          </select>
-        </div>
-
-        <div className="grid gap-2">
-          <label className="text-sm text-muted-foreground">{t("filters.needsHumanSupport")}</label>
-          <select
-            className="h-10 rounded-md border bg-white px-3 text-sm"
-            value={needsHumanSupport}
-            onChange={(event) => {
-              setNeedsHumanSupport(
-                event.target.value as AdminFilterValue<"yes" | "no">
-              );
-              setPage(1);
-            }}
-          >
-            <option value="all">{t("filters.all")}</option>
-            <option value="yes">{t("common.yes")}</option>
-            <option value="no">{t("common.no")}</option>
-          </select>
+          <div className="grid gap-2">
+            <label className="text-sm text-muted-foreground">{t("filters.needsHumanSupport")}</label>
+            <select
+              className="h-10 rounded-md border bg-white px-3 text-sm"
+              value={needsHumanSupport}
+              onChange={(event) => {
+                setNeedsHumanSupport(
+                  event.target.value as AdminFilterValue<"yes" | "no">
+                );
+                setPage(1);
+              }}
+            >
+              <option value="all">{t("filters.all")}</option>
+              <option value="yes">{t("common.yes")}</option>
+              <option value="no">{t("common.no")}</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
-        <div className="space-y-4">
+      <div className="grid min-h-[calc(100vh-14rem)] items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+        <div className="min-w-0 space-y-4">
           {threadsQ.isLoading ? (
             <div className="rounded-lg border bg-white px-4 py-6 text-sm text-muted-foreground">
               {t("loadingThreads")}
@@ -174,6 +176,7 @@ export function SupportChatAdminView() {
             <>
               <SupportChatThreadsTable
                 locale={lang}
+                resetSortKey={`${page}:${locale}:${status}:${lastDisposition}:${needsHumanSupport}`}
                 rows={threadsQ.data.items}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
@@ -211,17 +214,19 @@ export function SupportChatAdminView() {
           )}
         </div>
 
-        {detailQ.isLoading ? (
-          <div className="rounded-lg border bg-white px-4 py-6 text-sm text-muted-foreground">
-            {t("loadingThread")}
-          </div>
-        ) : detailQ.isError ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {t("loadThreadError")}
-          </div>
-        ) : (
-          <SupportChatThreadDetail locale={lang} detail={detailQ.data} />
-        )}
+        <div className="min-w-0 lg:sticky lg:top-4 lg:h-[calc(100vh-6rem)]">
+          {detailQ.isLoading ? (
+            <div className="rounded-lg border bg-white px-4 py-6 text-sm text-muted-foreground">
+              {t("loadingThread")}
+            </div>
+          ) : detailQ.isError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {t("loadThreadError")}
+            </div>
+          ) : (
+            <SupportChatThreadDetail locale={lang} detail={detailQ.data} />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,27 +1,68 @@
 import "server-only";
 
 import type { Payload } from "payload";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import type {
   SupportChatMessage,
   SupportChatThread,
+  User,
 } from "@/payload-types";
-import type { AdminSupportMessageRow } from "@/modules/support-chat/server/admin-procedures";
-
-function relationshipId(value: unknown) {
-  return typeof value === "string"
-    ? value
-    : ((value as { id?: string } | null)?.id ?? null);
-}
+import type {
+  AdminSupportAssistantOutcome,
+  AdminSupportMessageRow,
+  AdminSupportReviewState,
+  AdminSupportUserSummary,
+} from "@/modules/support-chat/server/admin-procedures";
 
 function safeText(message: SupportChatMessage) {
   return message.redactedText ?? message.text ?? null;
+}
+
+function userSummary(value: unknown): AdminSupportUserSummary {
+  if (!value || typeof value === "string") return null;
+
+  const user = value as Partial<User> & { id?: string };
+  if (!user.id) return null;
+
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    username: user.username ?? null,
+    firstName: user.firstName ?? null,
+    lastName: user.lastName ?? null,
+    roles: user.roles ?? [],
+    language: user.language ? normalizeToSupported(user.language) : null,
+    country: user.country ?? null,
+  };
+}
+
+function assistantOutcome(
+  disposition: SupportChatThread["lastDisposition"]
+): AdminSupportAssistantOutcome {
+  if (disposition === "escalate") return "escalated";
+  return disposition ?? null;
+}
+
+function reviewState(thread: SupportChatThread): AdminSupportReviewState {
+  if (thread.status === "closed") return "closed";
+  if (thread.status === "escalated" || thread.lastNeedsHumanSupport) {
+    return "needs_review";
+  }
+  return "answered";
+}
+
+function latestUserMessagePreview(messages: AdminSupportMessageRow[]) {
+  const latest = [...messages].reverse().find((message) => message.role === "user");
+  if (!latest?.text) return null;
+
+  return latest.text.replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
 export async function listSupportMessages(db: Payload, id: string) {
   const thread = (await db.findByID({
     collection: "support_chat_threads",
     id,
-    depth: 0,
+    depth: 1,
     disableErrors: true,
     overrideAccess: true,
   })) as SupportChatThread | null;
@@ -87,11 +128,14 @@ export async function listSupportMessages(db: Payload, id: string) {
       locale: thread.locale,
       status: thread.status,
       messageCount: thread.messageCount,
-      lastDisposition: thread.lastDisposition ?? null,
+      reviewState: reviewState(thread),
+      lastAssistantOutcome: assistantOutcome(thread.lastDisposition),
       lastNeedsHumanSupport: Boolean(thread.lastNeedsHumanSupport),
+      latestUserMessagePreview: latestUserMessagePreview(messages),
       lastMessageAt: thread.lastMessageAt ?? null,
       retentionUntil: thread.retentionUntil,
-      userId: relationshipId(thread.user),
+      createdAt: thread.createdAt,
+      user: userSummary(thread.user),
     },
     messages,
   };

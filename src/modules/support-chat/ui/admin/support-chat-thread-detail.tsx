@@ -2,9 +2,13 @@
 
 import { useTranslations } from "next-intl";
 import type { AppLang } from "@/lib/i18n/app-lang";
+import { cn } from "@/lib/utils";
 import type {
+  AdminSupportAssistantOutcome,
   AdminSupportMessageRow,
+  AdminSupportReviewState,
   AdminSupportThreadRow,
+  AdminSupportUserSummary,
 } from "@/modules/support-chat/server/admin-procedures";
 
 type SupportThreadDetail = {
@@ -12,7 +16,9 @@ type SupportThreadDetail = {
   messages: AdminSupportMessageRow[];
 };
 
-function formatDate(value: string, locale: string) {
+function formatDate(value: string | null, locale: string) {
+  if (!value) return "-";
+
   return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
@@ -35,6 +41,173 @@ function MetaRow({
   );
 }
 
+function userDisplayName(user: AdminSupportUserSummary) {
+  if (!user) return null;
+
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+  return fullName || user.username || user.email;
+}
+
+function ReviewBadge({ state }: { state: AdminSupportReviewState }) {
+  const t = useTranslations("supportChatAdmin");
+  const label =
+    state === "needs_review"
+      ? t("reviewState.needsReview")
+      : state === "closed"
+        ? t("reviewState.closed")
+        : t("reviewState.answered");
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
+        state === "needs_review" && "bg-amber-100 text-amber-900",
+        state === "answered" && "bg-emerald-100 text-emerald-900",
+        state === "closed" && "bg-muted text-muted-foreground"
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+function outcomeFromDisposition(
+  disposition: AdminSupportMessageRow["disposition"]
+): AdminSupportAssistantOutcome {
+  if (disposition === "escalate") return "escalated";
+  return disposition ?? null;
+}
+
+function OutcomeBadge({
+  outcome,
+}: {
+  outcome: AdminSupportAssistantOutcome;
+}) {
+  const t = useTranslations("supportChatAdmin");
+  if (!outcome) return null;
+  const label =
+    outcome === "unsupported_account_question"
+      ? t("outcome.accountBlocked")
+      : outcome === "escalated"
+        ? t("outcome.escalated")
+        : outcome === "uncertain"
+          ? t("outcome.uncertain")
+          : t("outcome.answered");
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+        outcome === "answered" && "bg-emerald-50 text-emerald-800",
+        outcome === "uncertain" && "bg-amber-50 text-amber-800",
+        outcome === "escalated" && "bg-red-50 text-red-800",
+        outcome === "unsupported_account_question" &&
+          "bg-orange-50 text-orange-800"
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+function outcomeHelp(
+  t: ReturnType<typeof useTranslations>,
+  outcome: Exclude<AdminSupportAssistantOutcome, "answered" | null>
+) {
+  if (outcome === "unsupported_account_question") {
+    return t("outcomeHelp.accountBlocked");
+  }
+  if (outcome === "escalated") return t("outcomeHelp.escalated");
+  return t("outcomeHelp.uncertain");
+}
+
+function ConversationMessage({
+  message,
+  locale,
+}: {
+  message: AdminSupportMessageRow;
+  locale: AppLang;
+}) {
+  const t = useTranslations("supportChatAdmin");
+  const isAssistant = message.role === "assistant";
+  const outcome = isAssistant ? outcomeFromDisposition(message.disposition) : null;
+  const shouldExplain = outcome && outcome !== "answered";
+
+  return (
+    <article
+      className={cn(
+        "rounded-lg border p-4",
+        isAssistant ? "bg-white" : "bg-muted/30"
+      )}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <p className="font-medium">
+            {isAssistant ? t("detail.assistant") : t("detail.user")}
+          </p>
+          <OutcomeBadge outcome={outcome} />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {formatDate(message.createdAt, locale)}
+        </p>
+      </div>
+
+      <div className="mt-3 whitespace-pre-wrap rounded-md bg-white/70 px-3 py-2 text-sm leading-6">
+        {message.text ?? "-"}
+      </div>
+
+      {shouldExplain ? (
+        <div className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          {outcomeHelp(
+            t,
+            outcome as Exclude<AdminSupportAssistantOutcome, "answered" | null>
+          )}
+        </div>
+      ) : null}
+
+      {isAssistant ? (
+        <div className="mt-3 space-y-2">
+          {message.sources.length > 0 ? (
+            <details className="rounded-md border bg-muted/20 p-3">
+              <summary className="cursor-pointer text-sm font-medium">
+                {t("detail.sourcesSummary", { count: message.sources.length })}
+              </summary>
+              <div className="mt-3 space-y-2">
+                {message.sources.map((source) => (
+                  <div
+                    key={`${message.id}-${source.chunkId}`}
+                    className="rounded-md border bg-white p-3 text-xs"
+                  >
+                    <p className="font-medium">{source.documentId}</p>
+                    <p className="mt-1 text-muted-foreground">
+                      {source.sectionTitle ?? source.sectionId}
+                    </p>
+                    <div className="mt-2 grid gap-1 sm:grid-cols-2">
+                      <MetaRow
+                        label={t("detail.sourceType")}
+                        value={source.sourceType}
+                      />
+                      <MetaRow
+                        label={t("detail.sourceLocale")}
+                        value={source.sourceLocale.toUpperCase()}
+                      />
+                      <MetaRow label={t("detail.score")} value={source.score} />
+                      <MetaRow
+                        label={t("detail.sectionId")}
+                        value={source.sectionId}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 export function SupportChatThreadDetail({
   locale,
   detail,
@@ -52,85 +225,174 @@ export function SupportChatThreadDetail({
     );
   }
 
+  const userName = userDisplayName(detail.thread.user);
+  const latestAssistantMessage = [...detail.messages]
+    .reverse()
+    .find((message) => message.role === "assistant");
+
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-white p-4 space-y-2 text-sm">
-        <h2 className="text-base font-semibold">{t("detail.thread")}</h2>
-        <MetaRow label={t("table.threadId")} value={detail.thread.threadId} />
-        <MetaRow label={t("table.locale")} value={detail.thread.locale.toUpperCase()} />
-        <MetaRow label={t("table.status")} value={detail.thread.status} />
-        <MetaRow label={t("table.lastDisposition")} value={detail.thread.lastDisposition} />
-        <MetaRow
-          label={t("table.needsHumanSupport")}
-          value={detail.thread.lastNeedsHumanSupport ? t("common.yes") : t("common.no")}
-        />
-        <MetaRow label={t("table.messageCount")} value={detail.thread.messageCount} />
-        <MetaRow label={t("detail.userId")} value={detail.thread.userId} />
-        <MetaRow
-          label={t("table.retentionUntil")}
-          value={formatDate(detail.thread.retentionUntil, locale)}
-        />
+    <div className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-lg border bg-white">
+      <div className="shrink-0 border-b p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-semibold">
+              {userName ?? t("thread.anonymous")}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {detail.thread.user?.email ??
+                detail.thread.user?.username ??
+                t("thread.anonymousSubtitle")}
+            </p>
+          </div>
+          <ReviewBadge state={detail.thread.reviewState} />
+        </div>
+
+        <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
+          <MetaRow
+            label={t("table.locale")}
+            value={detail.thread.locale.toUpperCase()}
+          />
+          <MetaRow label={t("table.status")} value={detail.thread.status} />
+          <MetaRow
+            label={t("detail.lastActivity")}
+            value={formatDate(detail.thread.lastMessageAt, locale)}
+          />
+          <MetaRow
+            label={t("table.messageCount")}
+            value={detail.thread.messageCount}
+          />
+        </div>
+
+        {detail.thread.user ? (
+          <div className="mt-4 rounded-md bg-muted/30 p-3 text-xs">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <MetaRow label={t("detail.userId")} value={detail.thread.user.id} />
+              <MetaRow
+                label={t("detail.username")}
+                value={detail.thread.user.username}
+              />
+              <MetaRow
+                label={t("detail.userLanguage")}
+                value={detail.thread.user.language?.toUpperCase() ?? null}
+              />
+              <MetaRow
+                label={t("detail.userCountry")}
+                value={detail.thread.user.country}
+              />
+              <MetaRow
+                label={t("detail.userRoles")}
+                value={detail.thread.user.roles.join(", ") || null}
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      <div className="space-y-3">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {detail.messages.map((message) => (
-          <div key={message.id} className="rounded-lg border bg-white p-4 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-medium capitalize">{message.role}</p>
-              <p className="text-xs text-muted-foreground">
-                {formatDate(message.createdAt, locale)}
-              </p>
-            </div>
-
-            <div className="whitespace-pre-wrap rounded-md bg-muted/40 px-3 py-2 text-sm">
-              {message.text ?? "-"}
-            </div>
-
-            <div className="grid gap-2 text-xs sm:grid-cols-2">
-              <MetaRow label={t("detail.responseOrigin")} value={message.responseOrigin} />
-              <MetaRow label={t("table.lastDisposition")} value={message.disposition} />
-              <MetaRow
-                label={t("table.needsHumanSupport")}
-                value={message.needsHumanSupport ? t("common.yes") : t("common.no")}
-              />
-              <MetaRow label={t("detail.redactionApplied")} value={message.redactionApplied ? t("common.yes") : t("common.no")} />
-              <MetaRow label={t("detail.model")} value={message.model} />
-              <MetaRow label={t("detail.modelVersion")} value={message.modelVersion} />
-              <MetaRow label={t("detail.promptVersion")} value={message.promptVersion} />
-              <MetaRow label={t("detail.guardrailVersion")} value={message.guardrailVersion} />
-              <MetaRow label={t("detail.retrievalVersion")} value={message.retrievalVersion} />
-              <MetaRow label={t("detail.knowledgePackVersion")} value={message.knowledgePackVersion} />
-            </div>
-
-            {message.redactionTypes.length > 0 ? (
-              <div className="space-y-1 text-xs">
-                <p className="font-medium">{t("detail.redactionTypes")}</p>
-                <p className="text-muted-foreground">{message.redactionTypes.join(", ")}</p>
-              </div>
-            ) : null}
-
-            {message.sources.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">{t("detail.sources")}</p>
-                <div className="space-y-2">
-                  {message.sources.map((source) => (
-                    <div key={`${message.id}-${source.chunkId}`} className="rounded-md border bg-muted/20 p-3 text-xs space-y-1">
-                      <MetaRow label={t("detail.documentId")} value={source.documentId} />
-                      <MetaRow label={t("detail.sectionId")} value={source.sectionId} />
-                      <MetaRow label={t("detail.sourceType")} value={source.sourceType} />
-                      <MetaRow label={t("detail.sourceLocale")} value={source.sourceLocale.toUpperCase()} />
-                      <MetaRow label={t("detail.score")} value={source.score} />
-                      <MetaRow
-                        label={t("detail.matchedTerms")}
-                        value={source.matchedTerms.join(", ") || "-"}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
+          <ConversationMessage
+            key={message.id}
+            locale={locale}
+            message={message}
+          />
         ))}
+      </div>
+
+      <div className="shrink-0 border-t bg-muted/20 p-4">
+        <details className="text-xs">
+          <summary className="cursor-pointer font-medium">
+            {t("detail.threadDiagnostics")}
+          </summary>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <MetaRow label={t("table.threadId")} value={detail.thread.threadId} />
+            <MetaRow
+              label={t("table.retentionUntil")}
+              value={formatDate(detail.thread.retentionUntil, locale)}
+            />
+            <MetaRow
+              label={t("table.lastAssistantOutcome")}
+              value={
+                detail.thread.lastAssistantOutcome
+                  ? detail.thread.lastAssistantOutcome ===
+                    "unsupported_account_question"
+                    ? t("outcome.accountBlocked")
+                    : detail.thread.lastAssistantOutcome === "escalated"
+                      ? t("outcome.escalated")
+                      : detail.thread.lastAssistantOutcome === "uncertain"
+                        ? t("outcome.uncertain")
+                        : t("outcome.answered")
+                  : null
+              }
+            />
+            <MetaRow
+              label={t("table.needsHumanSupport")}
+              value={
+                detail.thread.lastNeedsHumanSupport
+                ? t("common.yes")
+                  : t("common.no")
+              }
+            />
+          </div>
+
+          {latestAssistantMessage ? (
+            <div className="mt-4 border-t pt-3">
+              <p className="mb-2 font-medium">
+                {t("detail.latestAssistantMetadata")}
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <MetaRow
+                  label={t("detail.responseOrigin")}
+                  value={latestAssistantMessage.responseOrigin}
+                />
+                <MetaRow
+                  label={t("detail.redactionApplied")}
+                  value={
+                    latestAssistantMessage.redactionApplied
+                      ? t("common.yes")
+                      : t("common.no")
+                  }
+                />
+                <MetaRow
+                  label={t("detail.model")}
+                  value={latestAssistantMessage.model}
+                />
+                <MetaRow
+                  label={t("detail.modelVersion")}
+                  value={latestAssistantMessage.modelVersion}
+                />
+                <MetaRow
+                  label={t("detail.promptVersion")}
+                  value={latestAssistantMessage.promptVersion}
+                />
+                <MetaRow
+                  label={t("detail.guardrailVersion")}
+                  value={latestAssistantMessage.guardrailVersion}
+                />
+                <MetaRow
+                  label={t("detail.retrievalVersion")}
+                  value={latestAssistantMessage.retrievalVersion}
+                />
+                <MetaRow
+                  label={t("detail.knowledgePackVersion")}
+                  value={latestAssistantMessage.knowledgePackVersion}
+                />
+                <MetaRow
+                  label={t("detail.openAIRequestId")}
+                  value={latestAssistantMessage.openAIRequestId}
+                />
+              </div>
+
+              {latestAssistantMessage.redactionTypes.length > 0 ? (
+                <div className="mt-3">
+                  <p className="font-medium">{t("detail.redactionTypes")}</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {latestAssistantMessage.redactionTypes.join(", ")}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </details>
       </div>
     </div>
   );

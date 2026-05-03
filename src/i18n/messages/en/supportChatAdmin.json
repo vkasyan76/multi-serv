@@ -10,7 +10,7 @@
   "loadThreadError": "Failed to load support-chat thread detail.",
   "emptySummary": "No review data is available yet.",
   "emptyThreads": "No support-chat threads match the current filters.",
-  "selectThread": "Select a support-chat thread to inspect its persisted exchange and assistant metadata.",
+  "selectThread": "Select a support-chat conversation to review the transcript.",
   "filters": {
     "all": "All",
     "locale": "Locale",
@@ -26,8 +26,34 @@
   "disposition": {
     "answered": "Answered",
     "uncertain": "Uncertain",
-    "escalate": "Escalate",
+    "escalate": "Escalated",
+    "escalated": "Escalated",
     "unsupported_account_question": "Unsupported account question"
+  },
+  "reviewState": {
+    "needs_review": "Needs review",
+    "answered": "Answered",
+    "closed": "Closed",
+    "needsReview": "Needs review"
+  },
+  "outcome": {
+    "answered": "Answered",
+    "uncertain": "Uncertain",
+    "escalated": "Escalated",
+    "unsupported_account_question": "Unsupported account question",
+    "accountBlocked": "Account request blocked"
+  },
+  "outcomeHelp": {
+    "uncertain": "The assistant did not have enough reliable approved context to answer confidently.",
+    "escalated": "The system decided this request should not be handled automatically.",
+    "unsupported_account_question": "The user asked for account, order, payment, or action access outside the safe support boundary.",
+    "accountBlocked": "The user asked for account, order, payment, or action access outside the safe support boundary."
+  },
+  "thread": {
+    "anonymous": "Anonymous user",
+    "anonymousSubtitle": "No signed-in user is linked to this conversation.",
+    "noPreview": "No user message preview is available.",
+    "messageCount": "{count, plural, one {# message} other {# messages}}"
   },
   "common": {
     "yes": "Yes",
@@ -44,18 +70,31 @@
     "topSourceDocuments": "Top source documents"
   },
   "table": {
+    "user": "User",
+    "latestMessage": "Latest user message",
+    "reviewState": "Review",
     "threadId": "Thread ID",
     "locale": "Locale",
     "status": "Status",
     "lastDisposition": "Last disposition",
+    "lastAssistantOutcome": "Last assistant outcome",
     "needsHumanSupport": "Needs human",
     "messageCount": "Messages",
     "lastMessageAt": "Last message",
-    "retentionUntil": "Retention until"
+    "retentionUntil": "Retention until",
+    "statusSummary": "Status",
+    "lastActivity": "Last activity"
   },
   "detail": {
     "thread": "Thread",
+    "user": "User",
+    "assistant": "Assistant",
     "userId": "User ID",
+    "username": "Username",
+    "userLanguage": "User language",
+    "userCountry": "User country",
+    "userRoles": "User roles",
+    "lastActivity": "Last activity",
     "responseOrigin": "Response origin",
     "redactionApplied": "Redaction applied",
     "redactionTypes": "Redaction types",
@@ -65,17 +104,27 @@
     "guardrailVersion": "Guardrail version",
     "retrievalVersion": "Retrieval version",
     "knowledgePackVersion": "Knowledge pack version",
+    "openAIRequestId": "OpenAI request ID",
     "sources": "Sources",
+    "sourcesSummary": "Sources used ({count})",
+    "diagnostics": "AI audit details",
+    "threadDiagnostics": "Thread diagnostics",
     "documentId": "Document ID",
     "sectionId": "Section ID",
     "sourceType": "Source type",
     "sourceLocale": "Source locale",
     "score": "Score",
-    "matchedTerms": "Matched terms"
+    "matchedTerms": "Matched terms",
+    "latestAssistantMetadata": "Latest assistant response metadata"
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",
     "previous": "Previous",
     "next": "Next"
+  },
+  "sort": {
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "notSorted": "Not sorted"
   }
 }
