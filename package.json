@@ -38,6 +38,9 @@
     "test:email:order-request-lifecycle": "node --import tsx --test --test-concurrency=1 src/modules/email/templates/order-request-lifecycle-copy.test.ts",
     "test:booking-request-lifecycle": "npm run test:checkout && npm run test:orders && npm run test:email:order-request-lifecycle && npm run test:i18n:messages",
     "test:i18n:messages": "node --import tsx ./src/scripts/i18n-check.ts",
+    "test:support-chat:account-aware-helpers": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/support-chat/server/account-aware/helpers.test.ts",
+    "test:support-chat:account-aware-routing": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/support-chat/server/account-aware/routing.test.ts",
+    "test:support-chat:phase2-account-aware": "node --conditions=react-server --import tsx ./src/scripts/run-support-chat-phase2-account-aware-tests.ts",
     "test:support-chat:phase1": "node --conditions=react-server --import tsx ./src/scripts/run-support-chat-phase1-tests.ts"
   },
   "dependencies": {

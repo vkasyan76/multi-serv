@@ -4,10 +4,35 @@ export type SupportChatDisposition =
   | "escalate"
   | "unsupported_account_question";
 
+export type SupportChatAction = {
+  id: string;
+  type: "account_candidate_select";
+  label: string;
+  description?: string;
+  token: string;
+};
+
+export type SupportSelectedOrderContext = {
+  type: "selected_order";
+  token: string;
+  label?: string;
+  description?: string;
+};
+
+export type SupportTopicContext = {
+  type: "support_topic";
+  token: string;
+  topic: "booking" | "payment" | "cancellation" | "provider_onboarding";
+  source: "starter_prompt" | "follow_up";
+  selectedAt: string;
+  expiresAt: string;
+};
+
 export type SupportChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  actions?: SupportChatAction[];
   disposition?: SupportChatDisposition;
   needsHumanSupport?: boolean;
   sources?: {

@@ -4,6 +4,9 @@ export const SUPPORT_ACCOUNT_HELPER_NAMES = [
   "getOrderStatusForCurrentUser",
   "getPaymentStatusForCurrentUser",
   "canCancelOrderForCurrentUser",
+  "getSupportOrderCandidatesForCurrentUser",
+  "getRecentSupportOrderCandidatesForCurrentUser",
+  "getSupportPaymentOverviewForCurrentUser",
 ] as const;
 
 export type SupportAccountHelperName =
@@ -23,6 +26,31 @@ export type SupportAccountHelperDeniedReason =
 export type SupportAccountHelperResult<T> =
   | { ok: true; data: T }
   | { ok: false; reason: SupportAccountHelperDeniedReason };
+
+export const SUPPORT_ACCOUNT_ANSWER_MODES = [
+  "server_deterministic",
+  "model_rewritten",
+  "model_rewrite_rejected",
+  "model_rewrite_disabled",
+] as const;
+
+export type SupportAccountAnswerMode =
+  (typeof SUPPORT_ACCOUNT_ANSWER_MODES)[number];
+
+export const SUPPORT_ACCOUNT_REWRITE_REJECTED_REASONS = [
+  "feature_disabled",
+  "model_error",
+  "empty_output",
+  "wrong_locale",
+  "unsafe_system_claim",
+  "unsupported_fact",
+  "contradicts_fallback",
+  "mutation_claim",
+  "missing_required_limitation",
+] as const;
+
+export type SupportAccountRewriteRejectedReason =
+  (typeof SUPPORT_ACCOUNT_REWRITE_REJECTED_REASONS)[number];
 
 export const SUPPORT_ACCOUNT_REFERENCE_TYPES = [
   "order_id",
@@ -102,6 +130,30 @@ export type SupportAccountCancellationBlockReason =
   | "slot_paid"
   | "unknown";
 
+export type SupportAccountCanceledByRole = "customer" | "tenant";
+
+export type SupportAccountAccessRole = "customer" | "tenant";
+
+export type SupportAccountOrderStatusReasonKey =
+  | "customer_canceled"
+  | "provider_declined"
+  | "provider_canceled"
+  | "awaiting_provider_confirmation"
+  | "provider_confirmed"
+  | "completed"
+  | "accepted"
+  | "disputed"
+  | "unknown";
+
+export type SupportOrderCandidateStatusFilter =
+  | "canceled"
+  | "requested"
+  | "scheduled"
+  | "completed_or_accepted"
+  | "payment_not_due"
+  | "payment_pending"
+  | "paid";
+
 export type SupportAccountNextStepKey =
   | "await_provider_confirmation"
   | "view_orders"
@@ -126,9 +178,15 @@ export type SupportOrderStatusDTO = SupportAccountHelperBaseDTO & {
   serviceStatusCategory: SupportAccountOrderServiceStatusCategory;
   paymentStatusCategory: SupportAccountPaymentStatusCategory;
   invoiceStatusCategory: SupportAccountInvoiceStatusCategory;
+  accessRole: SupportAccountAccessRole;
   createdAt?: string;
   firstSlotStart?: string;
   lastUpdatedAt?: string;
+  providerDisplayName?: string;
+  serviceNames?: string[];
+  canceledByRole?: SupportAccountCanceledByRole;
+  statusReasonKey: SupportAccountOrderStatusReasonKey;
+  publicStatusReason?: string;
 };
 
 export type SupportPaymentStatusDTO = SupportAccountHelperBaseDTO & {
@@ -137,6 +195,8 @@ export type SupportPaymentStatusDTO = SupportAccountHelperBaseDTO & {
   resultCategory: "payment_status";
   paymentStatusCategory: SupportAccountPaymentStatusCategory;
   invoiceStatusCategory: SupportAccountInvoiceStatusCategory;
+  serviceStatusCategory?: SupportAccountOrderServiceStatusCategory;
+  accessRole?: SupportAccountAccessRole;
   issuedAt?: string;
   paidAt?: string;
   paymentDueAt?: string;
@@ -147,16 +207,57 @@ export type SupportCancellationEligibilityDTO =
     helper: "canCancelOrderForCurrentUser";
     referenceType: "order_id";
     resultCategory: "cancellation_eligibility";
+    accessRole: SupportAccountAccessRole;
     canCancel: boolean;
     blockReason?: SupportAccountCancellationBlockReason;
     firstSlotStart?: string;
     cutoffAt?: string;
   };
 
+export type SupportOrderCandidateDTO = {
+  orderId: string;
+  serviceStatusCategory: SupportAccountOrderServiceStatusCategory;
+  paymentStatusCategory: SupportAccountPaymentStatusCategory;
+  invoiceStatusCategory: SupportAccountInvoiceStatusCategory;
+  createdAt?: string;
+  firstSlotStart?: string;
+  tenantDisplayName?: string;
+  serviceNames?: string[];
+  nextStepKey: SupportAccountNextStepKey;
+};
+
+export type SupportOrderCandidateListDTO = {
+  helper:
+    | "getSupportOrderCandidatesForCurrentUser"
+    | "getRecentSupportOrderCandidatesForCurrentUser";
+  resultCategory: "order_candidates";
+  statusFilter?: SupportOrderCandidateStatusFilter;
+  candidates: SupportOrderCandidateDTO[];
+};
+
+export type SupportPaymentOverviewDTO = {
+  helper: "getSupportPaymentOverviewForCurrentUser";
+  resultCategory: "payment_overview";
+  inspectedOrderCount: number;
+  limitDescription: "recent_support_orders";
+  categories: {
+    paid: number;
+    paymentPending: number;
+    paymentNotDue: number;
+    paymentCanceled: number;
+    refunded: number;
+    unknown: number;
+  };
+  recentExamples: SupportOrderCandidateDTO[];
+  nextStepKey: SupportAccountNextStepKey;
+};
+
 export type SupportAccountHelperDTO =
   | SupportOrderStatusDTO
   | SupportPaymentStatusDTO
-  | SupportCancellationEligibilityDTO;
+  | SupportCancellationEligibilityDTO
+  | SupportOrderCandidateListDTO
+  | SupportPaymentOverviewDTO;
 
 export type SupportAccountResult =
   SupportAccountHelperResult<SupportAccountHelperDTO>;

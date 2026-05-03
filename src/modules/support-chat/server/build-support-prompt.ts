@@ -2,6 +2,7 @@ import "server-only";
 
 import { type AppLang } from "@/lib/i18n/app-lang";
 import { type SupportKnowledgeMatch } from "@/modules/support-chat/server/retrieve-knowledge";
+import { formatSupportTerminologyForPrompt } from "@/modules/support-chat/server/support-terminology";
 
 export type BuildSupportPromptInput = {
   message: string;
@@ -26,6 +27,7 @@ const SUPPORT_CHAT_GUARDRAILS = [
 
 export function buildSupportPrompt(input: BuildSupportPromptInput) {
   // Keep this helper formatting-only; support decisions stay in the orchestrator.
+  const terminology = formatSupportTerminologyForPrompt(input.locale);
   const sourceLocales = Array.from(
     new Set(input.sources.map((source) => source.locale))
   ).join(", ");
@@ -46,6 +48,8 @@ ${source.text}`
     instructions: `You are Infinisimo support chat.
 Requested locale: ${input.locale}
 Knowledge locales in context: ${sourceLocales}
+
+${terminology}
 
 ${SUPPORT_CHAT_GUARDRAILS.map((rule) => `- ${rule}`).join("\n")}`,
     input: `Support context:

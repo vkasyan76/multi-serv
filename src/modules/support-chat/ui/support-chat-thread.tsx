@@ -1,16 +1,21 @@
 import { cn } from "@/lib/utils";
-import { type SupportChatMessage } from "@/modules/support-chat/ui/types";
+import {
+  type SupportChatAction,
+  type SupportChatMessage,
+} from "@/modules/support-chat/ui/types";
 
 export function SupportChatThread({
   messages,
   isSending,
   sendingText,
   getHandoffText,
+  onActionSelect,
 }: {
   messages: SupportChatMessage[];
   isSending: boolean;
   sendingText: string;
   getHandoffText: (message: SupportChatMessage) => string | null;
+  onActionSelect: (action: SupportChatAction) => void;
 }) {
   return (
     <div className="space-y-2.5">
@@ -36,6 +41,29 @@ export function SupportChatThread({
               <p className="mr-auto max-w-[82%] rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs leading-5 text-neutral-700 shadow-sm">
                 {handoffText}
               </p>
+            ) : null}
+
+            {!isUser && message.actions?.length ? (
+              <div className="mr-auto grid max-w-[82%] gap-2">
+                {message.actions.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    disabled={isSending}
+                    onClick={() => onActionSelect(action)}
+                    className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-left text-xs shadow-sm transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <span className="block font-medium text-foreground">
+                      {action.label}
+                    </span>
+                    {action.description ? (
+                      <span className="mt-0.5 block text-muted-foreground">
+                        {action.description}
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
             ) : null}
           </div>
         );

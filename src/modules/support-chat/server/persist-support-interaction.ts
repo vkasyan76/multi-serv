@@ -216,6 +216,11 @@ export async function persistSupportInteraction(
         input.response.responseOrigin === "model"
           ? input.response.modelMetadata?.modelVersion
           : undefined,
+      accountAnswerMode: input.response.accountAnswerMode,
+      accountRewriteModel: input.response.accountRewriteModel,
+      accountRewriteModelVersion: input.response.accountRewriteModelVersion,
+      accountRewriteRejectedReason: input.response.accountRewriteRejectedReason,
+      accountRewriteFallbackUsed: input.response.accountRewriteFallbackUsed,
       promptVersion: SUPPORT_CHAT_PROMPT_VERSION,
       guardrailVersion: SUPPORT_CHAT_GUARDRAIL_VERSION,
       retrievalVersion: SUPPORT_CHAT_RETRIEVAL_VERSION,

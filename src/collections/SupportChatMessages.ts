@@ -18,6 +18,25 @@ const SUPPORT_KNOWLEDGE_SOURCE_TYPES = [
 
 const SUPPORT_CHAT_RESPONSE_ORIGINS = ["server", "model"] as const;
 
+const SUPPORT_ACCOUNT_ANSWER_MODES = [
+  "server_deterministic",
+  "model_rewritten",
+  "model_rewrite_rejected",
+  "model_rewrite_disabled",
+] as const;
+
+const SUPPORT_ACCOUNT_REWRITE_REJECTED_REASONS = [
+  "feature_disabled",
+  "model_error",
+  "empty_output",
+  "wrong_locale",
+  "unsafe_system_claim",
+  "unsupported_fact",
+  "contradicts_fallback",
+  "mutation_claim",
+  "missing_required_limitation",
+] as const;
+
 export const SupportChatMessages: CollectionConfig = {
   slug: "support_chat_messages",
   indexes: [
@@ -122,6 +141,32 @@ export const SupportChatMessages: CollectionConfig = {
     },
     { name: "model", type: "text" },
     { name: "modelVersion", type: "text" },
+    {
+      name: "accountAnswerMode",
+      type: "select",
+      options: SUPPORT_ACCOUNT_ANSWER_MODES.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    { name: "accountRewriteModel", type: "text" },
+    { name: "accountRewriteModelVersion", type: "text" },
+    {
+      name: "accountRewriteRejectedReason",
+      type: "select",
+      options: SUPPORT_ACCOUNT_REWRITE_REJECTED_REASONS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    {
+      name: "accountRewriteFallbackUsed",
+      type: "checkbox",
+      defaultValue: false,
+      index: true,
+    },
     { name: "promptVersion", type: "text" },
     { name: "guardrailVersion", type: "text" },
     { name: "retrievalVersion", type: "text" },

@@ -129,6 +129,9 @@ Required env groups are defined in `README.md`:
 - Support chat launchers in navbar/mobile/footer should open the panel rather than navigate away.
 - Do not use the modal `Sheet` component for the support assistant panel unless product requirements change; the page behind should remain visible and usable.
 - Anonymous and signed-in users share the same public support entry point; signed-in state alone must not be treated as permission for live account/order/payment answers.
+- The support panel now has two modes: AI chat and authenticated email handoff. AI chat remains available to anonymous users; `Write email` requires a signed-in user because replies use the registered account email resolved server-side.
+- `Clear chat` is a local UI reset only: it clears messages, thread/context tokens, input/error state, and returns the support panel to chat mode; it does not delete server/admin logs.
+- Support chat launchers use a shared AI chat icon component (`support-chat-ai-icon.tsx`) so navbar and panel identity stay visually aligned.
 - Keep AI support chat separate from `src/modules/conversations/*` and `src/modules/messages/*`; those remain human-to-human messaging domains.
 - Support chat scope is grounded general support only: terms/policy, registration/onboarding, booking/payment/cancellation/dispute rules at policy level, failure next steps, and basic marketplace usage.
 - Support chat must not claim live order/payment/account lookup, make cancellation decisions for a specific order, perform vendor/admin actions, run broad DB reads, or access Stripe/Payload/Mongo/backend systems directly.
@@ -153,6 +156,10 @@ Required env groups are defined in `README.md`:
 - `threadId` is an opaque support-chat continuity id for server/admin logs only and must not be treated as user-visible persisted chat history.
 - Support-chat disposition is server-owned; the model may draft normal answers, but server code decides `answered`, `uncertain`, `escalate`, or `unsupported_account_question`.
 - Support-chat prompt builders should format selected context only; disposition, unsupported-account handling, and weak-source decisions belong in server orchestration.
+- Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helpers, but the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
+- Selected-order context and support-topic context are server-issued signed tokens. Invalid selected-order follow-ups should ask the user to reselect the order; invalid/expired topic context is a soft hint and should be ignored.
+- General topic help must stay general unless the user clearly asks about their own bookings/orders/payments or has selected/referenced a specific item.
+- Explicit paid-order questions route to bounded paid payment candidates; generic payment overviews must avoid implying a full account-history scan.
 - Support-chat guardrails must prevent "common practice" answers from being treated as Infinisimo policy; answers must be grounded in retrieved support context.
 - Ambiguous support-chat requests should receive one short clarifying question instead of a guessed answer.
 - Unsupported or escalated support-chat responses should still say what the assistant can help with and what the user should do next.
@@ -170,8 +177,21 @@ Required env groups are defined in `README.md`:
 - The support-chat model is configured in `src/modules/support-chat/server/openai-config.ts`; `OPENAI_SUPPORT_CHAT_MODEL` and `OPENAI_SUPPORT_CHAT_MODEL_VERSION` must both be set explicitly so future logs can distinguish model behavior.
 - OpenAI outages or empty model output should return a user-safe fallback message, not raw SDK/API errors.
 - `src/modules/support-chat/server/rate-limit.ts` is only an in-memory first-layer guard; do not treat it as durable multi-instance rate limiting.
+- Support email handoff lives in `support-email.ts` and `support-email-rate-limit.ts`. It sends from the app-owned sender to `SUPPORT_EMAIL_TO`, sets `Reply-To` to the registered user email, validates/rate-limits attempts, and never accepts recipient or reply-to from the client.
+- Support handoff emails intentionally include the user's message first, then curated user/provider profile tables, request context, and verified selected-order metadata when available. Do not include raw records, full transcripts, Stripe requirement payloads, raw payment/order data, or full tax identifiers unless explicitly approved.
+- Local/dev email sending may require `EMAIL_DEV_ALLOWLIST`; production should configure the actual support inbox through environment variables rather than relying on the dev allowlist.
 - Phase 1 support-chat regression cases live in `src/modules/support-chat/testing/phase1-test-cases.ts`, the runner lives in `src/scripts/run-support-chat-phase1-tests.ts`, and the review guide lives in `docs/support-chat-phase1-test-sheet.md`.
 - Rerun `npm run test:support-chat:phase1` after meaningful support-chat changes to prompt, model, retrieval, knowledge pack, or guardrail behavior; use `--json` and `--out <path>` when you want a saved artifact for review.
+- Block 13A Phase 1 support-chat hardening is complete for the targeted safety categories:
+  adversarial unsupported-account prompts, weak-source conservatism, abusive/empty/nonsense boundaries, and "common marketplace rules" prompts.
+- Known non-blocking Phase 1 support-chat regression issue:
+  `npm run test:support-chat:phase1` still has 2 unrelated cross-locale structured failures:
+  `onboarding-complete-profile-fr` and `booking-policy-reschedule-de`.
+- Block 13 account-aware support has moved beyond helper scaffolding: safe
+  order, payment, and cancellation helper routing exists for exact references,
+  selected-order follow-ups, bounded candidate lists, and explicit personal
+  lookup questions. Keep the same fail-closed ownership and DTO boundaries for
+  future helper expansion.
 - When extending support chat, prefer documenting stable boundaries here: entry points, ownership, access model, source-of-truth locations, storage shape, and safety constraints.
 
 ## Checkout UI Note
@@ -179,6 +199,51 @@ Required env groups are defined in `README.md`:
 - The active slot-order customer drawer is `src/modules/checkout/ui/slots-cart-drawer.tsx`.
 - Treat `src/modules/checkout/ui/cart-drawer.tsx` as legacy unless a task explicitly says otherwise.
 - For current slot-lifecycle booking/order UX, prefer tracing changes through `slots-cart-drawer.tsx` and the slot checkout flow instead of the legacy drawer.
+
+## Booking Request Lifecycle
+
+- The booking request / tenant confirmation redesign is implemented.
+- Design contract lives in `docs/booking-request-confirmation-lifecycle.md`.
+- Current slot-lifecycle checkout creates a booking request, not a scheduled booking.
+- Keep `bookings.status` as technical slot occupancy:
+  - `available` = open
+  - `booked` = temporary cart hold
+  - `confirmed` = attached to an order / blocked from other customers
+- Use `serviceStatus: "requested"` for the provider-confirmation workflow state.
+- After slot checkout:
+  - `order.serviceStatus = "requested"`
+  - `booking.status = "confirmed"`
+  - `booking.serviceStatus = "requested"`
+- After tenant confirmation:
+  - `order.serviceStatus = "scheduled"`
+  - `booking.serviceStatus = "scheduled"`
+- Tenant decline reuses the canceled order state for v1:
+  - `order.status = "canceled"`
+  - `order.serviceStatus` remains `"requested"` for audit/history
+  - `order.canceledByRole = "tenant"`
+  - `order.cancelReason` stores the optional decline reason
+  - requested slots are released back to available and request/customer/service/payment state is cleared
+- Customers may cancel a requested order before provider confirmation; requested-state cancellation releases slots and clears request state.
+- Scheduled-order cancellation remains separate and still obeys the normal cutoff/payment/invoice rules.
+- Tenant scheduled-cancel must reject requested orders; tenants should decline requested orders instead.
+- Requested orders cannot be completed or invoiced.
+- Order rollup must preserve `requested` before falling back to scheduled; do not normalize requested/unknown statuses to scheduled in shared logic.
+- UI semantics:
+  - customer checkout CTA says "Request booking"
+  - customer requested orders show "Awaiting provider confirmation" and "Cancel request"
+  - tenant requested orders show "Awaiting your confirmation" with Confirm request / Decline request actions
+  - tenant calendar shows requested events distinctly from scheduled events
+- Emails:
+  - `order.created.customer` and `order.created.tenant` use booking-request wording
+  - tenant confirmation sends `order.confirmed.customer`
+  - tenant decline sends `order.declined.customer`
+  - real scheduled cancellations still use `order.canceled.*`
+- Support-chat knowledge and the Block 13 account-aware contract are aligned with
+  `requested` and `await_provider_confirmation`, but no account-aware helpers,
+  routing, tool-calling, or actions were added as part of the order redesign.
+- Aggregate validation for this lifecycle is `npm run test:booking-request-lifecycle`.
+- `test:booking-request-lifecycle` intentionally does not include
+  `test:support-chat:phase1` because the latter has known unrelated cross-locale failures.
 
 ## Admin Dashboard Status (Brief)
 

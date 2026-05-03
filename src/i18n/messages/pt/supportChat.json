@@ -13,19 +13,38 @@
     "booking": "Ajuda com reservas",
     "payment": "Pergunta de pagamento",
     "cancel": "Cancelar uma reserva",
-    "provider": "Tornar-se fornecedor"
+    "provider": "Tornar-se prestador de serviços"
   },
   "suggestionPrompts": {
     "booking": "Preciso de ajuda com uma reserva.",
     "payment": "Tenho uma pergunta sobre um pagamento.",
     "cancel": "Preciso de ajuda para cancelar uma reserva.",
-    "provider": "Quero tornar-me fornecedor."
+    "provider": "Quero tornar-me prestador de serviços."
   },
-  "disclaimer": "O suporte com IA pode cometer erros. Não pode aceder a dados em tempo real de encomendas, pagamentos ou contas.",
+  "disclaimer": "O suporte com IA pode cometer erros. Só pode verificar detalhes limitados e seguros de pedidos ou pagamentos que selecione ou indique.",
   "contactSupport": "Contactar suporte",
+  "writeEmail": "Escrever e-mail",
+  "emailMode": {
+    "title": "Escrever ao suporte",
+    "description": "Responderemos para o e-mail da sua conta registada.",
+    "accountEmailLabel": "E-mail da conta",
+    "accountEmailFallback": "Vamos usar o e-mail associado à sua conta.",
+    "messageLabel": "Mensagem",
+    "messagePlaceholder": "Descreva o seu pedido...",
+    "backToChat": "Voltar ao chat",
+    "sendMessage": "Enviar mensagem",
+    "sendingMessage": "A enviar...",
+    "sendSuccess": "A sua mensagem foi enviada. O suporte responderá para o e-mail da sua conta registada.",
+    "sendError": "Não foi possível enviar a sua mensagem. Tente novamente.",
+    "messageTooShort": "Introduza uma mensagem antes de enviar.",
+    "notConnected": "O envio de e-mail será ligado a seguir.",
+    "loginRequired": "Inicie sessão para contactar o suporte por e-mail."
+  },
+  "clearChat": "Limpar chat",
   "send": "Enviar",
   "sending": "O suporte está a responder...",
   "error": "Algo correu mal. Tente novamente ou contacte o suporte.",
+  "selectedCandidate": "Selecionado",
   "serverMessages": {
     "rateLimit": "Demasiados pedidos no chat de suporte. Aguarde um momento e tente novamente.",
     "outage": "O chat de suporte está temporariamente indisponível. Tente novamente mais tarde ou contacte o suporte.",
@@ -33,7 +52,8 @@
     "abusive": "Posso ajudar com questões de suporte, mas não posso responder a mensagens abusivas. Contacte o suporte se precisar de ajuda.",
     "nonsense": "Não consegui entender esse pedido. Reformule a sua pergunta de suporte ou contacte o suporte.",
     "clarify": "O que está a tentar fazer: registar-se, reservar um serviço, gerir um perfil de prestador, pagar uma encomenda, cancelar ou contestar alguma coisa?",
-    "unsupportedAccount": "Ainda não posso verificar neste chat detalhes em tempo real de encomendas, pagamentos, faturas, reembolsos ou contas. Posso explicar a política geral ou os passos habituais com base no material de suporte da Infinisimo. Para a sua conta ou encomenda específica, utilize as páginas da sua conta ou contacte o suporte.",
+    "unsupportedAccount": "Só posso verificar detalhes limitados e seguros de pedidos, pagamentos ou faturas quando seleciona ou indica um item específico que posso verificar. Não posso percorrer todo o histórico da conta, pedidos não relacionados, Stripe ou registos internos da conta.",
+    "unsupportedAction": "Não posso executar ações como cancelar, reembolsar, cobrar ou alterar um pedido neste chat. Posso explicar as regras ou ajudar a verificar, de forma segura para o suporte, a elegibilidade de um pedido selecionado.",
     "uncertain": "Não tenho informação de suporte suficiente para responder com confiança. Posso ajudar com questões gerais sobre registo, configuração de prestador, reservas, pagamentos, cancelamentos, disputas e utilização do marketplace. Para este problema específico, contacte o suporte."
   },
   "handoffAccount": "Para ajuda específica da conta, contacte o suporte com os dados da sua encomenda, fatura ou conta.",
