@@ -8,7 +8,53 @@ import { verifySelectedOrderContextToken } from "@/modules/support-chat/server/a
 type SupportEmailUser = {
   id?: string;
   email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  username?: string | null;
+  roles?: string[] | null;
+  language?: string | null;
+  country?: string | null;
+  location?: string | null;
+  createdAt?: string | null;
+  coordinates?: {
+    city?: string | null;
+    region?: string | null;
+    postalCode?: string | null;
+    street?: string | null;
+    streetNumber?: string | null;
+    countryISO?: string | null;
+    countryName?: string | null;
+  } | null;
 };
+
+type SupportEmailTenant = {
+  id?: string;
+  name?: string | null;
+  slug?: string | null;
+  country?: string | null;
+  hourlyRate?: number | null;
+  services?: string[] | null;
+  categories?: Array<string | { name?: string | null; slug?: string | null }> | null;
+  subcategories?: Array<string | { name?: string | null; slug?: string | null }> | null;
+  phone?: string | null;
+  website?: string | null;
+  onboardingStatus?: string | null;
+  chargesEnabled?: boolean | null;
+  payoutsEnabled?: boolean | null;
+  stripeDetailsSubmitted?: boolean | null;
+  vatRegistered?: boolean | null;
+  vatIdValid?: boolean | null;
+};
+
+type SupportEmailProfile = {
+  user: SupportEmailUser & {
+    id: string;
+    email: string;
+  };
+  tenants: SupportEmailTenant[];
+};
+
+type EmailRow = [label: string, value: unknown];
 
 export type SupportEmailSender = (
   args: SendEmailArgs,
@@ -48,10 +94,158 @@ function supportInbox() {
   return normalizeEmail(process.env.SUPPORT_EMAIL_TO);
 }
 
-async function resolveSupportUserEmail(input: {
-  db: Payload;
+function isPresentValue(value: unknown) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+function formatBoolean(value: unknown) {
+  if (value === true) return "Yes";
+  if (value === false) return "No";
+  return null;
+}
+
+function formatList(value: unknown) {
+  if (!Array.isArray(value)) return null;
+  const items = value
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object") {
+        const relation = item as { name?: unknown; slug?: unknown };
+        if (typeof relation.name === "string" && relation.name.trim()) {
+          return relation.name.trim();
+        }
+        if (typeof relation.slug === "string" && relation.slug.trim()) {
+          return relation.slug.trim();
+        }
+      }
+      return null;
+    })
+    .filter((item): item is string => Boolean(item));
+  return items.length > 0 ? items.join(", ") : null;
+}
+
+function formatValue(value: unknown): string | null {
+  if (!isPresentValue(value)) return null;
+  if (typeof value === "boolean") return formatBoolean(value);
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : null;
+  if (Array.isArray(value)) return formatList(value);
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") return value.trim();
+  return null;
+}
+
+function compactRows(rows: EmailRow[]) {
+  return rows
+    .map(([label, value]) => [label, formatValue(value)] as const)
+    .filter((row): row is readonly [string, string] => Boolean(row[1]));
+}
+
+function addressSummary(user: SupportEmailProfile["user"]) {
+  if (user.location) return user.location;
+  const coordinates = user.coordinates;
+  if (!coordinates) return null;
+  return [
+    [coordinates.street, coordinates.streetNumber].filter(Boolean).join(" "),
+    coordinates.postalCode,
+    coordinates.city,
+    coordinates.region,
+    coordinates.countryName ?? coordinates.countryISO,
+  ]
+    .filter((part): part is string => Boolean(part && part.trim()))
+    .join(", ");
+}
+
+function supportEmailDisplayName(user: SupportEmailProfile["user"]) {
+  const fullName = [user.firstName, user.lastName]
+    .map((part) => (typeof part === "string" ? part.trim() : ""))
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    fullName ||
+    user.username?.trim() ||
+    user.email?.trim() ||
+    user.id ||
+    "Infinisimo user"
+  );
+}
+
+function userProfileRows(input: {
+  profile: SupportEmailProfile;
   clerkUserId: string;
 }) {
+  const { user } = input.profile;
+  return compactRows([
+    ["Email", user.email],
+    ["Payload user ID", user.id],
+    ["Clerk user ID", input.clerkUserId],
+    ["First name", user.firstName],
+    ["Last name", user.lastName],
+    ["Username", user.username],
+    ["Roles", user.roles],
+    ["Preferred language", user.language],
+    ["Country", user.country ?? user.coordinates?.countryName],
+    ["Country ISO", user.coordinates?.countryISO],
+    ["City", user.coordinates?.city],
+    ["Region / state", user.coordinates?.region],
+    ["Postal code", user.coordinates?.postalCode],
+    ["Address summary", addressSummary(user)],
+    ["Created at", user.createdAt],
+  ]);
+}
+
+function tenantProfileRows(tenant: SupportEmailTenant) {
+  return compactRows([
+    ["Tenant ID", tenant.id],
+    ["Tenant name", tenant.name],
+    ["Tenant slug", tenant.slug],
+    ["Business country", tenant.country],
+    ["Hourly rate", tenant.hourlyRate == null ? null : `EUR ${tenant.hourlyRate}`],
+    ["Services", tenant.services],
+    ["Categories", tenant.categories],
+    ["Subcategories", tenant.subcategories],
+    ["Phone", tenant.phone],
+    ["Website", tenant.website],
+    ["Stripe onboarding status", tenant.onboardingStatus],
+    ["Stripe details submitted", tenant.stripeDetailsSubmitted],
+    ["Charges enabled", tenant.chargesEnabled],
+    ["Payouts enabled", tenant.payoutsEnabled],
+    ["VAT registered", tenant.vatRegistered],
+    ["VAT ID valid", tenant.vatIdValid],
+  ]);
+}
+
+function requestContextRows(input: {
+  locale: AppLang;
+  threadId?: string;
+  currentUrl?: string;
+}) {
+  return compactRows([
+    ["Locale", input.locale],
+    ["Thread ID", input.threadId],
+    ["Current URL", input.currentUrl],
+    ["Timestamp", new Date().toISOString()],
+  ]);
+}
+
+function selectedOrderRows(
+  selectedOrder: ReturnType<typeof selectedOrderMetadata>,
+) {
+  if (!selectedOrder?.verified) return [];
+  return compactRows([
+    ["Reference type", selectedOrder.referenceType],
+    ["Reference", selectedOrder.reference],
+    ["Label", selectedOrder.label],
+  ]);
+}
+
+async function resolveSupportEmailProfile(input: {
+  db: Payload;
+  clerkUserId: string;
+}): Promise<SupportEmailProfile | null> {
   const result = await input.db.find({
     collection: "users",
     where: { clerkUserId: { equals: input.clerkUserId } },
@@ -63,7 +257,19 @@ async function resolveSupportUserEmail(input: {
   const user = result.docs?.[0] as SupportEmailUser | undefined;
   const email = normalizeEmail(user?.email);
   if (!user?.id || !email) return null;
-  return { payloadUserId: user.id, email };
+
+  const tenantResult = await input.db.find({
+    collection: "tenants",
+    where: { user: { equals: user.id } },
+    limit: 3,
+    depth: 1,
+    overrideAccess: true,
+  });
+
+  return {
+    user: { ...user, id: user.id, email },
+    tenants: (tenantResult.docs ?? []) as SupportEmailTenant[],
+  };
 }
 
 function selectedOrderMetadata(input: {
@@ -88,51 +294,87 @@ function selectedOrderMetadata(input: {
 }
 
 function buildSupportEmailBody(input: {
-  userEmail: string;
+  profile: SupportEmailProfile;
   clerkUserId: string;
-  payloadUserId: string;
   message: string;
   locale: AppLang;
   threadId?: string;
   currentUrl?: string;
   selectedOrder: ReturnType<typeof selectedOrderMetadata>;
 }) {
-  const lines = [
-    "New support request from Infinisimo",
-    "",
-    "User:",
-    `- Email: ${input.userEmail}`,
-    `- Clerk user ID: ${input.clerkUserId}`,
-    `- Payload user ID: ${input.payloadUserId}`,
-    `- Locale: ${input.locale}`,
-    input.threadId ? `- Thread ID: ${input.threadId}` : null,
-    input.currentUrl ? `- Current URL: ${input.currentUrl}` : null,
+  const displayName = supportEmailDisplayName(input.profile.user);
+  const userRows = userProfileRows({
+    profile: input.profile,
+    clerkUserId: input.clerkUserId,
+  });
+  const tenantSections = input.profile.tenants
+    .map((tenant) => ({
+      title: tenant.name
+        ? `Service provider profile: ${tenant.name}`
+        : "Service provider profile",
+      rows: tenantProfileRows(tenant),
+    }))
+    .filter((section) => section.rows.length > 0);
+  const contextRows = requestContextRows({
+    locale: input.locale,
+    threadId: input.threadId,
+    currentUrl: input.currentUrl,
+  });
+  const orderRows = selectedOrderRows(input.selectedOrder);
+
+  const textSections = [
+    `Support request from ${displayName}`,
     "",
     "Message:",
     input.message,
+    "",
+    renderTextSection("User profile", userRows),
+    ...tenantSections.map((section) =>
+      renderTextSection(section.title, section.rows),
+    ),
+    renderTextSection("Request context", contextRows),
+    orderRows.length > 0 ? renderTextSection("Selected order", orderRows) : null,
   ].filter((line): line is string => line !== null);
 
-  if (input.selectedOrder?.verified) {
-    lines.push(
-      "",
-      "Selected order:",
-      `- Reference type: ${input.selectedOrder.referenceType}`,
-      `- Reference: ${input.selectedOrder.reference}`,
-    );
-    if (input.selectedOrder.label) {
-      lines.push(`- Label: ${input.selectedOrder.label}`);
-    }
-  } else if (input.selectedOrder && !input.selectedOrder.verified) {
-    lines.push("", "Selected order: not verified");
-  }
+  const text = textSections.join("\n");
+  const htmlSections = [
+    `<h2>Support request from ${escapeHtml(displayName)}</h2>`,
+    "<h3>Message</h3>",
+    `<p style="white-space:pre-wrap">${escapeHtml(input.message)}</p>`,
+    renderHtmlTable("User profile", userRows),
+    ...tenantSections.map((section) =>
+      renderHtmlTable(section.title, section.rows),
+    ),
+    renderHtmlTable("Request context", contextRows),
+    orderRows.length > 0 ? renderHtmlTable("Selected order", orderRows) : null,
+  ].filter((section): section is string => section !== null);
+  const html = `<div>${htmlSections.join("\n")}</div>`;
 
-  const text = lines.join("\n");
-  const html = `<div>${text
-    .split("\n")
-    .map((line) => (line ? escapeHtml(line) : "&nbsp;"))
-    .join("<br />")}</div>`;
+  return { text, html, displayName };
+}
 
-  return { text, html };
+function renderTextSection(
+  title: string,
+  rows: readonly (readonly [string, string])[],
+) {
+  return [
+    `${title}:`,
+    ...rows.map(([label, value]) => `- ${label}: ${value}`),
+  ].join("\n");
+}
+
+function renderHtmlTable(
+  title: string,
+  rows: readonly (readonly [string, string])[],
+) {
+  if (rows.length === 0) return null;
+  const body = rows
+    .map(
+      ([label, value]) =>
+        `<tr><th style="padding:6px 10px;text-align:left;border:1px solid #ddd;background:#f6f6f6;vertical-align:top">${escapeHtml(label)}</th><td style="padding:6px 10px;border:1px solid #ddd;vertical-align:top">${escapeHtml(value)}</td></tr>`,
+    )
+    .join("");
+  return `<h3>${escapeHtml(title)}</h3><table style="border-collapse:collapse;margin:0 0 16px 0">${body}</table>`;
 }
 
 async function defaultSendEmail(args: SendEmailArgs) {
@@ -148,12 +390,12 @@ export async function sendSupportEmailHandoff(
     return { ok: false as const, reason: "missing_support_inbox" as const };
   }
 
-  const user = await resolveSupportUserEmail({
+  const profile = await resolveSupportEmailProfile({
     db: input.db,
     clerkUserId: input.clerkUserId,
   });
 
-  if (!user) {
+  if (!profile) {
     return { ok: false as const, reason: "missing_user_email" as const };
   }
 
@@ -163,9 +405,8 @@ export async function sendSupportEmailHandoff(
   });
 
   const body = buildSupportEmailBody({
-    userEmail: user.email,
+    profile,
     clerkUserId: input.clerkUserId,
-    payloadUserId: user.payloadUserId,
     message: input.message,
     locale: input.locale,
     threadId: input.threadId,
@@ -176,8 +417,8 @@ export async function sendSupportEmailHandoff(
   const sendEmailImpl = input.sendEmailImpl ?? defaultSendEmail;
   const result = await sendEmailImpl({
     to,
-    replyTo: user.email,
-    subject: "Support request from Infinisimo user",
+    replyTo: profile.user.email,
+    subject: `Support request from ${body.displayName}`,
     text: body.text,
     html: body.html,
     headers: {

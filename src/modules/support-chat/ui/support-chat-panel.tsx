@@ -150,95 +150,93 @@ export function SupportChatPanel({ className }: { className?: string }) {
         </Button>
       </header>
 
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-3 px-4 py-4">
-          {mode === "chat" ? (
-            <>
-              {!hasUserMessage ? (
-                <div className="space-y-3 py-4 text-center">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold">
-                      {t("emptyTitle")}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t("emptySubtitle")}
-                    </p>
-                  </div>
-                  <SupportChatSuggestions
-                    suggestions={suggestions}
-                    disabled={isSending}
-                    onSelect={(suggestion) => sendMessage(suggestion.prompt)}
-                  />
-                </div>
-              ) : null}
-
-              <SupportChatThread
-                messages={messages}
-                isSending={isSending}
-                sendingText={t("sending")}
-                onActionSelect={sendAction}
-                getHandoffText={(message) =>
-                  getHandoffText(message, {
-                    account: t("handoffAccount"),
-                    general: t("handoffGeneral"),
-                  })
-                }
-              />
-            </>
-          ) : (
-            <div className="space-y-3 py-3">
-              <div className="space-y-1.5">
-                <h3 className="text-lg font-semibold">
-                  {t("emailMode.title")}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t("emailMode.description")}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-muted-foreground">
-                  {t("emailMode.accountEmailLabel")}
-                </div>
-                {accountEmail ? (
-                  <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-                    {accountEmail}
-                  </div>
-                ) : (
-                  <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                    {t("emailMode.accountEmailFallback")}
+      {mode === "chat" ? (
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="space-y-3 px-4 py-4">
+            {!hasUserMessage ? (
+              <div className="space-y-3 py-4 text-center">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-semibold">{t("emptyTitle")}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t("emptySubtitle")}
                   </p>
-                )}
-              </div>
-
-              <label className="block space-y-2">
-                <span className="text-xs font-medium text-muted-foreground">
-                  {t("emailMode.messageLabel")}
-                </span>
-                <textarea
-                  value={emailDraft}
-                  onChange={(event) =>
-                    handleEmailDraftChange(event.target.value)
-                  }
-                  placeholder={t("emailMode.messagePlaceholder")}
-                  className="min-h-[clamp(9rem,24dvh,14rem)] w-full resize-none rounded-xl border bg-white px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 sm:min-h-48"
+                </div>
+                <SupportChatSuggestions
+                  suggestions={suggestions}
+                  disabled={isSending}
+                  onSelect={(suggestion) => sendMessage(suggestion.prompt)}
                 />
-              </label>
+              </div>
+            ) : null}
 
-              {emailSent ? (
-                <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
-                  {t("emailMode.sendSuccess")}
-                </p>
-              ) : null}
-              {emailError ? (
-                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                  {emailError}
-                </p>
-              ) : null}
+            <SupportChatThread
+              messages={messages}
+              isSending={isSending}
+              sendingText={t("sending")}
+              onActionSelect={sendAction}
+              getHandoffText={(message) =>
+                getHandoffText(message, {
+                  account: t("handoffAccount"),
+                  general: t("handoffGeneral"),
+                })
+              }
+            />
+          </div>
+        </ScrollArea>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <div className="space-y-3 py-3 sm:flex sm:min-h-full sm:flex-col">
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-semibold">
+                {t("emailMode.title")}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {t("emailMode.description")}
+              </p>
             </div>
-          )}
+
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">
+                {t("emailMode.accountEmailLabel")}
+              </div>
+              {accountEmail ? (
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                  {accountEmail}
+                </div>
+              ) : (
+                <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                  {t("emailMode.accountEmailFallback")}
+                </p>
+              )}
+            </div>
+
+            <label className="block space-y-2 sm:flex sm:min-h-0 sm:flex-1 sm:flex-col">
+              <span className="text-xs font-medium text-muted-foreground">
+                {t("emailMode.messageLabel")}
+              </span>
+              <textarea
+                value={emailDraft}
+                onChange={(event) =>
+                  handleEmailDraftChange(event.target.value)
+                }
+                placeholder={t("emailMode.messagePlaceholder")}
+                className="min-h-[clamp(9rem,24dvh,14rem)] w-full resize-none rounded-xl border bg-white px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 sm:min-h-48 sm:flex-1"
+              />
+            </label>
+
+            {emailSent ? (
+              <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+                {t("emailMode.sendSuccess")}
+              </p>
+            ) : null}
+            {emailError ? (
+              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {emailError}
+              </p>
+            ) : null}
+          </div>
         </div>
-      </ScrollArea>
+      )}
 
       <footer className="space-y-2.5 border-t bg-white px-4 py-3">
         {error ? (

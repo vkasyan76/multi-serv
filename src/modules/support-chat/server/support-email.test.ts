@@ -29,9 +29,16 @@ afterEach(() => {
   }
 });
 
-function fakeDb(user: { id?: string; email?: string | null }) {
+function fakeDb(input: {
+  user: Record<string, unknown>;
+  tenants?: Array<Record<string, unknown>>;
+}) {
   return {
-    find: async () => ({ docs: [user] }),
+    find: async (args: { collection: string }) => {
+      if (args.collection === "users") return { docs: [input.user] };
+      if (args.collection === "tenants") return { docs: input.tenants ?? [] };
+      return { docs: [] };
+    },
   } as unknown as Payload;
 }
 
@@ -39,7 +46,23 @@ test("support email sends to configured inbox with registered user reply-to", as
   const sent: SendEmailArgs[] = [];
 
   const result = await sendSupportEmailHandoff({
-    db: fakeDb({ id: "payload-user-1", email: "USER@example.COM " }),
+    db: fakeDb({
+      user: {
+        id: "payload-user-1",
+        email: "USER@example.COM ",
+        firstName: "Valentyn",
+        lastName: "Kasyan",
+        username: "valentyn",
+        roles: ["user"],
+        language: "en",
+        country: "Germany",
+        coordinates: {
+          city: "Frankfurt am Main",
+          region: "Hessen",
+          postalCode: "60311",
+        },
+      },
+    }),
     clerkUserId: "user_123",
     message: "Please help me with this support request.",
     locale: "en",
@@ -57,13 +80,25 @@ test("support email sends to configured inbox with registered user reply-to", as
   });
   assert.equal(sent[0]?.to, "info@infinisimo.com");
   assert.equal(sent[0]?.replyTo, "user@example.com");
+  assert.equal(sent[0]?.subject, "Support request from Valentyn Kasyan");
   assert.match(sent[0]?.text ?? "", /Payload user ID: payload-user-1/);
+  assert.match(sent[0]?.text ?? "", /First name: Valentyn/);
+  assert.match(sent[0]?.text ?? "", /City: Frankfurt am Main/);
+  assert.match(sent[0]?.html ?? "", /<h3>User profile<\/h3>/);
   assert.match(sent[0]?.text ?? "", /Current URL: http:\/\/localhost:3000\/en\/orders/);
+  assert.ok(
+    (sent[0]?.text ?? "").indexOf("Message:") <
+      (sent[0]?.text ?? "").indexOf("User profile:"),
+  );
+  assert.ok(
+    (sent[0]?.html ?? "").indexOf("<h3>Message</h3>") <
+      (sent[0]?.html ?? "").indexOf("<h3>User profile</h3>"),
+  );
 });
 
 test("support email rejects missing registered account email", async () => {
   const result = await sendSupportEmailHandoff({
-    db: fakeDb({ id: "payload-user-1", email: "" }),
+    db: fakeDb({ user: { id: "payload-user-1", email: "" } }),
     clerkUserId: "user_123",
     message: "Please help me with this support request.",
     locale: "en",
@@ -84,7 +119,7 @@ test("support email includes verified selected order metadata only when token ve
   });
 
   await sendSupportEmailHandoff({
-    db: fakeDb({ id: "payload-user-1", email: "user@example.com" }),
+    db: fakeDb({ user: { id: "payload-user-1", email: "user@example.com" } }),
     clerkUserId: "user_123",
     message: "Please help me with this selected order.",
     locale: "en",
@@ -101,11 +136,35 @@ test("support email includes verified selected order metadata only when token ve
   assert.match(sent[0]?.text ?? "", /Label: react_jedi - 14 Apr 2026/);
 });
 
+test("support email subject falls back to username when full name is missing", async () => {
+  const sent: SendEmailArgs[] = [];
+
+  await sendSupportEmailHandoff({
+    db: fakeDb({
+      user: {
+        id: "payload-user-1",
+        email: "user@example.com",
+        username: "react_jedi",
+      },
+    }),
+    clerkUserId: "user_123",
+    message: "Please help me with this support request.",
+    locale: "en",
+    sendEmailImpl: async (args) => {
+      sent.push(args);
+      return { status: "sent" };
+    },
+  });
+
+  assert.equal(sent[0]?.subject, "Support request from react_jedi");
+  assert.match(sent[0]?.text ?? "", /^Support request from react_jedi/);
+});
+
 test("support email does not fail when selected order token is invalid", async () => {
   const sent: SendEmailArgs[] = [];
 
   const result = await sendSupportEmailHandoff({
-    db: fakeDb({ id: "payload-user-1", email: "user@example.com" }),
+    db: fakeDb({ user: { id: "payload-user-1", email: "user@example.com" } }),
     clerkUserId: "user_123",
     message: "Please help me even though the selected context is stale.",
     locale: "en",
@@ -118,7 +177,65 @@ test("support email does not fail when selected order token is invalid", async (
   });
 
   assert.equal(result.ok, true);
-  assert.match(sent[0]?.text ?? "", /Selected order: not verified/);
+  assert.doesNotMatch(sent[0]?.text ?? "", /Selected order:/);
+});
+
+test("support email includes curated tenant profile rows for vendor users", async () => {
+  const sent: SendEmailArgs[] = [];
+
+  await sendSupportEmailHandoff({
+    db: fakeDb({
+      user: { id: "payload-user-1", email: "user@example.com" },
+      tenants: [
+        {
+          id: "tenant-1",
+          name: "valentisimo",
+          slug: "react_jedi",
+          country: "DE",
+          hourlyRate: 1,
+          services: ["on-site", "on-line"],
+          categories: [{ name: "Furniture Assembly", slug: "furniture" }],
+          subcategories: [
+            { name: "Mounting & Disassembly", slug: "mounting" },
+          ],
+          phone: "+49123456789",
+          website: "https://example.com",
+          onboardingStatus: "completed",
+          stripeDetailsSubmitted: true,
+          chargesEnabled: true,
+          payoutsEnabled: false,
+          vatRegistered: true,
+          vatIdValid: true,
+          stripeRequirements: { currently_due: ["external_account"] },
+          stripeAccountId: "acct_secret",
+          vatId: "DE123456789",
+        },
+      ],
+    }),
+    clerkUserId: "user_123",
+    message: "Please help me with my provider profile.",
+    locale: "en",
+    sendEmailImpl: async (args) => {
+      sent.push(args);
+      return { status: "sent" };
+    },
+  });
+
+  const text = sent[0]?.text ?? "";
+  const html = sent[0]?.html ?? "";
+  assert.match(text, /Service provider profile: valentisimo/);
+  assert.match(text, /Tenant slug: react_jedi/);
+  assert.match(text, /Hourly rate: EUR 1/);
+  assert.match(text, /Services: on-site, on-line/);
+  assert.match(text, /Categories: Furniture Assembly/);
+  assert.match(text, /Payouts enabled: No/);
+  assert.match(html, /<h3>Service provider profile: valentisimo<\/h3>/);
+  assert.doesNotMatch(text, /acct_secret/);
+  assert.doesNotMatch(text, /external_account/);
+  assert.doesNotMatch(text, /DE123456789/);
+  assert.doesNotMatch(html, /acct_secret/);
+  assert.doesNotMatch(html, /external_account/);
+  assert.doesNotMatch(html, /DE123456789/);
 });
 
 test("support email rate limiter blocks after five attempts", () => {
