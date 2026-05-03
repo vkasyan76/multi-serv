@@ -129,6 +129,9 @@ Required env groups are defined in `README.md`:
 - Support chat launchers in navbar/mobile/footer should open the panel rather than navigate away.
 - Do not use the modal `Sheet` component for the support assistant panel unless product requirements change; the page behind should remain visible and usable.
 - Anonymous and signed-in users share the same public support entry point; signed-in state alone must not be treated as permission for live account/order/payment answers.
+- The support panel now has two modes: AI chat and authenticated email handoff. AI chat remains available to anonymous users; `Write email` requires a signed-in user because replies use the registered account email resolved server-side.
+- `Clear chat` is a local UI reset only: it clears messages, thread/context tokens, input/error state, and returns the support panel to chat mode; it does not delete server/admin logs.
+- Support chat launchers use a shared AI chat icon component (`support-chat-ai-icon.tsx`) so navbar and panel identity stay visually aligned.
 - Keep AI support chat separate from `src/modules/conversations/*` and `src/modules/messages/*`; those remain human-to-human messaging domains.
 - Support chat scope is grounded general support only: terms/policy, registration/onboarding, booking/payment/cancellation/dispute rules at policy level, failure next steps, and basic marketplace usage.
 - Support chat must not claim live order/payment/account lookup, make cancellation decisions for a specific order, perform vendor/admin actions, run broad DB reads, or access Stripe/Payload/Mongo/backend systems directly.
@@ -153,6 +156,10 @@ Required env groups are defined in `README.md`:
 - `threadId` is an opaque support-chat continuity id for server/admin logs only and must not be treated as user-visible persisted chat history.
 - Support-chat disposition is server-owned; the model may draft normal answers, but server code decides `answered`, `uncertain`, `escalate`, or `unsupported_account_question`.
 - Support-chat prompt builders should format selected context only; disposition, unsupported-account handling, and weak-source decisions belong in server orchestration.
+- Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helpers, but the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
+- Selected-order context and support-topic context are server-issued signed tokens. Invalid selected-order follow-ups should ask the user to reselect the order; invalid/expired topic context is a soft hint and should be ignored.
+- General topic help must stay general unless the user clearly asks about their own bookings/orders/payments or has selected/referenced a specific item.
+- Explicit paid-order questions route to bounded paid payment candidates; generic payment overviews must avoid implying a full account-history scan.
 - Support-chat guardrails must prevent "common practice" answers from being treated as Infinisimo policy; answers must be grounded in retrieved support context.
 - Ambiguous support-chat requests should receive one short clarifying question instead of a guessed answer.
 - Unsupported or escalated support-chat responses should still say what the assistant can help with and what the user should do next.
@@ -170,6 +177,9 @@ Required env groups are defined in `README.md`:
 - The support-chat model is configured in `src/modules/support-chat/server/openai-config.ts`; `OPENAI_SUPPORT_CHAT_MODEL` and `OPENAI_SUPPORT_CHAT_MODEL_VERSION` must both be set explicitly so future logs can distinguish model behavior.
 - OpenAI outages or empty model output should return a user-safe fallback message, not raw SDK/API errors.
 - `src/modules/support-chat/server/rate-limit.ts` is only an in-memory first-layer guard; do not treat it as durable multi-instance rate limiting.
+- Support email handoff lives in `support-email.ts` and `support-email-rate-limit.ts`. It sends from the app-owned sender to `SUPPORT_EMAIL_TO`, sets `Reply-To` to the registered user email, validates/rate-limits attempts, and never accepts recipient or reply-to from the client.
+- Support handoff emails intentionally include the user's message first, then curated user/provider profile tables, request context, and verified selected-order metadata when available. Do not include raw records, full transcripts, Stripe requirement payloads, raw payment/order data, or full tax identifiers unless explicitly approved.
+- Local/dev email sending may require `EMAIL_DEV_ALLOWLIST`; production should configure the actual support inbox through environment variables rather than relying on the dev allowlist.
 - Phase 1 support-chat regression cases live in `src/modules/support-chat/testing/phase1-test-cases.ts`, the runner lives in `src/scripts/run-support-chat-phase1-tests.ts`, and the review guide lives in `docs/support-chat-phase1-test-sheet.md`.
 - Rerun `npm run test:support-chat:phase1` after meaningful support-chat changes to prompt, model, retrieval, knowledge pack, or guardrail behavior; use `--json` and `--out <path>` when you want a saved artifact for review.
 - Block 13A Phase 1 support-chat hardening is complete for the targeted safety categories:
@@ -177,23 +187,11 @@ Required env groups are defined in `README.md`:
 - Known non-blocking Phase 1 support-chat regression issue:
   `npm run test:support-chat:phase1` still has 2 unrelated cross-locale structured failures:
   `onboarding-complete-profile-fr` and `booking-policy-reschedule-de`.
-- Block 13 account-aware Commit 1 is complete:
-  contracts/types/versioning/boundary documentation live in
-  `src/modules/support-chat/server/account-aware/types.ts`,
-  `src/modules/support-chat/server/account-aware/versioning.ts`, and
-  `docs/support-chat-phase2-account-aware.md`.
-- Block 13 next safe implementation step is Commit 2A only:
-  backend helper functions for `getOrderStatusForCurrentUser`,
-  `getPaymentStatusForCurrentUser`, and `canCancelOrderForCurrentUser`.
-- Do not add Block 13 support-chat routing, model tool-calling, model-drafted
-  account answers, UI changes, broad account lookup, fuzzy/latest-order lookup,
-  cancellation mutations, or admin/vendor actions until backend helpers and
-  helper ownership/safety tests are complete.
-- Initial account-aware helpers must require exact targeted references only
-  (`order_id` and `invoice_id` per the current contract), resolve identity from
-  authenticated Clerk context to the Payload user, enforce ownership, return
-  sanitized DTOs, collapse missing/not-owned cases to `not_found_or_not_owned`,
-  and fail closed without leaking object existence.
+- Block 13 account-aware support has moved beyond helper scaffolding: safe
+  order, payment, and cancellation helper routing exists for exact references,
+  selected-order follow-ups, bounded candidate lists, and explicit personal
+  lookup questions. Keep the same fail-closed ownership and DTO boundaries for
+  future helper expansion.
 - When extending support chat, prefer documenting stable boundaries here: entry points, ownership, access model, source-of-truth locations, storage shape, and safety constraints.
 
 ## Checkout UI Note
