@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -37,7 +38,7 @@ function getHandoffText(
 
 export function SupportChatPanel({ className }: { className?: string }) {
   const t = useTranslations("supportChat");
-  const { user } = useUser();
+  const { isSignedIn, user } = useUser();
   const {
     open,
     closeChat,
@@ -61,6 +62,14 @@ export function SupportChatPanel({ className }: { className?: string }) {
   const handleClearChat = () => {
     setEmailDraft("");
     clearChat();
+  };
+  const handleOpenEmailMode = () => {
+    if (!isSignedIn) {
+      toast.error(t("emailMode.loginRequired"));
+      return;
+    }
+
+    openEmailMode();
   };
   const hasUserMessage = messages.some((message) => message.role === "user");
   const hasMessages = messages.length > 0;
@@ -239,7 +248,7 @@ export function SupportChatPanel({ className }: { className?: string }) {
               <button
                 type="button"
                 className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-foreground transition hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
-                onClick={openEmailMode}
+                onClick={handleOpenEmailMode}
                 disabled={isSending}
               >
                 {t("writeEmail")}

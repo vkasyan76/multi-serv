@@ -30,10 +30,11 @@
     "accountEmailLabel": "E-mail cont",
     "accountEmailFallback": "Vom folosi e-mailul asociat contului tău.",
     "messageLabel": "Mesaj",
-    "messagePlaceholder": "Descrie cu ce ai nevoie de ajutor...",
+    "messagePlaceholder": "Descrie solicitarea ta...",
     "backToChat": "Înapoi la chat",
     "sendMessage": "Trimite mesajul",
-    "notConnected": "Trimiterea e-mailului va fi conectată în pasul următor."
+    "notConnected": "Trimiterea e-mailului va fi conectată în pasul următor.",
+    "loginRequired": "Autentifică-te pentru a contacta asistența prin e-mail."
   },
   "clearChat": "Șterge chatul",
   "send": "Trimite",

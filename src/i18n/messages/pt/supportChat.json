@@ -30,10 +30,11 @@
     "accountEmailLabel": "E-mail da conta",
     "accountEmailFallback": "Vamos usar o e-mail associado à sua conta.",
     "messageLabel": "Mensagem",
-    "messagePlaceholder": "Descreva em que precisa de ajuda...",
+    "messagePlaceholder": "Descreva o seu pedido...",
     "backToChat": "Voltar ao chat",
     "sendMessage": "Enviar mensagem",
-    "notConnected": "O envio de e-mail será ligado a seguir."
+    "notConnected": "O envio de e-mail será ligado a seguir.",
+    "loginRequired": "Inicie sessão para contactar o suporte por e-mail."
   },
   "clearChat": "Limpar chat",
   "send": "Enviar",

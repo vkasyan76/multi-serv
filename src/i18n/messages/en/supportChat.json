@@ -30,10 +30,11 @@
     "accountEmailLabel": "Account email",
     "accountEmailFallback": "We will use the email address linked to your account.",
     "messageLabel": "Message",
-    "messagePlaceholder": "Describe what you need help with...",
+    "messagePlaceholder": "Describe your request...",
     "backToChat": "Back to chat",
     "sendMessage": "Send message",
-    "notConnected": "Email sending will be connected next."
+    "notConnected": "Email sending will be connected next.",
+    "loginRequired": "Please log in to contact support by email."
   },
   "clearChat": "Clear chat",
   "send": "Send",

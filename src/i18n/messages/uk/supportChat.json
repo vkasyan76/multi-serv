@@ -30,10 +30,11 @@
     "accountEmailLabel": "Email акаунта",
     "accountEmailFallback": "Ми використаємо email, пов'язаний із вашим акаунтом.",
     "messageLabel": "Повідомлення",
-    "messagePlaceholder": "Опишіть, з чим вам потрібна допомога...",
+    "messagePlaceholder": "Опишіть Ваше звернення...",
     "backToChat": "Назад до чату",
     "sendMessage": "Надіслати повідомлення",
-    "notConnected": "Надсилання email буде підключено наступним кроком."
+    "notConnected": "Надсилання email буде підключено наступним кроком.",
+    "loginRequired": "Увійдіть, щоб зв’язатися з підтримкою електронною поштою."
   },
   "clearChat": "Очистити чат",
   "send": "Надіслати",

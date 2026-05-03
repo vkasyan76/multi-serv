@@ -30,10 +30,11 @@
     "accountEmailLabel": "E-mail du compte",
     "accountEmailFallback": "Nous utiliserons l'adresse e-mail liée à votre compte.",
     "messageLabel": "Message",
-    "messagePlaceholder": "Décrivez ce pour quoi vous avez besoin d'aide...",
+    "messagePlaceholder": "Décrivez votre demande...",
     "backToChat": "Retour au chat",
     "sendMessage": "Envoyer le message",
-    "notConnected": "L'envoi d'e-mail sera connecté ensuite."
+    "notConnected": "L'envoi d'e-mail sera connecté ensuite.",
+    "loginRequired": "Veuillez vous connecter pour contacter l'assistance par e-mail."
   },
   "clearChat": "Effacer le chat",
   "send": "Envoyer",
