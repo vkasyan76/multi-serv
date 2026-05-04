@@ -16,7 +16,8 @@
     "locale": "Locale",
     "status": "Status",
     "lastDisposition": "Last disposition",
-    "needsHumanSupport": "Needs human support"
+    "needsHumanSupport": "Needs human support",
+    "review": "Review"
   },
   "status": {
     "open": "Open",
@@ -90,7 +91,8 @@
     "sourcesSummary": "Sources used ({count})",
     "diagnostics": "AI audit details",
     "threadDiagnostics": "Thread diagnostics",
-    "latestAssistantMetadata": "Latest assistant response metadata"
+    "latestAssistantMetadata": "Latest assistant response metadata",
+    "backendStatus": "Backend status"
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",
@@ -101,7 +103,9 @@
     "needs_review": "Needs review",
     "answered": "Answered",
     "closed": "Closed",
-    "needsReview": "Needs review"
+    "needsReview": "Needs review",
+    "uncertain": "Uncertain",
+    "accountBlocked": "Account request blocked"
   },
   "outcome": {
     "answered": "Answered",

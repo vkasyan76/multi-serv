@@ -53,17 +53,20 @@ function ReviewBadge({ state }: { state: AdminSupportReviewState }) {
   const label =
     state === "needs_review"
       ? t("reviewState.needsReview")
-      : state === "closed"
-        ? t("reviewState.closed")
-        : t("reviewState.answered");
+      : state === "uncertain"
+      ? t("reviewState.uncertain")
+      : state === "account_blocked"
+      ? t("reviewState.accountBlocked")
+      : t("reviewState.answered");
 
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
         state === "needs_review" && "bg-amber-100 text-amber-900",
-        state === "answered" && "bg-emerald-100 text-emerald-900",
-        state === "closed" && "bg-muted text-muted-foreground"
+        state === "uncertain" && "bg-yellow-100 text-yellow-900",
+        state === "account_blocked" && "bg-orange-100 text-orange-900",
+        state === "answered" && "bg-emerald-100 text-emerald-900"
       )}
     >
       {label}
@@ -252,7 +255,7 @@ export function SupportChatThreadDetail({
             label={t("table.locale")}
             value={detail.thread.locale.toUpperCase()}
           />
-          <MetaRow label={t("table.status")} value={detail.thread.status} />
+          <MetaRow label={t("detail.backendStatus")} value={detail.thread.status} />
           <MetaRow
             label={t("detail.lastActivity")}
             value={formatDate(detail.thread.lastMessageAt, locale)}

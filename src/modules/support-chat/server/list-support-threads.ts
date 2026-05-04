@@ -36,11 +36,45 @@ function assistantOutcome(
 }
 
 function reviewState(thread: SupportChatThread): AdminSupportReviewState {
-  if (thread.status === "closed") return "closed";
-  if (thread.status === "escalated" || thread.lastNeedsHumanSupport) {
+  if (
+    thread.status === "escalated" ||
+    thread.lastNeedsHumanSupport ||
+    thread.lastDisposition === "escalate"
+  ) {
     return "needs_review";
   }
+  if (thread.lastDisposition === "uncertain") return "uncertain";
+  if (thread.lastDisposition === "unsupported_account_question") {
+    return "account_blocked";
+  }
   return "answered";
+}
+
+function reviewFilterWhere(
+  review: "answered" | "uncertain" | "account_blocked" | "needs_review"
+): Where {
+  if (review === "needs_review") {
+    return {
+      or: [
+        { lastNeedsHumanSupport: { equals: true } },
+        { status: { equals: "escalated" } },
+        { lastDisposition: { equals: "escalate" } },
+      ],
+    };
+  }
+
+  const disposition =
+    review === "account_blocked"
+      ? "unsupported_account_question"
+      : review;
+
+  return {
+    and: [
+      { lastDisposition: { equals: disposition } },
+      { lastNeedsHumanSupport: { equals: false } },
+      { status: { not_equals: "escalated" } },
+    ],
+  };
 }
 
 async function latestUserMessagePreview(db: Payload, threadId: string) {
@@ -71,13 +105,7 @@ export async function listSupportThreads(
     page: number;
     limit: number;
     locale?: SupportChatThread["locale"];
-    status?: "open" | "escalated" | "closed";
-    lastDisposition?:
-      | "answered"
-      | "uncertain"
-      | "escalate"
-      | "unsupported_account_question";
-    needsHumanSupport?: boolean;
+    review?: "answered" | "uncertain" | "account_blocked" | "needs_review";
   }
 ) {
   const and: Where[] = [];
@@ -86,16 +114,8 @@ export async function listSupportThreads(
     and.push({ locale: { equals: input.locale } });
   }
 
-  if (input.status) {
-    and.push({ status: { equals: input.status } });
-  }
-
-  if (input.lastDisposition) {
-    and.push({ lastDisposition: { equals: input.lastDisposition } });
-  }
-
-  if (typeof input.needsHumanSupport === "boolean") {
-    and.push({ lastNeedsHumanSupport: { equals: input.needsHumanSupport } });
+  if (input.review) {
+    and.push(reviewFilterWhere(input.review));
   }
 
   const result = await db.find({

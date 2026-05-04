@@ -13,11 +13,11 @@ import { SupportChatThreadDetail } from "@/modules/support-chat/ui/admin/support
 import { SupportChatThreadsTable } from "@/modules/support-chat/ui/admin/support-chat-threads-table";
 
 type AdminFilterValue<T extends string> = T | "all";
-type AdminDisposition =
+type AdminReviewFilter =
   | "answered"
   | "uncertain"
-  | "escalate"
-  | "unsupported_account_question";
+  | "account_blocked"
+  | "needs_review";
 
 export function SupportChatAdminView() {
   const trpc = useTRPC();
@@ -27,13 +27,8 @@ export function SupportChatAdminView() {
 
   const [page, setPage] = useState(1);
   const [locale, setLocale] = useState<AdminFilterValue<AppLang>>("all");
-  const [status, setStatus] = useState<
-    AdminFilterValue<"open" | "escalated" | "closed">
-  >("all");
-  const [lastDisposition, setLastDisposition] =
-    useState<AdminFilterValue<AdminDisposition>>("all");
-  const [needsHumanSupport, setNeedsHumanSupport] =
-    useState<AdminFilterValue<"yes" | "no">>("all");
+  const [review, setReview] =
+    useState<AdminFilterValue<AdminReviewFilter>>("all");
   const [selectedId, setSelectedId] = useState<string | undefined>();
 
   const filters = useMemo(
@@ -41,14 +36,9 @@ export function SupportChatAdminView() {
       page,
       limit: 20,
       locale: locale === "all" ? undefined : locale,
-      status: status === "all" ? undefined : status,
-      lastDisposition: lastDisposition === "all" ? undefined : lastDisposition,
-      needsHumanSupport:
-        needsHumanSupport === "all"
-          ? undefined
-          : needsHumanSupport === "yes",
+      review: review === "all" ? undefined : review,
     }),
-    [lastDisposition, locale, needsHumanSupport, page, status]
+    [locale, page, review]
   );
 
   const summaryQ = useQuery(trpc.supportChat.adminReviewSummary.queryOptions());
@@ -75,7 +65,7 @@ export function SupportChatAdminView() {
       )}
 
       <div className="rounded-lg border bg-white p-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-sm text-muted-foreground">{t("filters.locale")}</label>
             <select
@@ -100,63 +90,24 @@ export function SupportChatAdminView() {
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm text-muted-foreground">{t("filters.status")}</label>
+            <label className="text-sm text-muted-foreground">{t("filters.review")}</label>
             <select
               className="h-10 rounded-md border bg-white px-3 text-sm"
-              value={status}
+              value={review}
               onChange={(event) => {
-                setStatus(
-                  event.target.value as AdminFilterValue<
-                    "open" | "escalated" | "closed"
-                  >
+                setReview(
+                  event.target.value as AdminFilterValue<AdminReviewFilter>
                 );
                 setPage(1);
               }}
             >
               <option value="all">{t("filters.all")}</option>
-              <option value="open">{t("status.open")}</option>
-              <option value="escalated">{t("status.escalated")}</option>
-              <option value="closed">{t("status.closed")}</option>
-            </select>
-          </div>
-
-          <div className="grid gap-2">
-            <label className="text-sm text-muted-foreground">{t("filters.lastDisposition")}</label>
-            <select
-              className="h-10 rounded-md border bg-white px-3 text-sm"
-              value={lastDisposition}
-              onChange={(event) => {
-                setLastDisposition(
-                  event.target.value as AdminFilterValue<AdminDisposition>
-                );
-                setPage(1);
-              }}
-            >
-              <option value="all">{t("filters.all")}</option>
-              <option value="answered">{t("disposition.answered")}</option>
-              <option value="uncertain">{t("disposition.uncertain")}</option>
-              <option value="escalate">{t("disposition.escalated")}</option>
-              <option value="unsupported_account_question">
-                {t("disposition.unsupported_account_question")}
+              <option value="answered">{t("reviewState.answered")}</option>
+              <option value="uncertain">{t("reviewState.uncertain")}</option>
+              <option value="account_blocked">
+                {t("reviewState.accountBlocked")}
               </option>
-            </select>
-          </div>
-
-          <div className="grid gap-2">
-            <label className="text-sm text-muted-foreground">{t("filters.needsHumanSupport")}</label>
-            <select
-              className="h-10 rounded-md border bg-white px-3 text-sm"
-              value={needsHumanSupport}
-              onChange={(event) => {
-                setNeedsHumanSupport(
-                  event.target.value as AdminFilterValue<"yes" | "no">
-                );
-                setPage(1);
-              }}
-            >
-              <option value="all">{t("filters.all")}</option>
-              <option value="yes">{t("common.yes")}</option>
-              <option value="no">{t("common.no")}</option>
+              <option value="needs_review">{t("reviewState.needsReview")}</option>
             </select>
           </div>
         </div>
@@ -176,7 +127,7 @@ export function SupportChatAdminView() {
             <>
               <SupportChatThreadsTable
                 locale={lang}
-                resetSortKey={`${page}:${locale}:${status}:${lastDisposition}:${needsHumanSupport}`}
+                resetSortKey={`${page}:${locale}:${review}`}
                 rows={threadsQ.data.items}
                 selectedId={selectedId}
                 onSelect={setSelectedId}

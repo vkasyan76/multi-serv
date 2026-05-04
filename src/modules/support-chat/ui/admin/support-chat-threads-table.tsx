@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type {
-  AdminSupportAssistantOutcome,
   AdminSupportReviewState,
   AdminSupportThreadRow,
   AdminSupportUserSummary,
@@ -47,8 +46,9 @@ function userSortValue(row: AdminSupportThreadRow) {
 
 function statusSortValue(row: AdminSupportThreadRow) {
   if (row.reviewState === "needs_review") return 0;
-  if (row.reviewState === "answered") return 1;
-  return 2;
+  if (row.reviewState === "uncertain") return 1;
+  if (row.reviewState === "account_blocked") return 2;
+  return 3;
 }
 
 function activitySortValue(row: AdminSupportThreadRow) {
@@ -88,20 +88,9 @@ function reviewStateLabel(
   state: AdminSupportReviewState
 ) {
   if (state === "needs_review") return t("reviewState.needsReview");
-  if (state === "closed") return t("reviewState.closed");
+  if (state === "uncertain") return t("reviewState.uncertain");
+  if (state === "account_blocked") return t("reviewState.accountBlocked");
   return t("reviewState.answered");
-}
-
-function outcomeLabel(
-  t: ReturnType<typeof useTranslations>,
-  outcome: AdminSupportAssistantOutcome
-) {
-  if (outcome === "uncertain") return t("outcome.uncertain");
-  if (outcome === "escalated") return t("outcome.escalated");
-  if (outcome === "unsupported_account_question") {
-    return t("outcome.accountBlocked");
-  }
-  return null;
 }
 
 function ReviewBadge({ state }: { state: AdminSupportReviewState }) {
@@ -112,8 +101,9 @@ function ReviewBadge({ state }: { state: AdminSupportReviewState }) {
       className={cn(
         "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
         state === "needs_review" && "bg-amber-100 text-amber-900",
-        state === "answered" && "bg-emerald-100 text-emerald-900",
-        state === "closed" && "bg-muted text-muted-foreground"
+        state === "uncertain" && "bg-yellow-100 text-yellow-900",
+        state === "account_blocked" && "bg-orange-100 text-orange-900",
+        state === "answered" && "bg-emerald-100 text-emerald-900"
       )}
     >
       {reviewStateLabel(t, state)}
@@ -252,10 +242,6 @@ export function SupportChatThreadsTable({
           {sortedRows.map((row) => {
             const displayName = userDisplayName(row.user);
             const secondary = userSecondaryLine(row.user);
-            const notableOutcome =
-              row.lastAssistantOutcome === "answered"
-                ? null
-                : outcomeLabel(t, row.lastAssistantOutcome);
 
             return (
               <tr
@@ -294,11 +280,6 @@ export function SupportChatThreadsTable({
                 </td>
                 <td className="px-3 py-3 align-top">
                   <ReviewBadge state={row.reviewState} />
-                  {notableOutcome ? (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {notableOutcome}
-                    </p>
-                  ) : null}
                 </td>
                 <td className="px-3 py-3 align-top text-xs">
                   <span className="block leading-5">

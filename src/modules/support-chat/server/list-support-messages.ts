@@ -44,9 +44,16 @@ function assistantOutcome(
 }
 
 function reviewState(thread: SupportChatThread): AdminSupportReviewState {
-  if (thread.status === "closed") return "closed";
-  if (thread.status === "escalated" || thread.lastNeedsHumanSupport) {
+  if (
+    thread.status === "escalated" ||
+    thread.lastNeedsHumanSupport ||
+    thread.lastDisposition === "escalate"
+  ) {
     return "needs_review";
+  }
+  if (thread.lastDisposition === "uncertain") return "uncertain";
+  if (thread.lastDisposition === "unsupported_account_question") {
+    return "account_blocked";
   }
   return "answered";
 }

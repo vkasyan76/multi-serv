@@ -8,7 +8,6 @@ import type {
   SupportChatThread,
   User,
 } from "@/payload-types";
-import type { SupportChatDisposition } from "@/modules/support-chat/server/generate-support-response";
 import { baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { listSupportMessages } from "@/modules/support-chat/server/list-support-messages";
@@ -61,20 +60,18 @@ async function requireSuperAdmin(ctx: TRPCContext) {
   }
 }
 
-const SUPPORT_CHAT_DISPOSITIONS = [
+const ADMIN_REVIEW_FILTERS = [
   "answered",
   "uncertain",
-  "escalate",
-  "unsupported_account_question",
-] as const satisfies readonly SupportChatDisposition[];
+  "account_blocked",
+  "needs_review",
+] as const;
 
 const adminListThreadsInput = z.object({
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(20),
   locale: z.enum(SUPPORTED_APP_LANGS).optional(),
-  status: z.enum(["open", "escalated", "closed"]).optional(),
-  lastDisposition: z.enum(SUPPORT_CHAT_DISPOSITIONS).optional(),
-  needsHumanSupport: z.boolean().optional(),
+  review: z.enum(ADMIN_REVIEW_FILTERS).optional(),
 });
 
 export const supportChatAdminProcedures = {
@@ -133,8 +130,9 @@ export type AdminSupportUserSummary = {
 
 export type AdminSupportReviewState =
   | "needs_review"
-  | "answered"
-  | "closed";
+  | "uncertain"
+  | "account_blocked"
+  | "answered";
 
 export type AdminSupportAssistantOutcome =
   | "answered"
