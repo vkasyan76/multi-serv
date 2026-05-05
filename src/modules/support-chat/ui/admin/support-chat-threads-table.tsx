@@ -46,9 +46,10 @@ function userSortValue(row: AdminSupportThreadRow) {
 
 function statusSortValue(row: AdminSupportThreadRow) {
   if (row.reviewState === "needs_review") return 0;
-  if (row.reviewState === "uncertain") return 1;
-  if (row.reviewState === "account_blocked") return 2;
-  return 3;
+  if (row.reviewState === "order_selection_requested") return 1;
+  if (row.reviewState === "uncertain") return 2;
+  if (row.reviewState === "account_blocked") return 3;
+  return 4;
 }
 
 function activitySortValue(row: AdminSupportThreadRow) {
@@ -88,6 +89,9 @@ function reviewStateLabel(
   state: AdminSupportReviewState
 ) {
   if (state === "needs_review") return t("reviewState.needsReview");
+  if (state === "order_selection_requested") {
+    return t("reviewState.orderSelectionRequested");
+  }
   if (state === "uncertain") return t("reviewState.uncertain");
   if (state === "account_blocked") return t("reviewState.accountBlocked");
   return t("reviewState.answered");
@@ -101,6 +105,7 @@ function ReviewBadge({ state }: { state: AdminSupportReviewState }) {
       className={cn(
         "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
         state === "needs_review" && "bg-amber-100 text-amber-900",
+        state === "order_selection_requested" && "bg-sky-100 text-sky-900",
         state === "uncertain" && "bg-yellow-100 text-yellow-900",
         state === "account_blocked" && "bg-orange-100 text-orange-900",
         state === "answered" && "bg-emerald-100 text-emerald-900"

@@ -284,6 +284,7 @@ export async function persistSupportInteraction(
       lastMessageAt: now.toISOString(),
       lastDisposition: input.response.disposition,
       lastNeedsHumanSupport: input.response.needsHumanSupport,
+      lastAccountContextKind: accountContextSnapshots[0]?.kind ?? null,
       messageCount,
       retentionUntil: addDays(now, SUPPORT_CHAT_RETENTION_DAYS).toISOString(),
     },

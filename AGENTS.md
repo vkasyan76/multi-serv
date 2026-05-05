@@ -169,8 +169,9 @@ Required env groups are defined in `README.md`:
 - Support-chat logs are admin-only by default and must not be exposed to vendors or regular users.
 - Support-chat admin review lives at `/[lang]/dashboard/admin/support-chat`; it is a separate admin child page, while the admin dashboard subnav remains section-based and the dashboard `Support Chat` section card is the entry point to the review page.
 - Support-chat admin review intentionally uses derived review labels for the main table/filter instead of raw thread lifecycle status:
-  - visible review labels are `Answered`, `Uncertain`, `Account request blocked`, and `Needs review`
-  - these labels are deterministic app logic derived from `lastDisposition`, `lastNeedsHumanSupport`, and raw `status`
+  - visible review labels are `Answered`, `Order selection requested`, `Uncertain`, `Account request blocked`, and `Needs review`
+  - these labels are deterministic app logic derived from `lastDisposition`, `lastNeedsHumanSupport`, raw `status`, and structured `lastAccountContextKind`
+  - `Order selection requested` must come only from structured `candidate_selection` context, never from assistant text matching, and old logs are not backfilled
   - raw thread `status` (`open` / `escalated` / `closed`) remains backend storage/lifecycle metadata and should stay in diagnostics rather than the main admin review filter/table
   - do not remove the backend `status` field without an explicit schema/storage migration decision
 - Account-aware support-chat admin review must persist and render structured support-safe account context snapshots for candidate orders, selected orders, helper results, and payment overview examples. Do not rely on assistant text alone to reconstruct which order/payment context was shown or used.

@@ -51,10 +51,16 @@ function reviewState(thread: SupportChatThread): AdminSupportReviewState {
   ) {
     return "needs_review";
   }
-  if (thread.lastDisposition === "uncertain") return "uncertain";
   if (thread.lastDisposition === "unsupported_account_question") {
     return "account_blocked";
   }
+  if (
+    thread.lastDisposition === "uncertain" &&
+    thread.lastAccountContextKind === "candidate_selection"
+  ) {
+    return "order_selection_requested";
+  }
+  if (thread.lastDisposition === "uncertain") return "uncertain";
   return "answered";
 }
 

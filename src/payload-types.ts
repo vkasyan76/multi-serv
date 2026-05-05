@@ -941,6 +941,10 @@ export interface SupportChatThread {
   lastDisposition?: ('answered' | 'uncertain' | 'escalate' | 'unsupported_account_question') | null;
   lastNeedsHumanSupport?: boolean | null;
   /**
+   * Derived from the latest assistant message's structured account-context snapshot.
+   */
+  lastAccountContextKind?: ('candidate_selection' | 'selected_order' | 'helper_result' | 'payment_overview') | null;
+  /**
    * Total stored messages in this support thread. Each completed exchange adds two.
    */
   messageCount: number;
@@ -1649,6 +1653,7 @@ export interface SupportChatThreadsSelect<T extends boolean = true> {
   lastMessageAt?: T;
   lastDisposition?: T;
   lastNeedsHumanSupport?: T;
+  lastAccountContextKind?: T;
   messageCount?: T;
   retentionUntil?: T;
   updatedAt?: T;

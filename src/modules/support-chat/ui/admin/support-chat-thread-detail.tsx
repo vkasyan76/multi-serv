@@ -53,6 +53,8 @@ function ReviewBadge({ state }: { state: AdminSupportReviewState }) {
   const label =
     state === "needs_review"
       ? t("reviewState.needsReview")
+      : state === "order_selection_requested"
+      ? t("reviewState.orderSelectionRequested")
       : state === "uncertain"
       ? t("reviewState.uncertain")
       : state === "account_blocked"
@@ -64,6 +66,7 @@ function ReviewBadge({ state }: { state: AdminSupportReviewState }) {
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
         state === "needs_review" && "bg-amber-100 text-amber-900",
+        state === "order_selection_requested" && "bg-sky-100 text-sky-900",
         state === "uncertain" && "bg-yellow-100 text-yellow-900",
         state === "account_blocked" && "bg-orange-100 text-orange-900",
         state === "answered" && "bg-emerald-100 text-emerald-900"
@@ -83,26 +86,33 @@ function outcomeFromDisposition(
 
 function OutcomeBadge({
   outcome,
+  orderSelectionRequested = false,
 }: {
   outcome: AdminSupportAssistantOutcome;
+  orderSelectionRequested?: boolean;
 }) {
   const t = useTranslations("supportChatAdmin");
   if (!outcome) return null;
   const label =
-    outcome === "unsupported_account_question"
-      ? t("outcome.accountBlocked")
-      : outcome === "escalated"
-        ? t("outcome.escalated")
-        : outcome === "uncertain"
-          ? t("outcome.uncertain")
-          : t("outcome.answered");
+    orderSelectionRequested
+      ? t("reviewState.orderSelectionRequested")
+      : outcome === "unsupported_account_question"
+        ? t("outcome.accountBlocked")
+        : outcome === "escalated"
+          ? t("outcome.escalated")
+          : outcome === "uncertain"
+            ? t("outcome.uncertain")
+            : t("outcome.answered");
 
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+        orderSelectionRequested && "bg-sky-50 text-sky-800",
         outcome === "answered" && "bg-emerald-50 text-emerald-800",
-        outcome === "uncertain" && "bg-amber-50 text-amber-800",
+        outcome === "uncertain" &&
+          !orderSelectionRequested &&
+          "bg-amber-50 text-amber-800",
         outcome === "escalated" && "bg-red-50 text-red-800",
         outcome === "unsupported_account_question" &&
           "bg-orange-50 text-orange-800"
@@ -110,6 +120,12 @@ function OutcomeBadge({
     >
       {label}
     </span>
+  );
+}
+
+function hasCandidateSelectionContext(message: AdminSupportMessageRow) {
+  return message.accountContextSnapshots.some(
+    (snapshot) => snapshot.kind === "candidate_selection"
   );
 }
 
@@ -134,7 +150,10 @@ function ConversationMessage({
   const t = useTranslations("supportChatAdmin");
   const isAssistant = message.role === "assistant";
   const outcome = isAssistant ? outcomeFromDisposition(message.disposition) : null;
-  const shouldExplain = outcome && outcome !== "answered";
+  const orderSelectionRequested =
+    isAssistant && outcome === "uncertain" && hasCandidateSelectionContext(message);
+  const shouldExplain =
+    outcome && outcome !== "answered" && !orderSelectionRequested;
 
   return (
     <article
@@ -148,7 +167,10 @@ function ConversationMessage({
           <p className="font-medium">
             {isAssistant ? t("detail.assistant") : t("detail.user")}
           </p>
-          <OutcomeBadge outcome={outcome} />
+          <OutcomeBadge
+            outcome={outcome}
+            orderSelectionRequested={orderSelectionRequested}
+          />
         </div>
         <p className="text-xs text-muted-foreground">
           {formatDate(message.createdAt, locale)}

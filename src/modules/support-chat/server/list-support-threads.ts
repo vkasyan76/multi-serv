@@ -43,15 +43,26 @@ function reviewState(thread: SupportChatThread): AdminSupportReviewState {
   ) {
     return "needs_review";
   }
-  if (thread.lastDisposition === "uncertain") return "uncertain";
   if (thread.lastDisposition === "unsupported_account_question") {
     return "account_blocked";
   }
+  if (
+    thread.lastDisposition === "uncertain" &&
+    thread.lastAccountContextKind === "candidate_selection"
+  ) {
+    return "order_selection_requested";
+  }
+  if (thread.lastDisposition === "uncertain") return "uncertain";
   return "answered";
 }
 
 function reviewFilterWhere(
-  review: "answered" | "uncertain" | "account_blocked" | "needs_review"
+  review:
+    | "answered"
+    | "order_selection_requested"
+    | "uncertain"
+    | "account_blocked"
+    | "needs_review"
 ): Where {
   if (review === "needs_review") {
     return {
@@ -59,6 +70,28 @@ function reviewFilterWhere(
         { lastNeedsHumanSupport: { equals: true } },
         { status: { equals: "escalated" } },
         { lastDisposition: { equals: "escalate" } },
+      ],
+    };
+  }
+
+  if (review === "order_selection_requested") {
+    return {
+      and: [
+        { lastDisposition: { equals: "uncertain" } },
+        { lastAccountContextKind: { equals: "candidate_selection" } },
+        { lastNeedsHumanSupport: { equals: false } },
+        { status: { not_equals: "escalated" } },
+      ],
+    };
+  }
+
+  if (review === "uncertain") {
+    return {
+      and: [
+        { lastDisposition: { equals: "uncertain" } },
+        { lastAccountContextKind: { not_equals: "candidate_selection" } },
+        { lastNeedsHumanSupport: { equals: false } },
+        { status: { not_equals: "escalated" } },
       ],
     };
   }
@@ -105,7 +138,12 @@ export async function listSupportThreads(
     page: number;
     limit: number;
     locale?: SupportChatThread["locale"];
-    review?: "answered" | "uncertain" | "account_blocked" | "needs_review";
+    review?:
+      | "answered"
+      | "order_selection_requested"
+      | "uncertain"
+      | "account_blocked"
+      | "needs_review";
   }
 ) {
   const and: Where[] = [];

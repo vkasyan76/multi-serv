@@ -15,6 +15,7 @@ import { SupportChatThreadsTable } from "@/modules/support-chat/ui/admin/support
 type AdminFilterValue<T extends string> = T | "all";
 type AdminReviewFilter =
   | "answered"
+  | "order_selection_requested"
   | "uncertain"
   | "account_blocked"
   | "needs_review";
@@ -103,6 +104,9 @@ export function SupportChatAdminView() {
             >
               <option value="all">{t("filters.all")}</option>
               <option value="answered">{t("reviewState.answered")}</option>
+              <option value="order_selection_requested">
+                {t("reviewState.orderSelectionRequested")}
+              </option>
               <option value="uncertain">{t("reviewState.uncertain")}</option>
               <option value="account_blocked">
                 {t("reviewState.accountBlocked")}

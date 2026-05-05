@@ -9,6 +9,13 @@ const SUPPORT_CHAT_DISPOSITIONS = [
   "unsupported_account_question",
 ] as const;
 
+const SUPPORT_CHAT_ACCOUNT_CONTEXT_KINDS = [
+  "candidate_selection",
+  "selected_order",
+  "helper_result",
+  "payment_overview",
+] as const;
+
 export const SupportChatThreads: CollectionConfig = {
   slug: "support_chat_threads",
   indexes: [
@@ -106,6 +113,21 @@ export const SupportChatThreads: CollectionConfig = {
       type: "checkbox",
       defaultValue: false,
       admin: { position: "sidebar" },
+    },
+    {
+      name: "lastAccountContextKind",
+      type: "select",
+      required: false,
+      options: SUPPORT_CHAT_ACCOUNT_CONTEXT_KINDS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+      admin: {
+        description:
+          "Derived from the latest assistant message's structured account-context snapshot.",
+        position: "sidebar",
+      },
     },
     {
       name: "messageCount",

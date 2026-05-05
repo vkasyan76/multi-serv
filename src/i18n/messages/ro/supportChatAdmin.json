@@ -118,6 +118,7 @@
     "answered": "Answered",
     "closed": "Closed",
     "needsReview": "Needs review",
+    "orderSelectionRequested": "Order selection requested",
     "uncertain": "Uncertain",
     "accountBlocked": "Account request blocked"
   },

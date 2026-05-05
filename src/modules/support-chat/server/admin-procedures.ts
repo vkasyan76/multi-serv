@@ -62,6 +62,7 @@ async function requireSuperAdmin(ctx: TRPCContext) {
 
 const ADMIN_REVIEW_FILTERS = [
   "answered",
+  "order_selection_requested",
   "uncertain",
   "account_blocked",
   "needs_review",
@@ -130,6 +131,7 @@ export type AdminSupportUserSummary = {
 
 export type AdminSupportReviewState =
   | "needs_review"
+  | "order_selection_requested"
   | "uncertain"
   | "account_blocked"
   | "answered";
