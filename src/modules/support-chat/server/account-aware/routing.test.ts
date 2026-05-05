@@ -421,6 +421,22 @@ async function respond(
   return { route, response, db, accountContext };
 }
 
+async function respondWithRoute(
+  route: Exclude<ReturnType<typeof routeSupportAccountAwareRequest>, { kind: "none" }>,
+  userId: string | null = "clerk-user-a",
+  locale: "en" | "de" | "fr" | "it" | "es" | "pt" | "pl" | "ro" | "uk" = "en",
+  options: { extraOrders?: Order[] } = {},
+) {
+  const { db, accountContext } = makeCtx(userId, options);
+  const response = await buildAccountAwareServerResponse({
+    route,
+    accountContext,
+    locale,
+    threadId: THREAD_ID,
+  });
+  return { route, response, db, accountContext };
+}
+
 test("routes exact order status requests to deterministic helper responses", async () => {
   const { route, response } = await respond(
     `What is my order status ${ORDER_REQUESTED_A}?`,
@@ -560,12 +576,12 @@ test("signed-out exact account request returns safe handoff", async () => {
 });
 
 test("signed-out candidate-selection account request returns safe handoff", async () => {
-  const route = routeSupportAccountAwareRequest("What is my order status?");
-  assert.equal(route.kind, "candidate_selection");
-
   const { accountContext, db } = makeCtx(null);
   const response = await buildAccountAwareServerResponse({
-    route: route as Exclude<typeof route, { kind: "none" }>,
+    route: {
+      kind: "candidate_selection",
+      selectionHelper: "getOrderStatusForCurrentUser",
+    },
     accountContext,
     locale: "en",
     threadId: THREAD_ID,
@@ -611,22 +627,23 @@ test("broad or deferred account prompts do not helper-route", async () => {
   }
 });
 
-test("status-filtered prompts route to bounded candidate selection", async () => {
-  const cases = [
-    ["Show my canceled orders", "canceled"],
-    ["Which orders are scheduled?", "scheduled"],
-    ["Show unpaid bookings", "payment_pending"],
-    ["Which bookings are awaiting confirmation?", "requested"],
-    ["Show my completed bookings", "completed_or_accepted"],
-    ["Show my paid orders", "paid"],
-  ] as const;
-
-  for (const [prompt, filter] of cases) {
-    const route = routeSupportAccountAwareRequest(prompt);
-    assert.equal(route.kind, "candidate_selection", prompt);
-    if (route.kind === "candidate_selection") {
-      assert.equal(route.statusFilter, filter, prompt);
-    }
+test("natural account lookup prompts no longer route directly without triage", () => {
+  for (const prompt of [
+    "Show my canceled orders",
+    "Which orders are scheduled?",
+    "Show unpaid bookings",
+    "Which bookings are awaiting confirmation?",
+    "Show my completed bookings",
+    "Show my paid orders",
+    "Which of my bookings can I cancel?",
+    "Welche meiner Buchungen kann ich stornieren?",
+    "Check the order with this provider from last week",
+    "Have I paid for anything?",
+    "Do I have unpaid orders?",
+    "Did I pay already for any order?",
+    "Habe ich schon eine Buchung bezahlt?",
+  ]) {
+    assert.equal(routeSupportAccountAwareRequest(prompt).kind, "none", prompt);
   }
 });
 
@@ -642,45 +659,6 @@ test("general cancellation help does not route to account candidates", () => {
   }
 });
 
-test("explicit personal cancellation lookup still routes to candidates", () => {
-  for (const prompt of [
-    "Which of my bookings can I cancel?",
-    "Welche meiner Buchungen kann ich stornieren?",
-    "Show my cancelable bookings",
-  ]) {
-    assert.equal(
-      routeSupportAccountAwareRequest(prompt).kind,
-      "candidate_selection",
-      prompt,
-    );
-  }
-});
-
-test("personal cancellation lookup without status uses cancellation candidates", () => {
-  const route = routeSupportAccountAwareRequest(
-    "Gibt es bei mir noch Buchungen die ich stornieren kann?",
-  );
-
-  assert.equal(route.kind, "candidate_selection");
-  if (route.kind === "candidate_selection") {
-    assert.equal(route.selectionHelper, "canCancelOrderForCurrentUser");
-    assert.equal(route.statusFilter, undefined);
-  }
-});
-
-test("explicit account lookup phrases still route to candidates", () => {
-  for (const prompt of [
-    "Check payment reference pay_123456",
-    "Check the order with this provider from last week",
-  ]) {
-    assert.equal(
-      routeSupportAccountAwareRequest(prompt).kind,
-      "candidate_selection",
-      prompt,
-    );
-  }
-});
-
 test("direct cancellation mutation commands do not route to candidate lookup", () => {
   for (const prompt of [
     "Cancel my booking now.",
@@ -690,22 +668,7 @@ test("direct cancellation mutation commands do not route to candidate lookup", (
   }
 });
 
-test("payment overview prompts route to bounded overview helper", async () => {
-  for (const prompt of [
-    "Have I paid for anything?",
-    "Do I have unpaid orders?",
-    "Do I have unpaid bookings?",
-    "What payments are still pending?",
-  ]) {
-    assert.deepEqual(
-      routeSupportAccountAwareRequest(prompt),
-      { kind: "payment_overview" },
-      prompt,
-    );
-  }
-});
-
-test("explicit paid-order lookup routes to paid payment candidates", () => {
+test("paid-order lookup prompts do not bypass triage", () => {
   const prompts = [
     "Did I pay already for any order?",
     "Have I paid for any booking?",
@@ -722,19 +685,11 @@ test("explicit paid-order lookup routes to paid payment candidates", () => {
   ];
 
   for (const prompt of prompts) {
-    assert.deepEqual(
-      routeSupportAccountAwareRequest(prompt),
-      {
-        kind: "candidate_selection",
-        selectionHelper: "getPaymentStatusForCurrentUser",
-        statusFilter: "paid",
-      },
-      prompt,
-    );
+    assert.equal(routeSupportAccountAwareRequest(prompt).kind, "none", prompt);
   }
 });
 
-test("payment overview prompts route across launched locales", () => {
+test("payment overview prompts do not bypass triage across launched locales", () => {
   const prompts = [
     "Did I pay already for any order?",
     "Do I have unpaid orders?",
@@ -763,11 +718,7 @@ test("payment overview prompts route across launched locales", () => {
   ];
 
   for (const prompt of prompts) {
-    const route = routeSupportAccountAwareRequest(prompt);
-    if (route.kind === "candidate_selection" && route.statusFilter === "paid") {
-      continue;
-    }
-    assert.deepEqual(route, { kind: "payment_overview" }, prompt);
+    assert.equal(routeSupportAccountAwareRequest(prompt).kind, "none", prompt);
   }
 });
 
@@ -835,7 +786,7 @@ test("exact account helper prompts route across launched locales", () => {
   }
 });
 
-test("status-filtered candidate prompts route across launched locales", () => {
+test("status-filtered candidate prompts do not bypass triage across launched locales", () => {
   const cases = [
     ["scheduled", "candidate_selection:scheduled", [
       "Which orders are scheduled?",
@@ -872,9 +823,9 @@ test("status-filtered candidate prompts route across launched locales", () => {
     ]],
   ] as const;
 
-  for (const [label, expected, prompts] of cases) {
+  for (const [label, , prompts] of cases) {
     for (const prompt of prompts) {
-      assert.equal(routeSummary(routeSupportAccountAwareRequest(prompt)), expected, `${label}: ${prompt}`);
+      assert.equal(routeSummary(routeSupportAccountAwareRequest(prompt)), "none", `${label}: ${prompt}`);
     }
   }
 });
@@ -955,7 +906,7 @@ test("selected-order follow-ups route across launched locales", () => {
   }
 });
 
-test("tenant awaiting-confirmation prompts route across launched locales", () => {
+test("tenant awaiting-confirmation prompts do not bypass triage across launched locales", () => {
   for (const prompt of [
     "Which bookings are awaiting confirmation?",
     "Welche Buchungen warten auf Bestätigung?",
@@ -969,7 +920,7 @@ test("tenant awaiting-confirmation prompts route across launched locales", () =>
   ]) {
     assert.equal(
       routeSummary(routeSupportAccountAwareRequest(prompt)),
-      "candidate_selection:requested",
+      "none",
       prompt,
     );
   }
@@ -1003,7 +954,7 @@ test("generic history and export prompts do not route to account broad blocker",
   }
 });
 
-test("vague account prompts route to candidate selection", () => {
+test("vague account prompts do not bypass triage", () => {
   for (const prompt of [
     "What is my order status?",
     "Did my payment go through?",
@@ -1021,14 +972,17 @@ test("vague account prompts route to candidate selection", () => {
   ]) {
     assert.equal(
       routeSupportAccountAwareRequest(prompt).kind,
-      "candidate_selection",
+      "none",
       prompt,
     );
   }
 });
 
 test("candidate selection returns clickable actions without exact helper calls", async () => {
-  const { route, response, db } = await respond("What was my last order?");
+  const { route, response, db } = await respondWithRoute({
+    kind: "candidate_selection",
+    selectionHelper: "getOrderStatusForCurrentUser",
+  });
 
   assert.equal(route.kind, "candidate_selection");
   if (route.kind === "candidate_selection") {
@@ -1059,7 +1013,11 @@ test("candidate selection returns clickable actions without exact helper calls",
 });
 
 test("filtered candidate selection returns bounded customer candidates", async () => {
-  const { route, response, db } = await respond("Show my canceled orders");
+  const { route, response, db } = await respondWithRoute({
+    kind: "candidate_selection",
+    selectionHelper: "getOrderStatusForCurrentUser",
+    statusFilter: "canceled",
+  });
 
   assert.equal(route.kind, "candidate_selection");
   if (route.kind === "candidate_selection") {
@@ -1080,8 +1038,12 @@ test("filtered candidate selection returns bounded customer candidates", async (
 });
 
 test("filtered candidate selection returns tenant-owned candidates", async () => {
-  const { route, response } = await respond(
-    "Which bookings are awaiting confirmation?",
+  const { route, response } = await respondWithRoute(
+    {
+      kind: "candidate_selection",
+      selectionHelper: "getOrderStatusForCurrentUser",
+      statusFilter: "requested",
+    },
     "clerk-user-tenant",
   );
 
@@ -1099,8 +1061,12 @@ test("filtered candidate selection returns tenant-owned candidates", async () =>
 });
 
 test("empty filtered candidate selection stays bounded and deterministic", async () => {
-  const { response } = await respond(
-    "Show my paid orders",
+  const { response } = await respondWithRoute(
+    {
+      kind: "candidate_selection",
+      selectionHelper: "getPaymentStatusForCurrentUser",
+      statusFilter: "paid",
+    },
     "clerk-user-other-tenant",
   );
 
@@ -1111,9 +1077,11 @@ test("empty filtered candidate selection stays bounded and deterministic", async
 });
 
 test("paid candidate click answers paid status from invoice cache", async () => {
-  const { route, response, accountContext, db } = await respond(
-    "Did I pay already for any order?",
-  );
+  const { route, response, accountContext, db } = await respondWithRoute({
+    kind: "candidate_selection",
+    selectionHelper: "getPaymentStatusForCurrentUser",
+    statusFilter: "paid",
+  });
 
   assert.equal(route.kind, "candidate_selection");
   if (route.kind === "candidate_selection") {
@@ -1150,8 +1118,12 @@ test("paid candidate lookup finds paid orders outside the old recent window", as
     }),
   );
 
-  const { route, response, db } = await respond(
-    "Did I pay already for any order?",
+  const { route, response, db } = await respondWithRoute(
+    {
+      kind: "candidate_selection",
+      selectionHelper: "getPaymentStatusForCurrentUser",
+      statusFilter: "paid",
+    },
     "clerk-user-a",
     "en",
     { extraOrders: newerUnpaidOrders },
@@ -1172,7 +1144,9 @@ test("paid candidate lookup finds paid orders outside the old recent window", as
 });
 
 test("payment overview returns bounded deterministic summary", async () => {
-  const { route, response, db } = await respond("Have I paid for anything?");
+  const { route, response, db } = await respondWithRoute({
+    kind: "payment_overview",
+  });
 
   assert.equal(route.kind, "payment_overview");
   assert.equal(response.disposition, "answered");
@@ -1200,8 +1174,8 @@ test("payment overview returns bounded deterministic summary", async () => {
 });
 
 test("Spanish payment overview returns localized deterministic summary", async () => {
-  const { route, response } = await respond(
-    "Tengo pedidos sin pagar?",
+  const { route, response } = await respondWithRoute(
+    { kind: "payment_overview" },
     "clerk-user-a",
     "es",
   );
@@ -1219,12 +1193,9 @@ test("Spanish payment overview returns localized deterministic summary", async (
 });
 
 test("signed-out payment overview returns safe handoff without account reads", async () => {
-  const route = routeSupportAccountAwareRequest("Have I paid for anything?");
-  assert.equal(route.kind, "payment_overview");
-
   const { accountContext, db } = makeCtx(null);
   const response = await buildAccountAwareServerResponse({
-    route,
+    route: { kind: "payment_overview" },
     accountContext,
     locale: "en",
     threadId: THREAD_ID,
@@ -1239,7 +1210,10 @@ test("signed-out payment overview returns safe handoff without account reads", a
 });
 
 test("candidate action click validates token and calls exact helper", async () => {
-  const { response, db, accountContext } = await respond("What was my last order?");
+  const { response, db, accountContext } = await respondWithRoute({
+    kind: "candidate_selection",
+    selectionHelper: "getOrderStatusForCurrentUser",
+  });
   const action = response.actions?.[0];
   assert.ok(action);
 
@@ -1307,7 +1281,7 @@ test("topic cancellation follow-up escalates to scheduled cancellation candidate
   );
 });
 
-test("topic cancellation follow-up escalates explicit personal cancellation lookup without status filter", async () => {
+test("topic cancellation follow-up fallback handles personal cancellation lookup without status filter", async () => {
   useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
@@ -1784,26 +1758,18 @@ test("selected order context routes follow-up questions to exact helpers", () =>
     "Do I have any paid orders?",
     { selectedOrder: selected },
   );
-  assert.equal(paidOrders.kind, "candidate_selection");
-  if (paidOrders.kind === "candidate_selection") {
-    assert.equal(paidOrders.selectionHelper, "getPaymentStatusForCurrentUser");
-    assert.equal(paidOrders.statusFilter, "paid");
-  }
+  assert.equal(paidOrders.kind, "none");
 
   const showPaidOrders = routeSupportAccountAwareRequest("Show my paid orders", {
     selectedOrder: selected,
   });
-  assert.equal(showPaidOrders.kind, "candidate_selection");
-  if (showPaidOrders.kind === "candidate_selection") {
-    assert.equal(showPaidOrders.selectionHelper, "getPaymentStatusForCurrentUser");
-    assert.equal(showPaidOrders.statusFilter, "paid");
-  }
+  assert.equal(showPaidOrders.kind, "none");
 
   const pendingPayments = routeSupportAccountAwareRequest(
     "Which payments are still pending?",
     { selectedOrder: selected },
   );
-  assert.equal(pendingPayments.kind, "payment_overview");
+  assert.equal(pendingPayments.kind, "none");
 
   for (const prompt of [
     "Why was the invoice not issued yet?",
@@ -1975,8 +1941,11 @@ test("selected order context gives role-aware invoice lifecycle explanations", a
 });
 
 test("localized account-aware responses stay deterministic outside English", async () => {
-  const frenchCandidates = await respond(
-    "Quelle était ma dernière commande ?",
+  const frenchCandidates = await respondWithRoute(
+    {
+      kind: "candidate_selection",
+      selectionHelper: "getOrderStatusForCurrentUser",
+    },
     "clerk-user-a",
     "fr",
   );
@@ -2055,7 +2024,14 @@ test("candidate prompts use the active locale across launched locales", async ()
   ] as const;
 
   for (const [locale, expectedCandidate, expectedStatus] of expectations) {
-    const response = await respond("What was my last order?", "clerk-user-a", locale);
+    const response = await respondWithRoute(
+      {
+        kind: "candidate_selection",
+        selectionHelper: "getOrderStatusForCurrentUser",
+      },
+      "clerk-user-a",
+      locale,
+    );
     assert.equal(response.response.disposition, "uncertain", locale);
     assert.match(response.response.assistantMessage, expectedCandidate, locale);
     assert.doesNotMatch(
@@ -2309,7 +2285,10 @@ test("candidate action token is re-authorized for tenant order access", async ()
 });
 
 test("candidate actions preserve payment and cancellation intent", async () => {
-  const payment = await respond("Did my payment go through?");
+  const payment = await respondWithRoute({
+    kind: "candidate_selection",
+    selectionHelper: "getPaymentStatusForCurrentUser",
+  });
   assert.equal(payment.route.kind, "candidate_selection");
   if (payment.route.kind === "candidate_selection") {
     assert.equal(payment.route.selectionHelper, "getPaymentStatusForCurrentUser");
@@ -2330,7 +2309,10 @@ test("candidate actions preserve payment and cancellation intent", async () => {
   assert.match(paymentClick.assistantMessage, /booking request/i);
   assert.match(paymentClick.assistantMessage, /awaiting provider confirmation/i);
 
-  const lastPayment = await respond("What was my last payment?");
+  const lastPayment = await respondWithRoute({
+    kind: "candidate_selection",
+    selectionHelper: "getPaymentStatusForCurrentUser",
+  });
   assert.equal(lastPayment.route.kind, "candidate_selection");
   if (lastPayment.route.kind === "candidate_selection") {
     assert.equal(
@@ -2345,7 +2327,10 @@ test("candidate actions preserve payment and cancellation intent", async () => {
   assert.match(lastPayment.response.assistantMessage, /Which order do you mean/i);
   assert.equal(lastPayment.response.actions?.[0]?.type, "account_candidate_select");
 
-  const cancel = await respond("Can I cancel my latest booking?");
+  const cancel = await respondWithRoute({
+    kind: "candidate_selection",
+    selectionHelper: "canCancelOrderForCurrentUser",
+  });
   assert.equal(cancel.route.kind, "candidate_selection");
   if (cancel.route.kind === "candidate_selection") {
     assert.equal(cancel.route.selectionHelper, "canCancelOrderForCurrentUser");
@@ -2367,7 +2352,10 @@ test("candidate actions preserve payment and cancellation intent", async () => {
 });
 
 test("tampered and wrong-thread action tokens fail safely", async () => {
-  const { response, accountContext } = await respond("What was my last order?");
+  const { response, accountContext } = await respondWithRoute({
+    kind: "candidate_selection",
+    selectionHelper: "getOrderStatusForCurrentUser",
+  });
   const action = response.actions?.[0];
   assert.ok(action);
 
@@ -2409,7 +2397,10 @@ test("expired and signed-out candidate action clicks fail safely", async () => {
   assert.equal(expired.accountHelperMetadata.actionTokenReason, "expired_token");
   assert.match(expired.assistantMessage, /selection expired/i);
 
-  const { response } = await respond("What was my last order?");
+  const { response } = await respondWithRoute({
+    kind: "candidate_selection",
+    selectionHelper: "getOrderStatusForCurrentUser",
+  });
   const action = response.actions?.[0];
   assert.ok(action);
   const signedOut = await buildAccountAwareActionResponse({
@@ -2433,10 +2424,11 @@ test("one candidate still asks for the exact order ID", async () => {
     return result;
   };
 
-  const route = routeSupportAccountAwareRequest("Can I cancel my latest booking?");
-  assert.equal(route.kind, "candidate_selection");
   const response = await buildAccountAwareServerResponse({
-    route,
+    route: {
+      kind: "candidate_selection",
+      selectionHelper: "canCancelOrderForCurrentUser",
+    },
     accountContext,
     locale: "en",
     threadId: THREAD_ID,

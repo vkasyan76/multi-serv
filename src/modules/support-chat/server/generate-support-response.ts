@@ -382,13 +382,10 @@ export async function generateSupportResponse(
     verifiedTopicContext?.ok ? verifiedTopicContext.context : null;
 
   // Pre-triage deterministic routing is limited to safety and exact-reference
-  // authority. Legacy natural-language account lookup runs only after triage
-  // has had a chance to classify meaning.
+  // authority. Natural-language account lookup should be classified by triage.
   const accountRoute = input.accountContext
     ? routeSupportAccountAwareRequest(message, {
         selectedOrder: selectedOrder?.ok ? selectedOrder.input : undefined,
-        suppressCandidateSelection: Boolean(supportTopic),
-        mode: "safety_and_exact_only",
       })
     : { kind: "none" as const };
   if (accountRoute.kind !== "none") {
@@ -620,7 +617,6 @@ export async function generateSupportResponse(
   if (!triageOutcome?.ok && input.accountContext) {
     const legacyAccountRoute = routeSupportAccountAwareRequest(message, {
       selectedOrder: selectedOrder?.ok ? selectedOrder.input : undefined,
-      suppressCandidateSelection: Boolean(supportTopic),
     });
 
     if (legacyAccountRoute.kind !== "none") {
@@ -671,6 +667,8 @@ export async function generateSupportResponse(
       });
     }
 
+    // Fallback only: this preserves short topic-context account follow-ups if
+    // triage is unavailable. Do not expand it as the primary meaning layer.
     const topicEscalation = detectTopicAccountEscalation({
       message,
       context: topicContext,

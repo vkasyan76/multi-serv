@@ -10,15 +10,9 @@ import "server-only";
  * - broad history/export blockers
  * - explicit server helper selection
  *
- * FALLBACK for now:
- * - legacy natural-language account lookup and status phrase routing
- *
- * REMOVE/DEMOTE LATER:
- * - broad multilingual phrase-list growth for conversational meaning
- *
- * Future patches should move primary conversation understanding into structured
- * model triage. This module should remain the server authority layer that maps
- * allowed routes to bounded helpers.
+ * Natural-language account lookup now belongs to structured model triage plus
+ * server eligibility mapping. This module remains the server authority layer
+ * for safety, exact references, and selected-order token follow-ups.
  */
 
 import type { AccountCandidateSelectionHelper } from "./action-tokens";
@@ -30,12 +24,8 @@ import type {
 } from "./types";
 import {
   detectBroadOrDeferredIntent,
-  detectCandidateSelectionIntent,
-  detectCandidateStatusFilter,
   detectCancelEligibilityIntent,
   detectOrderStatusIntent,
-  detectPaidOrderCandidateLookupIntent,
-  detectPaymentOverviewIntent,
   detectPaymentStatusIntent,
   detectSelectedOrderCancelFollowUpIntent,
   detectSelectedOrderDetailFollowUpIntent,
@@ -76,8 +66,6 @@ export type SupportAccountRoute =
 
 type RouteSupportAccountAwareOptions = {
   selectedOrder?: SupportAccountHelperInput & { referenceType: "order_id" };
-  suppressCandidateSelection?: boolean;
-  mode?: "full" | "safety_and_exact_only";
 };
 
 const OBJECT_ID_RE = /\b[a-f0-9]{24}\b/gi;
@@ -119,6 +107,9 @@ const ORDER_STATUS_PATTERNS = [
 
 const PAYMENT_STATUS_PATTERNS = [
   /\bpayment\s+status\b/i,
+  /\bdid\s+i\s+pay\s+already\b/i,
+  /\bhave\s+i\s+paid\b/i,
+  /\bpaid\s+already\b/i,
   /\b(my\s+)?payment\s+go\s+through\b/i,
   /\bcheck\s+(my\s+)?payment\b/i,
   /\b(last|latest|recent|most\s+recent)\s+(payment|payments)\b/i,
@@ -130,18 +121,9 @@ const PAYMENT_STATUS_PATTERNS = [
   /\bcheck\s+(my\s+)?invoice\b/i,
 ];
 
-const PAYMENT_OVERVIEW_PATTERNS = [
-  /\bdid\s+i\s+pay\s+already\b/i,
-  /\bhave\s+i\s+paid\b/i,
-  /\bpaid\s+already\b/i,
-  /\bdo\s+i\s+have\s+(any\s+)?paid\s+(orders|bookings)\b/i,
-  /\bany\s+paid\s+(orders|bookings)\b/i,
-  /\bdo\s+i\s+have\s+unpaid\s+(orders|bookings)\b/i,
-  /\bwhat\s+payments\s+are\s+still\s+pending\b/i,
-  /\bwhich\s+payments\s+are\s+still\s+pending\b/i,
-];
 
-// KEEP: requests that sound like mutations must not become helper execution.
+// KEEP: exact cancellation checks are read-only helper requests. Mutation
+// requests are handled by structured triage and server no-action boundaries.
 const CANCEL_ELIGIBILITY_PATTERNS = [
   /\bcan\s+i\s+cancel\s+(my\s+|this\s+|the\s+)?(?:last\s+|latest\s+|recent\s+|most\s+recent\s+)?(order|booking)\b/i,
   /\bcancel\s+(my\s+|this\s+|the\s+)?(?:last\s+|latest\s+|recent\s+|most\s+recent\s+)?(order|booking)\b/i,
@@ -160,44 +142,6 @@ const DIRECT_MUTATION_PATTERNS = [
   /скасуй\s+(моє|мою|мої)\s+(замовлення|бронювання)/u,
 ] as const;
 
-// FALLBACK: legacy candidate lookup detection until model triage replaces it.
-const PERSONAL_ACCOUNT_OBJECT_PATTERNS = [
-  /\b(my|mine)\b.*\b(orders?|bookings?|payments?|invoices?)\b/u,
-  /\b(orders?|bookings?|payments?|invoices?)\b.*\b(my|mine)\b/u,
-  /\bdo\s+i\s+have\b.*\b(orders?|bookings?|payments?|invoices?)\b/u,
-  /\b(orders?|bookings?)\b.*\bi\b.*\bcancel\b/u,
-  /\bmeine\b.*\bbuchung\b/u,
-  /\bmeine[rmn]?\b.*\b(buchungen?|bestellungen?|zahlungen?|rechnungen?)\b/u,
-  /\b(buchungen?|bestellungen?|zahlungen?|rechnungen?)\b.*\bmeine[rmn]?\b/u,
-  /\bbei\s+mir\b.*\b(buchungen?|bestellungen?|zahlungen?|rechnungen?)\b/u,
-  /\bhabe\s+ich\b.*\b(buchungen?|bestellungen?|zahlungen?|rechnungen?)\b/u,
-  /\b(buchungen?|bestellungen?)\b.*\bich\b.*\bstornieren\b/u,
-  /\b(ma|mon|mes)\b.*\b(commandes?|reservations?|paiements?|factures?)\b/u,
-  /\b(mi|mis)\b.*\b(pedidos?|reservas?|pagos?|facturas?)\b/u,
-  /\b(mio|mia|miei|mie)\b.*\b(ordini?|prenotazioni?|pagamenti?|fatture?)\b/u,
-  /\b(meu|minha|meus|minhas)\b.*\b(pedidos?|reservas?|pagamentos?|faturas?)\b/u,
-  /\b(moj|moja|moje|moich)\b.*\b(zamowienia?|rezerwacje?|platnosci|faktury)\b/u,
-  /\b(meu|mea|mele)\b.*\b(comenzi|comanda|rezervari|rezervare|plati|facturi)\b/u,
-  /(моє|мою|мої|моїх).*(замовлення|бронювання|оплат|платеж|рахунок|рахунки)/u,
-] as const;
-
-const LIST_ACCOUNT_OBJECT_PATTERNS = [
-  /\b(show|list|find|which)\b.*\b(orders?|bookings?|payments?|invoices?)\b/u,
-  /\b(zeige|zeig|liste|finde|welche)\b.*\b(buchungen?|bestellungen?|zahlungen?|rechnungen?)\b/u,
-  /\b(afficher|quelles?|quels?)\b.*\b(commandes?|reservations?|paiements?|factures?)\b/u,
-  /\b(mostra|quali)\b.*\b(ordini?|prenotazioni?|pagamenti?|fatture?)\b/u,
-  /\b(mostrar|que)\b.*\b(pedidos?|reservas?|pagos?|facturas?)\b/u,
-  /\b(mostrar|quais)\b.*\b(pedidos?|reservas?|pagamentos?|faturas?)\b/u,
-  /\b(pokaz|ktore)\b.*\b(zamowienia?|rezerwacje?|platnosci|faktury)\b/u,
-  /\b(arata|ce)\b.*\b(comenzi|comanda|rezervari|rezervarile|rezervare|plati|facturi)\b/u,
-  /(показати|які).*(замовлення|бронювання|оплат|платеж|рахунок|рахунки)/u,
-] as const;
-
-const EXPLICIT_ACCOUNT_LOOKUP_PATTERNS = [
-  /\bcheck\b.*\bpayment\s+reference\b/u,
-  /\bpayment\s+reference\b.*\bpay\b/u,
-  /\bcheck\b.*\b(orders?|bookings?)\b.*\b(provider|last\s+week|last\s+month|recent|latest|date)\b/u,
-] as const;
 
 // KEEP: selected-order reuse is allowed only around explicit selected context.
 const SELECTED_ORDER_REFERENCE_PATTERNS = [
@@ -311,26 +255,14 @@ function hasDirectMutationRequest(message: string) {
   );
 }
 
-function hasExplicitCandidateLookupIntent(message: string) {
-  const normalizedMessage = normalizeSelectedOrderText(message).replace(
-    /[łŁ]/g,
-    "l",
-  );
-
-  return (
-    hasAny(EXPLICIT_ACCOUNT_LOOKUP_PATTERNS, message.toLocaleLowerCase()) ||
-    hasAny(EXPLICIT_ACCOUNT_LOOKUP_PATTERNS, normalizedMessage) ||
-    hasAny(PERSONAL_ACCOUNT_OBJECT_PATTERNS, normalizedMessage) ||
-    hasAny(LIST_ACCOUNT_OBJECT_PATTERNS, normalizedMessage)
-  );
-}
-
-function hasCancelLookupVerb(message: string) {
+function hasAccountWideLookupShape(message: string) {
   const normalizedMessage = normalizeSelectedOrderText(message);
-  return /\b(cancel|cancelable|stornier\w+|annuler|annul\w+|anular|anul\w+)\b/u.test(
-    normalizedMessage,
+  return (
+    /\b(do\s+i\s+have|show|list|find|which|any)\b/u.test(normalizedMessage) &&
+    /\b(orders?|bookings?|payments?|invoices?)\b/u.test(normalizedMessage)
   );
 }
+
 
 function exactObjectIds(message: string) {
   return Array.from(new Set(message.match(OBJECT_ID_RE) ?? []));
@@ -353,22 +285,6 @@ function helperInput(
   };
 }
 
-function candidateSelectionHelper(input: {
-  hasCancelEligibility: boolean;
-  hasPaymentStatus: boolean;
-  statusFilter?: SupportOrderCandidateStatusFilter;
-}): AccountCandidateSelectionHelper {
-  if (
-    input.statusFilter === "payment_not_due" ||
-    input.statusFilter === "payment_pending" ||
-    input.statusFilter === "paid"
-  ) {
-    return "getPaymentStatusForCurrentUser";
-  }
-  if (input.hasCancelEligibility) return "canCancelOrderForCurrentUser";
-  if (input.hasPaymentStatus) return "getPaymentStatusForCurrentUser";
-  return "getOrderStatusForCurrentUser";
-}
 
 function hasSelectedOrderInvoiceLifecycleIntent(message: string) {
   const normalizedMessage = normalizeSelectedOrderText(message);
@@ -458,43 +374,12 @@ export function routeSupportAccountAwareRequest(
   const hasCancelEligibility =
     hasAny(CANCEL_ELIGIBILITY_PATTERNS, trimmed) ||
     detectCancelEligibilityIntent(trimmed);
-  const hasPaymentOverview =
-    hasAny(PAYMENT_OVERVIEW_PATTERNS, trimmed) ||
-    detectPaymentOverviewIntent(trimmed);
-  const hasPaidOrderCandidateLookup =
-    detectPaidOrderCandidateLookupIntent(trimmed);
-  const statusFilter = detectCandidateStatusFilter(trimmed);
-  const hasCandidateLookup = hasExplicitCandidateLookupIntent(trimmed);
   const hasDirectMutation = hasDirectMutationRequest(trimmed);
-  const suppressCandidateSelection = options?.suppressCandidateSelection;
-  const safetyAndExactOnly = options?.mode === "safety_and_exact_only";
-  const hasCandidateSelectionRoute =
-    ids.length === 0 &&
-    !safetyAndExactOnly &&
-    !hasDirectMutation &&
-    !suppressCandidateSelection &&
-    hasCandidateLookup &&
-    (
-      statusFilter ||
-      detectCandidateSelectionIntent(trimmed) ||
-      hasCancelEligibility ||
-      hasCancelLookupVerb(trimmed)
-    );
-  const shouldPreferAccountWideRoute =
-    ids.length === 0 &&
-    !safetyAndExactOnly &&
-    !suppressCandidateSelection &&
-    (
-      (!hasDirectMutation && hasPaidOrderCandidateLookup) ||
-      (hasPaymentOverview && /\b(orders?|bookings?|payments?)\b/i.test(trimmed)) ||
-      hasCandidateSelectionRoute
-    );
   const isAccountAware =
     hasOrderStatus ||
     hasPaymentStatus ||
     hasCancelEligibility ||
-    hasPaymentOverview ||
-    statusFilter;
+    hasDirectMutation;
 
   // KEEP: fail closed before any candidate/helper route can expose account data.
   if (detectBroadOrDeferredIntent(trimmed)) {
@@ -509,7 +394,6 @@ export function routeSupportAccountAwareRequest(
   }
 
   if (
-    !statusFilter &&
     BROAD_OR_DEFERRED_PATTERNS.some((pattern) => pattern.test(trimmed)) &&
     /\b(orders?|bookings?|payments?|invoices?|account|provider)\b/i.test(trimmed)
   ) {
@@ -519,7 +403,7 @@ export function routeSupportAccountAwareRequest(
   if (
     ids.length === 0 &&
     options?.selectedOrder &&
-    !shouldPreferAccountWideRoute
+    !hasAccountWideLookupShape(trimmed)
   ) {
     const selectedHelper = selectedOrderFollowUpHelper({
       message: trimmed,
@@ -537,41 +421,6 @@ export function routeSupportAccountAwareRequest(
     }
   }
 
-  if (
-    ids.length === 0 &&
-    !safetyAndExactOnly &&
-    !hasDirectMutation &&
-    !suppressCandidateSelection &&
-    hasPaidOrderCandidateLookup
-  ) {
-    return {
-      kind: "candidate_selection",
-      selectionHelper: "getPaymentStatusForCurrentUser",
-      statusFilter: "paid",
-    };
-  }
-
-  if (
-    ids.length === 0 &&
-    !safetyAndExactOnly &&
-    !suppressCandidateSelection &&
-    hasPaymentOverview
-  ) {
-    return { kind: "payment_overview" };
-  }
-
-  if (hasCandidateSelectionRoute) {
-    return {
-      kind: "candidate_selection",
-      selectionHelper: candidateSelectionHelper({
-        hasCancelEligibility,
-        hasPaymentStatus,
-        statusFilter,
-      }),
-      statusFilter,
-    };
-  }
-
   if (!isAccountAware) return { kind: "none" };
 
   // KEEP: exact references can only route into the explicit server helper
@@ -584,7 +433,7 @@ export function routeSupportAccountAwareRequest(
         referenceType: "order_id",
       };
     }
-    if (hasPaymentStatus || hasPaymentOverview) {
+    if (hasPaymentStatus) {
       return {
         kind: "missing_reference",
         helper: "getPaymentStatusForCurrentUser",
@@ -601,34 +450,17 @@ export function routeSupportAccountAwareRequest(
   const id = ids[0];
   if (!id) {
     if (hasExplicitInvalidReference(trimmed)) {
-      return (hasPaymentStatus || hasPaymentOverview) && /\binvoice\b/i.test(trimmed)
+      return hasPaymentStatus && /\binvoice\b/i.test(trimmed)
         ? helperInput("getPaymentStatusForCurrentUser", "invoice_id", trimmed)
         : helperInput(
             hasCancelEligibility
               ? "canCancelOrderForCurrentUser"
-              : hasPaymentStatus || hasPaymentOverview
+              : hasPaymentStatus
                 ? "getPaymentStatusForCurrentUser"
                 : "getOrderStatusForCurrentUser",
             "order_id",
             trimmed,
           );
-    }
-
-    if (
-      !safetyAndExactOnly &&
-      !hasDirectMutation &&
-      !suppressCandidateSelection &&
-      hasCandidateLookup
-    ) {
-      return {
-        kind: "candidate_selection",
-        selectionHelper: candidateSelectionHelper({
-          hasCancelEligibility,
-          hasPaymentStatus,
-          statusFilter,
-        }),
-        statusFilter,
-      };
     }
 
     return {
@@ -640,7 +472,7 @@ export function routeSupportAccountAwareRequest(
     return helperInput("canCancelOrderForCurrentUser", "order_id", id);
   }
 
-  if (hasPaymentStatus || hasPaymentOverview) {
+  if (hasPaymentStatus) {
     return helperInput(
       "getPaymentStatusForCurrentUser",
       /\binvoice\b/i.test(trimmed) ? "invoice_id" : "order_id",

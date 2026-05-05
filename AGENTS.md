@@ -161,6 +161,8 @@ Required env groups are defined in `README.md`:
   - server code must enforce authority, ownership, helper allowlists, result limits, and no-mutation boundaries
   - regex/deterministic routing is for safety and fallback only, not the primary assistant brain
   - do not keep expanding multilingual phrase lists for natural conversation understanding; add future coverage through structured triage plus reality evals
+  - natural-language account lookups such as scheduled/canceled/paid booking requests should reach helpers through structured triage plus server eligibility, not direct regex routing
+  - short topic-context phrase routing may remain only as an outage/legacy fallback after triage has no usable result
   - Patch 1 classification lives in `docs/support-chat-routing-boundaries.md`
 - Support-chat short conversation memory is a client-provided triage hint only.
   It may include the previous user message, previous assistant message, active
@@ -185,7 +187,7 @@ Required env groups are defined in `README.md`:
 - Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helper categories only after server eligibility checks; the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
 - Selected-order context and support-topic context are server-issued signed tokens. Invalid selected-order follow-ups should ask the user to reselect the order; invalid/expired topic context is a soft hint and should be ignored.
 - General topic help must stay general unless the user clearly asks about their own bookings/orders/payments or has selected/referenced a specific item.
-- Explicit paid-order questions route to bounded paid payment candidates; generic payment overviews must avoid implying a full account-history scan.
+- Explicit paid-order questions may route to bounded paid payment candidates only through structured triage plus server eligibility; generic payment overviews must avoid implying a full account-history scan.
 - Support-chat guardrails must prevent "common practice" answers from being treated as Infinisimo policy; answers must be grounded in retrieved support context.
 - Ambiguous support-chat requests should receive one short clarifying question instead of a guessed answer.
 - Unsupported or escalated support-chat responses should still say what the assistant can help with and what the user should do next.

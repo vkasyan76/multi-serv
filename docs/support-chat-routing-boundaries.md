@@ -44,6 +44,20 @@ remove regex that tries to infer broad meaning from translated phrases.
 
 Keep only the fallback pieces that are simpler and safer than model triage.
 
+## Patch 6 Demotion Rule
+
+Natural-language account lookup should not bypass structured triage. Requests
+like "my scheduled booking", "do I have paid orders", or localized equivalents
+should be interpreted by triage and then mapped through server eligibility.
+
+Keep deterministic routing for exact references, selected-order token follow-ups,
+unsafe/broad-account blockers, and candidate action token validation. Short
+topic-context phrase routing may remain only as a fallback when triage has no
+usable result.
+
+Do not delete a legacy regex path unless a triage/eligibility test covers the
+same customer behavior.
+
 ## Patch Sequence Dependency
 
 Do not remove legacy phrase paths in Patch 1. Patch 1 only labels boundaries so
