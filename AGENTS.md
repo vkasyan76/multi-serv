@@ -202,6 +202,12 @@ Required env groups are defined in `README.md`:
   - `Order selection requested` must come only from structured `candidate_selection` context, never from assistant text matching, and old logs are not backfilled
   - raw thread `status` (`open` / `escalated` / `closed`) remains backend storage/lifecycle metadata and should stay in diagnostics rather than the main admin review filter/table
   - do not remove the backend `status` field without an explicit schema/storage migration decision
+- Support-chat admin review evidence should stay detail-pane focused:
+  - keep the thread table compact and avoid adding triage/helper/grounding columns
+  - show latest assistant decision evidence in collapsed thread diagnostics
+  - use persisted triage, eligibility, grounding, helper result, and account snapshot metadata to explain behavior
+  - show a clear missing-evidence note for old logs that predate structured evidence storage
+  - do not add per-message triage metadata inline in the transcript unless explicitly requested for a debugging pass
 - Account-aware support-chat admin review must persist and render structured support-safe account context snapshots for candidate orders, selected orders, helper results, and payment overview examples. Do not rely on assistant text alone to reconstruct which order/payment context was shown or used.
   - snapshots must be structured metadata, not loose transcript text
   - only persist non-empty snapshots with real account context

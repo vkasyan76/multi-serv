@@ -106,7 +106,23 @@
     "serviceStatus": "Service status",
     "paymentStatus": "Payment status",
     "invoiceStatus": "Invoice status",
-    "nextStep": "Next step"
+    "nextStep": "Next step",
+    "latestAssistantDecision": "Latest assistant decision",
+    "noStructuredEvidence": "No structured assistant evidence was stored for this message.",
+    "reviewLabelReason": "Review label reason",
+    "triageIntent": "Triage intent",
+    "triageTopic": "Topic",
+    "triageStatusFilter": "Status filter",
+    "triageConfidence": "Confidence",
+    "triageReason": "Reason",
+    "groundingKind": "Grounding",
+    "mappedHelper": "Mapped helper",
+    "eligibility": "Eligibility",
+    "eligibilityReason": "Eligibility reason",
+    "helperResultCategory": "Helper result",
+    "latestAccountContextKind": "Account context",
+    "allowed": "Allowed",
+    "blocked": "Blocked"
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",
@@ -145,5 +161,12 @@
     "ascending": "Ascending",
     "descending": "Descending",
     "notSorted": "Not sorted"
+  },
+  "reviewReason": {
+    "answered": "The assistant answered from approved knowledge or support-safe account data.",
+    "orderSelectionRequested": "The assistant showed candidate orders and is waiting for the user to choose one.",
+    "uncertain": "The assistant could not answer confidently from approved context.",
+    "accountBlocked": "The request was outside the allowed account-support boundary.",
+    "needsReview": "The backend marked this conversation as requiring human review."
   }
 }

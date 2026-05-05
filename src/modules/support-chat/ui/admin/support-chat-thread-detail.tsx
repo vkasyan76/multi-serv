@@ -41,11 +41,49 @@ function MetaRow({
   );
 }
 
+function latestSnapshotValue(
+  message: AdminSupportMessageRow | undefined,
+  field: "kind" | "resultCategory"
+) {
+  if (!message) return null;
+
+  return [...message.accountContextSnapshots]
+    .reverse()
+    .find((snapshot) => snapshot[field])?.[field] ?? null;
+}
+
+function hasStructuredEvidence(message: AdminSupportMessageRow | undefined) {
+  if (!message) return false;
+
+  return Boolean(
+    message.triageIntent ||
+      message.triageTopic ||
+      message.triageStatusFilter ||
+      message.triageConfidence ||
+      message.triageReason ||
+      message.triageMappedHelper ||
+      typeof message.triageEligibilityAllowed === "boolean" ||
+      message.triageEligibilityReason ||
+      message.groundingKind ||
+      message.accountContextSnapshots.length > 0
+  );
+}
+
 function userDisplayName(user: AdminSupportUserSummary) {
   if (!user) return null;
 
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
   return fullName || user.username || user.email;
+}
+
+function reviewStateReasonKey(state: AdminSupportReviewState) {
+  if (state === "needs_review") return "reviewReason.needsReview";
+  if (state === "order_selection_requested") {
+    return "reviewReason.orderSelectionRequested";
+  }
+  if (state === "uncertain") return "reviewReason.uncertain";
+  if (state === "account_blocked") return "reviewReason.accountBlocked";
+  return "reviewReason.answered";
 }
 
 function ReviewBadge({ state }: { state: AdminSupportReviewState }) {
@@ -356,6 +394,82 @@ function AccountContextSnapshots({
   );
 }
 
+function AssistantEvidence({
+  message,
+  reviewState,
+}: {
+  message?: AdminSupportMessageRow;
+  reviewState: AdminSupportReviewState;
+}) {
+  const t = useTranslations("supportChatAdmin");
+
+  if (!message) return null;
+
+  const hasEvidence = hasStructuredEvidence(message);
+  const eligibility =
+    typeof message.triageEligibilityAllowed === "boolean"
+      ? message.triageEligibilityAllowed
+        ? t("detail.allowed")
+        : t("detail.blocked")
+      : null;
+  const accountContextKind = latestSnapshotValue(message, "kind");
+  const helperResultCategory = latestSnapshotValue(message, "resultCategory");
+
+  return (
+    <div className="mt-4 border-t pt-3">
+      <p className="mb-2 font-medium">{t("detail.latestAssistantDecision")}</p>
+
+      {!hasEvidence ? (
+        <p className="rounded-md bg-muted/40 px-3 py-2 text-muted-foreground">
+          {t("detail.noStructuredEvidence")}
+        </p>
+      ) : null}
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <MetaRow
+          label={t("detail.reviewLabelReason")}
+          value={t(reviewStateReasonKey(reviewState))}
+        />
+        <MetaRow label={t("detail.triageIntent")} value={message.triageIntent} />
+        <MetaRow label={t("detail.triageTopic")} value={message.triageTopic} />
+        <MetaRow
+          label={t("detail.triageStatusFilter")}
+          value={message.triageStatusFilter}
+        />
+        <MetaRow
+          label={t("detail.triageConfidence")}
+          value={message.triageConfidence}
+        />
+        <MetaRow label={t("detail.groundingKind")} value={message.groundingKind} />
+        <MetaRow
+          label={t("detail.mappedHelper")}
+          value={message.triageMappedHelper}
+        />
+        <MetaRow label={t("detail.eligibility")} value={eligibility} />
+        <MetaRow
+          label={t("detail.eligibilityReason")}
+          value={message.triageEligibilityReason}
+        />
+        <MetaRow
+          label={t("detail.helperResultCategory")}
+          value={helperResultCategory}
+        />
+        <MetaRow
+          label={t("detail.latestAccountContextKind")}
+          value={accountContextKind}
+        />
+      </div>
+
+      {message.triageReason ? (
+        <div className="mt-3 rounded-md bg-muted/30 px-3 py-2">
+          <p className="font-medium">{t("detail.triageReason")}</p>
+          <p className="mt-1 text-muted-foreground">{message.triageReason}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function SupportChatThreadDetail({
   locale,
   detail,
@@ -483,62 +597,69 @@ export function SupportChatThreadDetail({
           </div>
 
           {latestAssistantMessage ? (
-            <div className="mt-4 border-t pt-3">
-              <p className="mb-2 font-medium">
-                {t("detail.latestAssistantMetadata")}
-              </p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <MetaRow
-                  label={t("detail.responseOrigin")}
-                  value={latestAssistantMessage.responseOrigin}
-                />
-                <MetaRow
-                  label={t("detail.redactionApplied")}
-                  value={
-                    latestAssistantMessage.redactionApplied
-                      ? t("common.yes")
-                      : t("common.no")
-                  }
-                />
-                <MetaRow
-                  label={t("detail.model")}
-                  value={latestAssistantMessage.model}
-                />
-                <MetaRow
-                  label={t("detail.modelVersion")}
-                  value={latestAssistantMessage.modelVersion}
-                />
-                <MetaRow
-                  label={t("detail.promptVersion")}
-                  value={latestAssistantMessage.promptVersion}
-                />
-                <MetaRow
-                  label={t("detail.guardrailVersion")}
-                  value={latestAssistantMessage.guardrailVersion}
-                />
-                <MetaRow
-                  label={t("detail.retrievalVersion")}
-                  value={latestAssistantMessage.retrievalVersion}
-                />
-                <MetaRow
-                  label={t("detail.knowledgePackVersion")}
-                  value={latestAssistantMessage.knowledgePackVersion}
-                />
-                <MetaRow
-                  label={t("detail.openAIRequestId")}
-                  value={latestAssistantMessage.openAIRequestId}
-                />
-              </div>
+            <>
+              <AssistantEvidence
+                message={latestAssistantMessage}
+                reviewState={detail.thread.reviewState}
+              />
 
-              {latestAssistantMessage.redactionTypes.length > 0 ? (
-                <div className="mt-3">
-                  <p className="font-medium">{t("detail.redactionTypes")}</p>
-                  <p className="mt-1 text-muted-foreground">
-                    {latestAssistantMessage.redactionTypes.join(", ")}
-                  </p>
+              <div className="mt-4 border-t pt-3">
+                <p className="mb-2 font-medium">
+                  {t("detail.latestAssistantMetadata")}
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <MetaRow
+                    label={t("detail.responseOrigin")}
+                    value={latestAssistantMessage.responseOrigin}
+                  />
+                  <MetaRow
+                    label={t("detail.redactionApplied")}
+                    value={
+                      latestAssistantMessage.redactionApplied
+                        ? t("common.yes")
+                        : t("common.no")
+                    }
+                  />
+                  <MetaRow
+                    label={t("detail.model")}
+                    value={latestAssistantMessage.model}
+                  />
+                  <MetaRow
+                    label={t("detail.modelVersion")}
+                    value={latestAssistantMessage.modelVersion}
+                  />
+                  <MetaRow
+                    label={t("detail.promptVersion")}
+                    value={latestAssistantMessage.promptVersion}
+                  />
+                  <MetaRow
+                    label={t("detail.guardrailVersion")}
+                    value={latestAssistantMessage.guardrailVersion}
+                  />
+                  <MetaRow
+                    label={t("detail.retrievalVersion")}
+                    value={latestAssistantMessage.retrievalVersion}
+                  />
+                  <MetaRow
+                    label={t("detail.knowledgePackVersion")}
+                    value={latestAssistantMessage.knowledgePackVersion}
+                  />
+                  <MetaRow
+                    label={t("detail.openAIRequestId")}
+                    value={latestAssistantMessage.openAIRequestId}
+                  />
                 </div>
-              ) : null}
-            </div>
+
+                {latestAssistantMessage.redactionTypes.length > 0 ? (
+                  <div className="mt-3">
+                    <p className="font-medium">{t("detail.redactionTypes")}</p>
+                    <p className="mt-1 text-muted-foreground">
+                      {latestAssistantMessage.redactionTypes.join(", ")}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </>
           ) : null}
         </details>
       </div>
