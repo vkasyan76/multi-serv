@@ -3,6 +3,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { type AppLang } from "@/lib/i18n/app-lang";
 import type { SupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
+import { SUPPORT_CHAT_ACCOUNT_AWARE } from "@/modules/support-chat/lib/boundaries";
 import {
   classifySupportChatInputPrecheck,
   type SupportChatInputPrecheckDisposition,
@@ -53,6 +54,10 @@ import {
   isSelectedOrderFollowUpMessage,
   routeSupportAccountAwareRequest,
 } from "@/modules/support-chat/server/account-aware/routing";
+import {
+  evaluateSupportTriageEligibility,
+  type SupportTriageEligibilityReason,
+} from "@/modules/support-chat/server/account-aware/triage-eligibility";
 import { SUPPORT_ACCOUNT_HELPER_VERSION } from "@/modules/support-chat/server/account-aware/versioning";
 import type { TRPCContext } from "@/trpc/init";
 
@@ -98,6 +103,9 @@ export type GenerateSupportResponseResult = {
     requestId?: string | null;
   };
   triage?: SupportIntentTriageResult;
+  triageMappedHelper?: string;
+  triageEligibilityAllowed?: boolean;
+  triageEligibilityReason?: SupportTriageEligibilityReason;
   groundingKind: SupportGroundingKind;
   accountHelperMetadata?: SupportAccountHelperMetadata;
   accountAnswerMode?: SupportAccountAnswerMode;
@@ -383,13 +391,14 @@ export async function generateSupportResponse(
   const topicContext =
     verifiedTopicContext?.ok ? verifiedTopicContext.context : null;
 
-  // Current deterministic routing is a safety/legacy fast path. Future
-  // natural-language coverage should be added through structured triage, not
-  // by broadening regex lists here.
+  // Pre-triage deterministic routing is limited to safety and exact-reference
+  // authority. Legacy natural-language account lookup runs only after triage
+  // has had a chance to classify meaning.
   const accountRoute = input.accountContext
     ? routeSupportAccountAwareRequest(message, {
         selectedOrder: selectedOrder?.ok ? selectedOrder.input : undefined,
         suppressCandidateSelection: Boolean(supportTopic),
+        mode: "safety_and_exact_only",
       })
     : { kind: "none" as const };
   if (accountRoute.kind !== "none") {
@@ -431,52 +440,6 @@ export async function generateSupportResponse(
       supportTopicContext: responseTopic
         ? createSupportTopicContext(responseTopic)
         : undefined,
-      actions: accountResponse.actions,
-      selectedOrderContext: accountResponse.selectedOrderContext,
-      accountContextSnapshots: accountResponse.accountContextSnapshots,
-    });
-  }
-
-  const topicEscalation = detectTopicAccountEscalation({
-    message,
-    context: topicContext,
-  });
-
-  // Fallback only: short topic follow-ups can still reach bounded account
-  // helpers, but primary follow-up understanding belongs in model triage.
-  if (topicEscalation && input.accountContext && topicContext) {
-    const accountResponse = await buildAccountAwareServerResponse({
-      route: {
-        kind: "candidate_selection",
-        selectionHelper: topicEscalation.selectionHelper,
-        statusFilter: topicEscalation.statusFilter,
-      },
-      accountContext: input.accountContext,
-      locale: input.locale,
-      threadId,
-    });
-
-    return supportResponse({
-      threadId,
-      assistantMessage: accountResponse.assistantMessage,
-      sources: [],
-      disposition: accountResponse.disposition,
-      responseOrigin: "server",
-      needsHumanSupport: accountResponse.needsHumanSupport,
-      accountHelperMetadata: accountResponse.accountHelperMetadata,
-      accountAnswerMode: accountResponse.accountAnswerMode,
-      accountRewriteModel: accountResponse.accountRewriteModel,
-      accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
-      accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
-      accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
-      supportTopic: {
-        topic: topicContext.topic,
-        source: "follow_up",
-      },
-      supportTopicContext: createSupportTopicContext({
-        topic: topicContext.topic,
-        source: "follow_up",
-      }),
       actions: accountResponse.actions,
       selectedOrderContext: accountResponse.selectedOrderContext,
       accountContextSnapshots: accountResponse.accountContextSnapshots,
@@ -525,10 +488,27 @@ export async function generateSupportResponse(
           conversationMemory: input.conversationMemory,
         })
     : null;
+  let triageMappedHelper: string | undefined;
+  let triageEligibilityAllowed: boolean | undefined;
+  let triageEligibilityReason: SupportTriageEligibilityReason | undefined;
 
   if (triageOutcome?.ok) {
     const triage = triageOutcome.result;
     const triageTopic = topicDetectionFromTriage(triage);
+    const eligibility = evaluateSupportTriageEligibility({
+      triage,
+      accountContext: input.accountContext,
+      selectedOrder: selectedOrder?.ok ? selectedOrder.input : undefined,
+      accountAwareEnabled: SUPPORT_CHAT_ACCOUNT_AWARE,
+      broadOrDeferred: false,
+    });
+
+    triageEligibilityAllowed = eligibility.allowed;
+    if (eligibility.allowed) {
+      triageMappedHelper = eligibility.mappedHelper;
+    } else {
+      triageEligibilityReason = eligibility.reason;
+    }
 
     if (triage.confidence !== "high") {
       return supportResponse({
@@ -539,10 +519,52 @@ export async function generateSupportResponse(
         responseOrigin: "server",
         needsHumanSupport: false,
         triage,
+        triageEligibilityAllowed,
+        triageEligibilityReason,
         supportTopic: triageTopic ?? undefined,
         supportTopicContext: triageTopic
           ? createSupportTopicContext(triageTopic)
           : undefined,
+      });
+    }
+
+    if (eligibility.allowed && input.accountContext) {
+      const accountResponse = await buildAccountAwareServerResponse({
+        route: eligibility.route,
+        accountContext: input.accountContext,
+        locale: input.locale,
+        threadId,
+        selectedOrderDisplay: selectedOrder?.ok
+          ? {
+              label: selectedOrder.displayLabel,
+              description: selectedOrder.displayDescription,
+            }
+          : undefined,
+      });
+
+      return supportResponse({
+        threadId,
+        assistantMessage: accountResponse.assistantMessage,
+        sources: [],
+        disposition: accountResponse.disposition,
+        responseOrigin: "server",
+        needsHumanSupport: accountResponse.needsHumanSupport,
+        triage,
+        triageMappedHelper,
+        triageEligibilityAllowed,
+        accountHelperMetadata: accountResponse.accountHelperMetadata,
+        accountAnswerMode: accountResponse.accountAnswerMode,
+        accountRewriteModel: accountResponse.accountRewriteModel,
+        accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
+        accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
+        accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
+        supportTopic: triageTopic ?? undefined,
+        supportTopicContext: triageTopic
+          ? createSupportTopicContext(triageTopic)
+          : undefined,
+        actions: accountResponse.actions,
+        selectedOrderContext: accountResponse.selectedOrderContext,
+        accountContextSnapshots: accountResponse.accountContextSnapshots,
       });
     }
 
@@ -554,6 +576,29 @@ export async function generateSupportResponse(
         disposition: "unsupported_account_question",
         responseOrigin: "server",
         triage,
+        triageEligibilityAllowed,
+        triageEligibilityReason,
+        supportTopic: triageTopic ?? undefined,
+        supportTopicContext: triageTopic
+          ? createSupportTopicContext(triageTopic)
+          : undefined,
+      });
+    }
+
+    if (
+      triageEligibilityReason === "not_signed_in" ||
+      triageEligibilityReason === "account_aware_disabled" ||
+      triageEligibilityReason === "broad_or_deferred"
+    ) {
+      return supportResponse({
+        threadId,
+        assistantMessage: copy.unsupportedAccount,
+        sources: [],
+        disposition: "unsupported_account_question",
+        responseOrigin: "server",
+        triage,
+        triageEligibilityAllowed,
+        triageEligibilityReason,
         supportTopic: triageTopic ?? undefined,
         supportTopicContext: triageTopic
           ? createSupportTopicContext(triageTopic)
@@ -570,10 +615,110 @@ export async function generateSupportResponse(
         responseOrigin: "server",
         needsHumanSupport: false,
         triage,
+        triageEligibilityAllowed,
+        triageEligibilityReason,
         supportTopic: triageTopic ?? undefined,
         supportTopicContext: triageTopic
           ? createSupportTopicContext(triageTopic)
           : undefined,
+      });
+    }
+  }
+
+  if (!triageOutcome?.ok && input.accountContext) {
+    const legacyAccountRoute = routeSupportAccountAwareRequest(message, {
+      selectedOrder: selectedOrder?.ok ? selectedOrder.input : undefined,
+      suppressCandidateSelection: Boolean(supportTopic),
+    });
+
+    if (legacyAccountRoute.kind !== "none") {
+      const accountFollowUpTopic =
+        !supportTopic &&
+        topicContext &&
+        legacyAccountRoute.kind === "candidate_selection"
+          ? {
+              topic: topicContext.topic,
+              source: "follow_up" as const,
+            }
+          : undefined;
+      const responseTopic = supportTopic ?? accountFollowUpTopic;
+      const accountResponse = await buildAccountAwareServerResponse({
+        route: legacyAccountRoute,
+        accountContext: input.accountContext,
+        locale: input.locale,
+        threadId,
+        selectedOrderDisplay: selectedOrder?.ok
+          ? {
+              label: selectedOrder.displayLabel,
+              description: selectedOrder.displayDescription,
+            }
+          : undefined,
+      });
+
+      return supportResponse({
+        threadId,
+        assistantMessage: accountResponse.assistantMessage,
+        sources: [],
+        disposition: accountResponse.disposition,
+        responseOrigin: "server",
+        needsHumanSupport: accountResponse.needsHumanSupport,
+        accountHelperMetadata: accountResponse.accountHelperMetadata,
+        accountAnswerMode: accountResponse.accountAnswerMode,
+        accountRewriteModel: accountResponse.accountRewriteModel,
+        accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
+        accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
+        accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
+        supportTopic: responseTopic ?? undefined,
+        supportTopicContext: responseTopic
+          ? createSupportTopicContext(responseTopic)
+          : undefined,
+        actions: accountResponse.actions,
+        selectedOrderContext: accountResponse.selectedOrderContext,
+        accountContextSnapshots: accountResponse.accountContextSnapshots,
+      });
+    }
+
+    const topicEscalation = detectTopicAccountEscalation({
+      message,
+      context: topicContext,
+    });
+
+    if (topicEscalation && topicContext) {
+      const accountResponse = await buildAccountAwareServerResponse({
+        route: {
+          kind: "candidate_selection",
+          selectionHelper: topicEscalation.selectionHelper,
+          statusFilter: topicEscalation.statusFilter,
+        },
+        accountContext: input.accountContext,
+        locale: input.locale,
+        threadId,
+      });
+
+      return supportResponse({
+        threadId,
+        assistantMessage: accountResponse.assistantMessage,
+        sources: [],
+        disposition: accountResponse.disposition,
+        responseOrigin: "server",
+        needsHumanSupport: accountResponse.needsHumanSupport,
+        accountHelperMetadata: accountResponse.accountHelperMetadata,
+        accountAnswerMode: accountResponse.accountAnswerMode,
+        accountRewriteModel: accountResponse.accountRewriteModel,
+        accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
+        accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
+        accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
+        supportTopic: {
+          topic: topicContext.topic,
+          source: "follow_up",
+        },
+        supportTopicContext: createSupportTopicContext({
+          topic: topicContext.topic,
+          source: "follow_up",
+        }),
+        actions: accountResponse.actions,
+        selectedOrderContext: accountResponse.selectedOrderContext,
+        accountContextSnapshots: accountResponse.accountContextSnapshots,
       });
     }
   }
@@ -623,6 +768,9 @@ export async function generateSupportResponse(
       disposition: "unsupported_account_question",
       responseOrigin: "server",
       triage: triageOutcome?.ok ? triageOutcome.result : undefined,
+      triageMappedHelper,
+      triageEligibilityAllowed,
+      triageEligibilityReason,
       supportTopic: activeSupportTopic ?? undefined,
       supportTopicContext: refreshedTopicContext,
     });
@@ -636,6 +784,9 @@ export async function generateSupportResponse(
       disposition: "uncertain",
       responseOrigin: "server",
       triage: triageOutcome?.ok ? triageOutcome.result : undefined,
+      triageMappedHelper,
+      triageEligibilityAllowed,
+      triageEligibilityReason,
       supportTopic: activeSupportTopic ?? undefined,
       supportTopicContext: refreshedTopicContext,
     });
@@ -649,6 +800,9 @@ export async function generateSupportResponse(
       disposition: "uncertain",
       responseOrigin: "server",
       triage: triageOutcome?.ok ? triageOutcome.result : undefined,
+      triageMappedHelper,
+      triageEligibilityAllowed,
+      triageEligibilityReason,
       supportTopic: activeSupportTopic ?? undefined,
       supportTopicContext: refreshedTopicContext,
     });
@@ -677,6 +831,9 @@ export async function generateSupportResponse(
       disposition: "escalate",
       responseOrigin: "server",
       triage: triageOutcome?.ok ? triageOutcome.result : undefined,
+      triageMappedHelper,
+      triageEligibilityAllowed,
+      triageEligibilityReason,
       supportTopic: activeSupportTopic ?? undefined,
       supportTopicContext: refreshedTopicContext,
     });
@@ -695,6 +852,9 @@ export async function generateSupportResponse(
       requestId: modelResult.requestId,
     },
     triage: triageOutcome?.ok ? triageOutcome.result : undefined,
+    triageMappedHelper,
+    triageEligibilityAllowed,
+    triageEligibilityReason,
     supportTopic: activeSupportTopic ?? undefined,
     supportTopicContext: refreshedTopicContext,
   });

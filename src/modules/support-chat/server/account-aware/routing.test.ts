@@ -1367,65 +1367,105 @@ test("French cancellation topic follow-up routes to cancellable candidates", asy
   );
 });
 
-test("intent triage records typoed account follow-ups without helper routing", async () => {
+test("intent triage routes typoed scheduled booking follow-ups through eligibility", async () => {
   useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
   const response = await generateSupportResponse({
-    message: "Welche Buchungen kann ich stornorenen?",
+    message: "Meine Buchung ist geplant.",
     threadId: THREAD_ID,
     locale: "de",
     accountContext,
     intentTriageOverride: {
       intent: "account_candidate_lookup",
-      topic: "cancellation",
+      topic: "booking",
+      statusFilter: "scheduled",
       confidence: "high",
     },
   });
 
   assert.equal(response.disposition, "uncertain");
   assert.equal(response.triage?.intent, "account_candidate_lookup");
-  assert.equal(response.triage?.topic, "cancellation");
-  assert.equal(response.accountHelperMetadata, undefined);
-  assert.equal(response.actions, undefined);
+  assert.equal(response.triage?.topic, "booking");
+  assert.equal(response.triage?.statusFilter, "scheduled");
+  assert.equal(response.triageMappedHelper, "getOrderStatusForCurrentUser");
+  assert.equal(response.triageEligibilityAllowed, true);
+  assert.equal(response.triageEligibilityReason, undefined);
+  assert.equal(
+    response.accountHelperMetadata?.helper,
+    "getSupportOrderCandidatesForCurrentUser",
+  );
+  assert.ok(response.actions?.length);
   assert.ok(
-    !db.calls.some(
+    db.calls.some(
       (call) => call.method === "find" && call.collection === "orders",
     ),
   );
 });
 
-test("intent triage records broad support topics without helper routing", async () => {
+test("intent triage maps high-confidence candidate lookups to allowed helpers", async () => {
   useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
 
-  const cases = [
+  const cases: Array<{
+    message: string;
+    locale: "en" | "fr";
+    triage: {
+      intent: "account_candidate_lookup";
+      topic: "booking" | "payment" | "cancellation";
+      statusFilter:
+        | "requested"
+        | "scheduled"
+        | "canceled"
+        | "paid"
+        | "payment_pending"
+        | "payment_not_due";
+      confidence: "high";
+    };
+    mappedHelper:
+      | "getOrderStatusForCurrentUser"
+      | "getPaymentStatusForCurrentUser"
+      | "canCancelOrderForCurrentUser";
+    actionHelper:
+      | "getOrderStatusForCurrentUser"
+      | "getPaymentStatusForCurrentUser"
+      | "canCancelOrderForCurrentUser";
+  }> = [
     {
       message: "reservation anuler typo maybe",
       locale: "fr" as const,
       triage: {
         intent: "account_candidate_lookup" as const,
         topic: "cancellation" as const,
+        statusFilter: "scheduled" as const,
         confidence: "high" as const,
       },
+      mappedHelper: "canCancelOrderForCurrentUser",
+      actionHelper: "canCancelOrderForCurrentUser",
     },
     {
-      message: "paymnt thing maybe",
+      message: "paymnt paid thing maybe",
       locale: "en" as const,
       triage: {
         intent: "account_candidate_lookup" as const,
         topic: "payment" as const,
+        statusFilter: "paid" as const,
         confidence: "high" as const,
       },
+      mappedHelper: "getPaymentStatusForCurrentUser",
+      actionHelper: "getPaymentStatusForCurrentUser",
     },
     {
-      message: "bookng thing maybe",
+      message: "bookng requested thing maybe",
       locale: "en" as const,
       triage: {
         intent: "account_candidate_lookup" as const,
         topic: "booking" as const,
+        statusFilter: "requested" as const,
         confidence: "high" as const,
       },
+      mappedHelper: "getOrderStatusForCurrentUser",
+      actionHelper: "getOrderStatusForCurrentUser",
     },
   ];
 
@@ -1445,10 +1485,26 @@ test("intent triage records broad support topics without helper routing", async 
 
     assert.equal(response.triage?.intent, "account_candidate_lookup", item.message);
     assert.equal(response.triage?.topic, item.triage.topic, item.message);
-    assert.equal(response.accountHelperMetadata, undefined, item.message);
-    assert.equal(response.actions, undefined, item.message);
+    assert.equal(
+      response.triage?.statusFilter,
+      item.triage.statusFilter,
+      item.message,
+    );
+    assert.equal(response.triageMappedHelper, item.mappedHelper, item.message);
+    assert.equal(response.triageEligibilityAllowed, true, item.message);
+    assert.equal(response.triageEligibilityReason, undefined, item.message);
+    assert.equal(
+      response.accountHelperMetadata?.helper,
+      "getSupportOrderCandidatesForCurrentUser",
+      item.message,
+    );
+    assert.match(
+      response.actions?.[0]?.id ?? "",
+      new RegExp(item.actionHelper),
+      item.message,
+    );
     assert.ok(
-      !db.calls.some(
+      db.calls.some(
         (call) => call.method === "find" && call.collection === "orders",
       ),
       item.message,
@@ -1478,6 +1534,8 @@ test("intent triage does not route unsupported provider account lookup to helper
 
   assert.equal(response.accountHelperMetadata, undefined);
   assert.equal(response.actions, undefined);
+  assert.equal(response.triageEligibilityAllowed, false);
+  assert.equal(response.triageEligibilityReason, "unsupported_topic");
   assert.equal(
     db.calls.some((call) => call.collection === "orders"),
     false,
@@ -1504,6 +1562,43 @@ test("intent triage cannot route account helpers without account context", async
 
   assert.equal(response.accountHelperMetadata, undefined);
   assert.equal(response.actions, undefined);
+  assert.equal(response.triageEligibilityAllowed, undefined);
+  assert.equal(response.triageEligibilityReason, undefined);
+});
+
+test("intent triage denies helper routing for signed-out account context", async () => {
+  useSupportModelEnv();
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx(null);
+  const response = await generateSupportResponse({
+    message: "Meine Buchung ist geplant.",
+    threadId: THREAD_ID,
+    locale: "de",
+    accountContext,
+    conversationMemory: {
+      previousUserMessage: "Ich brauche Hilfe mit einer Buchung.",
+      previousAssistantMessage: "Welche Buchung meinst du?",
+      activeTopic: "booking",
+      hasSelectedOrderContext: false,
+      lastAssistantAskedForSelection: false,
+    },
+    intentTriageOverride: {
+      intent: "account_candidate_lookup",
+      topic: "booking",
+      statusFilter: "scheduled",
+      confidence: "high",
+    },
+  });
+
+  assert.equal(response.disposition, "unsupported_account_question");
+  assert.equal(response.triageEligibilityAllowed, false);
+  assert.equal(response.triageEligibilityReason, "not_signed_in");
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
 });
 
 test("intent triage asks for clarification on low confidence instead of support handoff", async () => {
@@ -1526,6 +1621,8 @@ test("intent triage asks for clarification on low confidence instead of support 
   assert.equal(response.needsHumanSupport, false);
   assert.equal(response.accountHelperMetadata, undefined);
   assert.equal(response.actions, undefined);
+  assert.equal(response.triageEligibilityAllowed, false);
+  assert.equal(response.triageEligibilityReason, "low_confidence");
   assert.equal(
     db.calls.some((call) => call.collection === "orders"),
     false,
@@ -1555,13 +1652,15 @@ test("intent triage unsafe mutation returns no-action boundary copy", async () =
   );
   assert.equal(response.accountHelperMetadata, undefined);
   assert.equal(response.actions, undefined);
+  assert.equal(response.triageEligibilityAllowed, false);
+  assert.equal(response.triageEligibilityReason, "unsafe_mutation");
   assert.equal(
     db.calls.some((call) => call.collection === "orders"),
     false,
   );
 });
 
-test("intent triage records selected-order follow-up typos without helper routing", async () => {
+test("intent triage routes selected-order follow-up typos to exact helpers", async () => {
   useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { accountContext } = makeCtx("clerk-user-a");
@@ -1587,8 +1686,47 @@ test("intent triage records selected-order follow-up typos without helper routin
 
   assert.equal(response.triage?.intent, "selected_order_follow_up");
   assert.equal(response.triage?.topic, "payment");
+  assert.equal(response.triageMappedHelper, "getPaymentStatusForCurrentUser");
+  assert.equal(response.triageEligibilityAllowed, true);
+  assert.equal(response.triageEligibilityReason, undefined);
+  assert.equal(
+    response.accountHelperMetadata?.helper,
+    "getPaymentStatusForCurrentUser",
+  );
+  assert.equal(response.actions, undefined);
+});
+
+test("intent triage requires selected-order context for selected-order follow-ups", async () => {
+  useSupportModelEnv();
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "was mit zahlun?",
+    threadId: THREAD_ID,
+    locale: "de",
+    accountContext,
+    conversationMemory: {
+      previousUserMessage: "Gib mir meine letzte Buchungen",
+      previousAssistantMessage: "Welche Bestellung meinst du?",
+      hasSelectedOrderContext: true,
+      lastAssistantAskedForSelection: false,
+    },
+    intentTriageOverride: {
+      intent: "selected_order_follow_up",
+      topic: "payment",
+      confidence: "high",
+    },
+  });
+
+  assert.equal(response.triage?.intent, "selected_order_follow_up");
+  assert.equal(response.triageEligibilityAllowed, false);
+  assert.equal(response.triageEligibilityReason, "missing_selected_order");
   assert.equal(response.accountHelperMetadata, undefined);
   assert.equal(response.actions, undefined);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
 });
 
 test("selected order context routes follow-up questions to exact helpers", () => {

@@ -77,6 +77,7 @@ export type SupportAccountRoute =
 type RouteSupportAccountAwareOptions = {
   selectedOrder?: SupportAccountHelperInput & { referenceType: "order_id" };
   suppressCandidateSelection?: boolean;
+  mode?: "full" | "safety_and_exact_only";
 };
 
 const OBJECT_ID_RE = /\b[a-f0-9]{24}\b/gi;
@@ -466,8 +467,10 @@ export function routeSupportAccountAwareRequest(
   const hasCandidateLookup = hasExplicitCandidateLookupIntent(trimmed);
   const hasDirectMutation = hasDirectMutationRequest(trimmed);
   const suppressCandidateSelection = options?.suppressCandidateSelection;
+  const safetyAndExactOnly = options?.mode === "safety_and_exact_only";
   const hasCandidateSelectionRoute =
     ids.length === 0 &&
+    !safetyAndExactOnly &&
     !hasDirectMutation &&
     !suppressCandidateSelection &&
     hasCandidateLookup &&
@@ -479,6 +482,7 @@ export function routeSupportAccountAwareRequest(
     );
   const shouldPreferAccountWideRoute =
     ids.length === 0 &&
+    !safetyAndExactOnly &&
     !suppressCandidateSelection &&
     (
       (!hasDirectMutation && hasPaidOrderCandidateLookup) ||
@@ -535,6 +539,7 @@ export function routeSupportAccountAwareRequest(
 
   if (
     ids.length === 0 &&
+    !safetyAndExactOnly &&
     !hasDirectMutation &&
     !suppressCandidateSelection &&
     hasPaidOrderCandidateLookup
@@ -548,15 +553,14 @@ export function routeSupportAccountAwareRequest(
 
   if (
     ids.length === 0 &&
+    !safetyAndExactOnly &&
     !suppressCandidateSelection &&
     hasPaymentOverview
   ) {
     return { kind: "payment_overview" };
   }
 
-  if (
-    hasCandidateSelectionRoute
-  ) {
+  if (hasCandidateSelectionRoute) {
     return {
       kind: "candidate_selection",
       selectionHelper: candidateSelectionHelper({
@@ -610,7 +614,12 @@ export function routeSupportAccountAwareRequest(
           );
     }
 
-    if (!hasDirectMutation && !suppressCandidateSelection && hasCandidateLookup) {
+    if (
+      !safetyAndExactOnly &&
+      !hasDirectMutation &&
+      !suppressCandidateSelection &&
+      hasCandidateLookup
+    ) {
       return {
         kind: "candidate_selection",
         selectionHelper: candidateSelectionHelper({

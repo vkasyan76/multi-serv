@@ -149,6 +149,12 @@ export async function listSupportMessages(db: Payload, id: string) {
     triageStatusFilter: message.triageStatusFilter ?? null,
     triageConfidence: message.triageConfidence ?? null,
     triageReason: message.triageReason ?? null,
+    triageMappedHelper: message.triageMappedHelper ?? null,
+    triageEligibilityAllowed:
+      typeof message.triageEligibilityAllowed === "boolean"
+        ? message.triageEligibilityAllowed
+        : null,
+    triageEligibilityReason: message.triageEligibilityReason ?? null,
     groundingKind: message.groundingKind ?? null,
     sources: (message.sources ?? []).map((source) => ({
       documentId: source.documentId,

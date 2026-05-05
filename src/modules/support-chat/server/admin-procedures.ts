@@ -188,6 +188,9 @@ export type AdminSupportMessageRow = {
   triageStatusFilter: string | null;
   triageConfidence: string | null;
   triageReason: string | null;
+  triageMappedHelper: string | null;
+  triageEligibilityAllowed: boolean | null;
+  triageEligibilityReason: string | null;
   groundingKind: string | null;
   sources: Array<{
     documentId: string;

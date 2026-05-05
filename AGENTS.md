@@ -170,13 +170,14 @@ Required env groups are defined in `README.md`:
   must not be used as evidence for helper execution.
 - Support-chat structured triage classifies user meaning only. It returns strict
   JSON with intent, topic, optional status filter, confidence, and short reason;
-  it must not answer the user, choose arbitrary DB queries, invent helper names,
-  or execute account helpers. Persisted triage evidence is for admin/debug
-  transparency and is not proof of account data.
+  it must not answer the user, choose arbitrary DB queries, or invent helper
+  names. High-confidence helper-eligible triage may execute account helpers only
+  through explicit server-owned eligibility mapping. Persisted triage evidence is
+  for admin/debug transparency and is not proof of account data.
 - Support-chat grounded answer evidence records only the grounding kind:
   `knowledge`, `account_safe_dto`, or `none`. Knowledge grounding comes from
   approved support sources; account grounding comes from support-safe snapshots.
-- Account-aware support is server-routed and bounded. Deterministic routing and future strict model intent triage may select existing safe helper categories only after server eligibility checks; the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
+- Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helper categories only after server eligibility checks; the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
 - Selected-order context and support-topic context are server-issued signed tokens. Invalid selected-order follow-ups should ask the user to reselect the order; invalid/expired topic context is a soft hint and should be ignored.
 - General topic help must stay general unless the user clearly asks about their own bookings/orders/payments or has selected/referenced a specific item.
 - Explicit paid-order questions route to bounded paid payment candidates; generic payment overviews must avoid implying a full account-history scan.

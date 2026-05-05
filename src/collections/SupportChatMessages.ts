@@ -72,6 +72,19 @@ const SUPPORT_GROUNDING_KINDS = [
   "none",
 ] as const;
 
+const SUPPORT_TRIAGE_ELIGIBILITY_REASONS = [
+  "not_signed_in",
+  "account_aware_disabled",
+  "low_confidence",
+  "unsafe_mutation",
+  "broad_or_deferred",
+  "unsupported_intent",
+  "unsupported_topic",
+  "unsupported_status_filter",
+  "missing_selected_order",
+  "no_allowed_mapping",
+] as const;
+
 export const SupportChatMessages: CollectionConfig = {
   slug: "support_chat_messages",
   indexes: [
@@ -287,6 +300,22 @@ export const SupportChatMessages: CollectionConfig = {
       index: true,
     },
     { name: "triageReason", type: "textarea" },
+    { name: "triageMappedHelper", type: "text" },
+    {
+      name: "triageEligibilityAllowed",
+      type: "checkbox",
+      defaultValue: false,
+      index: true,
+    },
+    {
+      name: "triageEligibilityReason",
+      type: "select",
+      options: SUPPORT_TRIAGE_ELIGIBILITY_REASONS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
     {
       name: "groundingKind",
       type: "select",

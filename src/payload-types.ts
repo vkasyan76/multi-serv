@@ -1046,6 +1046,22 @@ export interface SupportChatMessage {
   triageStatusFilter?: ('requested' | 'scheduled' | 'canceled' | 'paid' | 'payment_pending' | 'payment_not_due') | null;
   triageConfidence?: ('low' | 'medium' | 'high') | null;
   triageReason?: string | null;
+  triageMappedHelper?: string | null;
+  triageEligibilityAllowed?: boolean | null;
+  triageEligibilityReason?:
+    | (
+        | 'not_signed_in'
+        | 'account_aware_disabled'
+        | 'low_confidence'
+        | 'unsafe_mutation'
+        | 'broad_or_deferred'
+        | 'unsupported_intent'
+        | 'unsupported_topic'
+        | 'unsupported_status_filter'
+        | 'missing_selected_order'
+        | 'no_allowed_mapping'
+      )
+    | null;
   groundingKind: 'knowledge' | 'account_safe_dto' | 'none';
   promptVersion?: string | null;
   guardrailVersion?: string | null;
@@ -1741,6 +1757,9 @@ export interface SupportChatMessagesSelect<T extends boolean = true> {
   triageStatusFilter?: T;
   triageConfidence?: T;
   triageReason?: T;
+  triageMappedHelper?: T;
+  triageEligibilityAllowed?: T;
+  triageEligibilityReason?: T;
   groundingKind?: T;
   promptVersion?: T;
   guardrailVersion?: T;
