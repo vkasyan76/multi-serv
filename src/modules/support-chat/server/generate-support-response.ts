@@ -9,8 +9,6 @@ import {
   type SupportChatInputPrecheckDisposition,
 } from "@/modules/support-chat/lib/input-precheck";
 import { type SupportKnowledgeSourceType } from "@/modules/support-chat/server/knowledge-loader";
-import { buildSupportPrompt } from "@/modules/support-chat/server/build-support-prompt";
-import { createSupportChatModelResponse } from "@/modules/support-chat/server/openai-response";
 import {
   retrieveSupportKnowledge,
   type SupportKnowledgeMatch,
@@ -37,6 +35,10 @@ import {
   resolveSupportGroundingKind,
   type SupportGroundingKind,
 } from "@/modules/support-chat/server/grounding";
+import {
+  createKnowledgeGroundedAnswer,
+  resolveAccountGroundingKind,
+} from "@/modules/support-chat/server/grounded-answer";
 import {
   buildAccountAwareServerResponse,
   type SupportAccountHelperMetadata,
@@ -119,8 +121,6 @@ export type GenerateSupportResponseResult = {
   actions?: SupportChatAction[];
   selectedOrderContext?: SupportSelectedOrderContext;
 };
-
-const MIN_STRONG_SOURCE_SCORE = 4;
 
 // These tiny phrase/pattern checks are intentionally English-first for Phase 1.
 // They are a minimal shortcut for obvious ambiguous/account-specific requests,
@@ -239,16 +239,6 @@ function looksLikeAccountOrActionFollowUp(message: string) {
   // Cheap eligibility gate only: the model still classifies the intent, and the
   // server still owns every helper/action mapping.
   return ACCOUNT_ACTION_HINT_PATTERNS.some((pattern) => pattern.test(message));
-}
-
-function hasStrongSource(matches: SupportKnowledgeMatch[]) {
-  // The model only drafts normal answers when at least one non-fallback source
-  // is strong enough; weak-source paths stay deterministic and server-authored.
-  return matches.some(
-    (match) =>
-      match.score >= MIN_STRONG_SOURCE_SCORE &&
-      match.sourceType !== "fallback-guidance"
-  );
 }
 
 function toSupportChatSource(match: SupportKnowledgeMatch): SupportChatSource {
@@ -430,6 +420,7 @@ export async function generateSupportResponse(
       disposition: accountResponse.disposition,
       responseOrigin: "server",
       needsHumanSupport: accountResponse.needsHumanSupport,
+      groundingKind: resolveAccountGroundingKind(accountResponse),
       accountHelperMetadata: accountResponse.accountHelperMetadata,
       accountAnswerMode: accountResponse.accountAnswerMode,
       accountRewriteModel: accountResponse.accountRewriteModel,
@@ -549,6 +540,7 @@ export async function generateSupportResponse(
         disposition: accountResponse.disposition,
         responseOrigin: "server",
         needsHumanSupport: accountResponse.needsHumanSupport,
+        groundingKind: resolveAccountGroundingKind(accountResponse),
         triage,
         triageMappedHelper,
         triageEligibilityAllowed,
@@ -662,6 +654,7 @@ export async function generateSupportResponse(
         disposition: accountResponse.disposition,
         responseOrigin: "server",
         needsHumanSupport: accountResponse.needsHumanSupport,
+        groundingKind: resolveAccountGroundingKind(accountResponse),
         accountHelperMetadata: accountResponse.accountHelperMetadata,
         accountAnswerMode: accountResponse.accountAnswerMode,
         accountRewriteModel: accountResponse.accountRewriteModel,
@@ -702,6 +695,7 @@ export async function generateSupportResponse(
         disposition: accountResponse.disposition,
         responseOrigin: "server",
         needsHumanSupport: accountResponse.needsHumanSupport,
+        groundingKind: resolveAccountGroundingKind(accountResponse),
         accountHelperMetadata: accountResponse.accountHelperMetadata,
         accountAnswerMode: accountResponse.accountAnswerMode,
         accountRewriteModel: accountResponse.accountRewriteModel,
@@ -767,6 +761,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "unsupported_account_question",
       responseOrigin: "server",
+      groundingKind: "none",
       triage: triageOutcome?.ok ? triageOutcome.result : undefined,
       triageMappedHelper,
       triageEligibilityAllowed,
@@ -783,6 +778,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "uncertain",
       responseOrigin: "server",
+      groundingKind: "none",
       triage: triageOutcome?.ok ? triageOutcome.result : undefined,
       triageMappedHelper,
       triageEligibilityAllowed,
@@ -792,65 +788,22 @@ export async function generateSupportResponse(
     });
   }
 
-  if (!matches.length || !hasStrongSource(matches)) {
-    return supportResponse({
-      threadId,
-      assistantMessage: copy.uncertain,
-      sources,
-      disposition: "uncertain",
-      responseOrigin: "server",
-      triage: triageOutcome?.ok ? triageOutcome.result : undefined,
-      triageMappedHelper,
-      triageEligibilityAllowed,
-      triageEligibilityReason,
-      supportTopic: activeSupportTopic ?? undefined,
-      supportTopicContext: refreshedTopicContext,
-    });
-  }
-
-  const prompt = buildSupportPrompt({
+  const groundedAnswer = await createKnowledgeGroundedAnswer({
     message,
     locale: input.locale,
-    sources: matches,
+    threadId,
+    matches,
   });
-  const modelResult = await createSupportChatModelResponse({
-    instructions: prompt.instructions,
-    input: prompt.input,
-    locale: input.locale,
-    metadata: {
-      threadId,
-      locale: input.locale,
-    },
-  });
-
-  if (!modelResult.ok) {
-    return supportResponse({
-      threadId,
-      assistantMessage: modelResult.fallbackMessage,
-      sources,
-      disposition: "escalate",
-      responseOrigin: "server",
-      triage: triageOutcome?.ok ? triageOutcome.result : undefined,
-      triageMappedHelper,
-      triageEligibilityAllowed,
-      triageEligibilityReason,
-      supportTopic: activeSupportTopic ?? undefined,
-      supportTopicContext: refreshedTopicContext,
-    });
-  }
 
   return supportResponse({
     threadId,
-    assistantMessage: modelResult.text,
+    assistantMessage: groundedAnswer.assistantMessage,
     sources,
-    disposition: "answered",
-    needsHumanSupport: false,
-    responseOrigin: "model",
-    modelMetadata: {
-      model: modelResult.model,
-      modelVersion: modelResult.modelVersion,
-      requestId: modelResult.requestId,
-    },
+    disposition: groundedAnswer.disposition,
+    needsHumanSupport: groundedAnswer.needsHumanSupport,
+    responseOrigin: groundedAnswer.responseOrigin,
+    groundingKind: groundedAnswer.groundingKind,
+    modelMetadata: groundedAnswer.modelMetadata,
     triage: triageOutcome?.ok ? triageOutcome.result : undefined,
     triageMappedHelper,
     triageEligibilityAllowed,

@@ -177,6 +177,11 @@ Required env groups are defined in `README.md`:
 - Support-chat grounded answer evidence records only the grounding kind:
   `knowledge`, `account_safe_dto`, or `none`. Knowledge grounding comes from
   approved support sources; account grounding comes from support-safe snapshots.
+- Support-chat answer generation follows a two-step grounded flow:
+  structured triage may classify meaning, but answer text must come from either
+  approved retrieved knowledge or bounded support-safe account DTOs.
+  Weak/missing knowledge grounding must return deterministic uncertain/fallback
+  copy instead of asking the model to improvise.
 - Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helper categories only after server eligibility checks; the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
 - Selected-order context and support-topic context are server-issued signed tokens. Invalid selected-order follow-ups should ask the user to reselect the order; invalid/expired topic context is a soft hint and should be ignored.
 - General topic help must stay general unless the user clearly asks about their own bookings/orders/payments or has selected/referenced a specific item.
