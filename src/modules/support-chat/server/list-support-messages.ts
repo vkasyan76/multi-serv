@@ -114,6 +114,30 @@ export async function listSupportMessages(db: Payload, id: string) {
     retrievalVersion: message.retrievalVersion ?? null,
     knowledgePackVersion: message.knowledgePackVersion ?? null,
     openAIRequestId: message.openAIRequestId ?? null,
+    accountContextSnapshots: (message.accountContextSnapshots ?? []).map(
+      (snapshot) => ({
+        kind: snapshot.kind,
+        helper: snapshot.helper ?? null,
+        resultCategory: snapshot.resultCategory ?? null,
+        statusFilter: snapshot.statusFilter ?? null,
+        orders: (snapshot.orders ?? []).map((order) => ({
+          orderId: order.orderId ?? null,
+          referenceType: order.referenceType ?? null,
+          referenceId: order.referenceId ?? null,
+          displayReference: order.displayReference ?? null,
+          label: order.label ?? null,
+          description: order.description ?? null,
+          providerDisplayName: order.providerDisplayName ?? null,
+          serviceNames: (order.serviceNames ?? []).map((item) => item.name),
+          firstSlotStart: order.firstSlotStart ?? null,
+          createdAt: order.createdAt ?? null,
+          serviceStatusCategory: order.serviceStatusCategory ?? null,
+          paymentStatusCategory: order.paymentStatusCategory ?? null,
+          invoiceStatusCategory: order.invoiceStatusCategory ?? null,
+          nextStepKey: order.nextStepKey ?? null,
+        })),
+      })
+    ),
     sources: (message.sources ?? []).map((source) => ({
       documentId: source.documentId,
       documentVersion: source.documentVersion,

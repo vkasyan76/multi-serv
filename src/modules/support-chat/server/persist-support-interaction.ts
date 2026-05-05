@@ -6,6 +6,7 @@ import {
   type GenerateSupportResponseResult,
   type SupportChatSource,
 } from "@/modules/support-chat/server/generate-support-response";
+import type { SupportAccountContextSnapshot } from "@/modules/support-chat/server/account-aware/server-responses";
 import { redactSupportChatText } from "@/modules/support-chat/server/redaction";
 import {
   SUPPORT_CHAT_GUARDRAIL_VERSION,
@@ -69,6 +70,33 @@ function sourceRows(sources: SupportChatSource[]) {
 
 function redactionTypeRows(redactionTypes: string[]) {
   return redactionTypes.map((type) => ({ type }));
+}
+
+function accountContextSnapshotRows(snapshots: SupportAccountContextSnapshot[]) {
+  return snapshots
+    .map((snapshot) => ({
+      kind: snapshot.kind,
+      helper: snapshot.helper,
+      resultCategory: snapshot.resultCategory,
+      statusFilter: snapshot.statusFilter,
+      orders: snapshot.orders.map((order) => ({
+        orderId: order.orderId,
+        referenceType: order.referenceType,
+        referenceId: order.referenceId,
+        displayReference: order.displayReference,
+        label: order.label,
+        description: order.description,
+        providerDisplayName: order.providerDisplayName,
+        serviceNames: (order.serviceNames ?? []).map((name) => ({ name })),
+        firstSlotStart: order.firstSlotStart,
+        createdAt: order.createdAt,
+        serviceStatusCategory: order.serviceStatusCategory,
+        paymentStatusCategory: order.paymentStatusCategory,
+        invoiceStatusCategory: order.invoiceStatusCategory,
+        nextStepKey: order.nextStepKey,
+      })),
+    }))
+    .filter((snapshot) => snapshot.orders.length > 0);
 }
 
 async function findThread(db: Payload, threadId: string) {
@@ -177,6 +205,9 @@ export async function persistSupportInteraction(
 
   const userText = redactSupportChatText(input.message);
   const assistantText = redactSupportChatText(input.response.assistantMessage);
+  const accountContextSnapshots = accountContextSnapshotRows(
+    input.response.accountContextSnapshots ?? []
+  );
 
   await input.db.create({
     collection: "support_chat_messages",
@@ -221,6 +252,9 @@ export async function persistSupportInteraction(
       accountRewriteModelVersion: input.response.accountRewriteModelVersion,
       accountRewriteRejectedReason: input.response.accountRewriteRejectedReason,
       accountRewriteFallbackUsed: input.response.accountRewriteFallbackUsed,
+      ...(accountContextSnapshots.length
+        ? { accountContextSnapshots }
+        : {}),
       promptVersion: SUPPORT_CHAT_PROMPT_VERSION,
       guardrailVersion: SUPPORT_CHAT_GUARDRAIL_VERSION,
       retrievalVersion: SUPPORT_CHAT_RETRIEVAL_VERSION,

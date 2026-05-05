@@ -159,6 +159,28 @@ export type AdminSupportMessageRow = {
   retrievalVersion: string | null;
   knowledgePackVersion: string | null;
   openAIRequestId: string | null;
+  accountContextSnapshots: Array<{
+    kind: string;
+    helper: string | null;
+    resultCategory: string | null;
+    statusFilter: string | null;
+    orders: Array<{
+      orderId: string | null;
+      referenceType: string | null;
+      referenceId: string | null;
+      displayReference: string | null;
+      label: string | null;
+      description: string | null;
+      providerDisplayName: string | null;
+      serviceNames: string[];
+      firstSlotStart: string | null;
+      createdAt: string | null;
+      serviceStatusCategory: string | null;
+      paymentStatusCategory: string | null;
+      invoiceStatusCategory: string | null;
+      nextStepKey: string | null;
+    }>;
+  }>;
   sources: Array<{
     documentId: string;
     documentVersion: string;

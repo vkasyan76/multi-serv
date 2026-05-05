@@ -34,6 +34,7 @@ import {
 import {
   buildAccountAwareServerResponse,
   type SupportAccountHelperMetadata,
+  type SupportAccountContextSnapshot,
   type SupportChatAction,
   type SupportSelectedOrderContext,
 } from "@/modules/support-chat/server/account-aware/server-responses";
@@ -96,6 +97,7 @@ export type GenerateSupportResponseResult = {
   accountRewriteModelVersion?: string;
   accountRewriteRejectedReason?: SupportAccountRewriteRejectedReason;
   accountRewriteFallbackUsed?: boolean;
+  accountContextSnapshots?: SupportAccountContextSnapshot[];
   supportTopic?: SupportChatTopicDetection;
   supportTopicContext?: SupportTopicContext;
   actions?: SupportChatAction[];
@@ -386,6 +388,12 @@ export async function generateSupportResponse(
       accountContext: input.accountContext,
       locale: input.locale,
       threadId,
+      selectedOrderDisplay: selectedOrder?.ok
+        ? {
+            label: selectedOrder.displayLabel,
+            description: selectedOrder.displayDescription,
+          }
+        : undefined,
     });
 
     return supportResponse({
@@ -407,6 +415,7 @@ export async function generateSupportResponse(
         : undefined,
       actions: accountResponse.actions,
       selectedOrderContext: accountResponse.selectedOrderContext,
+      accountContextSnapshots: accountResponse.accountContextSnapshots,
     });
   }
 
@@ -450,6 +459,7 @@ export async function generateSupportResponse(
       }),
       actions: accountResponse.actions,
       selectedOrderContext: accountResponse.selectedOrderContext,
+      accountContextSnapshots: accountResponse.accountContextSnapshots,
     });
   }
 
@@ -529,6 +539,10 @@ export async function generateSupportResponse(
         accountContext: input.accountContext,
         locale: input.locale,
         threadId,
+        selectedOrderDisplay: {
+          label: selectedOrder.displayLabel,
+          description: selectedOrder.displayDescription,
+        },
       });
 
       return supportResponse({
@@ -550,6 +564,7 @@ export async function generateSupportResponse(
           : undefined,
         actions: accountResponse.actions,
         selectedOrderContext: accountResponse.selectedOrderContext,
+        accountContextSnapshots: accountResponse.accountContextSnapshots,
       });
     }
 
@@ -589,6 +604,7 @@ export async function generateSupportResponse(
           : undefined,
         actions: accountResponse.actions,
         selectedOrderContext: accountResponse.selectedOrderContext,
+        accountContextSnapshots: accountResponse.accountContextSnapshots,
       });
     }
 

@@ -990,6 +990,42 @@ export interface SupportChatMessage {
       )
     | null;
   accountRewriteFallbackUsed?: boolean | null;
+  /**
+   * Support-safe account/order context shown or used by account-aware support. Do not store raw records or Stripe payloads.
+   */
+  accountContextSnapshots?:
+    | {
+        kind: 'candidate_selection' | 'selected_order' | 'helper_result' | 'payment_overview';
+        helper?: string | null;
+        resultCategory?: string | null;
+        statusFilter?: string | null;
+        orders?:
+          | {
+              orderId?: string | null;
+              referenceType?: string | null;
+              referenceId?: string | null;
+              displayReference?: string | null;
+              label?: string | null;
+              description?: string | null;
+              providerDisplayName?: string | null;
+              serviceNames?:
+                | {
+                    name: string;
+                    id?: string | null;
+                  }[]
+                | null;
+              firstSlotStart?: string | null;
+              createdAt?: string | null;
+              serviceStatusCategory?: string | null;
+              paymentStatusCategory?: string | null;
+              invoiceStatusCategory?: string | null;
+              nextStepKey?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
   promptVersion?: string | null;
   guardrailVersion?: string | null;
   retrievalVersion?: string | null;
@@ -1645,6 +1681,39 @@ export interface SupportChatMessagesSelect<T extends boolean = true> {
   accountRewriteModelVersion?: T;
   accountRewriteRejectedReason?: T;
   accountRewriteFallbackUsed?: T;
+  accountContextSnapshots?:
+    | T
+    | {
+        kind?: T;
+        helper?: T;
+        resultCategory?: T;
+        statusFilter?: T;
+        orders?:
+          | T
+          | {
+              orderId?: T;
+              referenceType?: T;
+              referenceId?: T;
+              displayReference?: T;
+              label?: T;
+              description?: T;
+              providerDisplayName?: T;
+              serviceNames?:
+                | T
+                | {
+                    name?: T;
+                    id?: T;
+                  };
+              firstSlotStart?: T;
+              createdAt?: T;
+              serviceStatusCategory?: T;
+              paymentStatusCategory?: T;
+              invoiceStatusCategory?: T;
+              nextStepKey?: T;
+              id?: T;
+            };
+        id?: T;
+      };
   promptVersion?: T;
   guardrailVersion?: T;
   retrievalVersion?: T;

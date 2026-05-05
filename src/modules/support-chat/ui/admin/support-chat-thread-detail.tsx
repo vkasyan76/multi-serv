@@ -170,6 +170,8 @@ function ConversationMessage({
 
       {isAssistant ? (
         <div className="mt-3 space-y-2">
+          <AccountContextSnapshots message={message} locale={locale} />
+
           {message.sources.length > 0 ? (
             <details className="rounded-md border bg-muted/20 p-3">
               <summary className="cursor-pointer text-sm font-medium">
@@ -208,6 +210,127 @@ function ConversationMessage({
         </div>
       ) : null}
     </article>
+  );
+}
+
+function formatSnapshotDate(value: string | null, locale: AppLang) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeZone: "Europe/Berlin",
+  }).format(date);
+}
+
+function snapshotTitle(kind: string, t: ReturnType<typeof useTranslations>) {
+  if (kind === "candidate_selection") return t("detail.orderCandidatesShown");
+  if (kind === "selected_order") return t("detail.selectedOrderUsed");
+  if (kind === "payment_overview") return t("detail.paymentOverviewExamples");
+  return t("detail.accountHelperResult");
+}
+
+function AccountContextSnapshots({
+  message,
+  locale,
+}: {
+  message: AdminSupportMessageRow;
+  locale: AppLang;
+}) {
+  const t = useTranslations("supportChatAdmin");
+  const snapshots = message.accountContextSnapshots.filter(
+    (snapshot) => snapshot.orders.length > 0
+  );
+
+  if (!snapshots.length) return null;
+
+  return (
+    <div className="mt-3 space-y-2">
+      {snapshots.map((snapshot, snapshotIndex) => (
+        <details
+          key={`${message.id}-account-context-${snapshotIndex}`}
+          className="rounded-md border bg-blue-50/40 p-3"
+          open={snapshot.orders.length <= 2}
+        >
+          <summary className="cursor-pointer text-sm font-medium">
+            {snapshotTitle(snapshot.kind, t)}
+          </summary>
+
+          <div className="mt-3 space-y-2">
+            <div className="grid gap-2 text-xs sm:grid-cols-2">
+              <MetaRow label={t("detail.helper")} value={snapshot.helper} />
+              <MetaRow
+                label={t("detail.resultCategory")}
+                value={snapshot.resultCategory}
+              />
+            </div>
+
+            {snapshot.orders.map((order, orderIndex) => {
+              const date =
+                formatSnapshotDate(order.firstSlotStart, locale) ??
+                formatSnapshotDate(order.createdAt, locale);
+              const title =
+                order.displayReference ??
+                order.label ??
+                order.providerDisplayName ??
+                `${t("detail.order")} ${orderIndex + 1}`;
+              const serviceLine = [
+                order.providerDisplayName,
+                ...(order.serviceNames ?? []),
+                date,
+              ]
+                .filter(Boolean)
+                .join(" - ");
+              const statusLine = [
+                order.serviceStatusCategory,
+                order.paymentStatusCategory,
+                order.invoiceStatusCategory,
+              ]
+                .filter(Boolean)
+                .join(" - ");
+              const nonOrderReference =
+                order.referenceId && order.referenceType !== "order_id"
+                  ? `${order.referenceType ?? "reference"}: ${order.referenceId}`
+                  : null;
+
+              return (
+                <div
+                  key={`${message.id}-account-context-${snapshotIndex}-${orderIndex}`}
+                  className="rounded-md border bg-white p-3 text-xs"
+                >
+                  <p className="font-medium">{title}</p>
+                  {order.description ? (
+                    <p className="mt-1 text-muted-foreground">
+                      {order.description}
+                    </p>
+                  ) : null}
+                  {serviceLine ? <p className="mt-1">{serviceLine}</p> : null}
+                  {statusLine ? (
+                    <p className="mt-1 text-muted-foreground">{statusLine}</p>
+                  ) : null}
+                  {order.nextStepKey ? (
+                    <p className="mt-1 text-muted-foreground">
+                      {t("detail.nextStep")}: {order.nextStepKey}
+                    </p>
+                  ) : null}
+                  {order.orderId ? (
+                    <p className="mt-2 break-all text-[11px] text-muted-foreground">
+                      {t("detail.internalOrderId")}: {order.orderId}
+                    </p>
+                  ) : null}
+                  {nonOrderReference ? (
+                    <p className="mt-2 break-all text-[11px] text-muted-foreground">
+                      {t("detail.internalReference")}: {nonOrderReference}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      ))}
+    </div>
   );
 }
 

@@ -119,7 +119,21 @@
     "score": "Score",
     "matchedTerms": "Matched terms",
     "latestAssistantMetadata": "Latest assistant response metadata",
-    "backendStatus": "Backend status"
+    "backendStatus": "Backend status",
+    "order": "Order",
+    "accountContext": "Account context",
+    "orderCandidatesShown": "Order candidates shown",
+    "selectedOrderUsed": "Selected order used",
+    "accountHelperResult": "Account helper result",
+    "paymentOverviewExamples": "Recent order examples",
+    "helper": "Helper",
+    "resultCategory": "Result category",
+    "internalOrderId": "Internal order ID",
+    "internalReference": "Internal reference",
+    "serviceStatus": "Service status",
+    "paymentStatus": "Payment status",
+    "invoiceStatus": "Invoice status",
+    "nextStep": "Next step"
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",

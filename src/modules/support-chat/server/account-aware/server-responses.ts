@@ -22,6 +22,7 @@ import type {
   SupportAccountHelperDeniedReason,
   SupportAccountHelperDTO,
   SupportAccountHelperName,
+  SupportAccountReferenceType,
   SupportAccountRewriteRejectedReason,
   SupportOrderCandidateDTO,
   SupportOrderCandidateStatusFilter,
@@ -52,6 +53,7 @@ export type AccountAwareServerResponse = {
   disposition: "answered" | "uncertain" | "unsupported_account_question";
   needsHumanSupport: boolean;
   accountHelperMetadata: SupportAccountHelperMetadata;
+  accountContextSnapshots?: SupportAccountContextSnapshot[];
   actions?: SupportChatAction[];
   selectedOrderContext?: SupportSelectedOrderContext;
   accountAnswerMode?: SupportAccountAnswerMode;
@@ -59,6 +61,35 @@ export type AccountAwareServerResponse = {
   accountRewriteModelVersion?: string;
   accountRewriteRejectedReason?: SupportAccountRewriteRejectedReason;
   accountRewriteFallbackUsed?: boolean;
+};
+
+export type SupportAccountOrderSnapshot = {
+  orderId?: string;
+  referenceType?: SupportAccountReferenceType;
+  referenceId?: string;
+  displayReference?: string | null;
+  label?: string | null;
+  description?: string | null;
+  providerDisplayName?: string | null;
+  serviceNames?: string[];
+  firstSlotStart?: string | null;
+  createdAt?: string | null;
+  serviceStatusCategory?: string | null;
+  paymentStatusCategory?: string | null;
+  invoiceStatusCategory?: string | null;
+  nextStepKey?: string | null;
+};
+
+export type SupportAccountContextSnapshot = {
+  kind:
+    | "candidate_selection"
+    | "selected_order"
+    | "helper_result"
+    | "payment_overview";
+  helper?: SupportAccountHelperName;
+  resultCategory?: string;
+  statusFilter?: SupportOrderCandidateStatusFilter;
+  orders: SupportAccountOrderSnapshot[];
 };
 
 export type SupportChatAction = {
@@ -152,6 +183,75 @@ function candidateActionDescription(
   ]
     .filter((value): value is string => Boolean(value))
     .join(" - ");
+}
+
+function candidateSnapshot(
+  candidate: SupportOrderCandidateDTO,
+  locale: AppLang,
+  copy: AccountAwareLocalizedCopy,
+): SupportAccountOrderSnapshot {
+  return {
+    orderId: candidate.orderId,
+    referenceType: "order_id",
+    referenceId: candidate.orderId,
+    label: candidateActionLabel(candidate, locale) || null,
+    description: candidateActionDescription(candidate, copy) || null,
+    providerDisplayName: candidate.tenantDisplayName,
+    serviceNames: candidate.serviceNames ?? [],
+    firstSlotStart: candidate.firstSlotStart ?? null,
+    createdAt: candidate.createdAt ?? null,
+    serviceStatusCategory: candidate.serviceStatusCategory,
+    paymentStatusCategory: candidate.paymentStatusCategory,
+    invoiceStatusCategory: candidate.invoiceStatusCategory,
+    nextStepKey: candidate.nextStepKey,
+  };
+}
+
+function helperResultSnapshot(input: {
+  data: SupportAccountHelperDTO;
+  referenceType?: SupportAccountReferenceType;
+  reference?: string;
+  label?: string;
+  description?: string;
+}): SupportAccountOrderSnapshot | null {
+  const { data } = input;
+
+  if (data.resultCategory === "order_candidates") return null;
+  if (data.resultCategory === "payment_overview") return null;
+
+  return {
+    orderId: input.referenceType === "order_id" ? input.reference : undefined,
+    referenceType: input.referenceType,
+    referenceId: input.reference,
+    label: input.label ?? null,
+    description: input.description ?? null,
+    serviceNames:
+      "serviceNames" in data && Array.isArray(data.serviceNames)
+        ? data.serviceNames
+        : [],
+    providerDisplayName:
+      "providerDisplayName" in data ? data.providerDisplayName : undefined,
+    firstSlotStart: "firstSlotStart" in data ? data.firstSlotStart ?? null : null,
+    createdAt: "createdAt" in data ? data.createdAt ?? null : null,
+    serviceStatusCategory:
+      "serviceStatusCategory" in data ? data.serviceStatusCategory : null,
+    paymentStatusCategory:
+      "paymentStatusCategory" in data ? data.paymentStatusCategory : null,
+    invoiceStatusCategory:
+      "invoiceStatusCategory" in data ? data.invoiceStatusCategory : null,
+    nextStepKey: data.nextStepKey,
+  };
+}
+
+function nonEmptySnapshot(
+  snapshot: SupportAccountContextSnapshot,
+): SupportAccountContextSnapshot | undefined {
+  return snapshot.orders.length > 0 ? snapshot : undefined;
+}
+
+function snapshotArray(snapshot: SupportAccountContextSnapshot) {
+  const value = nonEmptySnapshot(snapshot);
+  return value ? [value] : undefined;
 }
 
 function candidateActions(input: {
@@ -444,6 +544,10 @@ export async function buildAccountAwareServerResponse(input: {
   accountContext?: AccountCtx;
   locale: AppLang;
   threadId: string;
+  selectedOrderDisplay?: {
+    label?: string;
+    description?: string;
+  };
 }): Promise<AccountAwareServerResponse> {
   const authenticated = Boolean(input.accountContext?.userId);
   const accountCopy = getAccountAwareCopy(input.locale);
@@ -534,6 +638,14 @@ export async function buildAccountAwareServerResponse(input: {
           requiredInputPresent: false,
           serverAuthored: true,
         },
+        accountContextSnapshots: snapshotArray({
+          kind: "payment_overview",
+          helper: "getSupportPaymentOverviewForCurrentUser",
+          resultCategory: result.data.resultCategory,
+          orders: result.data.recentExamples.map((candidate) =>
+            candidateSnapshot(candidate, input.locale, accountCopy),
+          ),
+        }),
       }),
       helperResult: result.data,
       locale: input.locale,
@@ -595,6 +707,15 @@ export async function buildAccountAwareServerResponse(input: {
         requiredInputPresent: false,
         serverAuthored: true,
       },
+      accountContextSnapshots: snapshotArray({
+        kind: "candidate_selection",
+        helper: "getSupportOrderCandidatesForCurrentUser",
+        resultCategory: result.data.resultCategory,
+        statusFilter: input.route.statusFilter,
+        orders: result.data.candidates.map((candidate) =>
+          candidateSnapshot(candidate, input.locale, accountCopy),
+        ),
+      }),
       actions: candidateActions({
         candidates: result.data.candidates,
         helper: input.route.selectionHelper,
@@ -683,6 +804,24 @@ export async function buildAccountAwareServerResponse(input: {
         requiredInputPresent: true,
         serverAuthored: true,
       },
+      accountContextSnapshots: (() => {
+        const order = helperResultSnapshot({
+          data: result.data,
+          referenceType: input.route.input.referenceType,
+          reference: input.route.input.reference,
+          label: input.selectedOrderDisplay?.label,
+          description: input.selectedOrderDisplay?.description,
+        });
+        if (!order) return undefined;
+        return [
+          {
+            kind: input.selectedOrderDisplay ? "selected_order" : "helper_result",
+            helper: input.route.helper,
+            resultCategory: result.data.resultCategory,
+            orders: [order],
+          } satisfies SupportAccountContextSnapshot,
+        ];
+      })(),
     }),
     helperResult: result.data,
     locale: input.locale,
@@ -741,6 +880,10 @@ export async function buildAccountAwareActionResponse(input: {
     accountContext: input.accountContext,
     locale: input.locale,
     threadId: input.threadId,
+    selectedOrderDisplay: {
+      label: verified.displayLabel,
+      description: verified.displayDescription,
+    },
   });
 
   if (response.disposition !== "answered") return response;

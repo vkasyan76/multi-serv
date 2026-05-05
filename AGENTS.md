@@ -173,6 +173,12 @@ Required env groups are defined in `README.md`:
   - these labels are deterministic app logic derived from `lastDisposition`, `lastNeedsHumanSupport`, and raw `status`
   - raw thread `status` (`open` / `escalated` / `closed`) remains backend storage/lifecycle metadata and should stay in diagnostics rather than the main admin review filter/table
   - do not remove the backend `status` field without an explicit schema/storage migration decision
+- Account-aware support-chat admin review must persist and render structured support-safe account context snapshots for candidate orders, selected orders, helper results, and payment overview examples. Do not rely on assistant text alone to reconstruct which order/payment context was shown or used.
+  - snapshots must be structured metadata, not loose transcript text
+  - only persist non-empty snapshots with real account context
+  - prefer user-facing labels/display references in visible UI; internal Payload order ids may be retained as admin diagnostics but must not be the primary visible label
+  - do not store invoice ids or other non-order references in an `orderId` field; use explicit reference metadata for diagnostics
+  - snapshots must never include raw order records, Stripe payloads, full customer/provider records, internal notes, or payment internals
 - Redaction is best-effort for persisted logs only; do not mutate model input unless explicitly approved.
 - Persisted assistant messages should include prompt, guardrail, retrieval, knowledge-pack, model, disposition, and source metadata.
 - `retentionUntil` represents support-chat retention policy; cleanup enforcement can be added separately.
