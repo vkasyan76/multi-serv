@@ -162,6 +162,12 @@ Required env groups are defined in `README.md`:
   - regex/deterministic routing is for safety and fallback only, not the primary assistant brain
   - do not keep expanding multilingual phrase lists for natural conversation understanding; add future coverage through structured triage plus reality evals
   - Patch 1 classification lives in `docs/support-chat-routing-boundaries.md`
+- Support-chat short conversation memory is a client-provided triage hint only.
+  It may include the previous user message, previous assistant message, active
+  topic hint, selected-order-context presence, and whether the assistant last
+  asked for account candidate selection. It must never include full transcripts,
+  raw order/payment data, Stripe data, or raw customer/provider records, and it
+  must not be used as evidence for helper execution.
 - Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helpers, but the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
 - Selected-order context and support-topic context are server-issued signed tokens. Invalid selected-order follow-ups should ask the user to reselect the order; invalid/expired topic context is a soft hint and should be ignored.
 - General topic help must stay general unless the user clearly asks about their own bookings/orders/payments or has selected/referenced a specific item.

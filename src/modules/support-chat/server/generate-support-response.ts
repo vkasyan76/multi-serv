@@ -2,6 +2,7 @@ import "server-only";
 
 import crypto from "node:crypto";
 import { type AppLang } from "@/lib/i18n/app-lang";
+import type { SupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
 import {
   classifySupportChatInputPrecheck,
   type SupportChatInputPrecheckDisposition,
@@ -76,6 +77,7 @@ export type GenerateSupportResponseInput = {
   accountContext?: Pick<TRPCContext, "db" | "userId">;
   selectedOrderContext?: Pick<SupportSelectedOrderContext, "type" | "token">;
   supportTopicContext?: Pick<SupportTopicContext, "type" | "token">;
+  conversationMemory?: SupportConversationMemory;
   intentTriageOverride?: SupportIntentTriageResult;
 };
 
@@ -486,7 +488,7 @@ export async function generateSupportResponse(
   const triageActiveTopic =
     topicContext && isSupportTopicContextFollowUp({ message, context: topicContext })
       ? topicContext.topic
-      : null;
+      : input.conversationMemory?.activeTopic ?? null;
   const shouldRunIntentTriage =
     !supportTopic &&
     !hasPolicyDefinitionRequest(message) &&
@@ -504,6 +506,7 @@ export async function generateSupportResponse(
           threadId,
           activeTopic: triageActiveTopic,
           hasSelectedOrderContext: Boolean(selectedOrder?.ok),
+          conversationMemory: input.conversationMemory,
         })
     : null;
 

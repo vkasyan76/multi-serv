@@ -1,3 +1,5 @@
+import type { SupportConversationMemory as SharedSupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
+
 export type SupportChatDisposition =
   | "answered"
   | "uncertain"
@@ -27,6 +29,8 @@ export type SupportTopicContext = {
   selectedAt: string;
   expiresAt: string;
 };
+
+export type SupportConversationMemory = SharedSupportConversationMemory;
 
 export type SupportChatMessage = {
   id: string;

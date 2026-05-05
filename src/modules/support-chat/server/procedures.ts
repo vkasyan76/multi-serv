@@ -12,6 +12,7 @@ import {
   SUPPORT_CHAT_PHASE,
   SUPPORT_CHAT_PUBLIC_ACCESS,
 } from "@/modules/support-chat/lib/boundaries";
+import { sanitizeSupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
 import { SUPPORT_CHAT_CAPABILITIES } from "@/modules/support-chat/lib/scope";
 import { supportChatAdminProcedures } from "@/modules/support-chat/server/admin-procedures";
 import { buildAccountAwareActionResponse } from "@/modules/support-chat/server/account-aware/server-responses";
@@ -33,6 +34,24 @@ function supportChatRateLimitKey(input: {
   const ip = forwardedFor || input.headers["x-real-ip"] || "anonymous";
   return `ip:${ip}`;
 }
+
+const SUPPORT_CONVERSATION_MEMORY_TOPICS = [
+  "booking",
+  "payment",
+  "cancellation",
+  "provider_onboarding",
+] as const;
+
+const supportConversationMemorySchema = z
+  .object({
+    previousUserMessage: z.string().trim().max(500).optional(),
+    previousAssistantMessage: z.string().trim().max(1000).optional(),
+    activeTopic: z.enum(SUPPORT_CONVERSATION_MEMORY_TOPICS).optional(),
+    hasSelectedOrderContext: z.boolean(),
+    lastAssistantAskedForSelection: z.boolean(),
+  })
+  .optional()
+  .transform((memory) => sanitizeSupportConversationMemory(memory));
 
 export const supportChatRouter = createTRPCRouter({
   ...supportChatAdminProcedures,
@@ -68,6 +87,7 @@ export const supportChatRouter = createTRPCRouter({
             token: z.string().min(1).max(4000),
           })
           .optional(),
+        conversationMemory: supportConversationMemorySchema,
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -116,6 +136,7 @@ export const supportChatRouter = createTRPCRouter({
             accountContext,
             selectedOrderContext: input.selectedOrderContext,
             supportTopicContext: input.supportTopicContext,
+            conversationMemory: input.conversationMemory,
           });
 
       try {

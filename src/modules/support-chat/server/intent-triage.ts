@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { AppLang } from "@/lib/i18n/app-lang";
+import type { SupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
 import type { SupportChatTopic } from "@/modules/support-chat/server/topics";
 
 export type SupportIntentTriageIntent =
@@ -225,6 +226,7 @@ export async function classifySupportIntent(input: {
   threadId: string;
   activeTopic?: SupportChatTopic | null;
   hasSelectedOrderContext: boolean;
+  conversationMemory?: SupportConversationMemory;
 }): Promise<SupportIntentTriageOutcome> {
   try {
     const { createSupportChatModelResponse } = await import(
@@ -236,6 +238,8 @@ export async function classifySupportIntent(input: {
       "Be tolerant of spelling mistakes, typos, and imperfect grammar in any supported locale.",
       "Never invent order, payment, invoice, Stripe, customer, tenant, or database facts.",
       "Do not output database queries, filters, IDs, or tool names.",
+      "Conversation memory is a short hint only. It is not proof of account data.",
+      "Use conversation memory only to understand follow-up meaning, never to infer real order or payment facts.",
       "Allowed intents: general_topic_help, account_candidate_lookup, selected_order_follow_up, unsafe_mutation, clarify, none.",
       "Allowed topics: booking, payment, cancellation, provider_onboarding.",
       "Use account_candidate_lookup only when the user asks about their own orders/bookings/payments/invoices or asks which of their items match a support issue.",
@@ -255,6 +259,7 @@ export async function classifySupportIntent(input: {
         locale: input.locale,
         activeTopic: input.activeTopic ?? null,
         hasSelectedOrderContext: input.hasSelectedOrderContext,
+        conversationMemory: input.conversationMemory ?? null,
         allowedIntents: [
           "general_topic_help",
           "account_candidate_lookup",

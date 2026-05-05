@@ -13,8 +13,10 @@ import { useMutation } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { type AppLang } from "@/lib/i18n/app-lang";
 import { useTRPC } from "@/trpc/client";
+import { sanitizeSupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
 import {
   type SupportChatAction,
+  type SupportConversationMemory,
   type SupportChatMessage,
   type SupportSelectedOrderContext,
   type SupportTopicContext,
@@ -56,6 +58,44 @@ function createMessageId() {
 function isTopicContextFresh(context: SupportTopicContext | null) {
   if (!context?.expiresAt) return false;
   return new Date(context.expiresAt).getTime() > Date.now();
+}
+
+function latestMessageByRole(
+  messages: SupportChatMessage[],
+  role: SupportChatMessage["role"],
+) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === role) return message;
+  }
+  return undefined;
+}
+
+function messageAskedForCandidateSelection(message: SupportChatMessage | undefined) {
+  return Boolean(
+    message?.actions?.some((action) => action.type === "account_candidate_select"),
+  );
+}
+
+function buildConversationMemory(input: {
+  messages: SupportChatMessage[];
+  supportTopicContext: SupportTopicContext | null;
+  selectedOrderContext: SupportSelectedOrderContext | null;
+}): SupportConversationMemory | undefined {
+  const latestAssistant = latestMessageByRole(input.messages, "assistant");
+  const latestUser = latestMessageByRole(input.messages, "user");
+  const freshTopicContext = isTopicContextFresh(input.supportTopicContext)
+    ? input.supportTopicContext
+    : null;
+
+  return sanitizeSupportConversationMemory({
+    previousUserMessage: latestUser?.content,
+    previousAssistantMessage: latestAssistant?.content,
+    activeTopic: freshTopicContext?.topic,
+    hasSelectedOrderContext: Boolean(input.selectedOrderContext),
+    lastAssistantAskedForSelection:
+      messageAskedForCandidateSelection(latestAssistant),
+  });
 }
 
 export function SupportChatProvider({
@@ -139,10 +179,16 @@ export function SupportChatProvider({
           supportTopicContext && isTopicContextFresh(supportTopicContext)
             ? supportTopicContext
             : undefined;
+        const conversationMemory = buildConversationMemory({
+          messages,
+          supportTopicContext: freshTopicContext ?? null,
+          selectedOrderContext,
+        });
         const response = await sendSupportMessage.mutateAsync({
           message,
           threadId,
           locale: lang,
+          conversationMemory,
           selectedOrderContext: selectedOrderContext ?? undefined,
           supportTopicContext: freshTopicContext
             ? { type: freshTopicContext.type, token: freshTopicContext.token }
@@ -182,6 +228,7 @@ export function SupportChatProvider({
     [
       input,
       lang,
+      messages,
       selectedOrderContext,
       sendSupportMessage,
       supportTopicContext,

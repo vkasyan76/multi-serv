@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { sanitizeSupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
 import { parseSupportIntentTriageResult } from "./intent-triage";
 
 test("parseSupportIntentTriageResult accepts valid strict JSON", () => {
@@ -76,5 +77,33 @@ test("parseSupportIntentTriageResult ignores extra helper fields", () => {
       topic: "cancellation",
       confidence: "high",
     },
+  );
+});
+
+test("sanitizeSupportConversationMemory keeps only short safe hints", () => {
+  const memory = sanitizeSupportConversationMemory({
+    previousUserMessage: ` ${"u".repeat(600)} `,
+    previousAssistantMessage: ` ${"a".repeat(1200)} `,
+    activeTopic: "booking",
+    hasSelectedOrderContext: true,
+    lastAssistantAskedForSelection: true,
+  });
+
+  assert.equal(memory?.previousUserMessage?.length, 500);
+  assert.equal(memory?.previousAssistantMessage?.length, 1000);
+  assert.equal(memory?.activeTopic, "booking");
+  assert.equal(memory?.hasSelectedOrderContext, true);
+  assert.equal(memory?.lastAssistantAskedForSelection, true);
+});
+
+test("sanitizeSupportConversationMemory drops empty memory", () => {
+  assert.equal(
+    sanitizeSupportConversationMemory({
+      previousUserMessage: "   ",
+      previousAssistantMessage: "\n\t",
+      hasSelectedOrderContext: false,
+      lastAssistantAskedForSelection: false,
+    }),
+    undefined,
   );
 });
