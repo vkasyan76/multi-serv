@@ -1028,7 +1028,7 @@ test("filtered candidate selection returns bounded customer candidates", async (
     response.accountHelperMetadata.helper,
     "getSupportOrderCandidatesForCurrentUser",
   );
-  assert.match(response.assistantMessage, /recent canceled booking candidate/i);
+  assert.match(response.assistantMessage, /recent canceled booking that may match/i);
   assert.equal(response.actions?.length, 1);
   assert.match(response.actions?.[0]?.description ?? "", /canceled/i);
   assert.equal(
@@ -1052,7 +1052,7 @@ test("filtered candidate selection returns tenant-owned candidates", async () =>
     assert.equal(route.statusFilter, "requested");
   }
   assert.equal(response.disposition, "uncertain");
-  assert.match(response.assistantMessage, /recent requested booking candidates/i);
+  assert.match(response.assistantMessage, /recent requested bookings that may match/i);
   assert.equal(response.actions?.length, 2);
   assert.doesNotMatch(
     JSON.stringify(response.actions),
@@ -1071,7 +1071,7 @@ test("empty filtered candidate selection stays bounded and deterministic", async
   );
 
   assert.equal(response.disposition, "uncertain");
-  assert.match(response.assistantMessage, /could not find recent paid booking candidates/i);
+  assert.match(response.assistantMessage, /could not find recent paid bookings/i);
   assert.match(response.assistantMessage, /not a full history check/i);
   assert.equal(response.actions?.length, 0);
 });
@@ -1622,7 +1622,7 @@ test("intent triage unsafe mutation returns no-action boundary copy", async () =
   assert.equal(response.disposition, "unsupported_account_question");
   assert.equal(
     response.assistantMessage,
-    getSupportChatCopy("en").serverMessages.unsupportedAction,
+    getSupportChatCopy("en").serverMessages.unsafeActionBlocked,
   );
   assert.equal(response.accountHelperMetadata, undefined);
   assert.equal(response.actions, undefined);
@@ -2434,7 +2434,7 @@ test("one candidate still asks for the exact order ID", async () => {
     threadId: THREAD_ID,
   });
 
-  assert.match(response.assistantMessage, /one recent order candidate/i);
+  assert.match(response.assistantMessage, /one recent order that may match/i);
   assert.equal(response.actions?.length, 1);
   assert.doesNotMatch(response.assistantMessage, /eligible for in-app cancellation/i);
   assert.doesNotMatch(response.assistantMessage, /reply\s+(1|one)/i);
@@ -2798,7 +2798,7 @@ test("account rewrite is not attempted for candidate or denied responses", async
   const candidate = await withRewriteFlag(true, () =>
     rewriteAccountAwareServerResponse({
       response: {
-        assistantMessage: "I found a few recent order candidates. Which order do you mean?",
+        assistantMessage: "I found a few recent orders that may match. Which order do you mean?",
         disposition: "uncertain",
         needsHumanSupport: false,
         accountHelperMetadata: {

@@ -19,8 +19,17 @@ type SupportChatServerCopy = {
     abusive: string;
     nonsense: string;
     clarify: string;
+    clarifyGeneral: string;
+    clarifyBooking: string;
+    clarifyPayment: string;
+    clarifyCancellation: string;
+    clarifyProvider: string;
+    lowConfidenceFollowUp: string;
     unsupportedAccount: string;
+    unsupportedBroadAccount: string;
+    accountContextUnavailable: string;
     unsupportedAction: string;
+    unsafeActionBlocked: string;
     uncertain: string;
   };
 };

@@ -51,10 +51,19 @@
     "empty": "Veuillez saisir une question d'assistance pour que je puisse vous aider.",
     "abusive": "Je peux aider pour les questions d'assistance, mais je ne peux pas répondre aux messages abusifs. Veuillez contacter l'assistance si vous avez besoin d'aide.",
     "nonsense": "Je n'ai pas compris cette demande. Veuillez reformuler votre question d'assistance ou contacter l'assistance.",
-    "clarify": "Que cherchez-vous à faire : vous inscrire, réserver un service, gérer un profil prestataire, payer une commande, annuler ou contester quelque chose ?",
-    "unsupportedAccount": "Je peux seulement vérifier des détails limités et sûrs d'une commande, d'un paiement ou d'une facture lorsque vous sélectionnez ou indiquez un élément précis que je peux vérifier. Je ne peux pas parcourir tout l'historique du compte, les commandes sans rapport, Stripe ou les données brutes du compte.",
-    "unsupportedAction": "Je ne peux pas effectuer d’actions comme annuler, rembourser, débiter ou modifier une commande depuis ce chat. Je peux expliquer les règles ou vous aider à vérifier, de façon sûre pour l’assistance, l’éligibilité d’une commande sélectionnée.",
-    "uncertain": "Je n'ai pas assez d'informations d'assistance pour répondre de manière fiable. Je peux aider sur les questions générales d'inscription, de configuration prestataire, de réservation, de paiement, d'annulation, de litige et d'utilisation de la marketplace. Pour ce problème précis, veuillez contacter l'assistance."
+    "clarify": "De quoi avez-vous besoin : réservation, paiement, annulation, profil prestataire, inscription ou litige ?",
+    "unsupportedAccount": "Je peux vérifier seulement des détails limités et sûrs d’une commande, réservation, paiement ou facture que vous sélectionnez ou indiquez. Je ne peux pas parcourir tout l’historique du compte, des données sans rapport, Stripe ou des données brutes.",
+    "unsupportedAction": "Je ne peux pas annuler, rembourser, débiter ou modifier une commande depuis ce chat. Je peux expliquer les règles ou aider à vérifier une commande sélectionnée.",
+    "uncertain": "Je n’ai pas assez d’informations d’assistance approuvées pour répondre de façon fiable. Essayez avec une réservation, un paiement, une annulation, une inscription, un profil prestataire ou une règle de la marketplace.",
+    "clarifyGeneral": "De quoi avez-vous besoin : réservation, paiement, annulation, profil prestataire, inscription ou litige ?",
+    "clarifyBooking": "Parlez-vous d’une réservation demandée, planifiée, annulée, de son paiement, ou d’une modification/annulation ?",
+    "clarifyPayment": "Parlez-vous d’une commande payée, d’un paiement en attente, d’une facture, ou du moment où le paiement devient dû ?",
+    "clarifyCancellation": "La réservation est-elle encore demandée, déjà planifiée ou annulée, et voulez-vous l’annuler ou comprendre pourquoi l’annulation est bloquée ?",
+    "clarifyProvider": "Avez-vous besoin d’aide pour créer un profil prestataire, terminer l’onboarding, gérer des services ou comprendre les paiements prestataire ?",
+    "lowConfidenceFollowUp": "Je veux être sûr de comprendre. Parlez-vous d’une réservation précise, d’un paiement, d’une annulation ou des règles générales de la plateforme ?",
+    "unsupportedBroadAccount": "Je ne peux pas parcourir ni exporter tout l’historique de votre compte depuis ce chat. Posez une question sur une commande, réservation, paiement ou facture précise, ou ouvrez la page correspondante du tableau de bord.",
+    "accountContextUnavailable": "Je peux expliquer les règles, mais je ne peux vérifier des détails de compte que si vous êtes connecté et si la demande est dans le périmètre sûr de l’assistance.",
+    "unsafeActionBlocked": "Je ne peux pas effectuer cette action depuis le chat. Je peux expliquer les règles ou vous aider à vérifier si une commande sélectionnée est éligible."
   },
   "handoffAccount": "Pour une aide propre à votre compte, contactez l'assistance avec les détails de votre commande, facture ou compte.",
   "handoffGeneral": "Si cela ne répond pas à votre question, contactez l'assistance."

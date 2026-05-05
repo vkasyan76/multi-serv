@@ -51,10 +51,19 @@
     "empty": "Introdu o întrebare de asistență ca să te pot ajuta.",
     "abusive": "Pot ajuta cu întrebări de asistență, dar nu pot răspunde la mesaje abuzive. Contactează asistența dacă ai nevoie de ajutor.",
     "nonsense": "Nu am putut înțelege această cerere. Reformulează întrebarea de asistență sau contactează asistența.",
-    "clarify": "Ce încerci să faci: să te înregistrezi, să rezervi un serviciu, să gestionezi un profil de prestator, să plătești o comandă, să anulezi sau să contești ceva?",
-    "unsupportedAccount": "Pot verifica doar detalii limitate și sigure despre comenzi, plăți sau facturi atunci când selectezi ori indici un element concret pe care îl pot verifica. Nu pot parcurge istoricul complet al contului, comenzi fără legătură, Stripe sau date brute ale contului.",
-    "unsupportedAction": "Nu pot efectua acțiuni precum anularea, rambursarea, debitarea sau modificarea unei comenzi din acest chat. Pot explica regulile sau te pot ajuta să verifici în siguranță eligibilitatea unei comenzi selectate.",
-    "uncertain": "Nu am suficiente informații de suport pentru a răspunde în mod fiabil. Pot ajuta cu întrebări generale despre înregistrare, configurarea prestatorului, rezervări, plăți, anulări, dispute și folosirea marketplace-ului. Pentru această problemă concretă, contactează asistența."
+    "clarify": "Cu ce ai nevoie de ajutor: o rezervare, o plată, o anulare, un profil de furnizor, înregistrare sau o dispută?",
+    "unsupportedAccount": "Pot verifica doar detalii limitate și sigure pentru suport despre o comandă, rezervare, plată sau factură pe care o selectezi sau o indici. Nu pot consulta întregul istoric al contului, date fără legătură, date Stripe sau înregistrări brute.",
+    "unsupportedAction": "Nu pot anula, rambursa, încasa sau modifica o comandă din acest chat. Pot explica regulile sau te pot ajuta să verifici în siguranță o comandă selectată.",
+    "uncertain": "Nu am suficiente informații aprobate pentru a răspunde cu încredere. Oferă mai multe detalii sau contactează suportul.",
+    "clarifyGeneral": "Cu ce ai nevoie de ajutor: o rezervare, o plată, o anulare, un profil de furnizor, înregistrare sau o dispută?",
+    "clarifyBooking": "Te referi la o rezervare solicitată, planificată, anulată, la plata unei rezervări sau la modificarea/anularea ei?",
+    "clarifyPayment": "Te referi la o comandă plătită, o plată în așteptare, o factură sau la momentul când plata devine scadentă?",
+    "clarifyCancellation": "Rezervarea este încă solicitată, deja planificată sau anulată, și vrei să o anulezi sau să înțelegi de ce anularea este blocată?",
+    "clarifyProvider": "Ai nevoie de ajutor pentru crearea unui profil de furnizor, finalizarea onboardingului, gestionarea serviciilor sau plățile furnizorului?",
+    "lowConfidenceFollowUp": "Nu sunt sigur ce detaliu îți trebuie. Vrei să verifici o rezervare anume, o plată, o anulare sau o regulă generală a platformei?",
+    "unsupportedBroadAccount": "Nu pot afișa sau exporta întregul istoric al contului din acest chat. Pot ajuta cu o comandă, rezervare, plată sau factură specifică dacă o selectezi sau o indici.",
+    "accountContextUnavailable": "Nu pot accesa în siguranță datele contului pentru această cerere. Autentifică-te și selectează sau indică o comandă, rezervare, plată sau factură specifică.",
+    "unsafeActionBlocked": "Nu pot anula, rambursa, încasa sau modifica o comandă din acest chat. Pot explica pașii sau verifica în siguranță o comandă selectată."
   },
   "handoffAccount": "Pentru ajutor specific contului, contactează asistența cu detaliile comenzii, facturii sau contului.",
   "handoffGeneral": "Dacă acest răspuns nu îți rezolvă întrebarea, contactează asistența."

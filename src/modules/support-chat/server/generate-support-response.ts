@@ -19,6 +19,7 @@ import {
   detectSupportChatStarterTopic,
   isSupportTopicContextFollowUp,
   verifySupportTopicContextToken,
+  type SupportChatTopic,
   type SupportTopicContext,
   type SupportChatTopicDetection,
 } from "@/modules/support-chat/server/topics";
@@ -266,6 +267,22 @@ function invalidInputMessage(
   return copy.nonsense;
 }
 
+function clarificationMessage(input: {
+  locale: AppLang;
+  topic?: SupportChatTopic | null;
+  reason?: "ambiguous" | "low_confidence" | "triage_clarify";
+}) {
+  const copy = getSupportChatCopy(input.locale).serverMessages;
+
+  if (input.reason === "low_confidence") return copy.lowConfidenceFollowUp;
+  if (input.topic === "booking") return copy.clarifyBooking;
+  if (input.topic === "payment") return copy.clarifyPayment;
+  if (input.topic === "cancellation") return copy.clarifyCancellation;
+  if (input.topic === "provider_onboarding") return copy.clarifyProvider;
+
+  return copy.clarifyGeneral;
+}
+
 function supportResponse(
   input: Omit<GenerateSupportResponseResult, "needsHumanSupport" | "groundingKind"> & {
     needsHumanSupport?: boolean;
@@ -307,7 +324,10 @@ export async function generateSupportResponse(
   if (isAmbiguousSupportRequest(message)) {
     return supportResponse({
       threadId,
-      assistantMessage: copy.clarify,
+      assistantMessage: clarificationMessage({
+        locale: input.locale,
+        reason: "ambiguous",
+      }),
       sources: [],
       disposition: "uncertain",
       responseOrigin: "server",
@@ -501,7 +521,11 @@ export async function generateSupportResponse(
     if (triage.confidence !== "high") {
       return supportResponse({
         threadId,
-        assistantMessage: copy.clarify,
+        assistantMessage: clarificationMessage({
+          locale: input.locale,
+          topic: triageTopic?.topic ?? triageActiveTopic,
+          reason: "low_confidence",
+        }),
         sources: [],
         disposition: "uncertain",
         responseOrigin: "server",
@@ -560,7 +584,7 @@ export async function generateSupportResponse(
     if (canUseTriageForUnsafeAction({ triage })) {
       return supportResponse({
         threadId,
-        assistantMessage: copy.unsupportedAction,
+        assistantMessage: copy.unsafeActionBlocked,
         sources: [],
         disposition: "unsupported_account_question",
         responseOrigin: "server",
@@ -579,9 +603,14 @@ export async function generateSupportResponse(
       triageEligibilityReason === "account_aware_disabled" ||
       triageEligibilityReason === "broad_or_deferred"
     ) {
+      const assistantMessage =
+        triageEligibilityReason === "broad_or_deferred"
+          ? copy.unsupportedBroadAccount
+          : copy.accountContextUnavailable;
+
       return supportResponse({
         threadId,
-        assistantMessage: copy.unsupportedAccount,
+        assistantMessage,
         sources: [],
         disposition: "unsupported_account_question",
         responseOrigin: "server",
@@ -598,7 +627,11 @@ export async function generateSupportResponse(
     if (triage.intent === "clarify") {
       return supportResponse({
         threadId,
-        assistantMessage: copy.clarify,
+        assistantMessage: clarificationMessage({
+          locale: input.locale,
+          topic: triageTopic?.topic ?? triageActiveTopic,
+          reason: "triage_clarify",
+        }),
         sources: [],
         disposition: "uncertain",
         responseOrigin: "server",

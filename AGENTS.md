@@ -192,6 +192,7 @@ Required env groups are defined in `README.md`:
 - Ambiguous support-chat requests should receive one short clarifying question instead of a guessed answer.
 - Unsupported or escalated support-chat responses should still say what the assistant can help with and what the user should do next.
 - The model should only draft normal answers after server-side checks pass; invalid, ambiguous, unsupported-account, weak-source, and outage paths should remain deterministic server-authored responses.
+- Deterministic/server-authored support-chat copy should be user-facing and topic-aware. Avoid generic menu-style clarification when a topic or triage topic is known, do not expose helper names or AI-audit wording, and avoid internal terms like "candidate" in customer-facing text; prefer "matching" or "recent" orders/bookings.
 - Support-chat storage must use `support_chat_threads` and `support_chat_messages`; do not reuse human `conversations` or `messages`.
 - `threadId` is the public support-chat continuity id and must not be confused with the Payload document id.
 - Support-chat logs are admin-only by default and must not be exposed to vendors or regular users.

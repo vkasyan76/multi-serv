@@ -51,10 +51,19 @@
     "empty": "Escribe una pregunta de soporte para que pueda ayudarte.",
     "abusive": "Puedo ayudar con preguntas de soporte, pero no puedo responder a mensajes abusivos. Contacta con soporte si necesitas ayuda.",
     "nonsense": "No he podido entender esa solicitud. Reformula tu pregunta de soporte o contacta con soporte.",
-    "clarify": "¿Qué intentas hacer: registrarte, reservar un servicio, gestionar un perfil de proveedor, pagar un pedido, cancelar o disputar algo?",
-    "unsupportedAccount": "Solo puedo revisar detalles limitados y seguros de pedidos, pagos o facturas cuando seleccionas o indicas un elemento específico que puedo verificar. No puedo recorrer todo el historial de la cuenta, pedidos no relacionados, Stripe ni registros internos de la cuenta.",
-    "unsupportedAction": "No puedo realizar acciones como cancelar, reembolsar, cobrar o actualizar un pedido desde este chat. Puedo explicar las reglas o ayudarte a comprobar de forma segura si un pedido seleccionado cumple los requisitos.",
-    "uncertain": "No tengo suficiente información de soporte para responder con fiabilidad. Puedo ayudar con preguntas generales sobre registro, configuración de proveedor, reservas, pagos, cancelaciones, disputas y uso del marketplace. Para este problema concreto, contacta con soporte."
+    "clarify": "¿Con qué necesitas ayuda: una reserva, un pago, una cancelación, un perfil de proveedor, el registro o una disputa?",
+    "unsupportedAccount": "Solo puedo revisar detalles limitados y seguros para soporte sobre un pedido, reserva, pago o factura que selecciones o indiques. No puedo consultar todo el historial de la cuenta, datos no relacionados, datos de Stripe ni registros sin procesar.",
+    "unsupportedAction": "No puedo cancelar, reembolsar, cobrar ni modificar un pedido desde este chat. Puedo explicar las reglas o ayudarte a revisar de forma segura un pedido seleccionado.",
+    "uncertain": "No tengo suficiente información aprobada para responder con confianza. Proporciona más detalles o contacta con soporte.",
+    "clarifyGeneral": "¿Con qué necesitas ayuda: una reserva, un pago, una cancelación, un perfil de proveedor, el registro o una disputa?",
+    "clarifyBooking": "¿Te refieres a una reserva solicitada, planificada, cancelada, al pago de una reserva o a cambiar/cancelarla?",
+    "clarifyPayment": "¿Te refieres a un pedido pagado, un pago pendiente, una factura o cuándo vence el pago?",
+    "clarifyCancellation": "¿La reserva sigue solicitada, ya está planificada o cancelada, y quieres cancelarla o entender por qué está bloqueada?",
+    "clarifyProvider": "¿Necesitas ayuda para crear un perfil de proveedor, completar el onboarding, gestionar servicios o entender pagos de proveedor?",
+    "lowConfidenceFollowUp": "No estoy seguro de qué detalle necesitas. ¿Quieres revisar una reserva específica, un pago, una cancelación o una regla general de la plataforma?",
+    "unsupportedBroadAccount": "No puedo mostrar ni exportar todo el historial de la cuenta desde este chat. Puedo ayudar con un pedido, reserva, pago o factura específicos si los seleccionas o indicas.",
+    "accountContextUnavailable": "No puedo acceder de forma segura a los datos de tu cuenta para esta solicitud. Inicia sesión y selecciona o indica el pedido, reserva, pago o factura específicos.",
+    "unsafeActionBlocked": "No puedo cancelar, reembolsar, cobrar ni modificar un pedido desde este chat. Puedo explicar los pasos o revisar de forma segura un pedido seleccionado."
   },
   "handoffAccount": "Para ayuda específica de tu cuenta, contacta con soporte e incluye los datos de tu pedido, factura o cuenta.",
   "handoffGeneral": "Si esto no responde a tu pregunta, contacta con soporte para recibir ayuda."
