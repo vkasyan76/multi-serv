@@ -368,6 +368,9 @@ export async function generateSupportResponse(
   const topicContext =
     verifiedTopicContext?.ok ? verifiedTopicContext.context : null;
 
+  // Current deterministic routing is a safety/legacy fast path. Future
+  // natural-language coverage should be added through structured triage, not
+  // by broadening regex lists here.
   const accountRoute = input.accountContext
     ? routeSupportAccountAwareRequest(message, {
         selectedOrder: selectedOrder?.ok ? selectedOrder.input : undefined,
@@ -424,6 +427,8 @@ export async function generateSupportResponse(
     context: topicContext,
   });
 
+  // Fallback only: short topic follow-ups can still reach bounded account
+  // helpers, but primary follow-up understanding belongs in model triage.
   if (topicEscalation && input.accountContext && topicContext) {
     const accountResponse = await buildAccountAwareServerResponse({
       route: {

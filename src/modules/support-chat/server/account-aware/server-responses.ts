@@ -31,6 +31,14 @@ import { getAccountAwareCopy, type AccountAwareLocalizedCopy } from "./localized
 import { SUPPORT_ACCOUNT_HELPER_VERSION } from "./versioning";
 import { rewriteAccountAwareServerResponse } from "./account-rewrite";
 
+/**
+ * Server-owned account helper execution.
+ *
+ * The model may classify user meaning in future triage patches, but helper
+ * mapping, execution, ownership checks, result limits, and mutation blocking
+ * stay server-side.
+ */
+
 type AccountCtx = Pick<TRPCContext, "db" | "userId">;
 type AccountResponseIntent = Extract<
   SupportAccountRoute,

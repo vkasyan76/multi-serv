@@ -1,3 +1,20 @@
+/**
+ * Legacy account intent normalizers.
+ *
+ * KEEP for safety/fallback checks:
+ * - broad account-history/export detection
+ * - bounded selected-order follow-up hints
+ *
+ * FALLBACK for now:
+ * - natural-language account lookup, status, payment, and cancellation phrase
+ *   lists that predate structured triage
+ *
+ * Future patches should stop growing this file as the assistant brain. New
+ * conversational coverage should be expressed through structured model triage
+ * plus reality evals, while this file remains a conservative fallback.
+ */
+
+// FALLBACK: multilingual lexical hints used by legacy candidate lookup.
 const RECENCY_TERMS = [
   "last",
   "latest",
@@ -111,6 +128,7 @@ const INVOICE_TERMS = [
   "рахунки",
 ] as const;
 
+// FALLBACK: legacy status/payment/cancellation phrase routing.
 const ORDER_STATUS_INTENT_PATTERNS = [
   /\b(order|booking)\s+status\b/,
   /\b(status|estado|statut|stato|statusul|stan)\b.*\b(order|booking|buchung|buchungen|bestellung|bestellungen|auftrag|auftrage|auftraege|commande|commandes|reservation|reservations|ordine|ordini|prenotazione|prenotazioni|pedido|pedidos|reserva|reservas|zamowienie|zamowienia|rezerwacja|rezerwacje|comanda|comenzi|comenzii|rezervare|rezervari)\b/,
@@ -147,6 +165,7 @@ const CANCEL_ELIGIBILITY_INTENT_PATTERNS = [
   /(замовлення|бронювання).*скасувати/u,
 ] as const;
 
+// KEEP: broad history/export scope is blocked deterministically.
 const BROAD_OR_DEFERRED_INTENT_PATTERNS = [
   /\bhistory\b/,
   /\bexport\b/,
@@ -169,6 +188,7 @@ const BROAD_OR_DEFERRED_INTENT_PATTERNS = [
   /(історія|експортувати).*(замовлення|бронювання|оплати|рахунки)/u,
 ] as const;
 
+// FALLBACK: vague account-object lookup should move behind model triage.
 const DIRECT_VAGUE_ACCOUNT_PATTERNS = [
   /\bfind\s+my\s+(order|booking)\b/,
   /\bwhat\s+happened\s+with\s+my\s+(order|booking)\b/,
@@ -344,6 +364,8 @@ const STATUS_FILTER_PATTERNS = {
   ],
 } as const;
 
+// KEEP/FALLBACK: selected-order follow-ups are bounded by a server-issued
+// selected-order token, but the phrase matching should not expand further.
 const SELECTED_ORDER_PAYMENT_FOLLOW_UP_PATTERNS = [
   /\bwhat\s+about\b.*\bpayment\b/,
   /\bpayment\b/,

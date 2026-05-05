@@ -156,6 +156,12 @@ Required env groups are defined in `README.md`:
 - `threadId` is an opaque support-chat continuity id for server/admin logs only and must not be treated as user-visible persisted chat history.
 - Support-chat disposition is server-owned; the model may draft normal answers, but server code decides `answered`, `uncertain`, `escalate`, or `unsupported_account_question`.
 - Support-chat prompt builders should format selected context only; disposition, unsupported-account handling, and weak-source decisions belong in server orchestration.
+- Support-chat routing architecture rule:
+  - model/triage should understand user meaning
+  - server code must enforce authority, ownership, helper allowlists, result limits, and no-mutation boundaries
+  - regex/deterministic routing is for safety and fallback only, not the primary assistant brain
+  - do not keep expanding multilingual phrase lists for natural conversation understanding; add future coverage through structured triage plus reality evals
+  - Patch 1 classification lives in `docs/support-chat-routing-boundaries.md`
 - Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helpers, but the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
 - Selected-order context and support-topic context are server-issued signed tokens. Invalid selected-order follow-ups should ask the user to reselect the order; invalid/expired topic context is a soft hint and should be ignored.
 - General topic help must stay general unless the user clearly asks about their own bookings/orders/payments or has selected/referenced a specific item.

@@ -1,5 +1,26 @@
 import "server-only";
 
+/**
+ * Account-aware routing boundary.
+ *
+ * KEEP deterministic here:
+ * - exact object-id/reference handling
+ * - selected-order token follow-ups
+ * - unsafe mutation blockers
+ * - broad history/export blockers
+ * - explicit server helper selection
+ *
+ * FALLBACK for now:
+ * - legacy natural-language account lookup and status phrase routing
+ *
+ * REMOVE/DEMOTE LATER:
+ * - broad multilingual phrase-list growth for conversational meaning
+ *
+ * Future patches should move primary conversation understanding into structured
+ * model triage. This module should remain the server authority layer that maps
+ * allowed routes to bounded helpers.
+ */
+
 import type { AccountCandidateSelectionHelper } from "./action-tokens";
 import type {
   SupportAccountHelperInput,
@@ -62,6 +83,7 @@ const OBJECT_ID_RE = /\b[a-f0-9]{24}\b/gi;
 const EXPLICIT_BAD_REF_RE =
   /\b(?:order|booking|invoice)\s*(?:id|#|number|reference|ref)\s*[:#-]?\s*([a-z0-9_-]{6,})\b/i;
 
+// KEEP: broad account-history/export requests are blocked deterministically.
 const BROAD_OR_DEFERRED_PATTERNS = [
   /\bhistory\b/i,
   /\ball\s+(my\s+)?(orders|payments|invoices|bookings)\b/i,
@@ -83,6 +105,8 @@ const ALWAYS_BROAD_OR_DEFERRED_PATTERNS = [
   /\binvoice\s+history\b/i,
 ];
 
+// FALLBACK: legacy account intent phrase lists. Do not expand these into the
+// primary assistant brain; structured triage should own new natural language.
 const ORDER_STATUS_PATTERNS = [
   /\border\s+status\b/i,
   /\bbooking\s+status\b/i,
@@ -116,6 +140,7 @@ const PAYMENT_OVERVIEW_PATTERNS = [
   /\bwhich\s+payments\s+are\s+still\s+pending\b/i,
 ];
 
+// KEEP: requests that sound like mutations must not become helper execution.
 const CANCEL_ELIGIBILITY_PATTERNS = [
   /\bcan\s+i\s+cancel\s+(my\s+|this\s+|the\s+)?(?:last\s+|latest\s+|recent\s+|most\s+recent\s+)?(order|booking)\b/i,
   /\bcancel\s+(my\s+|this\s+|the\s+)?(?:last\s+|latest\s+|recent\s+|most\s+recent\s+)?(order|booking)\b/i,
@@ -134,6 +159,7 @@ const DIRECT_MUTATION_PATTERNS = [
   /скасуй\s+(моє|мою|мої)\s+(замовлення|бронювання)/u,
 ] as const;
 
+// FALLBACK: legacy candidate lookup detection until model triage replaces it.
 const PERSONAL_ACCOUNT_OBJECT_PATTERNS = [
   /\b(my|mine)\b.*\b(orders?|bookings?|payments?|invoices?)\b/u,
   /\b(orders?|bookings?|payments?|invoices?)\b.*\b(my|mine)\b/u,
@@ -172,6 +198,7 @@ const EXPLICIT_ACCOUNT_LOOKUP_PATTERNS = [
   /\bcheck\b.*\b(orders?|bookings?)\b.*\b(provider|last\s+week|last\s+month|recent|latest|date)\b/u,
 ] as const;
 
+// KEEP: selected-order reuse is allowed only around explicit selected context.
 const SELECTED_ORDER_REFERENCE_PATTERNS = [
   /\b(this|that|selected)\s+(order|booking)\b/i,
   /\b(this|that)\s+one\b/i,
@@ -465,6 +492,7 @@ export function routeSupportAccountAwareRequest(
     hasPaymentOverview ||
     statusFilter;
 
+  // KEEP: fail closed before any candidate/helper route can expose account data.
   if (detectBroadOrDeferredIntent(trimmed)) {
     return { kind: "broad_or_deferred" };
   }
@@ -542,6 +570,8 @@ export function routeSupportAccountAwareRequest(
 
   if (!isAccountAware) return { kind: "none" };
 
+  // KEEP: exact references can only route into the explicit server helper
+  // allowlist below; helper execution still performs ownership checks.
   if (ids.length > 1) {
     if (hasCancelEligibility) {
       return {
