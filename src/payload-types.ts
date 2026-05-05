@@ -1030,6 +1030,23 @@ export interface SupportChatMessage {
         id?: string | null;
       }[]
     | null;
+  triageIntent?:
+    | (
+        | 'general_support'
+        | 'account_candidate_lookup'
+        | 'selected_order_follow_up'
+        | 'unsafe_mutation'
+        | 'unsupported_account_scope'
+        | 'clarify'
+        | 'none'
+        | 'not_applicable'
+      )
+    | null;
+  triageTopic?: ('booking' | 'payment' | 'cancellation' | 'provider_onboarding') | null;
+  triageStatusFilter?: ('requested' | 'scheduled' | 'canceled' | 'paid' | 'payment_pending' | 'payment_not_due') | null;
+  triageConfidence?: ('low' | 'medium' | 'high') | null;
+  triageReason?: string | null;
+  groundingKind: 'knowledge' | 'account_safe_dto' | 'none';
   promptVersion?: string | null;
   guardrailVersion?: string | null;
   retrievalVersion?: string | null;
@@ -1719,6 +1736,12 @@ export interface SupportChatMessagesSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  triageIntent?: T;
+  triageTopic?: T;
+  triageStatusFilter?: T;
+  triageConfidence?: T;
+  triageReason?: T;
+  groundingKind?: T;
   promptVersion?: T;
   guardrailVersion?: T;
   retrievalVersion?: T;

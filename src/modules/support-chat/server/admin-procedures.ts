@@ -183,6 +183,12 @@ export type AdminSupportMessageRow = {
       nextStepKey: string | null;
     }>;
   }>;
+  triageIntent: string | null;
+  triageTopic: string | null;
+  triageStatusFilter: string | null;
+  triageConfidence: string | null;
+  triageReason: string | null;
+  groundingKind: string | null;
   sources: Array<{
     documentId: string;
     documentVersion: string;

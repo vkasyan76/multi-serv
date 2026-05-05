@@ -37,6 +37,41 @@ const SUPPORT_ACCOUNT_REWRITE_REJECTED_REASONS = [
   "missing_required_limitation",
 ] as const;
 
+const SUPPORT_TRIAGE_INTENTS = [
+  "general_support",
+  "account_candidate_lookup",
+  "selected_order_follow_up",
+  "unsafe_mutation",
+  "unsupported_account_scope",
+  "clarify",
+  "none",
+  "not_applicable",
+] as const;
+
+const SUPPORT_TRIAGE_TOPICS = [
+  "booking",
+  "payment",
+  "cancellation",
+  "provider_onboarding",
+] as const;
+
+const SUPPORT_TRIAGE_STATUS_FILTERS = [
+  "requested",
+  "scheduled",
+  "canceled",
+  "paid",
+  "payment_pending",
+  "payment_not_due",
+] as const;
+
+const SUPPORT_TRIAGE_CONFIDENCES = ["low", "medium", "high"] as const;
+
+const SUPPORT_GROUNDING_KINDS = [
+  "knowledge",
+  "account_safe_dto",
+  "none",
+] as const;
+
 export const SupportChatMessages: CollectionConfig = {
   slug: "support_chat_messages",
   indexes: [
@@ -214,6 +249,54 @@ export const SupportChatMessages: CollectionConfig = {
         description:
           "Support-safe account/order context shown or used by account-aware support. Do not store raw records or Stripe payloads.",
       },
+    },
+    {
+      name: "triageIntent",
+      type: "select",
+      options: SUPPORT_TRIAGE_INTENTS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    {
+      name: "triageTopic",
+      type: "select",
+      options: SUPPORT_TRIAGE_TOPICS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    {
+      name: "triageStatusFilter",
+      type: "select",
+      options: SUPPORT_TRIAGE_STATUS_FILTERS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    {
+      name: "triageConfidence",
+      type: "select",
+      options: SUPPORT_TRIAGE_CONFIDENCES.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    { name: "triageReason", type: "textarea" },
+    {
+      name: "groundingKind",
+      type: "select",
+      required: true,
+      defaultValue: "none",
+      options: SUPPORT_GROUNDING_KINDS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
     },
     { name: "promptVersion", type: "text" },
     { name: "guardrailVersion", type: "text" },

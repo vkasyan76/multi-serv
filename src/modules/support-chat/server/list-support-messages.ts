@@ -144,6 +144,12 @@ export async function listSupportMessages(db: Payload, id: string) {
         })),
       })
     ),
+    triageIntent: message.triageIntent ?? null,
+    triageTopic: message.triageTopic ?? null,
+    triageStatusFilter: message.triageStatusFilter ?? null,
+    triageConfidence: message.triageConfidence ?? null,
+    triageReason: message.triageReason ?? null,
+    groundingKind: message.groundingKind ?? null,
     sources: (message.sources ?? []).map((source) => ({
       documentId: source.documentId,
       documentVersion: source.documentVersion,

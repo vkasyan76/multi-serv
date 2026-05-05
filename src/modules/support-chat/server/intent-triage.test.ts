@@ -7,12 +7,14 @@ import { parseSupportIntentTriageResult } from "./intent-triage";
 test("parseSupportIntentTriageResult accepts valid strict JSON", () => {
   assert.deepEqual(
     parseSupportIntentTriageResult(
-      '{"intent":"account_candidate_lookup","topic":"cancellation","confidence":"high"}',
+      '{"intent":"account_candidate_lookup","topic":"cancellation","statusFilter":"scheduled","confidence":"high","reason":"User asks about their own scheduled booking."}',
     ),
     {
       intent: "account_candidate_lookup",
       topic: "cancellation",
+      statusFilter: "scheduled",
       confidence: "high",
+      reason: "User asks about their own scheduled booking.",
     },
   );
 });
@@ -36,6 +38,12 @@ test("parseSupportIntentTriageResult rejects invalid enum fields", () => {
     ),
     null,
   );
+  assert.equal(
+    parseSupportIntentTriageResult(
+      '{"intent":"account_candidate_lookup","topic":"booking","statusFilter":"tomorrow","confidence":"high"}',
+    ),
+    null,
+  );
 });
 
 test("parseSupportIntentTriageResult rejects prose without JSON", () => {
@@ -53,7 +61,9 @@ test("parseSupportIntentTriageResult accepts embedded JSON intentionally", () =>
     {
       intent: "clarify",
       topic: undefined,
+      statusFilter: undefined,
       confidence: "low",
+      reason: undefined,
     },
   );
 });
@@ -67,16 +77,40 @@ test("parseSupportIntentTriageResult rejects helper names as intents", () => {
   );
 });
 
-test("parseSupportIntentTriageResult ignores extra helper fields", () => {
-  assert.deepEqual(
+test("parseSupportIntentTriageResult rejects extra helper fields", () => {
+  assert.equal(
     parseSupportIntentTriageResult(
       '{"intent":"account_candidate_lookup","topic":"cancellation","confidence":"high","helper":"canCancelOrderForCurrentUser"}',
     ),
+    null,
+  );
+});
+
+test("parseSupportIntentTriageResult accepts none and not_applicable", () => {
+  assert.deepEqual(
+    parseSupportIntentTriageResult(
+      '{"intent":"not_applicable","confidence":"low","reason":"Not a support request."}',
+    ),
     {
-      intent: "account_candidate_lookup",
-      topic: "cancellation",
-      confidence: "high",
+      intent: "not_applicable",
+      topic: undefined,
+      statusFilter: undefined,
+      confidence: "low",
+      reason: "Not a support request.",
     },
+  );
+});
+
+test("parseSupportIntentTriageResult rejects long reasons", () => {
+  assert.equal(
+    parseSupportIntentTriageResult(
+      JSON.stringify({
+        intent: "general_support",
+        confidence: "high",
+        reason: "x".repeat(301),
+      }),
+    ),
+    null,
   );
 });
 

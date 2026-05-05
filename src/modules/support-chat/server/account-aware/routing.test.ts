@@ -1367,7 +1367,7 @@ test("French cancellation topic follow-up routes to cancellable candidates", asy
   );
 });
 
-test("intent triage recovers typoed account follow-ups without broad lookup", async () => {
+test("intent triage records typoed account follow-ups without helper routing", async () => {
   useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { db, accountContext } = makeCtx("clerk-user-a");
@@ -1376,10 +1376,6 @@ test("intent triage recovers typoed account follow-ups without broad lookup", as
     threadId: THREAD_ID,
     locale: "de",
     accountContext,
-    supportTopicContext: createSupportTopicContext({
-      topic: "cancellation",
-      source: "starter_prompt",
-    }),
     intentTriageOverride: {
       intent: "account_candidate_lookup",
       topic: "cancellation",
@@ -1388,20 +1384,18 @@ test("intent triage recovers typoed account follow-ups without broad lookup", as
   });
 
   assert.equal(response.disposition, "uncertain");
-  assert.equal(
-    response.accountHelperMetadata?.helper,
-    "getSupportOrderCandidatesForCurrentUser",
-  );
-  assert.equal(response.supportTopic?.topic, "cancellation");
-  assert.match(response.actions?.[0]?.id ?? "", /canCancelOrderForCurrentUser/);
+  assert.equal(response.triage?.intent, "account_candidate_lookup");
+  assert.equal(response.triage?.topic, "cancellation");
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
   assert.ok(
-    db.calls.some(
+    !db.calls.some(
       (call) => call.method === "find" && call.collection === "orders",
     ),
   );
 });
 
-test("intent triage maps broad support topics through server-owned helpers", async () => {
+test("intent triage records broad support topics without helper routing", async () => {
   useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
 
@@ -1414,7 +1408,6 @@ test("intent triage maps broad support topics through server-owned helpers", asy
         topic: "cancellation" as const,
         confidence: "high" as const,
       },
-      expectedAction: /canCancelOrderForCurrentUser/,
     },
     {
       message: "paymnt thing maybe",
@@ -1424,7 +1417,6 @@ test("intent triage maps broad support topics through server-owned helpers", asy
         topic: "payment" as const,
         confidence: "high" as const,
       },
-      expectedAction: /getPaymentStatusForCurrentUser/,
     },
     {
       message: "bookng thing maybe",
@@ -1434,7 +1426,6 @@ test("intent triage maps broad support topics through server-owned helpers", asy
         topic: "booking" as const,
         confidence: "high" as const,
       },
-      expectedAction: /getOrderStatusForCurrentUser/,
     },
   ];
 
@@ -1452,15 +1443,12 @@ test("intent triage maps broad support topics through server-owned helpers", asy
       intentTriageOverride: item.triage,
     });
 
-    assert.equal(response.disposition, "uncertain", item.message);
-    assert.equal(
-      response.accountHelperMetadata?.helper,
-      "getSupportOrderCandidatesForCurrentUser",
-      item.message,
-    );
-    assert.match(response.actions?.[0]?.id ?? "", item.expectedAction, item.message);
+    assert.equal(response.triage?.intent, "account_candidate_lookup", item.message);
+    assert.equal(response.triage?.topic, item.triage.topic, item.message);
+    assert.equal(response.accountHelperMetadata, undefined, item.message);
+    assert.equal(response.actions, undefined, item.message);
     assert.ok(
-      db.calls.some(
+      !db.calls.some(
         (call) => call.method === "find" && call.collection === "orders",
       ),
       item.message,
@@ -1573,7 +1561,7 @@ test("intent triage unsafe mutation returns no-action boundary copy", async () =
   );
 });
 
-test("intent triage can recover selected-order follow-up typos", async () => {
+test("intent triage records selected-order follow-up typos without helper routing", async () => {
   useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");
   const { accountContext } = makeCtx("clerk-user-a");
@@ -1597,12 +1585,10 @@ test("intent triage can recover selected-order follow-up typos", async () => {
     },
   });
 
-  assert.equal(response.disposition, "answered");
-  assert.equal(
-    response.accountHelperMetadata?.helper,
-    "getPaymentStatusForCurrentUser",
-  );
-  assert.doesNotMatch(response.assistantMessage, /Welche Bestellung meinst du/i);
+  assert.equal(response.triage?.intent, "selected_order_follow_up");
+  assert.equal(response.triage?.topic, "payment");
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
 });
 
 test("selected order context routes follow-up questions to exact helpers", () => {

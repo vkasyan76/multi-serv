@@ -33,6 +33,10 @@ import {
   type SupportIntentTriageResult,
 } from "@/modules/support-chat/server/intent-triage";
 import {
+  resolveSupportGroundingKind,
+  type SupportGroundingKind,
+} from "@/modules/support-chat/server/grounding";
+import {
   buildAccountAwareServerResponse,
   type SupportAccountHelperMetadata,
   type SupportAccountContextSnapshot,
@@ -93,6 +97,8 @@ export type GenerateSupportResponseResult = {
     modelVersion?: string;
     requestId?: string | null;
   };
+  triage?: SupportIntentTriageResult;
+  groundingKind: SupportGroundingKind;
   accountHelperMetadata?: SupportAccountHelperMetadata;
   accountAnswerMode?: SupportAccountAnswerMode;
   accountRewriteModel?: string;
@@ -263,12 +269,19 @@ function invalidInputMessage(
 }
 
 function supportResponse(
-  input: Omit<GenerateSupportResponseResult, "needsHumanSupport"> & {
+  input: Omit<GenerateSupportResponseResult, "needsHumanSupport" | "groundingKind"> & {
     needsHumanSupport?: boolean;
+    groundingKind?: SupportGroundingKind;
   }
 ): GenerateSupportResponseResult {
   return {
     ...input,
+    groundingKind:
+      input.groundingKind ??
+      resolveSupportGroundingKind({
+        sources: input.sources,
+        accountContextSnapshots: input.accountContextSnapshots,
+      }),
     needsHumanSupport:
       input.needsHumanSupport ?? input.disposition !== "answered",
   };
@@ -495,6 +508,9 @@ export async function generateSupportResponse(
     Boolean(input.accountContext) &&
     (Boolean(topicContext) ||
       Boolean(selectedOrder?.ok) ||
+      Boolean(input.conversationMemory?.activeTopic) ||
+      Boolean(input.conversationMemory?.hasSelectedOrderContext) ||
+      Boolean(input.conversationMemory?.lastAssistantAskedForSelection) ||
       hasAccountSpecificRequest(message) ||
       looksLikeAccountOrActionFollowUp(message));
   const triageOutcome = shouldRunIntentTriage
@@ -522,97 +538,11 @@ export async function generateSupportResponse(
         disposition: "uncertain",
         responseOrigin: "server",
         needsHumanSupport: false,
-        supportTopic: triageTopic ?? undefined,
-        supportTopicContext: triageTopic
-          ? createSupportTopicContext(triageTopic)
-          : undefined,
-      });
-    }
-
-    if (
-      canUseTriageForSelectedOrder({
         triage,
-        hasAccountContext: Boolean(input.accountContext),
-        hasSelectedOrderContext: Boolean(selectedOrder?.ok),
-      }) &&
-      input.accountContext &&
-      selectedOrder?.ok
-    ) {
-      const accountResponse = await buildAccountAwareServerResponse({
-        route: {
-          kind: "helper",
-          helper: selectedOrderTriageHelper(triage),
-          input: selectedOrder.input,
-        },
-        accountContext: input.accountContext,
-        locale: input.locale,
-        threadId,
-        selectedOrderDisplay: {
-          label: selectedOrder.displayLabel,
-          description: selectedOrder.displayDescription,
-        },
-      });
-
-      return supportResponse({
-        threadId,
-        assistantMessage: accountResponse.assistantMessage,
-        sources: [],
-        disposition: accountResponse.disposition,
-        responseOrigin: "server",
-        needsHumanSupport: accountResponse.needsHumanSupport,
-        accountHelperMetadata: accountResponse.accountHelperMetadata,
-        accountAnswerMode: accountResponse.accountAnswerMode,
-        accountRewriteModel: accountResponse.accountRewriteModel,
-        accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
-        accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
-        accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
         supportTopic: triageTopic ?? undefined,
         supportTopicContext: triageTopic
           ? createSupportTopicContext(triageTopic)
           : undefined,
-        actions: accountResponse.actions,
-        selectedOrderContext: accountResponse.selectedOrderContext,
-        accountContextSnapshots: accountResponse.accountContextSnapshots,
-      });
-    }
-
-    if (
-      canUseTriageForCandidateLookup({
-        triage,
-        hasAccountContext: Boolean(input.accountContext),
-      }) &&
-      input.accountContext
-    ) {
-      const accountResponse = await buildAccountAwareServerResponse({
-        route: {
-          kind: "candidate_selection",
-          selectionHelper: candidateTriageHelper(triage),
-        },
-        accountContext: input.accountContext,
-        locale: input.locale,
-        threadId,
-      });
-
-      return supportResponse({
-        threadId,
-        assistantMessage: accountResponse.assistantMessage,
-        sources: [],
-        disposition: accountResponse.disposition,
-        responseOrigin: "server",
-        needsHumanSupport: accountResponse.needsHumanSupport,
-        accountHelperMetadata: accountResponse.accountHelperMetadata,
-        accountAnswerMode: accountResponse.accountAnswerMode,
-        accountRewriteModel: accountResponse.accountRewriteModel,
-        accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
-        accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
-        accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
-        supportTopic: triageTopic ?? undefined,
-        supportTopicContext: triageTopic
-          ? createSupportTopicContext(triageTopic)
-          : undefined,
-        actions: accountResponse.actions,
-        selectedOrderContext: accountResponse.selectedOrderContext,
-        accountContextSnapshots: accountResponse.accountContextSnapshots,
       });
     }
 
@@ -623,6 +553,7 @@ export async function generateSupportResponse(
         sources: [],
         disposition: "unsupported_account_question",
         responseOrigin: "server",
+        triage,
         supportTopic: triageTopic ?? undefined,
         supportTopicContext: triageTopic
           ? createSupportTopicContext(triageTopic)
@@ -638,6 +569,7 @@ export async function generateSupportResponse(
         disposition: "uncertain",
         responseOrigin: "server",
         needsHumanSupport: false,
+        triage,
         supportTopic: triageTopic ?? undefined,
         supportTopicContext: triageTopic
           ? createSupportTopicContext(triageTopic)
@@ -650,7 +582,7 @@ export async function generateSupportResponse(
     supportTopic ??
     (triageOutcome?.ok &&
     triageOutcome.result.confidence === "high" &&
-    triageOutcome.result.intent === "general_topic_help" &&
+    triageOutcome.result.intent === "general_support" &&
     triageOutcome.result.topic
       ? {
           topic: triageOutcome.result.topic,
@@ -690,6 +622,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "unsupported_account_question",
       responseOrigin: "server",
+      triage: triageOutcome?.ok ? triageOutcome.result : undefined,
       supportTopic: activeSupportTopic ?? undefined,
       supportTopicContext: refreshedTopicContext,
     });
@@ -702,6 +635,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "uncertain",
       responseOrigin: "server",
+      triage: triageOutcome?.ok ? triageOutcome.result : undefined,
       supportTopic: activeSupportTopic ?? undefined,
       supportTopicContext: refreshedTopicContext,
     });
@@ -714,6 +648,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "uncertain",
       responseOrigin: "server",
+      triage: triageOutcome?.ok ? triageOutcome.result : undefined,
       supportTopic: activeSupportTopic ?? undefined,
       supportTopicContext: refreshedTopicContext,
     });
@@ -741,6 +676,7 @@ export async function generateSupportResponse(
       sources,
       disposition: "escalate",
       responseOrigin: "server",
+      triage: triageOutcome?.ok ? triageOutcome.result : undefined,
       supportTopic: activeSupportTopic ?? undefined,
       supportTopicContext: refreshedTopicContext,
     });
@@ -758,6 +694,7 @@ export async function generateSupportResponse(
       modelVersion: modelResult.modelVersion,
       requestId: modelResult.requestId,
     },
+    triage: triageOutcome?.ok ? triageOutcome.result : undefined,
     supportTopic: activeSupportTopic ?? undefined,
     supportTopicContext: refreshedTopicContext,
   });
@@ -773,34 +710,6 @@ function topicDetectionFromTriage(
   };
 }
 
-function canUseTriageForCandidateLookup(input: {
-  triage: SupportIntentTriageResult;
-  hasAccountContext: boolean;
-}) {
-  if (!input.hasAccountContext) return false;
-  if (input.triage.confidence !== "high") return false;
-  if (input.triage.intent !== "account_candidate_lookup") return false;
-
-  return (
-    input.triage.topic === "booking" ||
-    input.triage.topic === "payment" ||
-    input.triage.topic === "cancellation"
-  );
-}
-
-function canUseTriageForSelectedOrder(input: {
-  triage: SupportIntentTriageResult;
-  hasAccountContext: boolean;
-  hasSelectedOrderContext: boolean;
-}) {
-  return (
-    input.hasAccountContext &&
-    input.hasSelectedOrderContext &&
-    input.triage.confidence === "high" &&
-    input.triage.intent === "selected_order_follow_up"
-  );
-}
-
 function canUseTriageForUnsafeAction(input: {
   triage: SupportIntentTriageResult;
 }) {
@@ -808,20 +717,4 @@ function canUseTriageForUnsafeAction(input: {
     input.triage.confidence === "high" &&
     input.triage.intent === "unsafe_mutation"
   );
-}
-
-function selectedOrderTriageHelper(
-  triage: SupportIntentTriageResult,
-): "getOrderStatusForCurrentUser" | "getPaymentStatusForCurrentUser" | "canCancelOrderForCurrentUser" {
-  if (triage.topic === "payment") return "getPaymentStatusForCurrentUser";
-  if (triage.topic === "cancellation") return "canCancelOrderForCurrentUser";
-  return "getOrderStatusForCurrentUser";
-}
-
-function candidateTriageHelper(
-  triage: SupportIntentTriageResult,
-): "getOrderStatusForCurrentUser" | "getPaymentStatusForCurrentUser" | "canCancelOrderForCurrentUser" {
-  if (triage.topic === "payment") return "getPaymentStatusForCurrentUser";
-  if (triage.topic === "cancellation") return "canCancelOrderForCurrentUser";
-  return "getOrderStatusForCurrentUser";
 }

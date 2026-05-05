@@ -221,6 +221,7 @@ export async function persistSupportInteraction(
       locale: input.locale,
       responseOrigin: "server",
       needsHumanSupport: false,
+      groundingKind: "none",
     },
     depth: 0,
     overrideAccess: true,
@@ -255,6 +256,12 @@ export async function persistSupportInteraction(
       ...(accountContextSnapshots.length
         ? { accountContextSnapshots }
         : {}),
+      triageIntent: input.response.triage?.intent,
+      triageTopic: input.response.triage?.topic,
+      triageStatusFilter: input.response.triage?.statusFilter,
+      triageConfidence: input.response.triage?.confidence,
+      triageReason: input.response.triage?.reason,
+      groundingKind: input.response.groundingKind,
       promptVersion: SUPPORT_CHAT_PROMPT_VERSION,
       guardrailVersion: SUPPORT_CHAT_GUARDRAIL_VERSION,
       retrievalVersion: SUPPORT_CHAT_RETRIEVAL_VERSION,
