@@ -10,6 +10,7 @@ import type {
   AdminSupportThreadRow,
   AdminSupportUserSummary,
 } from "@/modules/support-chat/server/admin-procedures";
+import { downloadSupportThreadCsv } from "@/modules/support-chat/ui/admin/support-chat-admin-csv";
 
 type SupportThreadDetail = {
   thread: AdminSupportThreadRow;
@@ -506,7 +507,16 @@ export function SupportChatThreadDetail({
                 t("thread.anonymousSubtitle")}
             </p>
           </div>
-          <ReviewBadge state={detail.thread.reviewState} />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => downloadSupportThreadCsv(detail)}
+              className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+            >
+              {t("detail.downloadCsv")}
+            </button>
+            <ReviewBadge state={detail.thread.reviewState} />
+          </div>
         </div>
 
         <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">

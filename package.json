@@ -40,6 +40,7 @@
     "test:i18n:messages": "node --import tsx ./src/scripts/i18n-check.ts",
     "test:support-chat:account-aware-helpers": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/support-chat/server/account-aware/helpers.test.ts",
     "test:support-chat:account-aware-routing": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/support-chat/server/account-aware/routing.test.ts",
+    "test:support-chat:admin-csv": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/support-chat/ui/admin/support-chat-admin-csv.test.ts",
     "test:support-chat:intent-triage": "node --conditions=react-server --import tsx --test --test-concurrency=1 src/modules/support-chat/server/intent-triage.test.ts",
     "test:support-chat:triage": "node --conditions=react-server --import tsx ./src/scripts/run-support-chat-triage-tests.ts",
     "test:support-chat:phase2-account-aware": "node --conditions=react-server --import tsx ./src/scripts/run-support-chat-phase2-account-aware-tests.ts",

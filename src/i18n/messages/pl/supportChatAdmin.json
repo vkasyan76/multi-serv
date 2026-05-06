@@ -82,6 +82,7 @@
     "matchedTerms": "Matched terms",
     "user": "User",
     "assistant": "Assistant",
+    "downloadCsv": "Download CSV",
     "username": "Username",
     "userLanguage": "User language",
     "userCountry": "User country",

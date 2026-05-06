@@ -100,6 +100,7 @@
     "thread": "Thread",
     "user": "User",
     "assistant": "Assistant",
+    "downloadCsv": "Download CSV",
     "userId": "User ID",
     "username": "Username",
     "userLanguage": "User language",
