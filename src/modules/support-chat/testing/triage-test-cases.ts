@@ -57,4 +57,60 @@ export const SUPPORT_TRIAGE_EVAL_CASES: SupportTriageEvalCase[] = [
     },
     notIntent: "account_candidate_lookup",
   },
+  {
+    id: "fr-scheduled-cancellation-follow-up",
+    locale: "fr",
+    message: "Elle est deja confirmee.",
+    memory: {
+      previousUserMessage: "J'ai besoin d'aide pour annuler une reservation.",
+      previousAssistantMessage: "Votre reservation est-elle demandee ou planifiee ?",
+      activeTopic: "cancellation",
+      hasSelectedOrderContext: false,
+      lastAssistantAskedForSelection: false,
+    },
+    expected: {
+      intent: "account_candidate_lookup",
+      topic: "cancellation",
+      statusFilter: "scheduled",
+      confidence: "high",
+    },
+  },
+  {
+    id: "it-paid-payment-follow-up",
+    locale: "it",
+    message: "E gia pagato?",
+    memory: {
+      previousUserMessage: "Ho una domanda sul pagamento.",
+      previousAssistantMessage: "La domanda riguarda un pagamento gia fatto o ancora dovuto?",
+      activeTopic: "payment",
+      hasSelectedOrderContext: false,
+      lastAssistantAskedForSelection: false,
+    },
+    expected: {
+      intent: "account_candidate_lookup",
+      topic: "payment",
+      statusFilter: "paid",
+      confidence: "high",
+    },
+  },
+  {
+    id: "unsafe-cancel-now",
+    locale: "en",
+    message: "Cancel my booking now.",
+    expected: {
+      intent: "unsafe_mutation",
+      topic: "cancellation",
+      confidence: "high",
+    },
+  },
+  {
+    id: "broad-export-payments",
+    locale: "en",
+    message: "Export my payments.",
+    expected: {
+      intent: "unsupported_account_scope",
+      topic: "payment",
+      confidence: "high",
+    },
+  },
 ];

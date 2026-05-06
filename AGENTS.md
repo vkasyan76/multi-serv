@@ -237,6 +237,9 @@ Required env groups are defined in `README.md`:
 - Local/dev email sending may require `EMAIL_DEV_ALLOWLIST`; production should configure the actual support inbox through environment variables rather than relying on the dev allowlist.
 - Phase 1 support-chat regression cases live in `src/modules/support-chat/testing/phase1-test-cases.ts`, the runner lives in `src/scripts/run-support-chat-phase1-tests.ts`, and the review guide lives in `docs/support-chat-phase1-test-sheet.md`.
 - Rerun `npm run test:support-chat:phase1` after meaningful support-chat changes to prompt, model, retrieval, knowledge pack, or guardrail behavior; use `--json` and `--out <path>` when you want a saved artifact for review.
+- Support-chat eval guidance lives in `docs/support-chat-eval-guide.md`.
+  - `npm run test:support-chat:phase2-account-aware` is an offline server-contract eval and uses explicit triage fixtures for model-understanding cases.
+  - `npm run test:support-chat:triage` is the live model triage eval; it skips cleanly without `OPENAI_API_KEY` and supports `--json --out <path>` for review artifacts.
 - Block 13A Phase 1 support-chat hardening is complete for the targeted safety categories:
   adversarial unsupported-account prompts, weak-source conservatism, abusive/empty/nonsense boundaries, and "common marketplace rules" prompts.
 - Known non-blocking Phase 1 support-chat regression issue:
