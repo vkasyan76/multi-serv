@@ -13,13 +13,13 @@
     "booking": "Hilfe zur Buchung",
     "payment": "Zahlungsfrage",
     "cancel": "Buchung stornieren",
-    "provider": "Dienstleister werden"
+    "provider": "Anbieter werden"
   },
   "suggestionPrompts": {
     "booking": "Ich brauche Hilfe mit einer Buchung.",
     "payment": "Ich habe eine Zahlungsfrage.",
     "cancel": "Ich brauche Hilfe beim Stornieren einer Buchung.",
-    "provider": "Ich möchte Dienstleister werden."
+    "provider": "Ich möchte Anbieter werden."
   },
   "disclaimer": "KI-Support kann Fehler machen. Er kann nur begrenzte support-sichere Bestell- oder Zahlungsdetails prüfen, die Sie auswählen oder angeben.",
   "contactSupport": "Support kontaktieren",
@@ -51,15 +51,15 @@
     "empty": "Bitte geben Sie eine Supportfrage ein, damit ich helfen kann.",
     "abusive": "Ich kann bei Supportfragen helfen, aber nicht auf beleidigende Nachrichten reagieren. Bitte kontaktieren Sie den Support, wenn Sie Hilfe benötigen.",
     "nonsense": "Ich konnte diese Anfrage nicht verstehen. Bitte formulieren Sie Ihre Supportfrage neu oder kontaktieren Sie den Support.",
-    "clarify": "Wobei brauchst du Hilfe: Buchung, Zahlung, Stornierung, Dienstleisterprofil, Registrierung oder Streitfall?",
+    "clarify": "Wobei brauchst du Hilfe: Buchung, Zahlung, Stornierung, Anbieterprofil, Registrierung oder Streitfall?",
     "unsupportedAccount": "Ich kann nur begrenzte support-sichere Details zu einer bestimmten Bestellung, Buchung, Zahlung oder Rechnung prüfen, die du auswählst oder angibst. Ich kann keine vollständige Konto-Historie, fremde Datensätze, Stripe-Daten oder Rohdaten durchsuchen.",
     "unsupportedAction": "Ich kann aus diesem Chat keine Bestellung stornieren, erstatten, abbuchen oder ändern. Ich kann die Regeln erklären oder eine ausgewählte Bestellung sicher prüfen helfen.",
-    "uncertain": "Ich habe nicht genug freigegebene Supportinformationen, um das zuverlässig zu beantworten. Frage nach einer bestimmten Buchung, Zahlung, Stornierung, Registrierung, einem Dienstleisterprofil oder einer Marktplatzregel.",
-    "clarifyGeneral": "Wobei brauchst du Hilfe: Buchung, Zahlung, Stornierung, Dienstleisterprofil, Registrierung oder Streitfall?",
+    "uncertain": "Ich habe nicht genug freigegebene Supportinformationen, um das zuverlässig zu beantworten. Frage nach einer bestimmten Buchung, Zahlung, Stornierung, Registrierung, einem Anbieterprofil oder einer Marktplatzregel.",
+    "clarifyGeneral": "Wobei brauchst du Hilfe: Buchung, Zahlung, Stornierung, Anbieterprofil, Registrierung oder Streitfall?",
     "clarifyBooking": "Meinst du eine angefragte Buchung, eine geplante Buchung, eine stornierte Buchung, die Zahlung dazu oder eine Änderung/Stornierung?",
     "clarifyPayment": "Meinst du eine bezahlte Bestellung, eine ausstehende Zahlung, eine Rechnung oder den Zeitpunkt der Zahlung?",
     "clarifyCancellation": "Ist die Buchung noch angefragt, bereits geplant oder storniert, und möchtest du sie stornieren oder verstehen, warum eine Stornierung blockiert ist?",
-    "clarifyProvider": "Brauchst du Hilfe beim Erstellen eines Dienstleisterprofils, beim Onboarding, bei Services oder bei Dienstleisterzahlungen?",
+    "clarifyProvider": "Brauchst du Hilfe beim Erstellen eines Anbieterprofils, beim Onboarding, bei Services oder bei Auszahlungen als Anbieter?",
     "lowConfidenceFollowUp": "Ich möchte sicher sein, dass ich dich richtig verstehe. Geht es um eine bestimmte Buchung, eine Zahlung, eine Stornierung oder allgemeine Plattformregeln?",
     "unsupportedBroadAccount": "Ich kann aus diesem Chat keine vollständige Konto-Historie durchsuchen oder exportieren. Frage nach einer bestimmten Bestellung, Buchung, Zahlung oder Rechnung oder öffne die passende Dashboard-Seite für die vollständige Liste.",
     "accountContextUnavailable": "Ich kann die Regeln erklären. Eine begrenzte support-sichere Suche ist möglich, wenn du angemeldet bist und nach einer bestimmten Buchung, Bestellung, Zahlung oder Rechnung fragst.",

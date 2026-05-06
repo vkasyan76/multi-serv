@@ -1,7 +1,7 @@
 {
   "tabs": {
     "general": "Allgemeine Einstellungen",
-    "provider": "Dienstleister",
+    "provider": "Anbieter",
     "payments": "Zahlungen"
   },
   "header": {
@@ -57,7 +57,7 @@
     }
   },
   "provider": {
-    "title": "Dienstleister-Einstellungen",
+    "title": "Anbieter-Einstellungen",
     "labels": {
       "business_name": "Firmenname (für Ihre Seiten-URL)",
       "hourly_rate": "Stundensatz ({currency})",
@@ -93,14 +93,14 @@
       "uploading": "Wird hochgeladen...",
       "updating": "Wird aktualisiert...",
       "creating": "Wird erstellt...",
-      "update_profile": "Dienstleisterprofil aktualisieren",
-      "create_profile": "Dienstleisterprofil erstellen"
+      "update_profile": "Anbieterprofil aktualisieren",
+      "create_profile": "Anbieterprofil erstellen"
     },
     "messages": {
       "form_invalid": "Bitte korrigieren Sie die Fehler im Formular.",
-      "updated_success": "Dienstleisterprofil erfolgreich aktualisiert!",
+      "updated_success": "Anbieterprofil erfolgreich aktualisiert!",
       "image_upload_partial_success": "Das Profil wurde erfolgreich erstellt, aber das Bild konnte nicht hochgeladen werden. Sie können es später im Profil-Editor hinzufügen.",
-      "created_next_payouts": "Dienstleisterprofil erstellt. Als Nächstes: Auszahlungen einrichten.",
+      "created_next_payouts": "Anbieterprofil erstellt. Als Nächstes: Auszahlungen einrichten.",
       "complete_payments_onboarding": "Zahlungs-Onboarding abschließen",
       "finish_stripe_onboarding": "Schließen Sie Ihr Stripe-Onboarding ab, um Auszahlungen zu erhalten. <link>Zu Zahlungen</link>",
       "name_locked": "* kann nach der Erstellung nicht mehr geändert werden (wird in Ihrer Seiten-URL verwendet)",
@@ -115,7 +115,7 @@
       "vat_eu_only": "Die USt-IdNr. kann nur für EU-Länder gesetzt werden.",
       "update_failed": "Das Profil konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
       "name_taken": "Dieser Firmenname ist bereits vergeben. Bitte wählen Sie einen anderen Namen.",
-      "create_failed": "Das Dienstleisterprofil konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+      "create_failed": "Das Anbieterprofil konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
       "upload_failed": "Das Bild konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.",
       "vat_invalid_vies": "Die USt-IdNr. ist nicht gültig.",
       "vat_invalid_status": "Ungültige USt-IdNr."
@@ -139,7 +139,7 @@
   "confirmation": {
     "titles": {
       "prereq": "Vervollständigen Sie Ihr allgemeines Profil, um fortzufahren",
-      "confirm": "Werden Sie Dienstleister"
+      "confirm": "Anbieter werden"
     },
     "messages": {
       "prereq_intro": "Ihr Standort wird benötigt, damit Kundinnen und Kunden Sie finden können.",
@@ -153,7 +153,7 @@
       "close": "Schließen und zu den allgemeinen Einstellungen zurückkehren",
       "complete_general": "Allgemeine Einstellungen abschließen",
       "loading": "Wird geladen...",
-      "create_provider": "Dienstleisterprofil erstellen",
+      "create_provider": "Anbieterprofil erstellen",
       "maybe_later": "Vielleicht später",
       "retry": "Erneut versuchen"
     },
@@ -164,7 +164,7 @@
   "payouts": {
     "title": "Zahlungen & Auszahlungen",
     "messages": {
-      "provider_required": "Erstellen Sie zuerst Ihr Dienstleisterprofil.",
+      "provider_required": "Erstellen Sie zuerst Ihr Anbieterprofil.",
       "active": "Auszahlungen sind aktiv. Verwalten Sie Ihr Stripe-Konto im Dashboard.",
       "finish_onboarding": "Schließen Sie die Stripe-Einrichtung ab, um Auszahlungen zu aktivieren.",
       "no_balance": "Noch kein Guthaben"
@@ -173,7 +173,7 @@
       "onboarding": "Stripe-Einrichtung",
       "update_details": "Stripe-Details aktualisieren",
       "open_dashboard": "Stripe-Dashboard öffnen",
-      "create_provider": "Dienstleisterprofil erstellen",
+      "create_provider": "Anbieterprofil erstellen",
       "retry": "Erneut versuchen"
     },
     "errors": {

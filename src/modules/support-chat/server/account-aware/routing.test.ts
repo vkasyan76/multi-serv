@@ -2033,8 +2033,8 @@ test("selected order detail follow-ups use support-safe order context", async ()
     response.accountHelperMetadata.helper,
     "getOrderStatusForCurrentUser",
   );
-  assert.match(response.assistantMessage, /Dienstleister: react_jedi/i);
-  assert.doesNotMatch(response.assistantMessage, /\bAnbieter:/i);
+  assert.match(response.assistantMessage, /Anbieter: react_jedi/i);
+  assert.doesNotMatch(response.assistantMessage, /Dienstleister: react_jedi/i);
   assert.doesNotMatch(response.assistantMessage, /keinen Zugriff/i);
 });
 

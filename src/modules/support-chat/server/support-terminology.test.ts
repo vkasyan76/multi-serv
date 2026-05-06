@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 
 import { SUPPORTED_APP_LANGS } from "@/lib/i18n/app-lang";
 import deSupportChat from "@/i18n/messages/de/supportChat.json";
+import deProfile from "@/i18n/messages/de/profile.json";
+import deLegalTerms from "@/i18n/messages/de/legalTerms.json";
 import ptSupportChat from "@/i18n/messages/pt/supportChat.json";
 import plSupportChat from "@/i18n/messages/pl/supportChat.json";
 import roSupportChat from "@/i18n/messages/ro/supportChat.json";
@@ -26,28 +28,39 @@ test("support terminology exists for every launched locale", () => {
   }
 });
 
-test("German support terminology prefers Dienstleister without banning Anbieter globally", () => {
+test("German support terminology prefers Anbieter while still recognizing Dienstleister input", () => {
   const terms = getSupportTerminology("de");
 
-  assert.equal(terms.providerRole, "Dienstleister");
+  assert.equal(terms.providerRole, "Anbieter");
+  assert.equal(terms.providerProfile, "Anbieterprofil");
+  assert.equal(terms.providerSettings, "Anbieter-Einstellungen");
   assert.equal(terms.requestedStatus, "angefragt");
   assert.equal(terms.scheduledStatus, "geplant");
   assert.equal(
     terms.awaitingProviderConfirmation,
-    "wartet auf Bestätigung durch den Dienstleister"
+    "wartet auf Bestätigung des Anbieters"
   );
   assert.ok(terms.avoidTerms?.includes("Provider-Profil"));
   assert.ok(terms.avoidTerms?.includes("Provider"));
-  assert.ok(terms.avoidTerms?.includes("Anbieterprofil"));
+  assert.ok(terms.avoidTerms?.includes("Dienstleisterprofil"));
+  assert.ok(terms.avoidTerms?.includes("Dienstleister-Einstellungen"));
   assert.equal(terms.avoidTerms?.includes("Anbieter"), false);
 
-  assert.match(deSupportChat.suggestions.provider, /Dienstleister/);
-  assert.match(deSupportChat.suggestionPrompts.provider, /Dienstleister/);
-  assert.doesNotMatch(deSupportChat.suggestions.provider, /Provider|Anbieterprofil/);
+  assert.match(deSupportChat.suggestions.provider, /Anbieter/);
+  assert.match(deSupportChat.suggestionPrompts.provider, /Anbieter/);
+  assert.doesNotMatch(deSupportChat.suggestions.provider, /Provider|Dienstleister/);
   assert.doesNotMatch(
     deSupportChat.suggestionPrompts.provider,
-    /Provider|Anbieterprofil/
+    /Provider|Dienstleister/
   );
+});
+
+test("German terminology cleanup keeps Dienstleistung service nouns", () => {
+  assert.match(deProfile.provider.labels.service_types, /Dienstleistung/);
+  assert.match(deProfile.provider.placeholders.services, /Dienstleistungsarten/);
+  assert.match(deProfile.confirmation.messages.confirm_intro, /Dienstleistungen/);
+  assert.match(deProfile.confirmation.messages.pricing_setup, /Dienstleistungskategorien/);
+  assert.match(deLegalTerms.section1.p2, /Dienstleistungsvertrag/);
 });
 
 test("support starter copy follows profile terminology in non-German locales", () => {
@@ -78,18 +91,19 @@ test("support prompt includes active locale terminology guidance", () => {
   });
 
   assert.match(prompt.instructions, /Locale terminology:/);
-  assert.match(prompt.instructions, /Dienstleister/);
-  assert.match(prompt.instructions, /Dienstleister-Einstellungen/);
+  assert.match(prompt.instructions, /Anbieter/);
+  assert.match(prompt.instructions, /Anbieter-Einstellungen/);
   assert.match(prompt.instructions, /Zahlungen/);
   assert.match(prompt.instructions, /Auszahlungen/);
   assert.match(prompt.instructions, /Stripe-Einrichtung/);
   assert.match(prompt.instructions, /requested="angefragt"/);
   assert.match(prompt.instructions, /scheduled="geplant"/);
-  assert.match(prompt.instructions, /wartet auf Bestätigung durch den Dienstleister/);
+  assert.match(prompt.instructions, /wartet auf Bestätigung des Anbieters/);
   assert.match(
     prompt.instructions,
     /Do not quote raw English lifecycle labels such as "Requested", "Scheduled", or "Awaiting provider confirmation"/
   );
   assert.match(prompt.instructions, /Provider-Profil/);
+  assert.match(prompt.instructions, /Dienstleisterprofil/);
   assert.doesNotMatch(prompt.instructions, /Avoid.*Anbieter[,.\n]/);
 });
