@@ -2190,7 +2190,7 @@ test("localized account-aware responses stay deterministic outside English", asy
 
 test("candidate prompts use the active locale across launched locales", async () => {
   const expectations = [
-    ["de", /Ich habe/i, /Diese Bestellung ist geplant/i],
+    ["de", /Ich habe/i, /Diese Buchung ist geplant/i],
     ["fr", /J'ai trouvé/i, /Cette commande est planifiée/i],
     ["it", /Ho trovato/i, /Questo ordine è programmato/i],
     ["es", /Encontré/i, /Este pedido está programado/i],

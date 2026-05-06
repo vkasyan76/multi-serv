@@ -124,6 +124,17 @@ const TRIAGE_EXAMPLES = [
     },
   },
   {
+    message: "Zahlungsmethode",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "general_support",
+      topic: "payment",
+      confidence: "high",
+      reason:
+        "Short follow-up in a booking request flow about payment method policy.",
+    },
+  },
+  {
     message: "Have I paid for any order?",
     hasSelectedOrderContext: false,
     result: {
@@ -353,6 +364,7 @@ export async function classifySupportIntent(input: {
       "Use account_candidate_lookup only when the user asks about their own orders/bookings/payments/invoices or asks which of their items match a support issue.",
       "Questions about how booking, payment, invoices, cancellation, provider payouts, or platform rules work are general_support, even when the user is signed out.",
       "Do not classify general policy questions as account_candidate_lookup only because they mention booking, payment, invoice, cancellation, or provider.",
+      "Short follow-ups such as 'payment method' or 'Zahlungsmethode' should use conversation memory to stay in the recent booking/payment policy context. Classify them as general_support unless the user asks to inspect their own bookings or payments.",
       "If the previous assistant message offered a limited support-safe lookup and the current user message confirms it, classify the requested lookup instead of treating the confirmation as general chat.",
       "For a confirmed payment-pending lookup offer, use account_candidate_lookup with topic payment and statusFilter payment_pending.",
       "For a confirmed scheduled-booking lookup offer, use account_candidate_lookup with topic booking and statusFilter scheduled.",

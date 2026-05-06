@@ -323,16 +323,16 @@ const EN: AccountAwareLocalizedCopy = {
 const DE: AccountAwareLocalizedCopy = {
   ...EN,
   candidate: {
-    fallbackLabel: "Passende Bestellung",
-    none: "Ich kann helfen, aber ich habe keine aktuellen support-sicheren Bestellungen gefunden, die passen. Öffne bitte deine Bestellseite oder kontaktiere den Support mit der genauen Bestell-ID.",
-    one: "Ich habe eine aktuelle Bestellung gefunden, die passen könnte. Wähle sie bitte unten aus, wenn das die gemeinte Bestellung ist.",
-    many: "Ich habe einige aktuelle Bestellungen gefunden, die passen könnten. Welche Bestellung meinst du?",
+    fallbackLabel: "Passende Buchung",
+    none: "Ich kann helfen, aber ich habe keine aktuellen support-sicheren Buchungen gefunden, die passen. Öffnen Sie bitte Ihre Buchungs-/Bestellseite oder kontaktieren Sie den Support mit der genauen Buchungs- oder Bestell-ID.",
+    one: "Ich habe eine aktuelle Buchung gefunden, die passen könnte. Wählen Sie sie bitte unten aus, wenn das die gemeinte Buchung ist.",
+    many: "Ich habe einige aktuelle Buchungen gefunden, die passen könnten. Welche Buchung meinen Sie?",
     filteredNone: (filter) =>
-      `Ich konnte keine aktuellen Buchungen mit Status ${filter} finden, die passen. Das ist keine vollständige Verlaufssuche. Öffne bitte deine Bestellseite, wenn du die komplette Liste brauchst.`,
+      `Ich konnte keine aktuellen Buchungen mit Status ${filter} finden, die passen. Das ist keine vollständige Verlaufssuche. Öffnen Sie bitte Ihre Buchungs-/Bestellseite, wenn Sie die komplette Liste benötigen.`,
     filteredOne: (filter) =>
-      `Ich habe eine aktuelle Buchung mit Status ${filter} gefunden, die passen könnte. Wähle sie bitte unten aus, wenn das die gemeinte Bestellung ist.`,
+      `Ich habe eine aktuelle Buchung mit Status ${filter} gefunden, die passen könnte. Wählen Sie sie bitte unten aus, wenn das die gemeinte Buchung ist.`,
     filteredMany: (filter) =>
-      `Ich habe aktuelle Buchungen mit Status ${filter} gefunden, die passen könnten. Welche Bestellung meinst du?`,
+      `Ich habe aktuelle Buchungen mit Status ${filter} gefunden, die passen könnten. Welche Buchung meinen Sie?`,
   },
   fieldLabels: {
     provider: "Anbieter",
@@ -345,8 +345,8 @@ const DE: AccountAwareLocalizedCopy = {
     nextStep: "Nächster Schritt",
   },
   missingReference: {
-    order: "Bitte gib die genaue Bestell-ID an, damit ich sie sicher prüfen kann.",
-    invoice: "Bitte gib die genaue Rechnungs-ID an, damit ich sie sicher prüfen kann.",
+    order: "Bitte geben Sie die genaue Buchungs- oder Bestell-ID an, damit ich sie sicher prüfen kann.",
+    invoice: "Bitte geben Sie die genaue Rechnungs-ID an, damit ich sie sicher prüfen kann.",
   },
   statusLabels: {
     ...EN.statusLabels,
@@ -382,169 +382,169 @@ const DE: AccountAwareLocalizedCopy = {
   },
   orderHeadline: {
     tenant: {
-      requested: "Diese Kundenbuchungsanfrage wartet auf deine Bestätigung.",
+      requested: "Diese Kundenbuchungsanfrage wartet auf Ihre Bestätigung.",
       scheduled: "Diese Kundenbuchung ist geplant.",
       completed:
-        "Diese Kundenbestellung ist als abgeschlossen markiert und wartet auf den nächsten Service-Schritt.",
-      accepted: "Diese Kundenbestellung wurde akzeptiert.",
-      disputed: "Diese Kundenbestellung ist als strittig markiert.",
-      canceled: "Diese Kundenbestellung ist storniert.",
+        "Diese Kundenbuchung ist als abgeschlossen markiert und wartet auf den nächsten Service-Schritt.",
+      accepted: "Diese Kundenbuchung wurde akzeptiert.",
+      disputed: "Diese Kundenbuchung ist als strittig markiert.",
+      canceled: "Diese Kundenbuchung ist storniert.",
       unknown:
-        "Ich habe die Bestellung gefunden, aber der aktuelle Servicestatus ist nicht in einer support-sicheren Kategorie verfügbar.",
+        "Ich habe die Buchung gefunden, aber der aktuelle Servicestatus ist nicht in einer support-sicheren Kategorie verfügbar.",
     },
     customer: {
       requested:
-        "Diese Bestellung wartet auf die Bestätigung des Anbieters. Es ist eine Buchungsanfrage, noch keine geplante Buchung.",
-      scheduled: "Diese Bestellung ist geplant.",
+        "Diese Buchung wartet auf die Bestätigung des Anbieters. Es ist eine Buchungsanfrage, noch keine geplante Buchung.",
+      scheduled: "Diese Buchung ist geplant.",
       completed:
-        "Diese Bestellung ist als abgeschlossen markiert und wartet auf den nächsten Service-Schritt.",
-      accepted: "Diese Bestellung wurde akzeptiert.",
-      disputed: "Diese Bestellung ist als strittig markiert.",
-      canceled: "Diese Bestellung ist storniert.",
+        "Diese Buchung ist als abgeschlossen markiert und wartet auf den nächsten Service-Schritt.",
+      accepted: "Diese Buchung wurde akzeptiert.",
+      disputed: "Diese Buchung ist als strittig markiert.",
+      canceled: "Diese Buchung ist storniert.",
       unknown:
-        "Ich habe die Bestellung gefunden, aber der aktuelle Servicestatus ist nicht in einer support-sicheren Kategorie verfügbar.",
+        "Ich habe die Buchung gefunden, aber der aktuelle Servicestatus ist nicht in einer support-sicheren Kategorie verfügbar.",
     },
   },
   statusReason: {
     tenant: {
-      customer_canceled: "Der Kunde hat diese Bestellung storniert.",
-      provider_declined: "Du hast diese Buchungsanfrage abgelehnt.",
-      provider_canceled: "Die Anbieterseite hat diese Bestellung storniert.",
+      customer_canceled: "Der Kunde hat diese Buchung storniert.",
+      provider_declined: "Sie haben diese Buchungsanfrage abgelehnt.",
+      provider_canceled: "Die Anbieterseite hat diese Buchung storniert.",
       awaiting_provider_confirmation:
-        "Diese Buchungsanfrage wartet auf deine Bestätigung oder Ablehnung.",
+        "Diese Buchungsanfrage wartet auf Ihre Bestätigung oder Ablehnung.",
       provider_confirmed: "Die Anbieterseite hat diese Buchung bestätigt.",
       completed: "Die Anbieterseite hat die Leistung als abgeschlossen markiert.",
       accepted: "Der Kunde hat den Abschluss der Leistung akzeptiert.",
       disputed: "Der Kunde hat den Abschluss der Leistung beanstandet.",
     },
     customer: {
-      customer_canceled: "Die Bestellung wurde vom Kunden storniert.",
+      customer_canceled: "Die Buchung wurde vom Kunden storniert.",
       provider_declined: "Der Anbieter hat diese Buchungsanfrage abgelehnt.",
-      provider_canceled: "Der Anbieter hat diese Bestellung storniert.",
+      provider_canceled: "Der Anbieter hat diese Buchung storniert.",
       awaiting_provider_confirmation:
         "Der Anbieter hat diese Buchungsanfrage noch nicht bestätigt oder abgelehnt.",
       provider_confirmed: "Der Anbieter hat diese Buchung bestätigt.",
       completed: "Der Anbieter hat die Leistung als abgeschlossen markiert.",
       accepted: "Der Abschluss der Leistung wurde akzeptiert.",
-      disputed: "Die Bestellung ist derzeit als strittig markiert.",
+      disputed: "Die Buchung ist derzeit als strittig markiert.",
     },
   },
   nextStep: {
     tenant: {
       await_provider_confirmation:
-        "Bestätige oder lehne die Anfrage in deinem Dashboard ab.",
-      pay_invoice: "Prüfe die ausgestellte Rechnung in deinem Dashboard.",
+        "Bestätigen Sie die Anfrage in Ihrem Dashboard oder lehnen Sie sie dort ab.",
+      pay_invoice: "Prüfen Sie die ausgestellte Rechnung in Ihrem Dashboard.",
       view_orders:
-        "Öffne die Bestellansicht in deinem Dashboard für die vollständige Bestellung.",
+        "Öffnen Sie die Buchungs-/Bestellansicht in Ihrem Dashboard für die vollständige Ansicht.",
       no_action_needed: "Derzeit ist keine Zahlungsaktion nötig.",
     },
     customer: {
       await_provider_confirmation:
-        "Warte, bis der Anbieter die Anfrage bestätigt oder ablehnt.",
-      pay_invoice: "Öffne die Rechnung auf deiner Bestellseite, um zu zahlen.",
-      view_orders: "Öffne deine Bestellseite für die vollständige Bestellung.",
+        "Warten Sie, bis der Anbieter die Anfrage bestätigt oder ablehnt.",
+      pay_invoice: "Öffnen Sie die Rechnung auf Ihrer Buchungs-/Bestellseite, um zu zahlen.",
+      view_orders: "Öffnen Sie Ihre Buchungs-/Bestellseite für die vollständige Ansicht.",
       no_action_needed: "Derzeit ist keine Zahlungsaktion nötig.",
     },
   },
   invoiceLifecycle: {
     tenant: {
       issued:
-        "Für diese Kundenbuchung wurde bereits eine Rechnung ausgestellt. Prüfe als Anbieter die Bestellung oder Rechnung in deinem Dashboard, um den aktuellen Zahlungsstand zu sehen.",
-      paid: "Diese Kundenbuchung ist im support-sicheren Bestellstatus bereits als bezahlt markiert. Prüfe die Bestellung in deinem Dashboard, wenn du die vollständige Ansicht brauchst.",
-      void: "Die Rechnung für diese Kundenbuchung ist derzeit nicht zahlbar. Prüfe die Bestellung in deinem Dashboard oder kontaktiere den Support, wenn der Kunde weiterhin Hilfe braucht.",
+        "Für diese Kundenbuchung wurde bereits eine Rechnung ausgestellt. Prüfen Sie als Anbieter die Buchung oder Rechnung in Ihrem Dashboard, um den aktuellen Zahlungsstand zu sehen.",
+      paid: "Diese Kundenbuchung ist im support-sicheren Buchungsstatus bereits als bezahlt markiert. Prüfen Sie die Buchung in Ihrem Dashboard, wenn Sie die vollständige Ansicht benötigen.",
+      void: "Die Rechnung für diese Kundenbuchung ist derzeit nicht zahlbar. Prüfen Sie die Buchung in Ihrem Dashboard oder kontaktieren Sie den Support, wenn der Kunde weiterhin Hilfe benötigt.",
       requested:
-        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil sie noch auf deine Bestätigung wartet. Buchungsanfragen werden nicht sofort zahlbar. Bestätige oder lehne die Anfrage in deinem Dashboard ab; später kann sich der Rechnungs-/Zahlungsstatus ändern.",
+        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil sie noch auf Ihre Bestätigung wartet. Buchungsanfragen werden nicht sofort zahlbar. Bestätigen Sie die Anfrage in Ihrem Dashboard oder lehnen Sie sie dort ab; später kann sich der Rechnungs-/Zahlungsstatus ändern.",
       scheduled:
-        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil diese geplante Bestellung den Rechnungs-/Zahlungsschritt noch nicht erreicht hat. Prüfe als Anbieter die Bestellung in deinem Dashboard und ob die Leistung bereit für den nächsten Schritt ist.",
+        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil diese geplante Buchung den Rechnungs-/Zahlungsschritt noch nicht erreicht hat. Prüfen Sie als Anbieter die Buchung in Ihrem Dashboard und ob die Leistung bereit für den nächsten Schritt ist.",
       completed:
-        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, obwohl die Bestellung über Anfrage/Planung hinaus ist. Prüfe die Bestellung in deinem Dashboard und kontaktiere den Support, wenn der Rechnungs-/Zahlungsschritt festhängt.",
+        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, obwohl die Buchung über Anfrage/Planung hinaus ist. Prüfen Sie die Buchung in Ihrem Dashboard und kontaktieren Sie den Support, wenn der Rechnungs-/Zahlungsschritt festhängt.",
       canceled:
-        "Es wurde keine Rechnung ausgestellt, weil diese Kundenbuchung storniert ist. Eine stornierte Bestellung soll derzeit nicht in den Rechnungs-/Zahlungsschritt wechseln.",
+        "Es wurde keine Rechnung ausgestellt, weil diese Kundenbuchung storniert ist. Eine stornierte Buchung soll derzeit nicht in den Rechnungs-/Zahlungsschritt wechseln.",
       unknown:
-        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil sie keinen support-sicheren Rechnungs-/Zahlungsstatus erreicht hat. Prüfe die vollständige Bestellung in deinem Dashboard.",
+        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil sie keinen support-sicheren Rechnungs-/Zahlungsstatus erreicht hat. Prüfen Sie die vollständige Buchung in Ihrem Dashboard.",
     },
     customer: {
       issued:
-        "Für diese Bestellung wurde bereits eine Rechnung ausgestellt. Öffne deine Bestellseite, um Rechnung und Zahlungsstand zu prüfen.",
-      paid: "Diese Bestellung ist im support-sicheren Bestellstatus bereits als bezahlt markiert. Öffne deine Bestellseite, wenn du die vollständige Ansicht brauchst.",
-      void: "Die Rechnung für diese Bestellung ist derzeit nicht zahlbar. Öffne deine Bestellseite oder kontaktiere den Support, wenn du Hilfe brauchst.",
+        "Für diese Buchung wurde bereits eine Rechnung ausgestellt. Öffnen Sie Ihre Buchungs-/Bestellseite, um Rechnung und Zahlungsstand zu prüfen.",
+      paid: "Diese Buchung ist im support-sicheren Buchungsstatus bereits als bezahlt markiert. Öffnen Sie Ihre Buchungs-/Bestellseite, wenn Sie die vollständige Ansicht benötigen.",
+      void: "Die Rechnung für diese Buchung ist derzeit nicht zahlbar. Öffnen Sie Ihre Buchungs-/Bestellseite oder kontaktieren Sie den Support, wenn Sie Hilfe benötigen.",
       requested:
-        "Für diese Bestellung wurde noch keine Rechnung ausgestellt, weil diese Buchungsanfrage noch auf die Bestätigung des Anbieters wartet. Buchungsanfragen werden nicht sofort zahlbar. Nach der Bestätigung und dem späteren Rechnungs-/Zahlungsschritt kann sich der Status ändern.",
+        "Für diese Buchung wurde noch keine Rechnung ausgestellt, weil diese Buchungsanfrage noch auf die Bestätigung des Anbieters wartet. Buchungsanfragen werden nicht sofort zahlbar. Nach der Bestätigung und dem späteren Rechnungs-/Zahlungsschritt kann sich der Status ändern.",
       scheduled:
-        "Für diese geplante Buchung wurde noch keine Rechnung ausgestellt, weil sie den Rechnungs-/Zahlungsschritt noch nicht erreicht hat. In diesem Ablauf kann die Zahlung später angefordert werden. Beobachte deine Bestellseite für Updates.",
+        "Für diese geplante Buchung wurde noch keine Rechnung ausgestellt, weil sie den Rechnungs-/Zahlungsschritt noch nicht erreicht hat. In diesem Ablauf kann die Zahlung später angefordert werden. Beobachten Sie Ihre Buchungs-/Bestellseite für Updates.",
       completed:
-        "Für diese Bestellung wurde noch keine Rechnung ausgestellt, obwohl sie über Anfrage/Planung hinaus ist. Prüfe deine Bestellseite und kontaktiere den Support, wenn der Rechnungs-/Zahlungsschritt festhängt.",
+        "Für diese Buchung wurde noch keine Rechnung ausgestellt, obwohl sie über Anfrage/Planung hinaus ist. Prüfen Sie Ihre Buchungs-/Bestellseite und kontaktieren Sie den Support, wenn der Rechnungs-/Zahlungsschritt festhängt.",
       canceled:
-        "Es wurde keine Rechnung ausgestellt, weil diese Bestellung storniert ist. Eine stornierte Bestellung soll derzeit nicht in den Rechnungs-/Zahlungsschritt wechseln.",
+        "Es wurde keine Rechnung ausgestellt, weil diese Buchung storniert ist. Eine stornierte Buchung soll derzeit nicht in den Rechnungs-/Zahlungsschritt wechseln.",
       unknown:
-        "Für diese Bestellung wurde noch keine Rechnung ausgestellt, weil sie keinen support-sicheren Rechnungs-/Zahlungsstatus erreicht hat. Öffne deine Bestellseite für die vollständige Ansicht.",
+        "Für diese Buchung wurde noch keine Rechnung ausgestellt, weil sie keinen support-sicheren Rechnungs-/Zahlungsstatus erreicht hat. Öffnen Sie Ihre Buchungs-/Bestellseite für die vollständige Ansicht.",
     },
   },
   paymentStatus: {
     paid: "Diese Zahlung ist als bezahlt markiert.",
     pending:
-      "Für diese Bestellung oder Rechnung ist eine Zahlung ausstehend. Du kannst die Rechnung über deine Bestellseite öffnen.",
+      "Für diese Buchung oder Rechnung ist eine Zahlung ausstehend. Sie können die Rechnung über Ihre Buchungs-/Bestellseite öffnen.",
     notDueRequested:
       "Die Zahlung ist noch nicht fällig, weil dies noch eine Buchungsanfrage ist, die auf die Bestätigung des Anbieters wartet. Buchungsanfragen werden nicht sofort zahlbar. Nach der Bestätigung und dem späteren Rechnungs-/Zahlungsschritt kann sich der Zahlungsstatus ändern.",
     notDueScheduled:
       "Die Zahlung ist noch nicht fällig, weil für diese geplante Buchung noch keine Rechnung ausgestellt wurde. In diesem Ablauf wird die Zahlung später über den Rechnungs-/Zahlungsschritt angefordert.",
     notDueCompleted:
-      "Die Zahlung ist noch nicht fällig, weil für diese Bestellung noch keine Rechnung ausgestellt wurde. Prüfe deine Bestellseite für Rechnungs- oder Zahlungsupdates.",
+      "Die Zahlung ist noch nicht fällig, weil für diese Buchung noch keine Rechnung ausgestellt wurde. Prüfen Sie Ihre Buchungs-/Bestellseite für Rechnungs- oder Zahlungsupdates.",
     notDueCanceled:
-      "Die Zahlung ist nicht fällig, weil diese Bestellung storniert ist und derzeit keine zahlbare Rechnung damit verbunden ist.",
+      "Die Zahlung ist nicht fällig, weil diese Buchung storniert ist und derzeit keine zahlbare Rechnung damit verbunden ist.",
     notDue:
-      "Die Zahlung ist für diese Bestellung noch nicht fällig. Derzeit ist keine zahlbare Rechnung damit verbunden.",
+      "Die Zahlung ist für diese Buchung noch nicht fällig. Derzeit ist keine zahlbare Rechnung damit verbunden.",
     void: "Diese Rechnung ist derzeit nicht zahlbar.",
     unknown:
       "Ich habe den Zahlungsdatensatz gefunden, aber der aktuelle Zahlungsstatus ist nicht in einer support-sicheren Kategorie verfügbar.",
   },
   cancellation: {
     eligible:
-      "Diese Bestellung scheint derzeit für eine In-App-Stornierung berechtigt zu sein. Bitte nutze die Stornierungsoption auf deiner Bestellseite.",
+      "Diese Buchung scheint derzeit für eine In-App-Stornierung berechtigt zu sein. Bitte nutzen Sie die Stornierungsoption auf Ihrer Buchungs-/Bestellseite.",
     notEligible:
-      "Diese Bestellung scheint derzeit nicht für eine In-App-Stornierung berechtigt zu sein. Nutze bitte deine Bestellseite oder kontaktiere den Support, wenn du Hilfe brauchst.",
+      "Diese Buchung scheint derzeit nicht für eine In-App-Stornierung berechtigt zu sein. Nutzen Sie bitte Ihre Buchungs-/Bestellseite oder kontaktieren Sie den Support, wenn Sie Hilfe benötigen.",
     blockReasons: {
       already_canceled:
-        "Diese Bestellung ist bereits storniert und kann deshalb nicht erneut in der App storniert werden.",
+        "Diese Buchung ist bereits storniert und kann deshalb nicht erneut in der App storniert werden.",
       order_paid:
-        "Diese Bestellung ist bereits als bezahlt markiert. Deshalb ist die In-App-Stornierung derzeit blockiert.",
+        "Diese Buchung ist bereits als bezahlt markiert. Deshalb ist die In-App-Stornierung derzeit blockiert.",
       not_slot_order:
-        "Diese Bestellung gehört nicht zu dem Buchungsablauf, der eine In-App-Stornierung unterstützt.",
+        "Diese Buchung gehört nicht zu dem Buchungsablauf, der eine In-App-Stornierung unterstützt.",
       wrong_service_status:
-        "Diese Bestellung ist derzeit nicht in einem Buchungsstatus, der eine In-App-Stornierung unterstützt.",
+        "Diese Buchung ist derzeit nicht in einem Buchungsstatus, der eine In-App-Stornierung unterstützt.",
       invoice_exists:
-        "Für diese Bestellung existiert bereits eine Rechnung. Deshalb ist die In-App-Stornierung derzeit blockiert.",
+        "Für diese Buchung existiert bereits eine Rechnung. Deshalb ist die In-App-Stornierung derzeit blockiert.",
       missing_slots:
-        "Ich kann die Buchungszeiten dieser Bestellung aus den support-sicheren Daten nicht bestätigen und sie deshalb nicht als stornierbar einstufen.",
+        "Ich kann die Buchungszeiten dieser Buchung aus den support-sicheren Daten nicht bestätigen und sie deshalb nicht als stornierbar einstufen.",
       invalid_slot_dates:
-        "Die Buchungszeit dieser Bestellung ist nicht in einer support-sicheren Form verfügbar. Deshalb kann ich die Stornierbarkeit nicht sicher bestätigen.",
+        "Die Buchungszeit dieser Buchung ist nicht in einer support-sicheren Form verfügbar. Deshalb kann ich die Stornierbarkeit nicht sicher bestätigen.",
       cutoff_passed:
         "Das Stornierungsfenster für diese Buchung ist bereits abgelaufen. Deshalb ist die In-App-Stornierung derzeit blockiert.",
       slot_paid:
         "Mindestens ein Buchungszeitraum ist bereits als bezahlt markiert. Deshalb ist die In-App-Stornierung derzeit blockiert.",
       unknown:
-        "Ich kann den genauen Blockierungsgrund aus den support-sicheren Daten nicht sicher erkennen. Prüfe bitte deine Bestellseite für die verfügbaren nächsten Schritte.",
+        "Ich kann den genauen Blockierungsgrund aus den support-sicheren Daten nicht sicher erkennen. Prüfen Sie bitte Ihre Buchungs-/Bestellseite für die verfügbaren nächsten Schritte.",
     },
   },
   overview: {
-    none: "Ich konnte keine aktuellen support-sicheren Bestellungen zum Zusammenfassen finden. Das ist keine vollständige Konto- oder Zahlungshistorie.",
+    none: "Ich konnte keine aktuellen support-sicheren Buchungen zum Zusammenfassen finden. Das ist keine vollständige Konto- oder Zahlungshistorie.",
     summary: (parts) =>
-      `In den aktuellen Bestellungen, die ich sicher prüfen kann, habe ich gefunden: ${parts}.`,
+      `In den aktuellen Buchungen, die ich sicher prüfen kann, habe ich gefunden: ${parts}.`,
     inspected: (countText) =>
       `Ich habe ${countText} geprüft. Das ist keine vollständige Zahlungshistorie.`,
     counts: {
-      paidOrders: (count) => `${count} bezahlte Bestellung${count === 1 ? "" : "en"}`,
+      paidOrders: (count) => `${count} bezahlte Buchung${count === 1 ? "" : "en"}`,
       paymentPending: (count) => `${count} mit ausstehender Zahlung`,
       paymentNotDue: (count) => `${count}, bei denen die Zahlung noch nicht fällig ist`,
       paymentCanceled: (count) => `${count} mit stornierter Zahlung`,
       refunded: (count) => `${count} erstattet`,
       unknown: (count) => `${count} mit unbekanntem Zahlungsstatus`,
       inspectedOrders: (count) =>
-        `${count} aktuelle support-sichere Bestellung${count === 1 ? "" : "en"}`,
+        `${count} aktuelle support-sichere Buchung${count === 1 ? "" : "en"}`,
     },
   },
   actionTokenExpired:
-    "Diese Bestellauswahl ist abgelaufen. Wähle die Bestellung bitte erneut aus, damit ich sie sicher prüfen kann.",
+    "Diese Buchungsauswahl ist abgelaufen. Wählen Sie die Buchung bitte erneut aus, damit ich sie sicher prüfen kann.",
   genericAccountItem:
     "Ich habe das Kontoelement gefunden, kann es aber noch nicht sicher zusammenfassen.",
 };

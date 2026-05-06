@@ -18,7 +18,7 @@ export const SUPPORT_TRIAGE_EVAL_CASES: SupportTriageEvalCase[] = [
     message: "Meine Buchung ist geplant.",
     memory: {
       previousUserMessage: "Ich brauche Hilfe mit einer Buchung.",
-      previousAssistantMessage: "Welche Art von Buchungshilfe brauchst du?",
+      previousAssistantMessage: "Welche Art von Buchungshilfe benötigen Sie?",
       activeTopic: "booking",
       hasSelectedOrderContext: false,
       lastAssistantAskedForSelection: false,
@@ -29,6 +29,25 @@ export const SUPPORT_TRIAGE_EVAL_CASES: SupportTriageEvalCase[] = [
       statusFilter: "scheduled",
       confidence: "high",
     },
+  },
+  {
+    id: "de-payment-method-booking-request-follow-up",
+    locale: "de",
+    message: "Zahlungsmethode.",
+    memory: {
+      previousUserMessage: "Anfrage abschicken.",
+      previousAssistantMessage:
+        "Mit dem Abschicken der Buchungsanfrage wird noch nichts berechnet.",
+      activeTopic: "booking",
+      hasSelectedOrderContext: false,
+      lastAssistantAskedForSelection: false,
+    },
+    expected: {
+      intent: "general_support",
+      topic: "payment",
+      confidence: "high",
+    },
+    notIntent: "account_candidate_lookup",
   },
   {
     id: "en-scheduled-booking-follow-up",

@@ -198,7 +198,7 @@ const POLICY_DEFINITION_PATTERNS = [
 
 const ACCOUNT_ACTION_HINT_PATTERNS = [
   /\b(order|orders|booking|bookings|payment|payments|invoice|invoices|refund|refunds|status|cancel|canceled|cancelled|pay|paid|charge|charged)\b/i,
-  /\b(buchung|buchungen|bestellung|bestellungen|zahlung|zahlungen|rechnung|rechnungen|status|storn\w*|bezahlen|bezahlt|erstatt\w*)\b/i,
+  /\b(buchung|buchungen|bestellung|bestellungen|zahlung|zahlungen|rechnung|rechnungen|status|storn\w*|zahlen|bezahlen|bezahlt|erstatt\w*)\b/i,
   /\b(commande|commandes|reservation|reservations|paiement|paiements|facture|factures|statut|annul\w*|payer|paye\w*|rembours\w*)\b/i,
   /\b(ordine|ordini|prenotazione|prenotazioni|pagamento|pagamenti|fattura|fatture|stato|annull\w*|pagare|pagato|rimbor\w*)\b/i,
   /\b(pedido|pedidos|reserva|reservas|pago|pagos|factura|facturas|estado|cancel\w*|anular|pagado|reembolso)\b/i,
@@ -295,6 +295,42 @@ function safeLookupOffer(input: {
   if (input.topic === "booking") return copy.offerScheduledBookingLookup;
   if (input.topic === "cancellation") return copy.offerCancellationLookup;
   return null;
+}
+
+function shouldAppendSafeLookupOffer(input: {
+  message: string;
+  topic?: SupportChatTopic | null;
+}) {
+  const text = normalizeSupportMessage(input.message);
+
+  if (input.topic === "payment") {
+    return (
+      (/\b(pay|paid|payment|payments|pending|unpaid|open)\b/u.test(text) &&
+        /\b(provider|booking|bookings|invoice|invoices|order|orders|due)\b/u.test(
+          text
+        )) ||
+      (/\b(zahlen|bezahlen|zahlung|zahlungen)\b/u.test(text) &&
+        /\b(anbieter|buchung|buchungen|rechnung|rechnungen|offen|ausstehend|fällig)\b/u.test(
+          text
+        ))
+    );
+  }
+
+  if (input.topic === "booking") {
+    return (
+      /\b(my|own|meine|meiner|meinen)\b/u.test(text) &&
+      /\b(booking|bookings|buchung|buchungen)\b/u.test(text)
+    );
+  }
+
+  if (input.topic === "cancellation") {
+    return (
+      /\b(my|own|meine|meiner|meinen|this|diese|diesen)\b/u.test(text) &&
+      /\b(cancel|cancellation|booking|storn|buchung)\b/u.test(text)
+    );
+  }
+
+  return false;
 }
 
 function appendSafeLookupOffer(input: {
@@ -800,7 +836,11 @@ export async function generateSupportResponse(
     groundedAnswer.disposition === "answered" &&
     triageOutcome?.ok &&
     triageOutcome.result.confidence === "high" &&
-    triageOutcome.result.intent === "general_support"
+    triageOutcome.result.intent === "general_support" &&
+    shouldAppendSafeLookupOffer({
+      message,
+      topic: triageOutcome.result.topic,
+    })
       ? safeLookupOffer({
           locale: input.locale,
           topic: triageOutcome.result.topic,

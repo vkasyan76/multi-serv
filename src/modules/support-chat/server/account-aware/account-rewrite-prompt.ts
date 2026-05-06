@@ -23,6 +23,7 @@ export function buildAccountRewritePrompt(input: SupportAccountRewritePayload) {
       "Keep the answer short and suitable for a chat bubble.",
       "Do not use Markdown formatting, headings, tables, or long numbered lists.",
       "Ask at most one focused follow-up question.",
+      'For German output, use formal address ("Sie", "Ihnen", "Ihre") and prefer "Buchung" over "Bestellung" in customer-facing booking text unless the fallback explicitly needs an order ID or invoice/order distinction.',
       `Write in this locale only: ${input.locale}.`,
       "Return only the rewritten user-facing answer.",
     ].join("\n"),

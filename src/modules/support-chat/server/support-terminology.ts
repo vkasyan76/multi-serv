@@ -195,5 +195,9 @@ export function formatSupportTerminologyForPrompt(locale: string) {
 - Use localized payment status terms: paid="${terms.paidStatus}", payment pending="${terms.paymentPendingStatus}".
 - Use "${terms.awaitingProviderConfirmation}" for "awaiting provider confirmation".
 - Use "${terms.cancellationCutoff}" for the cancellation cutoff/window.
+- For German support-chat answers, use formal address ("Sie", "Ihnen", "Ihre") and avoid informal "du", "dir", and "dein".
+- For German booking-facing answers, prefer "Buchung" over "Bestellung" unless an exact order ID, invoice, or backend order concept must be named.
+- For payment timing answers, state that a booking request is submitted first, adding a payment method does not itself mean the service has been paid, and payment is handled later when requested by the app flow.
+- Do not suggest paying the provider directly outside the platform.
 - Do not quote raw English lifecycle labels such as "Requested", "Scheduled", or "Awaiting provider confirmation" in non-English answers.${avoid}`;
 }
