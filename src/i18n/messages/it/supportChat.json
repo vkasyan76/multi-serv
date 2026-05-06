@@ -21,7 +21,7 @@
     "cancel": "Ho bisogno di aiuto per annullare una prenotazione.",
     "provider": "Voglio diventare fornitore."
   },
-  "disclaimer": "Il supporto IA può commettere errori. Può verificare solo dettagli limitati e sicuri di ordini o pagamenti che selezioni o indichi.",
+  "disclaimer": "Il supporto IA può commettere errori. Può controllare solo dettagli limitati e sicuri di prenotazioni, ordini o pagamenti che selezioni o indichi.",
   "contactSupport": "Contatta il supporto",
   "writeEmail": "Scrivi un'e-mail",
   "emailMode": {
@@ -51,10 +51,22 @@
     "empty": "Inserisci una domanda di supporto così posso aiutarti.",
     "abusive": "Posso aiutare con domande di supporto, ma non posso rispondere a messaggi offensivi. Contatta il supporto se hai bisogno di aiuto.",
     "nonsense": "Non sono riuscito a capire questa richiesta. Riformula la tua domanda di supporto oppure contatta il supporto.",
-    "clarify": "Che cosa stai cercando di fare: registrarti, prenotare un servizio, gestire un profilo fornitore, pagare un ordine, annullare o contestare qualcosa?",
-    "unsupportedAccount": "Posso verificare solo dettagli limitati e sicuri di ordini, pagamenti o fatture quando selezioni o indichi un elemento specifico che posso verificare. Non posso consultare tutta la cronologia dell'account, ordini non correlati, Stripe o dati grezzi dell'account.",
-    "unsupportedAction": "Non posso eseguire azioni come annullare, rimborsare, addebitare o modificare un ordine da questa chat. Posso spiegare le regole o aiutarti a verificare in modo sicuro l’idoneità di un ordine selezionato.",
-    "uncertain": "Non ho abbastanza informazioni di supporto per rispondere in modo affidabile. Posso aiutare con domande generali su registrazione, configurazione fornitore, prenotazione, pagamento, cancellazione, contestazioni e uso del marketplace. Per questo problema specifico, contatta il supporto."
+    "clarify": "Di cosa hai bisogno: una prenotazione, un pagamento, una cancellazione, un profilo fornitore, registrazione o una contestazione?",
+    "unsupportedAccount": "Posso controllare solo dettagli limitati e sicuri per il supporto su una prenotazione, un ordine, un pagamento o una fattura specifici che selezioni o indichi. Non posso consultare l'intera cronologia dell'account, dati non correlati, dati Stripe o record grezzi.",
+    "unsupportedAction": "Non posso cancellare, rimborsare, addebitare o modificare una prenotazione o un ordine da questa chat. Posso spiegare le regole o aiutarti a controllare in sicurezza una prenotazione selezionata.",
+    "uncertain": "Non ho abbastanza informazioni di supporto approvate per rispondere con affidabilità. Prova a chiedere di una prenotazione, un pagamento, una cancellazione, una registrazione, un profilo fornitore o una regola della piattaforma.",
+    "clarifyGeneral": "Di cosa hai bisogno: una prenotazione, un pagamento, una cancellazione, un profilo fornitore, registrazione o una contestazione?",
+    "clarifyBooking": "Intendi una prenotazione richiesta, programmata, annullata, il relativo pagamento oppure una modifica/cancellazione?",
+    "clarifyPayment": "Intendi un ordine pagato, un pagamento ancora in sospeso, una fattura o quando il pagamento diventa dovuto?",
+    "clarifyCancellation": "La prenotazione è ancora richiesta, già programmata o annullata, e vuoi cancellarla o capire perché la cancellazione è bloccata?",
+    "clarifyProvider": "Hai bisogno di aiuto per creare un profilo fornitore, completare l’onboarding, gestire i servizi o capire i pagamenti del fornitore?",
+    "lowConfidenceFollowUp": "Non sono sicuro di quale dettaglio ti serve. Vuoi controllare una prenotazione specifica, un pagamento, una cancellazione o una regola generale della piattaforma?",
+    "unsupportedBroadAccount": "Non posso mostrare o esportare tutta la cronologia dell'account da questa chat. Chiedi di una prenotazione, un pagamento o una fattura specifici, oppure apri la pagina corrispondente del pannello per l'elenco completo.",
+    "accountContextUnavailable": "Posso spiegare le regole. Una verifica limitata e sicura per il supporto è disponibile se hai effettuato l'accesso e chiedi di una prenotazione, ordine, pagamento o fattura specifici.",
+    "unsafeActionBlocked": "Non posso cancellare, rimborsare, addebitare o modificare nulla dalla chat. Posso spiegare le regole o aiutarti a controllare se una prenotazione selezionata è idonea.",
+    "offerPaymentPendingLookup": "Se vuoi, posso cercare prenotazioni recenti con un pagamento ancora in sospeso.",
+    "offerScheduledBookingLookup": "Se vuoi, posso cercare prenotazioni programmate recenti che potrebbero corrispondere.",
+    "offerCancellationLookup": "Se vuoi, posso cercare prenotazioni programmate recenti che potrebbero essere rilevanti per l’annullamento."
   },
   "handoffAccount": "Per assistenza specifica sull'account, contatta il supporto con i dettagli di ordine, fattura o account.",
   "handoffGeneral": "Se questo non risponde alla tua domanda, contatta il supporto."

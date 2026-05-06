@@ -59,7 +59,7 @@
   "provider": {
     "title": "Service Provider Settings",
     "labels": {
-      "business_name": "Business Name (for your page URL)",
+      "business_name": "Provider name (for your page URL)",
       "hourly_rate": "Hourly Rate ({currency})",
       "service_types": "Type of Service",
       "categories": "Categories",
@@ -75,7 +75,7 @@
       "online": "Online"
     },
     "placeholders": {
-      "business_name": "Enter business name",
+      "business_name": "Enter provider name",
       "hourly_rate": "Enter hourly rate in {currency}",
       "services": "Select service types",
       "categories": "Select categories",
@@ -114,16 +114,16 @@
       "vat_validation_failed": "VAT validation failed. Please try again.",
       "vat_eu_only": "VAT can be set only for EU countries.",
       "update_failed": "Failed to update profile. Please try again.",
-      "name_taken": "Business name is already taken. Please choose a different name.",
+      "name_taken": "Provider name is already taken. Please choose a different name.",
       "create_failed": "Failed to create vendor profile. Please try again.",
       "upload_failed": "Failed to upload image. Please try again.",
       "vat_invalid_vies": "VAT number is not valid.",
       "vat_invalid_status": "Invalid VAT ID"
     },
     "validation": {
-      "name_required": "Business name is required",
-      "name_max": "Business name must be less than 50 characters",
-      "name_format": "Business name can contain letters, numbers, hyphens, and underscores",
+      "name_required": "Provider name is required",
+      "name_max": "Provider name must be less than 50 characters",
+      "name_format": "Provider name can contain letters, numbers, hyphens, and underscores",
       "bio_max": "Description must be under 1200 characters",
       "services_required": "Select at least one service type",
       "categories_required": "Select at least one category",

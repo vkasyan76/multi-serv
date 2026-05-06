@@ -8,7 +8,6 @@ import type {
   SupportChatThread,
   User,
 } from "@/payload-types";
-import type { SupportChatDisposition } from "@/modules/support-chat/server/generate-support-response";
 import { baseProcedure } from "@/trpc/init";
 import type { TRPCContext } from "@/trpc/init";
 import { listSupportMessages } from "@/modules/support-chat/server/list-support-messages";
@@ -61,20 +60,19 @@ async function requireSuperAdmin(ctx: TRPCContext) {
   }
 }
 
-const SUPPORT_CHAT_DISPOSITIONS = [
+const ADMIN_REVIEW_FILTERS = [
   "answered",
+  "order_selection_requested",
   "uncertain",
-  "escalate",
-  "unsupported_account_question",
-] as const satisfies readonly SupportChatDisposition[];
+  "account_blocked",
+  "needs_review",
+] as const;
 
 const adminListThreadsInput = z.object({
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(20),
   locale: z.enum(SUPPORTED_APP_LANGS).optional(),
-  status: z.enum(["open", "escalated", "closed"]).optional(),
-  lastDisposition: z.enum(SUPPORT_CHAT_DISPOSITIONS).optional(),
-  needsHumanSupport: z.boolean().optional(),
+  review: z.enum(ADMIN_REVIEW_FILTERS).optional(),
 });
 
 export const supportChatAdminProcedures = {
@@ -108,14 +106,42 @@ export type AdminSupportThreadRow = {
   id: string;
   threadId: string;
   locale: AppLang;
-  userId: string | null;
+  user: AdminSupportUserSummary;
   status: SupportChatThread["status"];
-  lastDisposition: Exclude<SupportChatThread["lastDisposition"], undefined> | null;
+  reviewState: AdminSupportReviewState;
+  lastAssistantOutcome: AdminSupportAssistantOutcome;
   lastNeedsHumanSupport: boolean;
   messageCount: number;
+  latestUserMessagePreview: string | null;
   lastMessageAt: string | null;
   retentionUntil: string;
+  createdAt: string;
 };
+
+export type AdminSupportUserSummary = {
+  id: string;
+  email: string | null;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  roles: string[];
+  language: AppLang | null;
+  country: string | null;
+} | null;
+
+export type AdminSupportReviewState =
+  | "needs_review"
+  | "order_selection_requested"
+  | "uncertain"
+  | "account_blocked"
+  | "answered";
+
+export type AdminSupportAssistantOutcome =
+  | "answered"
+  | "uncertain"
+  | "escalated"
+  | "unsupported_account_question"
+  | null;
 
 export type AdminSupportMessageRow = {
   id: string;
@@ -135,6 +161,37 @@ export type AdminSupportMessageRow = {
   retrievalVersion: string | null;
   knowledgePackVersion: string | null;
   openAIRequestId: string | null;
+  accountContextSnapshots: Array<{
+    kind: string;
+    helper: string | null;
+    resultCategory: string | null;
+    statusFilter: string | null;
+    orders: Array<{
+      orderId: string | null;
+      referenceType: string | null;
+      referenceId: string | null;
+      displayReference: string | null;
+      label: string | null;
+      description: string | null;
+      providerDisplayName: string | null;
+      serviceNames: string[];
+      firstSlotStart: string | null;
+      createdAt: string | null;
+      serviceStatusCategory: string | null;
+      paymentStatusCategory: string | null;
+      invoiceStatusCategory: string | null;
+      nextStepKey: string | null;
+    }>;
+  }>;
+  triageIntent: string | null;
+  triageTopic: string | null;
+  triageStatusFilter: string | null;
+  triageConfidence: string | null;
+  triageReason: string | null;
+  triageMappedHelper: string | null;
+  triageEligibilityAllowed: boolean | null;
+  triageEligibilityReason: string | null;
+  groundingKind: string | null;
   sources: Array<{
     documentId: string;
     documentVersion: string;

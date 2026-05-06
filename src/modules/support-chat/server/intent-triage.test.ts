@@ -1,17 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { sanitizeSupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
 import { parseSupportIntentTriageResult } from "./intent-triage";
 
 test("parseSupportIntentTriageResult accepts valid strict JSON", () => {
   assert.deepEqual(
     parseSupportIntentTriageResult(
-      '{"intent":"account_candidate_lookup","topic":"cancellation","confidence":"high"}',
+      '{"intent":"account_candidate_lookup","topic":"cancellation","statusFilter":"scheduled","confidence":"high","reason":"User asks about their own scheduled booking."}',
     ),
     {
       intent: "account_candidate_lookup",
       topic: "cancellation",
+      statusFilter: "scheduled",
       confidence: "high",
+      reason: "User asks about their own scheduled booking.",
     },
   );
 });
@@ -35,6 +38,12 @@ test("parseSupportIntentTriageResult rejects invalid enum fields", () => {
     ),
     null,
   );
+  assert.equal(
+    parseSupportIntentTriageResult(
+      '{"intent":"account_candidate_lookup","topic":"booking","statusFilter":"tomorrow","confidence":"high"}',
+    ),
+    null,
+  );
 });
 
 test("parseSupportIntentTriageResult rejects prose without JSON", () => {
@@ -52,7 +61,9 @@ test("parseSupportIntentTriageResult accepts embedded JSON intentionally", () =>
     {
       intent: "clarify",
       topic: undefined,
+      statusFilter: undefined,
       confidence: "low",
+      reason: undefined,
     },
   );
 });
@@ -66,15 +77,109 @@ test("parseSupportIntentTriageResult rejects helper names as intents", () => {
   );
 });
 
-test("parseSupportIntentTriageResult ignores extra helper fields", () => {
-  assert.deepEqual(
+test("parseSupportIntentTriageResult rejects extra helper fields", () => {
+  assert.equal(
     parseSupportIntentTriageResult(
       '{"intent":"account_candidate_lookup","topic":"cancellation","confidence":"high","helper":"canCancelOrderForCurrentUser"}',
     ),
+    null,
+  );
+});
+
+test("parseSupportIntentTriageResult rejects arbitrary DB-style fields", () => {
+  for (const payload of [
     {
       intent: "account_candidate_lookup",
-      topic: "cancellation",
+      topic: "booking",
+      statusFilter: "scheduled",
       confidence: "high",
+      orderId: "100000000000000000000001",
     },
+    {
+      intent: "account_candidate_lookup",
+      topic: "payment",
+      statusFilter: "paid",
+      confidence: "high",
+      dbQuery: { collection: "orders" },
+    },
+    {
+      intent: "account_candidate_lookup",
+      topic: "booking",
+      statusFilter: "scheduled",
+      confidence: "high",
+      filters: { tenant: "any" },
+    },
+  ]) {
+    assert.equal(parseSupportIntentTriageResult(JSON.stringify(payload)), null);
+  }
+});
+
+test("parseSupportIntentTriageResult accepts none and not_applicable", () => {
+  assert.deepEqual(
+    parseSupportIntentTriageResult(
+      '{"intent":"not_applicable","confidence":"low","reason":"Not a support request."}',
+    ),
+    {
+      intent: "not_applicable",
+      topic: undefined,
+      statusFilter: undefined,
+      confidence: "low",
+      reason: "Not a support request.",
+    },
+  );
+});
+
+test("parseSupportIntentTriageResult rejects long reasons", () => {
+  assert.equal(
+    parseSupportIntentTriageResult(
+      JSON.stringify({
+        intent: "general_support",
+        confidence: "high",
+        reason: "x".repeat(301),
+      }),
+    ),
+    null,
+  );
+});
+
+test("sanitizeSupportConversationMemory keeps only short safe hints", () => {
+  const memory = sanitizeSupportConversationMemory({
+    previousUserMessage: ` ${"u".repeat(600)} `,
+    previousAssistantMessage: ` ${"a".repeat(1200)} `,
+    activeTopic: "booking",
+    hasSelectedOrderContext: true,
+    lastAssistantAskedForSelection: true,
+  });
+
+  assert.equal(memory?.previousUserMessage?.length, 500);
+  assert.equal(memory?.previousAssistantMessage?.length, 1000);
+  assert.equal(memory?.activeTopic, "booking");
+  assert.equal(memory?.hasSelectedOrderContext, true);
+  assert.equal(memory?.lastAssistantAskedForSelection, true);
+});
+
+test("sanitizeSupportConversationMemory drops unsupported runtime topics", () => {
+  const memory = sanitizeSupportConversationMemory({
+    previousUserMessage: "Can you check this?",
+    previousAssistantMessage: "What do you need?",
+    activeTopic: "orders" as never,
+    hasSelectedOrderContext: false,
+    lastAssistantAskedForSelection: false,
+  });
+
+  assert.equal(memory?.activeTopic, undefined);
+  assert.equal(memory?.previousUserMessage, "Can you check this?");
+});
+
+test("sanitizeSupportConversationMemory drops empty memory", () => {
+  assert.equal(
+    sanitizeSupportConversationMemory({
+      activeTopic: "orders" as never,
+      previousUserMessage: "   ",
+      previousAssistantMessage: "\n\t",
+      hasSelectedOrderContext: false,
+      lastAssistantAskedForSelection: false,
+    }),
+    undefined,
   );
 });

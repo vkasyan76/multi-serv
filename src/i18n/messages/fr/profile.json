@@ -59,7 +59,7 @@
   "provider": {
     "title": "Paramètres du prestataire",
     "labels": {
-      "business_name": "Nom de l'entreprise (pour l'URL de votre page)",
+      "business_name": "Nom du prestataire (pour l'URL de votre page)",
       "hourly_rate": "Tarif horaire ({currency})",
       "service_types": "Type de service",
       "categories": "Catégories",
@@ -75,7 +75,7 @@
       "online": "En ligne"
     },
     "placeholders": {
-      "business_name": "Saisissez le nom de l'entreprise",
+      "business_name": "Saisissez le nom du prestataire",
       "hourly_rate": "Saisissez le tarif horaire en {currency}",
       "services": "Sélectionnez des types de service",
       "categories": "Sélectionnez des catégories",
@@ -114,16 +114,16 @@
       "vat_validation_failed": "La validation du numéro de TVA a échoué. Veuillez réessayer.",
       "vat_eu_only": "La TVA ne peut être définie que pour les pays de l'UE.",
       "update_failed": "La mise à jour du profil a échoué. Veuillez réessayer.",
-      "name_taken": "Ce nom d'entreprise est déjà pris. Veuillez en choisir un autre.",
+      "name_taken": "Ce nom de prestataire est déjà pris. Veuillez en choisir un autre.",
       "create_failed": "La création du profil prestataire a échoué. Veuillez réessayer.",
       "upload_failed": "Le téléversement de l'image a échoué. Veuillez réessayer.",
       "vat_invalid_vies": "Le numéro de TVA n'est pas valide.",
       "vat_invalid_status": "Numéro de TVA invalide"
     },
     "validation": {
-      "name_required": "Le nom de l'entreprise est obligatoire",
-      "name_max": "Le nom de l'entreprise doit contenir moins de 50 caractères",
-      "name_format": "Le nom de l'entreprise peut contenir des lettres, des chiffres, des tirets et des tirets bas",
+      "name_required": "Le nom du prestataire est obligatoire",
+      "name_max": "Le nom du prestataire doit contenir moins de 50 caractères",
+      "name_format": "Le nom du prestataire peut contenir des lettres, des chiffres, des tirets et des tirets bas",
       "bio_max": "La description doit contenir moins de 1200 caractères",
       "services_required": "Sélectionnez au moins un type de service",
       "categories_required": "Sélectionnez au moins une catégorie",

@@ -1,13 +1,135 @@
 import "server-only";
 
 import type { Payload, Where } from "payload";
-import type { SupportChatThread } from "@/payload-types";
-import type { AdminSupportThreadRow } from "@/modules/support-chat/server/admin-procedures";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
+import type { SupportChatMessage, SupportChatThread, User } from "@/payload-types";
+import type {
+  AdminSupportAssistantOutcome,
+  AdminSupportReviewState,
+  AdminSupportThreadRow,
+  AdminSupportUserSummary,
+} from "@/modules/support-chat/server/admin-procedures";
 
-function relationshipId(value: unknown) {
-  return typeof value === "string"
-    ? value
-    : ((value as { id?: string } | null)?.id ?? null);
+function userSummary(value: unknown): AdminSupportUserSummary {
+  if (!value || typeof value === "string") return null;
+
+  const user = value as Partial<User> & { id?: string };
+  if (!user.id) return null;
+
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    username: user.username ?? null,
+    firstName: user.firstName ?? null,
+    lastName: user.lastName ?? null,
+    roles: user.roles ?? [],
+    language: user.language ? normalizeToSupported(user.language) : null,
+    country: user.country ?? null,
+  };
+}
+
+function assistantOutcome(
+  disposition: SupportChatThread["lastDisposition"]
+): AdminSupportAssistantOutcome {
+  if (disposition === "escalate") return "escalated";
+  return disposition ?? null;
+}
+
+function reviewState(thread: SupportChatThread): AdminSupportReviewState {
+  if (
+    thread.status === "escalated" ||
+    thread.lastNeedsHumanSupport ||
+    thread.lastDisposition === "escalate"
+  ) {
+    return "needs_review";
+  }
+  if (thread.lastDisposition === "unsupported_account_question") {
+    return "account_blocked";
+  }
+  if (
+    thread.lastDisposition === "uncertain" &&
+    thread.lastAccountContextKind === "candidate_selection"
+  ) {
+    return "order_selection_requested";
+  }
+  if (thread.lastDisposition === "uncertain") return "uncertain";
+  return "answered";
+}
+
+function reviewFilterWhere(
+  review:
+    | "answered"
+    | "order_selection_requested"
+    | "uncertain"
+    | "account_blocked"
+    | "needs_review"
+): Where {
+  if (review === "needs_review") {
+    return {
+      or: [
+        { lastNeedsHumanSupport: { equals: true } },
+        { status: { equals: "escalated" } },
+        { lastDisposition: { equals: "escalate" } },
+      ],
+    };
+  }
+
+  if (review === "order_selection_requested") {
+    return {
+      and: [
+        { lastDisposition: { equals: "uncertain" } },
+        { lastAccountContextKind: { equals: "candidate_selection" } },
+        { lastNeedsHumanSupport: { equals: false } },
+        { status: { not_equals: "escalated" } },
+      ],
+    };
+  }
+
+  if (review === "uncertain") {
+    return {
+      and: [
+        { lastDisposition: { equals: "uncertain" } },
+        { lastAccountContextKind: { not_equals: "candidate_selection" } },
+        { lastNeedsHumanSupport: { equals: false } },
+        { status: { not_equals: "escalated" } },
+      ],
+    };
+  }
+
+  const disposition =
+    review === "account_blocked"
+      ? "unsupported_account_question"
+      : review;
+
+  return {
+    and: [
+      { lastDisposition: { equals: disposition } },
+      { lastNeedsHumanSupport: { equals: false } },
+      { status: { not_equals: "escalated" } },
+    ],
+  };
+}
+
+async function latestUserMessagePreview(db: Payload, threadId: string) {
+  const result = await db.find({
+    collection: "support_chat_messages",
+    where: {
+      and: [
+        { thread: { equals: threadId } },
+        { role: { equals: "user" } },
+      ],
+    },
+    sort: "-createdAt",
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  });
+
+  const message = result.docs[0] as SupportChatMessage | undefined;
+  const text = message?.redactedText ?? message?.text;
+  if (!text) return null;
+
+  return text.replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
 export async function listSupportThreads(
@@ -16,13 +138,12 @@ export async function listSupportThreads(
     page: number;
     limit: number;
     locale?: SupportChatThread["locale"];
-    status?: "open" | "escalated" | "closed";
-    lastDisposition?:
+    review?:
       | "answered"
+      | "order_selection_requested"
       | "uncertain"
-      | "escalate"
-      | "unsupported_account_question";
-    needsHumanSupport?: boolean;
+      | "account_blocked"
+      | "needs_review";
   }
 ) {
   const and: Where[] = [];
@@ -31,16 +152,8 @@ export async function listSupportThreads(
     and.push({ locale: { equals: input.locale } });
   }
 
-  if (input.status) {
-    and.push({ status: { equals: input.status } });
-  }
-
-  if (input.lastDisposition) {
-    and.push({ lastDisposition: { equals: input.lastDisposition } });
-  }
-
-  if (typeof input.needsHumanSupport === "boolean") {
-    and.push({ lastNeedsHumanSupport: { equals: input.needsHumanSupport } });
+  if (input.review) {
+    and.push(reviewFilterWhere(input.review));
   }
 
   const result = await db.find({
@@ -49,23 +162,32 @@ export async function listSupportThreads(
     page: input.page,
     limit: input.limit,
     sort: "-lastMessageAt",
-    depth: 0,
+    depth: 1,
     overrideAccess: true,
   });
 
-  const items: AdminSupportThreadRow[] = ((result.docs ?? []) as SupportChatThread[])
-    .filter((thread) => Boolean(thread.id))
-    .map((thread) => ({
+  const threads = ((result.docs ?? []) as SupportChatThread[]).filter((thread) =>
+    Boolean(thread.id)
+  );
+
+  const previews = await Promise.all(
+    threads.map((thread) => latestUserMessagePreview(db, thread.id))
+  );
+
+  const items: AdminSupportThreadRow[] = threads.map((thread, index) => ({
       id: thread.id,
       threadId: thread.threadId,
       locale: thread.locale,
-      userId: relationshipId(thread.user),
+      user: userSummary(thread.user),
       status: thread.status,
-      lastDisposition: thread.lastDisposition ?? null,
+      reviewState: reviewState(thread),
+      lastAssistantOutcome: assistantOutcome(thread.lastDisposition),
       lastNeedsHumanSupport: Boolean(thread.lastNeedsHumanSupport),
       messageCount: thread.messageCount,
+      latestUserMessagePreview: previews[index] ?? null,
       lastMessageAt: thread.lastMessageAt ?? null,
       retentionUntil: thread.retentionUntil,
+      createdAt: thread.createdAt,
     }));
 
   return {

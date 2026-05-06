@@ -59,7 +59,7 @@
   "provider": {
     "title": "Setări furnizor de servicii",
     "labels": {
-      "business_name": "Numele afacerii (pentru URL-ul paginii tale)",
+      "business_name": "Numele furnizorului (pentru URL-ul paginii tale)",
       "hourly_rate": "Tarif orar ({currency})",
       "service_types": "Tip de serviciu",
       "categories": "Categorii",
@@ -75,7 +75,7 @@
       "online": "Online"
     },
     "placeholders": {
-      "business_name": "Introduceți numele afacerii",
+      "business_name": "Introduceți numele furnizorului",
       "hourly_rate": "Introduceți tariful orar în {currency}",
       "services": "Selectați tipurile de servicii",
       "categories": "Selectați categorii",
@@ -114,16 +114,16 @@
       "vat_validation_failed": "Validarea TVA a eșuat. Încercați din nou.",
       "vat_eu_only": "TVA poate fi setată doar pentru țările UE.",
       "update_failed": "Actualizarea profilului a eșuat. Încercați din nou.",
-      "name_taken": "Acest nume de afacere este deja folosit. Alegeți altul.",
+      "name_taken": "Acest nume de furnizor este deja folosit. Alegeți altul.",
       "create_failed": "Crearea profilului furnizorului a eșuat. Încercați din nou.",
       "upload_failed": "Încărcarea imaginii a eșuat. Încercați din nou.",
       "vat_invalid_vies": "Numărul de TVA nu este valid.",
       "vat_invalid_status": "Număr TVA invalid"
     },
     "validation": {
-      "name_required": "Numele afacerii este obligatoriu",
-      "name_max": "Numele afacerii trebuie să aibă mai puțin de 50 de caractere",
-      "name_format": "Numele afacerii poate conține litere, cifre, cratime și underscore-uri",
+      "name_required": "Numele furnizorului este obligatoriu",
+      "name_max": "Numele furnizorului trebuie să aibă mai puțin de 50 de caractere",
+      "name_format": "Numele furnizorului poate conține litere, cifre, cratime și underscore-uri",
       "bio_max": "Descrierea trebuie să aibă mai puțin de 1200 de caractere",
       "services_required": "Selectați cel puțin un tip de serviciu",
       "categories_required": "Selectați cel puțin o categorie",

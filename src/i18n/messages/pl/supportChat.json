@@ -21,7 +21,7 @@
     "cancel": "Potrzebuję pomocy przy anulowaniu rezerwacji.",
     "provider": "Chcę zostać usługodawcą."
   },
-  "disclaimer": "Wsparcie AI może popełniać błędy. Może sprawdzać tylko ograniczone, bezpieczne szczegóły zamówień lub płatności, które wybierzesz albo wskażesz.",
+  "disclaimer": "Wsparcie AI może popełniać błędy. Może sprawdzać tylko ograniczone, bezpieczne szczegóły rezerwacji, zamówień lub płatności, które wybierzesz albo wskażesz.",
   "contactSupport": "Skontaktuj się ze wsparciem",
   "writeEmail": "Napisz e-mail",
   "emailMode": {
@@ -51,10 +51,22 @@
     "empty": "Wpisz pytanie do wsparcia, żebym mógł pomóc.",
     "abusive": "Mogę pomóc w pytaniach dotyczących wsparcia, ale nie mogę odpowiadać na obraźliwe wiadomości. Skontaktuj się ze wsparciem, jeśli potrzebujesz pomocy.",
     "nonsense": "Nie udało mi się zrozumieć tej prośby. Przeformułuj pytanie do wsparcia albo skontaktuj się ze wsparciem.",
-    "clarify": "Co próbujesz zrobić: zarejestrować się, zarezerwować usługę, zarządzać profilem usługodawcy, opłacić zamówienie, anulować coś czy zgłosić spór?",
-    "unsupportedAccount": "Mogę sprawdzać tylko ograniczone, bezpieczne szczegóły zamówień, płatności lub faktur, gdy wybierzesz albo wskażesz konkretny element, który mogę zweryfikować. Nie mogę przeglądać pełnej historii konta, niepowiązanych zamówień, Stripe ani surowych danych konta.",
-    "unsupportedAction": "Nie mogę wykonywać z tego czatu działań takich jak anulowanie, zwrot, obciążenie lub zmiana zamówienia. Mogę wyjaśnić zasady albo pomóc bezpiecznie sprawdzić kwalifikowalność wybranego zamówienia.",
-    "uncertain": "Nie mam wystarczających informacji wsparcia, aby odpowiedzieć wiarygodnie. Mogę pomóc w ogólnych pytaniach dotyczących rejestracji, konfiguracji usługodawcy, rezerwacji, płatności, anulowania, sporów i korzystania z marketplace. W sprawie tego konkretnego problemu skontaktuj się ze wsparciem."
+    "clarify": "W czym potrzebujesz pomocy: rezerwacja, płatność, anulowanie, profil oferenta, rejestracja czy spór?",
+    "unsupportedAccount": "Mogę sprawdzić tylko ograniczone, bezpieczne dla wsparcia dane konkretnej rezerwacji, zamówienia, płatności lub faktury, którą wybierzesz albo wskażesz. Nie mogę przeglądać pełnej historii konta, danych niepowiązanych, danych Stripe ani surowych rekordów.",
+    "unsupportedAction": "Nie mogę anulować, zwrócić środków, obciążyć ani zmienić rezerwacji lub zamówienia z tego czatu. Mogę wyjaśnić zasady albo pomóc bezpiecznie sprawdzić wybraną rezerwację.",
+    "uncertain": "Nie mam wystarczających zatwierdzonych informacji, aby odpowiedzieć wiarygodnie. Zapytaj o konkretną rezerwację, płatność, anulowanie, rejestrację, profil oferenta albo zasadę platformy.",
+    "clarifyGeneral": "W czym potrzebujesz pomocy: rezerwacja, płatność, anulowanie, profil oferenta, rejestracja czy spór?",
+    "clarifyBooking": "Czy chodzi o rezerwację zgłoszoną, zaplanowaną, anulowaną, płatność za rezerwację albo jej zmianę/anulowanie?",
+    "clarifyPayment": "Czy chodzi o opłacone zamówienie, oczekującą płatność, fakturę albo termin płatności?",
+    "clarifyCancellation": "Czy rezerwacja jest nadal zgłoszona, już zaplanowana czy anulowana, i czy chcesz ją anulować czy zrozumieć blokadę anulowania?",
+    "clarifyProvider": "Potrzebujesz pomocy przy tworzeniu profilu oferenta, onboardingu, zarządzaniu usługami czy wypłatach dla oferenta?",
+    "lowConfidenceFollowUp": "Nie mam pewności, jakiego szczegółu potrzebujesz. Chcesz sprawdzić konkretną rezerwację, płatność, anulowanie czy ogólną zasadę platformy?",
+    "unsupportedBroadAccount": "Nie mogę pokazać ani wyeksportować pełnej historii konta z tego czatu. Zapytaj o konkretną rezerwację, płatność lub fakturę albo otwórz odpowiednią stronę panelu, aby zobaczyć pełną listę.",
+    "accountContextUnavailable": "Mogę wyjaśnić zasady. Ograniczone, bezpieczne dla wsparcia sprawdzenie jest dostępne, jeśli jesteś zalogowany i pytasz o konkretną rezerwację, zamówienie, płatność lub fakturę.",
+    "unsafeActionBlocked": "Nie mogę anulować, zwracać środków, obciążać ani zmieniać czegokolwiek z poziomu czatu. Mogę wyjaśnić zasady albo pomóc sprawdzić, czy wybrana rezerwacja kwalifikuje się do działania.",
+    "offerPaymentPendingLookup": "Jeśli chcesz, mogę wyszukać aktualne rezerwacje, w których płatność jest nadal oczekująca.",
+    "offerScheduledBookingLookup": "Jeśli chcesz, mogę wyszukać aktualne zaplanowane rezerwacje, które mogą pasować.",
+    "offerCancellationLookup": "Jeśli chcesz, mogę wyszukać aktualne zaplanowane rezerwacje, które mogą mieć znaczenie przy anulowaniu."
   },
   "handoffAccount": "Aby uzyskać pomoc dotyczącą konta, skontaktuj się ze wsparciem i podaj dane zamówienia, faktury lub konta.",
   "handoffGeneral": "Jeśli to nie odpowiada na Twoje pytanie, skontaktuj się ze wsparciem."

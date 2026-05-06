@@ -156,18 +156,73 @@ Required env groups are defined in `README.md`:
 - `threadId` is an opaque support-chat continuity id for server/admin logs only and must not be treated as user-visible persisted chat history.
 - Support-chat disposition is server-owned; the model may draft normal answers, but server code decides `answered`, `uncertain`, `escalate`, or `unsupported_account_question`.
 - Support-chat prompt builders should format selected context only; disposition, unsupported-account handling, and weak-source decisions belong in server orchestration.
-- Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helpers, but the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
+- Support-chat routing architecture rule:
+  - model/triage should understand user meaning
+  - server code must enforce authority, ownership, helper allowlists, result limits, and no-mutation boundaries
+  - regex/deterministic routing is for safety and fallback only, not the primary assistant brain
+  - do not keep expanding multilingual phrase lists for natural conversation understanding; add future coverage through structured triage plus reality evals
+  - natural-language account lookups such as scheduled/canceled/paid booking requests should reach helpers through structured triage plus server eligibility, not direct regex routing
+  - short topic-context phrase routing may remain only as an outage/legacy fallback after triage has no usable result
+  - Patch 1 classification lives in `docs/support-chat-routing-boundaries.md`
+- Support-chat short conversation memory is a client-provided triage hint only.
+  It may include the previous user message, previous assistant message, active
+  topic hint, selected-order-context presence, and whether the assistant last
+  asked for account candidate selection. It must never include full transcripts,
+  raw order/payment data, Stripe data, or raw customer/provider records, and it
+  must not be used as evidence for helper execution.
+- Support-chat structured triage classifies user meaning only. It returns strict
+  JSON with intent, topic, optional status filter, confidence, and short reason;
+  it must not answer the user, choose arbitrary DB queries, or invent helper
+  names. High-confidence helper-eligible triage may execute account helpers only
+  through explicit server-owned eligibility mapping. Persisted triage evidence is
+  for admin/debug transparency and is not proof of account data.
+- Support-chat grounded answer evidence records only the grounding kind:
+  `knowledge`, `account_safe_dto`, or `none`. Knowledge grounding comes from
+  approved support sources; account grounding comes from support-safe snapshots.
+- Support-chat answer generation follows a two-step grounded flow:
+  structured triage may classify meaning, but answer text must come from either
+  approved retrieved knowledge or bounded support-safe account DTOs.
+  Weak/missing knowledge grounding must return deterministic uncertain/fallback
+  copy instead of asking the model to improvise.
+- Final support-chat architecture contract:
+  - model triage owns meaning only
+  - server eligibility owns authority, helper mapping, ownership, and result limits
+  - helpers retrieve bounded support-safe DTOs only
+  - grounding is required for factual answers
+  - regex is safety/fallback only, not the conversation brain
+  - admin evidence must be persisted for triage, eligibility, grounding, helper use, and account snapshots
+  - chat must never mutate orders, payments, bookings, provider profiles, invoices, or Stripe state
+- Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helper categories only after server eligibility checks; the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
 - Selected-order context and support-topic context are server-issued signed tokens. Invalid selected-order follow-ups should ask the user to reselect the order; invalid/expired topic context is a soft hint and should be ignored.
 - General topic help must stay general unless the user clearly asks about their own bookings/orders/payments or has selected/referenced a specific item.
-- Explicit paid-order questions route to bounded paid payment candidates; generic payment overviews must avoid implying a full account-history scan.
+- Explicit paid-order questions may route to bounded paid payment candidates only through structured triage plus server eligibility; generic payment overviews must avoid implying a full account-history scan.
 - Support-chat guardrails must prevent "common practice" answers from being treated as Infinisimo policy; answers must be grounded in retrieved support context.
 - Ambiguous support-chat requests should receive one short clarifying question instead of a guessed answer.
 - Unsupported or escalated support-chat responses should still say what the assistant can help with and what the user should do next.
 - The model should only draft normal answers after server-side checks pass; invalid, ambiguous, unsupported-account, weak-source, and outage paths should remain deterministic server-authored responses.
+- Deterministic/server-authored support-chat copy should be user-facing and topic-aware. Avoid generic menu-style clarification when a topic or triage topic is known, do not expose helper names or AI-audit wording, and avoid internal terms like "candidate" in customer-facing text; prefer "matching" or "recent" orders/bookings.
 - Support-chat storage must use `support_chat_threads` and `support_chat_messages`; do not reuse human `conversations` or `messages`.
 - `threadId` is the public support-chat continuity id and must not be confused with the Payload document id.
 - Support-chat logs are admin-only by default and must not be exposed to vendors or regular users.
 - Support-chat admin review lives at `/[lang]/dashboard/admin/support-chat`; it is a separate admin child page, while the admin dashboard subnav remains section-based and the dashboard `Support Chat` section card is the entry point to the review page.
+- Support-chat admin review intentionally uses derived review labels for the main table/filter instead of raw thread lifecycle status:
+  - visible review labels are `Answered`, `Order selection requested`, `Uncertain`, `Account request blocked`, and `Needs review`
+  - these labels are deterministic app logic derived from `lastDisposition`, `lastNeedsHumanSupport`, raw `status`, and structured `lastAccountContextKind`
+  - `Order selection requested` must come only from structured `candidate_selection` context, never from assistant text matching, and old logs are not backfilled
+  - raw thread `status` (`open` / `escalated` / `closed`) remains backend storage/lifecycle metadata and should stay in diagnostics rather than the main admin review filter/table
+  - do not remove the backend `status` field without an explicit schema/storage migration decision
+- Support-chat admin review evidence should stay detail-pane focused:
+  - keep the thread table compact and avoid adding triage/helper/grounding columns
+  - show latest assistant decision evidence in collapsed thread diagnostics
+  - use persisted triage, eligibility, grounding, helper result, and account snapshot metadata to explain behavior
+  - show a clear missing-evidence note for old logs that predate structured evidence storage
+  - do not add per-message triage metadata inline in the transcript unless explicitly requested for a debugging pass
+- Account-aware support-chat admin review must persist and render structured support-safe account context snapshots for candidate orders, selected orders, helper results, and payment overview examples. Do not rely on assistant text alone to reconstruct which order/payment context was shown or used.
+  - snapshots must be structured metadata, not loose transcript text
+  - only persist non-empty snapshots with real account context
+  - prefer user-facing labels/display references in visible UI; internal Payload order ids may be retained as admin diagnostics but must not be the primary visible label
+  - do not store invoice ids or other non-order references in an `orderId` field; use explicit reference metadata for diagnostics
+  - snapshots must never include raw order records, Stripe payloads, full customer/provider records, internal notes, or payment internals
 - Redaction is best-effort for persisted logs only; do not mutate model input unless explicitly approved.
 - Persisted assistant messages should include prompt, guardrail, retrieval, knowledge-pack, model, disposition, and source metadata.
 - `retentionUntil` represents support-chat retention policy; cleanup enforcement can be added separately.
@@ -182,6 +237,9 @@ Required env groups are defined in `README.md`:
 - Local/dev email sending may require `EMAIL_DEV_ALLOWLIST`; production should configure the actual support inbox through environment variables rather than relying on the dev allowlist.
 - Phase 1 support-chat regression cases live in `src/modules/support-chat/testing/phase1-test-cases.ts`, the runner lives in `src/scripts/run-support-chat-phase1-tests.ts`, and the review guide lives in `docs/support-chat-phase1-test-sheet.md`.
 - Rerun `npm run test:support-chat:phase1` after meaningful support-chat changes to prompt, model, retrieval, knowledge pack, or guardrail behavior; use `--json` and `--out <path>` when you want a saved artifact for review.
+- Support-chat eval guidance lives in `docs/support-chat-eval-guide.md`.
+  - `npm run test:support-chat:phase2-account-aware` is an offline server-contract eval and uses explicit triage fixtures for model-understanding cases.
+  - `npm run test:support-chat:triage` is the live model triage eval; it skips cleanly without `OPENAI_API_KEY` and supports `--json --out <path>` for review artifacts.
 - Block 13A Phase 1 support-chat hardening is complete for the targeted safety categories:
   adversarial unsupported-account prompts, weak-source conservatism, abusive/empty/nonsense boundaries, and "common marketplace rules" prompts.
 - Known non-blocking Phase 1 support-chat regression issue:

@@ -4,4 +4,4 @@ export const SUPPORT_CHAT_PHASE = 1 as const;
 
 export const SUPPORT_CHAT_PUBLIC_ACCESS = true;
 
-export const SUPPORT_CHAT_ACCOUNT_AWARE = false;
+export const SUPPORT_CHAT_ACCOUNT_AWARE = true;

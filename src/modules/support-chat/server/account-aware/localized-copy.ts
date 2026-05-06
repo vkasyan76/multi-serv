@@ -96,16 +96,16 @@ export type AccountAwareLocalizedCopy = {
 
 const EN: AccountAwareLocalizedCopy = {
   candidate: {
-    fallbackLabel: "Order candidate",
-    none: "I can help, but I could not find recent support-safe order candidates. Please open your Orders page or contact support with the exact order ID.",
-    one: "I found one recent order candidate. Please select it below if it is the order you mean.",
-    many: "I found a few recent order candidates. Which order do you mean?",
+    fallbackLabel: "Matching booking",
+    none: "I can help, but I could not find recent matching bookings in the support-safe lookup. Please open your Orders page or contact support with the exact booking or order ID.",
+    one: "I found one recent booking that may match. Please select it below if it is the booking you mean.",
+    many: "I found a few recent bookings that may match. Which booking do you mean?",
     filteredNone: (filter) =>
-      `I could not find recent ${filter} booking candidates. This is not a full history check. Please open your Orders page if you need the complete list.`,
+      `I could not find recent ${filter} bookings in the support-safe lookup. This is not a full history check. Please open your Orders page if you need the complete list.`,
     filteredOne: (filter) =>
-      `I found one recent ${filter} booking candidate. Please select it below if it is the order you mean.`,
+      `I found one recent ${filter} booking that may match. Please select it below if it is the booking you mean.`,
     filteredMany: (filter) =>
-      `I found recent ${filter} booking candidates. Which order do you mean?`,
+      `I found recent ${filter} bookings that may match. Which booking do you mean?`,
   },
   fieldLabels: {
     provider: "Provider",
@@ -315,7 +315,7 @@ const EN: AccountAwareLocalizedCopy = {
     },
   },
   actionTokenExpired:
-    "That order selection expired. Please select the order again so I can check it safely.",
+    "That booking selection expired. Please select the booking again so I can check it safely.",
   genericAccountItem:
     "I found the account item, but I cannot safely summarize it yet.",
 };
@@ -323,30 +323,30 @@ const EN: AccountAwareLocalizedCopy = {
 const DE: AccountAwareLocalizedCopy = {
   ...EN,
   candidate: {
-    fallbackLabel: "Bestellkandidat",
-    none: "Ich kann helfen, aber ich habe keine aktuellen support-sicheren Bestellkandidaten gefunden. Öffne bitte deine Bestellseite oder kontaktiere den Support mit der genauen Bestell-ID.",
-    one: "Ich habe einen aktuellen Bestellkandidaten gefunden. Wähle ihn bitte unten aus, wenn das die gemeinte Bestellung ist.",
-    many: "Ich habe einige aktuelle Bestellkandidaten gefunden. Welche Bestellung meinst du?",
+    fallbackLabel: "Passende Buchung",
+    none: "Ich kann helfen, aber ich habe keine aktuellen support-sicheren Buchungen gefunden, die passen. Öffnen Sie bitte Ihre Buchungs-/Bestellseite oder kontaktieren Sie den Support mit der genauen Buchungs- oder Bestell-ID.",
+    one: "Ich habe eine aktuelle Buchung gefunden, die passen könnte. Wählen Sie sie bitte unten aus, wenn das die gemeinte Buchung ist.",
+    many: "Ich habe einige aktuelle Buchungen gefunden, die passen könnten. Welche Buchung meinen Sie?",
     filteredNone: (filter) =>
-      `Ich konnte keine aktuellen Buchungskandidaten mit Status ${filter} finden. Das ist keine vollständige Verlaufssuche. Öffne bitte deine Bestellseite, wenn du die komplette Liste brauchst.`,
+      `Ich konnte keine aktuellen Buchungen mit Status ${filter} finden, die passen. Das ist keine vollständige Verlaufssuche. Öffnen Sie bitte Ihre Buchungs-/Bestellseite, wenn Sie die komplette Liste benötigen.`,
     filteredOne: (filter) =>
-      `Ich habe einen aktuellen Buchungskandidaten mit Status ${filter} gefunden. Wähle ihn bitte unten aus, wenn das die gemeinte Bestellung ist.`,
+      `Ich habe eine aktuelle Buchung mit Status ${filter} gefunden, die passen könnte. Wählen Sie sie bitte unten aus, wenn das die gemeinte Buchung ist.`,
     filteredMany: (filter) =>
-      `Ich habe aktuelle Buchungskandidaten mit Status ${filter} gefunden. Welche Bestellung meinst du?`,
+      `Ich habe aktuelle Buchungen mit Status ${filter} gefunden, die passen könnten. Welche Buchung meinen Sie?`,
   },
   fieldLabels: {
-    provider: "Dienstleister",
+    provider: "Anbieter",
     service: "Leistung",
     date: "Datum",
     status: "Status",
     payment: "Zahlung",
     reason: "Grund",
-    note: "Hinweis von Dienstleister/Kunde",
+    note: "Hinweis von Anbieter/Kunde",
     nextStep: "Nächster Schritt",
   },
   missingReference: {
-    order: "Bitte gib die genaue Bestell-ID an, damit ich sie sicher prüfen kann.",
-    invoice: "Bitte gib die genaue Rechnungs-ID an, damit ich sie sicher prüfen kann.",
+    order: "Bitte geben Sie die genaue Buchungs- oder Bestell-ID an, damit ich sie sicher prüfen kann.",
+    invoice: "Bitte geben Sie die genaue Rechnungs-ID an, damit ich sie sicher prüfen kann.",
   },
   statusLabels: {
     ...EN.statusLabels,
@@ -382,169 +382,169 @@ const DE: AccountAwareLocalizedCopy = {
   },
   orderHeadline: {
     tenant: {
-      requested: "Diese Kundenbuchungsanfrage wartet auf deine Bestätigung.",
+      requested: "Diese Kundenbuchungsanfrage wartet auf Ihre Bestätigung.",
       scheduled: "Diese Kundenbuchung ist geplant.",
       completed:
-        "Diese Kundenbestellung ist als abgeschlossen markiert und wartet auf den nächsten Service-Schritt.",
-      accepted: "Diese Kundenbestellung wurde akzeptiert.",
-      disputed: "Diese Kundenbestellung ist als strittig markiert.",
-      canceled: "Diese Kundenbestellung ist storniert.",
+        "Diese Kundenbuchung ist als abgeschlossen markiert und wartet auf den nächsten Service-Schritt.",
+      accepted: "Diese Kundenbuchung wurde akzeptiert.",
+      disputed: "Diese Kundenbuchung ist als strittig markiert.",
+      canceled: "Diese Kundenbuchung ist storniert.",
       unknown:
-        "Ich habe die Bestellung gefunden, aber der aktuelle Servicestatus ist nicht in einer support-sicheren Kategorie verfügbar.",
+        "Ich habe die Buchung gefunden, aber der aktuelle Servicestatus ist nicht in einer support-sicheren Kategorie verfügbar.",
     },
     customer: {
       requested:
-        "Diese Bestellung wartet auf die Bestätigung des Anbieters. Es ist eine Buchungsanfrage, noch keine geplante Buchung.",
-      scheduled: "Diese Bestellung ist geplant.",
+        "Diese Buchung wartet auf die Bestätigung des Anbieters. Es ist eine Buchungsanfrage, noch keine geplante Buchung.",
+      scheduled: "Diese Buchung ist geplant.",
       completed:
-        "Diese Bestellung ist als abgeschlossen markiert und wartet auf den nächsten Service-Schritt.",
-      accepted: "Diese Bestellung wurde akzeptiert.",
-      disputed: "Diese Bestellung ist als strittig markiert.",
-      canceled: "Diese Bestellung ist storniert.",
+        "Diese Buchung ist als abgeschlossen markiert und wartet auf den nächsten Service-Schritt.",
+      accepted: "Diese Buchung wurde akzeptiert.",
+      disputed: "Diese Buchung ist als strittig markiert.",
+      canceled: "Diese Buchung ist storniert.",
       unknown:
-        "Ich habe die Bestellung gefunden, aber der aktuelle Servicestatus ist nicht in einer support-sicheren Kategorie verfügbar.",
+        "Ich habe die Buchung gefunden, aber der aktuelle Servicestatus ist nicht in einer support-sicheren Kategorie verfügbar.",
     },
   },
   statusReason: {
     tenant: {
-      customer_canceled: "Der Kunde hat diese Bestellung storniert.",
-      provider_declined: "Du hast diese Buchungsanfrage abgelehnt.",
-      provider_canceled: "Die Anbieterseite hat diese Bestellung storniert.",
+      customer_canceled: "Der Kunde hat diese Buchung storniert.",
+      provider_declined: "Sie haben diese Buchungsanfrage abgelehnt.",
+      provider_canceled: "Die Anbieterseite hat diese Buchung storniert.",
       awaiting_provider_confirmation:
-        "Diese Buchungsanfrage wartet auf deine Bestätigung oder Ablehnung.",
+        "Diese Buchungsanfrage wartet auf Ihre Bestätigung oder Ablehnung.",
       provider_confirmed: "Die Anbieterseite hat diese Buchung bestätigt.",
       completed: "Die Anbieterseite hat die Leistung als abgeschlossen markiert.",
       accepted: "Der Kunde hat den Abschluss der Leistung akzeptiert.",
       disputed: "Der Kunde hat den Abschluss der Leistung beanstandet.",
     },
     customer: {
-      customer_canceled: "Die Bestellung wurde vom Kunden storniert.",
+      customer_canceled: "Die Buchung wurde vom Kunden storniert.",
       provider_declined: "Der Anbieter hat diese Buchungsanfrage abgelehnt.",
-      provider_canceled: "Der Anbieter hat diese Bestellung storniert.",
+      provider_canceled: "Der Anbieter hat diese Buchung storniert.",
       awaiting_provider_confirmation:
         "Der Anbieter hat diese Buchungsanfrage noch nicht bestätigt oder abgelehnt.",
       provider_confirmed: "Der Anbieter hat diese Buchung bestätigt.",
       completed: "Der Anbieter hat die Leistung als abgeschlossen markiert.",
       accepted: "Der Abschluss der Leistung wurde akzeptiert.",
-      disputed: "Die Bestellung ist derzeit als strittig markiert.",
+      disputed: "Die Buchung ist derzeit als strittig markiert.",
     },
   },
   nextStep: {
     tenant: {
       await_provider_confirmation:
-        "Bestätige oder lehne die Anfrage in deinem Dashboard ab.",
-      pay_invoice: "Prüfe die ausgestellte Rechnung in deinem Dashboard.",
+        "Bestätigen Sie die Anfrage in Ihrem Dashboard oder lehnen Sie sie dort ab.",
+      pay_invoice: "Prüfen Sie die ausgestellte Rechnung in Ihrem Dashboard.",
       view_orders:
-        "Öffne die Bestellansicht in deinem Dashboard für die vollständige Bestellung.",
+        "Öffnen Sie die Buchungs-/Bestellansicht in Ihrem Dashboard für die vollständige Ansicht.",
       no_action_needed: "Derzeit ist keine Zahlungsaktion nötig.",
     },
     customer: {
       await_provider_confirmation:
-        "Warte, bis der Anbieter die Anfrage bestätigt oder ablehnt.",
-      pay_invoice: "Öffne die Rechnung auf deiner Bestellseite, um zu zahlen.",
-      view_orders: "Öffne deine Bestellseite für die vollständige Bestellung.",
+        "Warten Sie, bis der Anbieter die Anfrage bestätigt oder ablehnt.",
+      pay_invoice: "Öffnen Sie die Rechnung auf Ihrer Buchungs-/Bestellseite, um zu zahlen.",
+      view_orders: "Öffnen Sie Ihre Buchungs-/Bestellseite für die vollständige Ansicht.",
       no_action_needed: "Derzeit ist keine Zahlungsaktion nötig.",
     },
   },
   invoiceLifecycle: {
     tenant: {
       issued:
-        "Für diese Kundenbuchung wurde bereits eine Rechnung ausgestellt. Prüfe als Anbieter die Bestellung oder Rechnung in deinem Dashboard, um den aktuellen Zahlungsstand zu sehen.",
-      paid: "Diese Kundenbuchung ist im support-sicheren Bestellstatus bereits als bezahlt markiert. Prüfe die Bestellung in deinem Dashboard, wenn du die vollständige Ansicht brauchst.",
-      void: "Die Rechnung für diese Kundenbuchung ist derzeit nicht zahlbar. Prüfe die Bestellung in deinem Dashboard oder kontaktiere den Support, wenn der Kunde weiterhin Hilfe braucht.",
+        "Für diese Kundenbuchung wurde bereits eine Rechnung ausgestellt. Prüfen Sie als Anbieter die Buchung oder Rechnung in Ihrem Dashboard, um den aktuellen Zahlungsstand zu sehen.",
+      paid: "Diese Kundenbuchung ist im support-sicheren Buchungsstatus bereits als bezahlt markiert. Prüfen Sie die Buchung in Ihrem Dashboard, wenn Sie die vollständige Ansicht benötigen.",
+      void: "Die Rechnung für diese Kundenbuchung ist derzeit nicht zahlbar. Prüfen Sie die Buchung in Ihrem Dashboard oder kontaktieren Sie den Support, wenn der Kunde weiterhin Hilfe benötigt.",
       requested:
-        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil sie noch auf deine Bestätigung wartet. Buchungsanfragen werden nicht sofort zahlbar. Bestätige oder lehne die Anfrage in deinem Dashboard ab; später kann sich der Rechnungs-/Zahlungsstatus ändern.",
+        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil sie noch auf Ihre Bestätigung wartet. Buchungsanfragen werden nicht sofort zahlbar. Bestätigen Sie die Anfrage in Ihrem Dashboard oder lehnen Sie sie dort ab; später kann sich der Rechnungs-/Zahlungsstatus ändern.",
       scheduled:
-        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil diese geplante Bestellung den Rechnungs-/Zahlungsschritt noch nicht erreicht hat. Prüfe als Anbieter die Bestellung in deinem Dashboard und ob die Leistung bereit für den nächsten Schritt ist.",
+        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil diese geplante Buchung den Rechnungs-/Zahlungsschritt noch nicht erreicht hat. Prüfen Sie als Anbieter die Buchung in Ihrem Dashboard und ob die Leistung bereit für den nächsten Schritt ist.",
       completed:
-        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, obwohl die Bestellung über Anfrage/Planung hinaus ist. Prüfe die Bestellung in deinem Dashboard und kontaktiere den Support, wenn der Rechnungs-/Zahlungsschritt festhängt.",
+        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, obwohl die Buchung über Anfrage/Planung hinaus ist. Prüfen Sie die Buchung in Ihrem Dashboard und kontaktieren Sie den Support, wenn der Rechnungs-/Zahlungsschritt festhängt.",
       canceled:
-        "Es wurde keine Rechnung ausgestellt, weil diese Kundenbuchung storniert ist. Eine stornierte Bestellung soll derzeit nicht in den Rechnungs-/Zahlungsschritt wechseln.",
+        "Es wurde keine Rechnung ausgestellt, weil diese Kundenbuchung storniert ist. Eine stornierte Buchung soll derzeit nicht in den Rechnungs-/Zahlungsschritt wechseln.",
       unknown:
-        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil sie keinen support-sicheren Rechnungs-/Zahlungsstatus erreicht hat. Prüfe die vollständige Bestellung in deinem Dashboard.",
+        "Für diese Kundenbuchung wurde noch keine Rechnung ausgestellt, weil sie keinen support-sicheren Rechnungs-/Zahlungsstatus erreicht hat. Prüfen Sie die vollständige Buchung in Ihrem Dashboard.",
     },
     customer: {
       issued:
-        "Für diese Bestellung wurde bereits eine Rechnung ausgestellt. Öffne deine Bestellseite, um Rechnung und Zahlungsstand zu prüfen.",
-      paid: "Diese Bestellung ist im support-sicheren Bestellstatus bereits als bezahlt markiert. Öffne deine Bestellseite, wenn du die vollständige Ansicht brauchst.",
-      void: "Die Rechnung für diese Bestellung ist derzeit nicht zahlbar. Öffne deine Bestellseite oder kontaktiere den Support, wenn du Hilfe brauchst.",
+        "Für diese Buchung wurde bereits eine Rechnung ausgestellt. Öffnen Sie Ihre Buchungs-/Bestellseite, um Rechnung und Zahlungsstand zu prüfen.",
+      paid: "Diese Buchung ist im support-sicheren Buchungsstatus bereits als bezahlt markiert. Öffnen Sie Ihre Buchungs-/Bestellseite, wenn Sie die vollständige Ansicht benötigen.",
+      void: "Die Rechnung für diese Buchung ist derzeit nicht zahlbar. Öffnen Sie Ihre Buchungs-/Bestellseite oder kontaktieren Sie den Support, wenn Sie Hilfe benötigen.",
       requested:
-        "Für diese Bestellung wurde noch keine Rechnung ausgestellt, weil diese Buchungsanfrage noch auf die Bestätigung des Anbieters wartet. Buchungsanfragen werden nicht sofort zahlbar. Nach der Bestätigung und dem späteren Rechnungs-/Zahlungsschritt kann sich der Status ändern.",
+        "Für diese Buchung wurde noch keine Rechnung ausgestellt, weil diese Buchungsanfrage noch auf die Bestätigung des Anbieters wartet. Buchungsanfragen werden nicht sofort zahlbar. Nach der Bestätigung und dem späteren Rechnungs-/Zahlungsschritt kann sich der Status ändern.",
       scheduled:
-        "Für diese geplante Buchung wurde noch keine Rechnung ausgestellt, weil sie den Rechnungs-/Zahlungsschritt noch nicht erreicht hat. In diesem Ablauf kann die Zahlung später angefordert werden. Beobachte deine Bestellseite für Updates.",
+        "Für diese geplante Buchung wurde noch keine Rechnung ausgestellt, weil sie den Rechnungs-/Zahlungsschritt noch nicht erreicht hat. In diesem Ablauf kann die Zahlung später angefordert werden. Beobachten Sie Ihre Buchungs-/Bestellseite für Updates.",
       completed:
-        "Für diese Bestellung wurde noch keine Rechnung ausgestellt, obwohl sie über Anfrage/Planung hinaus ist. Prüfe deine Bestellseite und kontaktiere den Support, wenn der Rechnungs-/Zahlungsschritt festhängt.",
+        "Für diese Buchung wurde noch keine Rechnung ausgestellt, obwohl sie über Anfrage/Planung hinaus ist. Prüfen Sie Ihre Buchungs-/Bestellseite und kontaktieren Sie den Support, wenn der Rechnungs-/Zahlungsschritt festhängt.",
       canceled:
-        "Es wurde keine Rechnung ausgestellt, weil diese Bestellung storniert ist. Eine stornierte Bestellung soll derzeit nicht in den Rechnungs-/Zahlungsschritt wechseln.",
+        "Es wurde keine Rechnung ausgestellt, weil diese Buchung storniert ist. Eine stornierte Buchung soll derzeit nicht in den Rechnungs-/Zahlungsschritt wechseln.",
       unknown:
-        "Für diese Bestellung wurde noch keine Rechnung ausgestellt, weil sie keinen support-sicheren Rechnungs-/Zahlungsstatus erreicht hat. Öffne deine Bestellseite für die vollständige Ansicht.",
+        "Für diese Buchung wurde noch keine Rechnung ausgestellt, weil sie keinen support-sicheren Rechnungs-/Zahlungsstatus erreicht hat. Öffnen Sie Ihre Buchungs-/Bestellseite für die vollständige Ansicht.",
     },
   },
   paymentStatus: {
     paid: "Diese Zahlung ist als bezahlt markiert.",
     pending:
-      "Für diese Bestellung oder Rechnung ist eine Zahlung ausstehend. Du kannst die Rechnung über deine Bestellseite öffnen.",
+      "Für diese Buchung oder Rechnung ist eine Zahlung ausstehend. Sie können die Rechnung über Ihre Buchungs-/Bestellseite öffnen.",
     notDueRequested:
       "Die Zahlung ist noch nicht fällig, weil dies noch eine Buchungsanfrage ist, die auf die Bestätigung des Anbieters wartet. Buchungsanfragen werden nicht sofort zahlbar. Nach der Bestätigung und dem späteren Rechnungs-/Zahlungsschritt kann sich der Zahlungsstatus ändern.",
     notDueScheduled:
       "Die Zahlung ist noch nicht fällig, weil für diese geplante Buchung noch keine Rechnung ausgestellt wurde. In diesem Ablauf wird die Zahlung später über den Rechnungs-/Zahlungsschritt angefordert.",
     notDueCompleted:
-      "Die Zahlung ist noch nicht fällig, weil für diese Bestellung noch keine Rechnung ausgestellt wurde. Prüfe deine Bestellseite für Rechnungs- oder Zahlungsupdates.",
+      "Die Zahlung ist noch nicht fällig, weil für diese Buchung noch keine Rechnung ausgestellt wurde. Prüfen Sie Ihre Buchungs-/Bestellseite für Rechnungs- oder Zahlungsupdates.",
     notDueCanceled:
-      "Die Zahlung ist nicht fällig, weil diese Bestellung storniert ist und derzeit keine zahlbare Rechnung damit verbunden ist.",
+      "Die Zahlung ist nicht fällig, weil diese Buchung storniert ist und derzeit keine zahlbare Rechnung damit verbunden ist.",
     notDue:
-      "Die Zahlung ist für diese Bestellung noch nicht fällig. Derzeit ist keine zahlbare Rechnung damit verbunden.",
+      "Die Zahlung ist für diese Buchung noch nicht fällig. Derzeit ist keine zahlbare Rechnung damit verbunden.",
     void: "Diese Rechnung ist derzeit nicht zahlbar.",
     unknown:
       "Ich habe den Zahlungsdatensatz gefunden, aber der aktuelle Zahlungsstatus ist nicht in einer support-sicheren Kategorie verfügbar.",
   },
   cancellation: {
     eligible:
-      "Diese Bestellung scheint derzeit für eine In-App-Stornierung berechtigt zu sein. Bitte nutze die Stornierungsoption auf deiner Bestellseite.",
+      "Diese Buchung scheint derzeit für eine In-App-Stornierung berechtigt zu sein. Bitte nutzen Sie die Stornierungsoption auf Ihrer Buchungs-/Bestellseite.",
     notEligible:
-      "Diese Bestellung scheint derzeit nicht für eine In-App-Stornierung berechtigt zu sein. Nutze bitte deine Bestellseite oder kontaktiere den Support, wenn du Hilfe brauchst.",
+      "Diese Buchung scheint derzeit nicht für eine In-App-Stornierung berechtigt zu sein. Nutzen Sie bitte Ihre Buchungs-/Bestellseite oder kontaktieren Sie den Support, wenn Sie Hilfe benötigen.",
     blockReasons: {
       already_canceled:
-        "Diese Bestellung ist bereits storniert und kann deshalb nicht erneut in der App storniert werden.",
+        "Diese Buchung ist bereits storniert und kann deshalb nicht erneut in der App storniert werden.",
       order_paid:
-        "Diese Bestellung ist bereits als bezahlt markiert. Deshalb ist die In-App-Stornierung derzeit blockiert.",
+        "Diese Buchung ist bereits als bezahlt markiert. Deshalb ist die In-App-Stornierung derzeit blockiert.",
       not_slot_order:
-        "Diese Bestellung gehört nicht zu dem Buchungsablauf, der eine In-App-Stornierung unterstützt.",
+        "Diese Buchung gehört nicht zu dem Buchungsablauf, der eine In-App-Stornierung unterstützt.",
       wrong_service_status:
-        "Diese Bestellung ist derzeit nicht in einem Buchungsstatus, der eine In-App-Stornierung unterstützt.",
+        "Diese Buchung ist derzeit nicht in einem Buchungsstatus, der eine In-App-Stornierung unterstützt.",
       invoice_exists:
-        "Für diese Bestellung existiert bereits eine Rechnung. Deshalb ist die In-App-Stornierung derzeit blockiert.",
+        "Für diese Buchung existiert bereits eine Rechnung. Deshalb ist die In-App-Stornierung derzeit blockiert.",
       missing_slots:
-        "Ich kann die Buchungszeiten dieser Bestellung aus den support-sicheren Daten nicht bestätigen und sie deshalb nicht als stornierbar einstufen.",
+        "Ich kann die Buchungszeiten dieser Buchung aus den support-sicheren Daten nicht bestätigen und sie deshalb nicht als stornierbar einstufen.",
       invalid_slot_dates:
-        "Die Buchungszeit dieser Bestellung ist nicht in einer support-sicheren Form verfügbar. Deshalb kann ich die Stornierbarkeit nicht sicher bestätigen.",
+        "Die Buchungszeit dieser Buchung ist nicht in einer support-sicheren Form verfügbar. Deshalb kann ich die Stornierbarkeit nicht sicher bestätigen.",
       cutoff_passed:
         "Das Stornierungsfenster für diese Buchung ist bereits abgelaufen. Deshalb ist die In-App-Stornierung derzeit blockiert.",
       slot_paid:
         "Mindestens ein Buchungszeitraum ist bereits als bezahlt markiert. Deshalb ist die In-App-Stornierung derzeit blockiert.",
       unknown:
-        "Ich kann den genauen Blockierungsgrund aus den support-sicheren Daten nicht sicher erkennen. Prüfe bitte deine Bestellseite für die verfügbaren nächsten Schritte.",
+        "Ich kann den genauen Blockierungsgrund aus den support-sicheren Daten nicht sicher erkennen. Prüfen Sie bitte Ihre Buchungs-/Bestellseite für die verfügbaren nächsten Schritte.",
     },
   },
   overview: {
-    none: "Ich konnte keine aktuellen support-sicheren Bestellungen zum Zusammenfassen finden. Das ist keine vollständige Konto- oder Zahlungshistorie.",
+    none: "Ich konnte keine aktuellen support-sicheren Buchungen zum Zusammenfassen finden. Das ist keine vollständige Konto- oder Zahlungshistorie.",
     summary: (parts) =>
-      `In den aktuellen Bestellungen, die ich sicher prüfen kann, habe ich gefunden: ${parts}.`,
+      `In den aktuellen Buchungen, die ich sicher prüfen kann, habe ich gefunden: ${parts}.`,
     inspected: (countText) =>
       `Ich habe ${countText} geprüft. Das ist keine vollständige Zahlungshistorie.`,
     counts: {
-      paidOrders: (count) => `${count} bezahlte Bestellung${count === 1 ? "" : "en"}`,
+      paidOrders: (count) => `${count} bezahlte Buchung${count === 1 ? "" : "en"}`,
       paymentPending: (count) => `${count} mit ausstehender Zahlung`,
       paymentNotDue: (count) => `${count}, bei denen die Zahlung noch nicht fällig ist`,
       paymentCanceled: (count) => `${count} mit stornierter Zahlung`,
       refunded: (count) => `${count} erstattet`,
       unknown: (count) => `${count} mit unbekanntem Zahlungsstatus`,
       inspectedOrders: (count) =>
-        `${count} aktuelle support-sichere Bestellung${count === 1 ? "" : "en"}`,
+        `${count} aktuelle support-sichere Buchung${count === 1 ? "" : "en"}`,
     },
   },
   actionTokenExpired:
-    "Diese Bestellauswahl ist abgelaufen. Wähle die Bestellung bitte erneut aus, damit ich sie sicher prüfen kann.",
+    "Diese Buchungsauswahl ist abgelaufen. Wählen Sie die Buchung bitte erneut aus, damit ich sie sicher prüfen kann.",
   genericAccountItem:
     "Ich habe das Kontoelement gefunden, kann es aber noch nicht sicher zusammenfassen.",
 };
@@ -552,16 +552,16 @@ const DE: AccountAwareLocalizedCopy = {
 const FR: AccountAwareLocalizedCopy = {
   ...EN,
   candidate: {
-    fallbackLabel: "Commande candidate",
-    none: "Je peux aider, mais je n'ai trouvé aucune commande récente pouvant être affichée en toute sécurité. Ouvrez votre page Commandes ou contactez l'assistance avec l'ID exact de la commande.",
-    one: "J'ai trouvé une commande récente candidate. Sélectionnez-la ci-dessous si c'est la commande concernée.",
-    many: "J'ai trouvé quelques commandes récentes candidates. Laquelle voulez-vous dire ?",
+    fallbackLabel: "Réservation correspondante",
+    none: "Je peux aider, mais je n'ai trouvé aucune réservation récente correspondante dans la vérification sûre. Ouvrez votre page Commandes ou contactez l'assistance avec l'ID exact de réservation ou de commande.",
+    one: "J'ai trouvé une réservation récente qui peut correspondre. Sélectionnez-la ci-dessous si c'est la réservation concernée.",
+    many: "J'ai trouvé quelques réservations récentes qui peuvent correspondre. De quelle réservation parlez-vous ?",
     filteredNone: (filter) =>
-      `Je n'ai trouvé aucune réservation récente candidate avec le statut ${filter}. Ceci n'est pas une vérification complète de l'historique. Ouvrez votre page Commandes si vous avez besoin de la liste complète.`,
+      `Je n'ai trouvé aucune réservation récente correspondant au statut ${filter}. Ceci n'est pas une vérification complète de l'historique. Ouvrez votre page Commandes si vous avez besoin de la liste complète.`,
     filteredOne: (filter) =>
-      `J'ai trouvé une réservation récente candidate avec le statut ${filter}. Sélectionnez-la ci-dessous si c'est la commande concernée.`,
+      `J'ai trouvé une réservation récente avec le statut ${filter} qui peut correspondre. Sélectionnez-la ci-dessous si c'est la réservation concernée.`,
     filteredMany: (filter) =>
-      `J'ai trouvé des réservations récentes candidates avec le statut ${filter}. Laquelle voulez-vous dire ?`,
+      `J'ai trouvé des réservations récentes avec le statut ${filter} qui peuvent correspondre. De quelle réservation parlez-vous ?`,
   },
   fieldLabels: {
     provider: "Prestataire",
@@ -775,7 +775,7 @@ const FR: AccountAwareLocalizedCopy = {
   genericAccountItem:
     "J'ai trouvé l'élément du compte, mais je ne peux pas encore le résumer en toute sécurité.",
   actionTokenExpired:
-    "Cette sélection de commande a expiré. Sélectionnez à nouveau la commande pour que je puisse la vérifier en toute sécurité.",
+    "Cette sélection de réservation a expiré. Sélectionnez à nouveau la réservation pour que je puisse la vérifier en toute sécurité.",
 };
 
 function withRomanceCopy(overrides: Partial<AccountAwareLocalizedCopy>): AccountAwareLocalizedCopy {
@@ -819,18 +819,18 @@ function withRomanceCopy(overrides: Partial<AccountAwareLocalizedCopy>): Account
 
 const IT = withRomanceCopy({
   actionTokenExpired:
-    "Questa selezione dell'ordine è scaduta. Seleziona di nuovo l'ordine così posso verificarlo in modo sicuro.",
+    "Questa selezione della prenotazione è scaduta. Seleziona di nuovo la prenotazione così posso verificarla in modo sicuro.",
   candidate: {
-    fallbackLabel: "Ordine candidato",
-    none: "Posso aiutarti, ma non ho trovato ordini recenti sicuri da mostrare. Apri la pagina Ordini o contatta l'assistenza con l'ID esatto dell'ordine.",
-    one: "Ho trovato un ordine recente candidato. Selezionalo qui sotto se è l'ordine corretto.",
-    many: "Ho trovato alcuni ordini recenti candidati. Quale ordine intendi?",
+    fallbackLabel: "Prenotazione corrispondente",
+    none: "Posso aiutarti, ma non ho trovato prenotazioni recenti corrispondenti nella verifica sicura. Apri la pagina Ordini o contatta l'assistenza con l'ID esatto della prenotazione o dell'ordine.",
+    one: "Ho trovato una prenotazione recente che può corrispondere. Selezionala qui sotto se è la prenotazione corretta.",
+    many: "Ho trovato alcune prenotazioni recenti che possono corrispondere. Quale prenotazione intendi?",
     filteredNone: (filter) =>
-      `Non ho trovato prenotazioni recenti candidate con stato ${filter}. Non è una verifica completa della cronologia. Apri la pagina Ordini se ti serve l'elenco completo.`,
+      `Non ho trovato prenotazioni recenti che possono corrispondere con stato ${filter}. Non è una verifica completa della cronologia. Apri la pagina Ordini se ti serve l'elenco completo.`,
     filteredOne: (filter) =>
-      `Ho trovato una prenotazione recente candidata con stato ${filter}. Selezionala qui sotto se è l'ordine corretto.`,
+      `Ho trovato una prenotazione recente che può corrispondere con stato ${filter}. Selezionala qui sotto se è la prenotazione corretta.`,
     filteredMany: (filter) =>
-      `Ho trovato prenotazioni recenti candidate con stato ${filter}. Quale ordine intendi?`,
+      `Ho trovato prenotazioni recenti che possono corrispondere con stato ${filter}. Quale prenotazione intendi?`,
   },
   fieldLabels: {
     provider: "Fornitore",
@@ -1012,18 +1012,18 @@ const IT = withRomanceCopy({
 
 const ES = withRomanceCopy({
   actionTokenExpired:
-    "Esta selección de pedido ha caducado. Selecciona de nuevo el pedido para que pueda revisarlo de forma segura.",
+    "Esta selección de reserva ha caducado. Selecciona de nuevo la reserva para que pueda revisarla de forma segura.",
   candidate: {
-    fallbackLabel: "Pedido candidato",
-    none: "Puedo ayudar, pero no encontré pedidos recientes que pueda mostrar de forma segura. Abre tu página de Pedidos o contacta con soporte con el ID exacto del pedido.",
-    one: "Encontré un pedido reciente candidato. Selecciónalo abajo si es el pedido correcto.",
-    many: "Encontré algunos pedidos recientes candidatos. ¿Qué pedido quieres decir?",
+    fallbackLabel: "Reserva coincidente",
+    none: "Puedo ayudar, pero no encontré reservas recientes que coincidan en la revisión segura. Abre tu página de Pedidos o contacta con soporte con el ID exacto de la reserva o del pedido.",
+    one: "Encontré una reserva reciente que puede coincidir. Selecciónala abajo si es la reserva correcta.",
+    many: "Encontré algunas reservas recientes que pueden coincidir. ¿A qué reserva te refieres?",
     filteredNone: (filter) =>
-      `No encontré reservas recientes candidatas con estado ${filter}. Esto no es una revisión completa del historial. Abre tu página de Pedidos si necesitas la lista completa.`,
+      `No encontré reservas recientes que coincidan con el estado ${filter}. Esto no es una revisión completa del historial. Abre tu página de Pedidos si necesitas la lista completa.`,
     filteredOne: (filter) =>
-      `Encontré una reserva reciente candidata con estado ${filter}. Selecciónala abajo si es el pedido correcto.`,
+      `Encontré una reserva reciente con estado ${filter} que puede coincidir. Selecciónala abajo si es la reserva correcta.`,
     filteredMany: (filter) =>
-      `Encontré reservas recientes candidatas con estado ${filter}. ¿Qué pedido quieres decir?`,
+      `Encontré reservas recientes con estado ${filter} que pueden coincidir. ¿A qué reserva te refieres?`,
   },
   fieldLabels: {
     provider: "Proveedor",
@@ -1205,18 +1205,18 @@ const ES = withRomanceCopy({
 
 const PT = withRomanceCopy({
   actionTokenExpired:
-    "Esta seleção de pedido expirou. Selecione novamente o pedido para que eu possa verificá-lo com segurança.",
+    "Esta seleção de reserva expirou. Selecione novamente a reserva para que eu possa verificá-la com segurança.",
   candidate: {
-    fallbackLabel: "Pedido candidato",
-    none: "Posso ajudar, mas não encontrei pedidos recentes que possa mostrar com segurança. Abra a página Pedidos ou contacte o suporte com o ID exato do pedido.",
-    one: "Encontrei um pedido recente candidato. Selecione-o abaixo se for o pedido correto.",
-    many: "Encontrei alguns pedidos recentes candidatos. Qual pedido quer dizer?",
+    fallbackLabel: "Reserva correspondente",
+    none: "Posso ajudar, mas não encontrei reservas recentes correspondentes na verificação segura. Abra a página Pedidos ou contacte o suporte com o ID exato da reserva ou do pedido.",
+    one: "Encontrei uma reserva recente que pode corresponder. Selecione-a abaixo se for a reserva correta.",
+    many: "Encontrei algumas reservas recentes que podem corresponder. A que reserva se refere?",
     filteredNone: (filter) =>
-      `Não encontrei reservas recentes candidatas com estado ${filter}. Isto não é uma verificação completa do histórico. Abra a página Pedidos se precisar da lista completa.`,
+      `Não encontrei reservas recentes que correspondam ao estado ${filter}. Isto não é uma verificação completa do histórico. Abra a página Pedidos se precisar da lista completa.`,
     filteredOne: (filter) =>
-      `Encontrei uma reserva recente candidata com estado ${filter}. Selecione-a abaixo se for o pedido correto.`,
+      `Encontrei uma reserva recente com estado ${filter} que pode corresponder. Selecione-a abaixo se for a reserva correta.`,
     filteredMany: (filter) =>
-      `Encontrei reservas recentes candidatas com estado ${filter}. Qual pedido quer dizer?`,
+      `Encontrei reservas recentes com estado ${filter} que podem corresponder. A que reserva se refere?`,
   },
   fieldLabels: {
     provider: "Prestador",
@@ -1398,18 +1398,18 @@ const PT = withRomanceCopy({
 
 const PL = withRomanceCopy({
   actionTokenExpired:
-    "Ten wybór zamówienia wygasł. Wybierz zamówienie ponownie, abym mógł je bezpiecznie sprawdzić.",
+    "Ten wybór rezerwacji wygasł. Wybierz rezerwację ponownie, abym mógł ją bezpiecznie sprawdzić.",
   candidate: {
-    fallbackLabel: "Kandydat zamówienia",
-    none: "Mogę pomóc, ale nie znalazłem ostatnich zamówień, które można bezpiecznie pokazać. Otwórz stronę Zamówienia albo skontaktuj się z pomocą, podając dokładny identyfikator zamówienia.",
-    one: "Znalazłem jedno ostatnie pasujące zamówienie. Wybierz je poniżej, jeśli to właściwe zamówienie.",
-    many: "Znalazłem kilka ostatnich pasujących zamówień. O które zamówienie chodzi?",
+    fallbackLabel: "Pasująca rezerwacja",
+    none: "Mogę pomóc, ale nie znalazłem ostatnich pasujących rezerwacji w bezpiecznym sprawdzeniu. Otwórz stronę Zamówienia albo skontaktuj się ze wsparciem, podając dokładny identyfikator rezerwacji lub zamówienia.",
+    one: "Znalazłem jedną ostatnią pasującą rezerwację. Wybierz ją poniżej, jeśli to właściwa rezerwacja.",
+    many: "Znalazłem kilka ostatnich pasujących rezerwacji. O którą rezerwację chodzi?",
     filteredNone: (filter) =>
       `Nie znalazłem ostatnich rezerwacji ze statusem ${filter}. To nie jest pełne sprawdzenie historii. Otwórz stronę Zamówienia, jeśli potrzebujesz pełnej listy.`,
     filteredOne: (filter) =>
-      `Znalazłem jedną ostatnią rezerwację ze statusem ${filter}. Wybierz ją poniżej, jeśli to właściwe zamówienie.`,
+      `Znalazłem jedną ostatnią rezerwację ze statusem ${filter}. Wybierz ją poniżej, jeśli to właściwa rezerwacja.`,
     filteredMany: (filter) =>
-      `Znalazłem ostatnie rezerwacje ze statusem ${filter}. O które zamówienie chodzi?`,
+      `Znalazłem ostatnie rezerwacje ze statusem ${filter}. O którą rezerwację chodzi?`,
   },
   fieldLabels: {
     provider: "Dostawca",
@@ -1591,18 +1591,18 @@ const PL = withRomanceCopy({
 
 const RO = withRomanceCopy({
   actionTokenExpired:
-    "Această selecție a comenzii a expirat. Selectează din nou comanda ca să o pot verifica în siguranță.",
+    "Această selecție a rezervării a expirat. Selectează din nou rezervarea ca să o pot verifica în siguranță.",
   candidate: {
-    fallbackLabel: "Comandă candidată",
-    none: "Pot ajuta, dar nu am găsit comenzi recente care pot fi afișate în siguranță. Deschide pagina Comenzi sau contactează suportul cu ID-ul exact al comenzii.",
-    one: "Am găsit o comandă recentă candidată. Selecteaz-o mai jos dacă aceasta este comanda dorită.",
-    many: "Am găsit câteva comenzi recente candidate. La care comandă te referi?",
+    fallbackLabel: "Rezervare potrivită",
+    none: "Pot ajuta, dar nu am găsit rezervări recente potrivite în verificarea sigură. Deschide pagina Comenzi sau contactează suportul cu ID-ul exact al rezervării sau comenzii.",
+    one: "Am găsit o rezervare recentă care se poate potrivi. Selecteaz-o mai jos dacă aceasta este rezervarea dorită.",
+    many: "Am găsit câteva rezervări recente care se pot potrivi. La care rezervare te referi?",
     filteredNone: (filter) =>
-      `Nu am găsit rezervări recente candidate cu statusul ${filter}. Aceasta nu este o verificare completă a istoricului. Deschide pagina Comenzi dacă ai nevoie de lista completă.`,
+      `Nu am găsit rezervări recente care se potrivesc cu statusul ${filter}. Aceasta nu este o verificare completă a istoricului. Deschide pagina Comenzi dacă ai nevoie de lista completă.`,
     filteredOne: (filter) =>
-      `Am găsit o rezervare recentă candidată cu statusul ${filter}. Selecteaz-o mai jos dacă aceasta este comanda dorită.`,
+      `Am găsit o rezervare recentă cu statusul ${filter} care se poate potrivi. Selecteaz-o mai jos dacă aceasta este rezervarea dorită.`,
     filteredMany: (filter) =>
-      `Am găsit rezervări recente candidate cu statusul ${filter}. La care comandă te referi?`,
+      `Am găsit rezervări recente cu statusul ${filter} care se pot potrivi. La care rezervare te referi?`,
   },
   fieldLabels: {
     provider: "Furnizor",
@@ -1784,18 +1784,18 @@ const RO = withRomanceCopy({
 
 const UK = withRomanceCopy({
   actionTokenExpired:
-    "Цей вибір замовлення застарів. Виберіть замовлення ще раз, щоб я міг безпечно його перевірити.",
+    "Цей вибір бронювання застарів. Виберіть бронювання ще раз, щоб я міг безпечно його перевірити.",
   candidate: {
-    fallbackLabel: "Можливе замовлення",
-    none: "Я можу допомогти, але не знайшов останніх замовлень, які можна безпечно показати. Відкрийте сторінку замовлень або зверніться до підтримки з точним ID замовлення.",
-    one: "Я знайшов одне нещодавнє можливе замовлення. Виберіть його нижче, якщо це потрібне замовлення.",
-    many: "Я знайшов кілька нещодавніх можливих замовлень. Яке замовлення ви маєте на увазі?",
+    fallbackLabel: "Відповідне бронювання",
+    none: "Я можу допомогти, але не знайшов нещодавніх відповідних бронювань у безпечній перевірці. Відкрийте сторінку замовлень або зверніться до підтримки з точним ID бронювання чи замовлення.",
+    one: "Я знайшов одне нещодавнє бронювання, яке може відповідати запиту. Виберіть його нижче, якщо це потрібне бронювання.",
+    many: "Я знайшов кілька нещодавніх бронювань, які можуть відповідати запиту. Яке бронювання ви маєте на увазі?",
     filteredNone: (filter) =>
       `Я не знайшов нещодавніх бронювань зі статусом ${filter}. Це не повна перевірка історії. Відкрийте сторінку замовлень, якщо потрібен повний список.`,
     filteredOne: (filter) =>
-      `Я знайшов одне нещодавнє бронювання зі статусом ${filter}. Виберіть його нижче, якщо це потрібне замовлення.`,
+      `Я знайшов одне нещодавнє бронювання зі статусом ${filter}. Виберіть його нижче, якщо це потрібне бронювання.`,
     filteredMany: (filter) =>
-      `Я знайшов нещодавні бронювання зі статусом ${filter}. Яке замовлення ви маєте на увазі?`,
+      `Я знайшов нещодавні бронювання зі статусом ${filter}. Яке бронювання ви маєте на увазі?`,
   },
   fieldLabels: {
     provider: "Постачальник",

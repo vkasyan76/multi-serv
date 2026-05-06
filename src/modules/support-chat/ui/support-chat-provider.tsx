@@ -4,17 +4,21 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useUser } from "@clerk/nextjs";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { type AppLang } from "@/lib/i18n/app-lang";
 import { useTRPC } from "@/trpc/client";
+import { sanitizeSupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
 import {
   type SupportChatAction,
+  type SupportConversationMemory,
   type SupportChatMessage,
   type SupportSelectedOrderContext,
   type SupportTopicContext,
@@ -58,6 +62,44 @@ function isTopicContextFresh(context: SupportTopicContext | null) {
   return new Date(context.expiresAt).getTime() > Date.now();
 }
 
+function latestMessageByRole(
+  messages: SupportChatMessage[],
+  role: SupportChatMessage["role"],
+) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === role) return message;
+  }
+  return undefined;
+}
+
+function messageAskedForCandidateSelection(message: SupportChatMessage | undefined) {
+  return Boolean(
+    message?.actions?.some((action) => action.type === "account_candidate_select"),
+  );
+}
+
+function buildConversationMemory(input: {
+  messages: SupportChatMessage[];
+  supportTopicContext: SupportTopicContext | null;
+  selectedOrderContext: SupportSelectedOrderContext | null;
+}): SupportConversationMemory | undefined {
+  const latestAssistant = latestMessageByRole(input.messages, "assistant");
+  const latestUser = latestMessageByRole(input.messages, "user");
+  const freshTopicContext = isTopicContextFresh(input.supportTopicContext)
+    ? input.supportTopicContext
+    : null;
+
+  return sanitizeSupportConversationMemory({
+    previousUserMessage: latestUser?.content,
+    previousAssistantMessage: latestAssistant?.content,
+    activeTopic: freshTopicContext?.topic,
+    hasSelectedOrderContext: Boolean(input.selectedOrderContext),
+    lastAssistantAskedForSelection:
+      messageAskedForCandidateSelection(latestAssistant),
+  });
+}
+
 export function SupportChatProvider({
   lang,
   initialOpen = false,
@@ -69,6 +111,11 @@ export function SupportChatProvider({
 }) {
   const t = useTranslations("supportChat");
   const trpc = useTRPC();
+  const {
+    isLoaded: authLoaded,
+    isSignedIn,
+    user,
+  } = useUser();
   const sendSupportMessage = useMutation(
     trpc.supportChat.sendMessage.mutationOptions()
   );
@@ -90,6 +137,14 @@ export function SupportChatProvider({
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const pendingSendRef = useRef(false);
+  const requestSequenceRef = useRef(0);
+  const supportChatOwnerKey = authLoaded
+    ? isSignedIn && user?.id
+      ? `user:${user.id}`
+      : "anonymous"
+    : "loading";
+  const ownerKeyRef = useRef(supportChatOwnerKey);
+  const previousOwnerKeyRef = useRef<string | null>(null);
 
   const openChat = useCallback(() => setOpen(true), []);
   const closeChat = useCallback(() => setOpen(false), []);
@@ -100,16 +155,32 @@ export function SupportChatProvider({
     setEmailSent(false);
   }, []);
   const clearChat = useCallback(() => {
+    requestSequenceRef.current += 1;
+    pendingSendRef.current = false;
     setThreadId(undefined);
     setMessages([]);
     setSelectedOrderContext(null);
     setSupportTopicContext(null);
     setInput("");
+    setIsSending(false);
     setError(null);
     setEmailError(null);
     setEmailSent(false);
     setMode("chat");
   }, []);
+
+  useEffect(() => {
+    if (!authLoaded) return;
+
+    const previousOwnerKey = previousOwnerKeyRef.current;
+    previousOwnerKeyRef.current = supportChatOwnerKey;
+    ownerKeyRef.current = supportChatOwnerKey;
+
+    if (previousOwnerKey == null) return;
+    if (previousOwnerKey !== supportChatOwnerKey) {
+      clearChat();
+    }
+  }, [authLoaded, clearChat, supportChatOwnerKey]);
 
   const sendMessage = useCallback(
     async (messageOverride?: string) => {
@@ -120,6 +191,9 @@ export function SupportChatProvider({
       // duplicate requests before isSending flips on the next render.
       if (!message || pendingSendRef.current) return;
       pendingSendRef.current = true;
+      const requestId = requestSequenceRef.current + 1;
+      requestSequenceRef.current = requestId;
+      const requestOwnerKey = ownerKeyRef.current;
 
       const userMessage: SupportChatMessage = {
         id: createMessageId(),
@@ -139,15 +213,28 @@ export function SupportChatProvider({
           supportTopicContext && isTopicContextFresh(supportTopicContext)
             ? supportTopicContext
             : undefined;
+        const conversationMemory = buildConversationMemory({
+          messages,
+          supportTopicContext: freshTopicContext ?? null,
+          selectedOrderContext,
+        });
         const response = await sendSupportMessage.mutateAsync({
           message,
           threadId,
           locale: lang,
+          conversationMemory,
           selectedOrderContext: selectedOrderContext ?? undefined,
           supportTopicContext: freshTopicContext
             ? { type: freshTopicContext.type, token: freshTopicContext.token }
             : undefined,
         });
+
+        if (
+          requestSequenceRef.current !== requestId ||
+          ownerKeyRef.current !== requestOwnerKey
+        ) {
+          return;
+        }
 
         setThreadId(response.threadId);
         if (response.selectedOrderContext) {
@@ -167,6 +254,13 @@ export function SupportChatProvider({
           },
         ]);
       } catch {
+        if (
+          requestSequenceRef.current !== requestId ||
+          ownerKeyRef.current !== requestOwnerKey
+        ) {
+          return;
+        }
+
         setMessages((current) =>
           current.filter((item) => item.id !== userMessage.id)
         );
@@ -175,13 +269,19 @@ export function SupportChatProvider({
         }
         setError(t("error"));
       } finally {
-        pendingSendRef.current = false;
-        setIsSending(false);
+        if (
+          requestSequenceRef.current === requestId &&
+          ownerKeyRef.current === requestOwnerKey
+        ) {
+          pendingSendRef.current = false;
+          setIsSending(false);
+        }
       }
     },
     [
       input,
       lang,
+      messages,
       selectedOrderContext,
       sendSupportMessage,
       supportTopicContext,
@@ -194,6 +294,9 @@ export function SupportChatProvider({
     async (action: SupportChatAction) => {
       if (pendingSendRef.current) return;
       pendingSendRef.current = true;
+      const requestId = requestSequenceRef.current + 1;
+      requestSequenceRef.current = requestId;
+      const requestOwnerKey = ownerKeyRef.current;
 
       // The visible selection label is user-facing only; the server trusts the
       // signed action token, not this localized text.
@@ -221,6 +324,13 @@ export function SupportChatProvider({
           },
         });
 
+        if (
+          requestSequenceRef.current !== requestId ||
+          ownerKeyRef.current !== requestOwnerKey
+        ) {
+          return;
+        }
+
         setThreadId(response.threadId);
         if (response.selectedOrderContext) {
           setSelectedOrderContext(response.selectedOrderContext);
@@ -239,13 +349,25 @@ export function SupportChatProvider({
           },
         ]);
       } catch {
+        if (
+          requestSequenceRef.current !== requestId ||
+          ownerKeyRef.current !== requestOwnerKey
+        ) {
+          return;
+        }
+
         setMessages((current) =>
           current.filter((item) => item.id !== userMessage.id)
         );
         setError(t("error"));
       } finally {
-        pendingSendRef.current = false;
-        setIsSending(false);
+        if (
+          requestSequenceRef.current === requestId &&
+          ownerKeyRef.current === requestOwnerKey
+        ) {
+          pendingSendRef.current = false;
+          setIsSending(false);
+        }
       }
     },
     [lang, sendSupportMessage, t, threadId]
@@ -256,6 +378,7 @@ export function SupportChatProvider({
       const trimmed = message.trim();
       if (trimmed.length < 10) return false;
 
+      const requestOwnerKey = ownerKeyRef.current;
       setEmailError(null);
       setEmailSent(false);
 
@@ -268,9 +391,11 @@ export function SupportChatProvider({
             typeof window === "undefined" ? undefined : window.location.href,
           selectedOrderContext: selectedOrderContext ?? undefined,
         });
+        if (ownerKeyRef.current !== requestOwnerKey) return false;
         setEmailSent(true);
         return true;
       } catch {
+        if (ownerKeyRef.current !== requestOwnerKey) return false;
         setEmailError(t("emailMode.sendError"));
         return false;
       }

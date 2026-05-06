@@ -16,7 +16,8 @@
     "locale": "Locale",
     "status": "Status",
     "lastDisposition": "Last disposition",
-    "needsHumanSupport": "Needs human support"
+    "needsHumanSupport": "Needs human support",
+    "review": "Review"
   },
   "status": {
     "open": "Open",
@@ -27,7 +28,8 @@
     "answered": "Answered",
     "uncertain": "Uncertain",
     "escalate": "Escalate",
-    "unsupported_account_question": "Unsupported account question"
+    "unsupported_account_question": "Unsupported account question",
+    "escalated": "Escalated"
   },
   "common": {
     "yes": "Yes",
@@ -51,7 +53,13 @@
     "needsHumanSupport": "Needs human",
     "messageCount": "Messages",
     "lastMessageAt": "Last message",
-    "retentionUntil": "Retention until"
+    "retentionUntil": "Retention until",
+    "user": "User",
+    "latestMessage": "Latest user message",
+    "reviewState": "Review",
+    "lastAssistantOutcome": "Last assistant outcome",
+    "statusSummary": "Status",
+    "lastActivity": "Last activity"
   },
   "detail": {
     "thread": "Thread",
@@ -71,11 +79,96 @@
     "sourceType": "Source type",
     "sourceLocale": "Source locale",
     "score": "Score",
-    "matchedTerms": "Matched terms"
+    "matchedTerms": "Matched terms",
+    "user": "User",
+    "assistant": "Assistant",
+    "downloadCsv": "Download CSV",
+    "username": "Username",
+    "userLanguage": "User language",
+    "userCountry": "User country",
+    "userRoles": "User roles",
+    "lastActivity": "Last activity",
+    "openAIRequestId": "OpenAI request ID",
+    "sourcesSummary": "Sources used ({count})",
+    "diagnostics": "AI audit details",
+    "threadDiagnostics": "Thread diagnostics",
+    "latestAssistantMetadata": "Latest assistant response metadata",
+    "backendStatus": "Backend status",
+    "order": "Order",
+    "accountContext": "Account context",
+    "orderCandidatesShown": "Order candidates shown",
+    "selectedOrderUsed": "Selected order used",
+    "accountHelperResult": "Account helper result",
+    "paymentOverviewExamples": "Recent order examples",
+    "helper": "Helper",
+    "resultCategory": "Result category",
+    "internalOrderId": "Internal order ID",
+    "internalReference": "Internal reference",
+    "serviceStatus": "Service status",
+    "paymentStatus": "Payment status",
+    "invoiceStatus": "Invoice status",
+    "nextStep": "Next step",
+    "latestAssistantDecision": "Latest assistant decision",
+    "noStructuredEvidence": "No structured assistant evidence was stored for this message.",
+    "reviewLabelReason": "Review label reason",
+    "triageIntent": "Triage intent",
+    "triageTopic": "Topic",
+    "triageStatusFilter": "Status filter",
+    "triageConfidence": "Confidence",
+    "triageReason": "Reason",
+    "groundingKind": "Grounding",
+    "mappedHelper": "Mapped helper",
+    "eligibility": "Eligibility",
+    "eligibilityReason": "Eligibility reason",
+    "helperResultCategory": "Helper result",
+    "latestAccountContextKind": "Account context",
+    "allowed": "Allowed",
+    "blocked": "Blocked",
+    "noAccountMatches": "O assistente executou a verificação, mas não foram encontrados itens de conta seguros para suporte correspondentes."
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",
     "previous": "Previous",
     "next": "Next"
+  },
+  "reviewState": {
+    "needs_review": "Needs review",
+    "answered": "Answered",
+    "closed": "Closed",
+    "needsReview": "Needs review",
+    "orderSelectionRequested": "Order selection requested",
+    "uncertain": "Uncertain",
+    "accountBlocked": "Account request blocked"
+  },
+  "outcome": {
+    "answered": "Answered",
+    "uncertain": "Uncertain",
+    "escalated": "Escalated",
+    "unsupported_account_question": "Unsupported account question",
+    "accountBlocked": "Account request blocked"
+  },
+  "outcomeHelp": {
+    "uncertain": "The assistant did not have enough reliable approved context to answer confidently.",
+    "escalated": "The system decided this request should not be handled automatically.",
+    "unsupported_account_question": "The user asked for account, order, payment, or action access outside the safe support boundary.",
+    "accountBlocked": "The user asked for account, order, payment, or action access outside the safe support boundary."
+  },
+  "thread": {
+    "anonymous": "Anonymous user",
+    "anonymousSubtitle": "No signed-in user is linked to this conversation.",
+    "noPreview": "No user message preview is available.",
+    "messageCount": "{count, plural, one {# message} other {# messages}}"
+  },
+  "sort": {
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "notSorted": "Not sorted"
+  },
+  "reviewReason": {
+    "answered": "The assistant answered from approved knowledge or support-safe account data.",
+    "orderSelectionRequested": "The assistant showed candidate orders and is waiting for the user to choose one.",
+    "uncertain": "The assistant could not answer confidently from approved context.",
+    "accountBlocked": "The request was outside the allowed account-support boundary.",
+    "needsReview": "The backend marked this conversation as requiring human review."
   }
 }

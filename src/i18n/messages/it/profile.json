@@ -59,7 +59,7 @@
   "provider": {
     "title": "Impostazioni del fornitore di servizi",
     "labels": {
-      "business_name": "Nome dell'attività (per l'URL della tua pagina)",
+      "business_name": "Nome del fornitore (per l'URL della tua pagina)",
       "hourly_rate": "Tariffa oraria ({currency})",
       "service_types": "Tipo di servizio",
       "categories": "Categorie",
@@ -75,7 +75,7 @@
       "online": "Online"
     },
     "placeholders": {
-      "business_name": "Inserisci il nome dell'attività",
+      "business_name": "Inserisci il nome del fornitore",
       "hourly_rate": "Inserisci la tariffa oraria in {currency}",
       "services": "Seleziona i tipi di servizio",
       "categories": "Seleziona le categorie",
@@ -114,16 +114,16 @@
       "vat_validation_failed": "La verifica della partita IVA non è riuscita. Riprova.",
       "vat_eu_only": "La partita IVA può essere impostata solo per i paesi UE.",
       "update_failed": "Impossibile aggiornare il profilo. Riprova.",
-      "name_taken": "Questo nome attività è già in uso. Scegline un altro.",
+      "name_taken": "Questo nome fornitore è già in uso. Scegline un altro.",
       "create_failed": "Impossibile creare il profilo fornitore. Riprova.",
       "upload_failed": "Impossibile caricare l'immagine. Riprova.",
       "vat_invalid_vies": "La partita IVA non è valida.",
       "vat_invalid_status": "Partita IVA non valida"
     },
     "validation": {
-      "name_required": "Il nome dell'attività è obbligatorio",
-      "name_max": "Il nome dell'attività deve contenere meno di 50 caratteri",
-      "name_format": "Il nome dell'attività può contenere lettere, numeri, trattini e trattini bassi",
+      "name_required": "Il nome del fornitore è obbligatorio",
+      "name_max": "Il nome del fornitore deve contenere meno di 50 caratteri",
+      "name_format": "Il nome del fornitore può contenere lettere, numeri, trattini e trattini bassi",
       "bio_max": "La descrizione deve contenere meno di 1200 caratteri",
       "services_required": "Seleziona almeno un tipo di servizio",
       "categories_required": "Seleziona almeno una categoria",

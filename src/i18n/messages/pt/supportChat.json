@@ -21,7 +21,7 @@
     "cancel": "Preciso de ajuda para cancelar uma reserva.",
     "provider": "Quero tornar-me prestador de serviços."
   },
-  "disclaimer": "O suporte com IA pode cometer erros. Só pode verificar detalhes limitados e seguros de pedidos ou pagamentos que selecione ou indique.",
+  "disclaimer": "O suporte com IA pode cometer erros. Só pode verificar detalhes limitados e seguros de reservas, pedidos ou pagamentos que selecione ou indique.",
   "contactSupport": "Contactar suporte",
   "writeEmail": "Escrever e-mail",
   "emailMode": {
@@ -51,10 +51,22 @@
     "empty": "Introduza uma pergunta de suporte para que eu possa ajudar.",
     "abusive": "Posso ajudar com questões de suporte, mas não posso responder a mensagens abusivas. Contacte o suporte se precisar de ajuda.",
     "nonsense": "Não consegui entender esse pedido. Reformule a sua pergunta de suporte ou contacte o suporte.",
-    "clarify": "O que está a tentar fazer: registar-se, reservar um serviço, gerir um perfil de prestador, pagar uma encomenda, cancelar ou contestar alguma coisa?",
-    "unsupportedAccount": "Só posso verificar detalhes limitados e seguros de pedidos, pagamentos ou faturas quando seleciona ou indica um item específico que posso verificar. Não posso percorrer todo o histórico da conta, pedidos não relacionados, Stripe ou registos internos da conta.",
-    "unsupportedAction": "Não posso executar ações como cancelar, reembolsar, cobrar ou alterar um pedido neste chat. Posso explicar as regras ou ajudar a verificar, de forma segura para o suporte, a elegibilidade de um pedido selecionado.",
-    "uncertain": "Não tenho informação de suporte suficiente para responder com confiança. Posso ajudar com questões gerais sobre registo, configuração de prestador, reservas, pagamentos, cancelamentos, disputas e utilização do marketplace. Para este problema específico, contacte o suporte."
+    "clarify": "Precisa de ajuda com uma reserva, pagamento, cancelamento, perfil de prestador, registo ou disputa?",
+    "unsupportedAccount": "Só posso verificar detalhes limitados e seguros para suporte sobre uma reserva, pedido, pagamento ou fatura específica que selecione ou indique. Não posso consultar todo o histórico da conta, dados não relacionados, dados Stripe ou registos brutos.",
+    "unsupportedAction": "Não posso cancelar, reembolsar, cobrar nem alterar uma reserva ou pedido neste chat. Posso explicar as regras ou ajudar a verificar com segurança uma reserva selecionada.",
+    "uncertain": "Não tenho informação de suporte aprovada suficiente para responder com fiabilidade. Pergunte sobre uma reserva, pagamento, cancelamento, registo, perfil de prestador ou regra da plataforma.",
+    "clarifyGeneral": "Precisa de ajuda com uma reserva, pagamento, cancelamento, perfil de prestador, registo ou disputa?",
+    "clarifyBooking": "Refere-se a uma reserva solicitada, planeada, cancelada, ao pagamento da reserva ou a alterá-la/cancelá-la?",
+    "clarifyPayment": "Refere-se a um pedido pago, um pagamento pendente, uma fatura ou quando o pagamento vence?",
+    "clarifyCancellation": "A reserva ainda está solicitada, já está planeada ou cancelada, e pretende cancelá-la ou entender porque o cancelamento está bloqueado?",
+    "clarifyProvider": "Precisa de ajuda para criar um perfil de prestador, concluir o onboarding, gerir serviços ou entender pagamentos de prestador?",
+    "lowConfidenceFollowUp": "Não tenho certeza de que detalhe precisa. Quer verificar uma reserva específica, um pagamento, um cancelamento ou uma regra geral da plataforma?",
+    "unsupportedBroadAccount": "Não posso mostrar nem exportar todo o histórico da conta a partir deste chat. Pergunte sobre uma reserva, pagamento ou fatura específica, ou abra a página correspondente do painel para ver a lista completa.",
+    "accountContextUnavailable": "Posso explicar as regras. Uma verificação limitada e segura para suporte está disponível se tiver sessão iniciada e perguntar sobre uma reserva, pedido, pagamento ou fatura específica.",
+    "unsafeActionBlocked": "Não posso cancelar, reembolsar, cobrar nem alterar nada a partir do chat. Posso explicar as regras ou ajudar a verificar se uma reserva selecionada é elegível.",
+    "offerPaymentPendingLookup": "Se quiser, posso procurar reservas atuais com pagamento ainda pendente.",
+    "offerScheduledBookingLookup": "Se quiser, posso procurar reservas programadas atuais que possam corresponder.",
+    "offerCancellationLookup": "Se quiser, posso procurar reservas programadas atuais que possam ser relevantes para cancelamento."
   },
   "handoffAccount": "Para ajuda específica da conta, contacte o suporte com os dados da sua encomenda, fatura ou conta.",
   "handoffGeneral": "Se isto não responder à sua pergunta, contacte o suporte."

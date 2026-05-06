@@ -12,10 +12,15 @@ import {
   SUPPORT_CHAT_PHASE,
   SUPPORT_CHAT_PUBLIC_ACCESS,
 } from "@/modules/support-chat/lib/boundaries";
+import { sanitizeSupportConversationMemory } from "@/modules/support-chat/lib/conversation-memory";
 import { SUPPORT_CHAT_CAPABILITIES } from "@/modules/support-chat/lib/scope";
 import { supportChatAdminProcedures } from "@/modules/support-chat/server/admin-procedures";
 import { buildAccountAwareActionResponse } from "@/modules/support-chat/server/account-aware/server-responses";
-import { generateSupportResponse } from "@/modules/support-chat/server/generate-support-response";
+import {
+  generateSupportResponse,
+  type GenerateSupportResponseResult,
+} from "@/modules/support-chat/server/generate-support-response";
+import { resolveSupportGroundingKind } from "@/modules/support-chat/server/grounding";
 import { persistSupportInteraction } from "@/modules/support-chat/server/persist-support-interaction";
 import { checkSupportChatRateLimit } from "@/modules/support-chat/server/rate-limit";
 import { checkSupportEmailRateLimit } from "@/modules/support-chat/server/support-email-rate-limit";
@@ -33,6 +38,24 @@ function supportChatRateLimitKey(input: {
   const ip = forwardedFor || input.headers["x-real-ip"] || "anonymous";
   return `ip:${ip}`;
 }
+
+const SUPPORT_CONVERSATION_MEMORY_TOPICS = [
+  "booking",
+  "payment",
+  "cancellation",
+  "provider_onboarding",
+] as const;
+
+const supportConversationMemorySchema = z
+  .object({
+    previousUserMessage: z.string().trim().max(500).optional(),
+    previousAssistantMessage: z.string().trim().max(1000).optional(),
+    activeTopic: z.enum(SUPPORT_CONVERSATION_MEMORY_TOPICS).optional(),
+    hasSelectedOrderContext: z.boolean(),
+    lastAssistantAskedForSelection: z.boolean(),
+  })
+  .optional()
+  .transform((memory) => sanitizeSupportConversationMemory(memory));
 
 export const supportChatRouter = createTRPCRouter({
   ...supportChatAdminProcedures,
@@ -68,6 +91,7 @@ export const supportChatRouter = createTRPCRouter({
             token: z.string().min(1).max(4000),
           })
           .optional(),
+        conversationMemory: supportConversationMemorySchema,
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -89,6 +113,7 @@ export const supportChatRouter = createTRPCRouter({
           disposition: "escalate" as const,
           needsHumanSupport: false,
           responseOrigin: "server" as const,
+          groundingKind: "none" as const,
         };
       }
 
@@ -97,26 +122,49 @@ export const supportChatRouter = createTRPCRouter({
         userId: ctx.userId,
       };
 
-      const response = input.action
-        ? {
-            threadId,
-            sources: [],
-            responseOrigin: "server" as const,
-            ...(await buildAccountAwareActionResponse({
-              token: input.action.token,
-              threadId,
-              locale,
-              accountContext,
-            })),
-          }
-        : await generateSupportResponse({
-            message: input.message,
-            threadId,
+      if (input.action) {
+        const actionResponse = await buildAccountAwareActionResponse({
+          token: input.action.token,
+          threadId,
+          locale,
+          accountContext,
+        });
+        const response: GenerateSupportResponseResult = {
+          threadId,
+          sources: [],
+          responseOrigin: "server" as const,
+          ...actionResponse,
+          groundingKind: resolveSupportGroundingKind({
+            accountContextSnapshots: actionResponse.accountContextSnapshots,
+          }),
+        };
+
+        try {
+          await persistSupportInteraction({
+            db: ctx.db,
+            userId: ctx.userId,
             locale,
-            accountContext,
-            selectedOrderContext: input.selectedOrderContext,
-            supportTopicContext: input.supportTopicContext,
+            message: input.message,
+            response,
           });
+        } catch (error) {
+          // Logging must not make a support answer unavailable.
+          console.warn("[support-chat] Failed to persist interaction", error);
+        }
+
+        return response;
+      }
+
+      const response: GenerateSupportResponseResult =
+        await generateSupportResponse({
+          message: input.message,
+          threadId,
+          locale,
+          accountContext,
+          selectedOrderContext: input.selectedOrderContext,
+          supportTopicContext: input.supportTopicContext,
+          conversationMemory: input.conversationMemory,
+        });
 
       try {
         await persistSupportInteraction({

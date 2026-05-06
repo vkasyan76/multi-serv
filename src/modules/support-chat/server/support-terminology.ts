@@ -39,9 +39,9 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     cancellationCutoff: "cancellation cutoff",
   },
   de: {
-    providerRole: "Dienstleister",
-    providerProfile: "Dienstleisterprofil",
-    providerSettings: "Dienstleister-Einstellungen",
+    providerRole: "Anbieter",
+    providerProfile: "Anbieterprofil",
+    providerSettings: "Anbieter-Einstellungen",
     paymentsArea: "Zahlungen",
     payouts: "Auszahlungen",
     stripeOnboarding: "Stripe-Einrichtung",
@@ -50,12 +50,13 @@ const TERMINOLOGY: Record<AppLang, SupportTerminology> = {
     canceledStatus: "storniert",
     paidStatus: "bezahlt",
     paymentPendingStatus: "Zahlung ausstehend",
-    awaitingProviderConfirmation: "wartet auf Bestätigung durch den Dienstleister",
+    awaitingProviderConfirmation: "wartet auf Bestätigung des Anbieters",
     cancellationCutoff: "Stornofrist",
     avoidTerms: [
       "Provider-Profil",
       "Provider",
-      "Anbieterprofil",
+      "Dienstleisterprofil",
+      "Dienstleister-Einstellungen",
       "Awaiting provider confirmation",
       "Requested",
       "Scheduled",
@@ -194,5 +195,12 @@ export function formatSupportTerminologyForPrompt(locale: string) {
 - Use localized payment status terms: paid="${terms.paidStatus}", payment pending="${terms.paymentPendingStatus}".
 - Use "${terms.awaitingProviderConfirmation}" for "awaiting provider confirmation".
 - Use "${terms.cancellationCutoff}" for the cancellation cutoff/window.
+- Use the localized terms above for customer-facing wording in this locale; do not fall back to English UI or status labels unless the requested locale is English.
+- Prefer booking/reservation wording for booking-facing questions. Use order wording only when an exact order ID, invoice, or Orders page distinction matters.
+- For German support-chat answers, use formal address ("Sie", "Ihnen", "Ihre") and avoid informal "du", "dir", and "dein".
+- For German booking-facing answers, prefer "Buchung" over "Bestellung" unless an exact order ID, invoice, or backend order concept must be named.
+- For payment timing answers, state that a booking request is submitted first, adding a payment method does not itself mean the service has been paid, and payment is handled later when requested by the app flow.
+- Do not suggest paying the provider directly outside the platform.
+- Avoid internal support-chat terms in user-facing answers, including helper, DTO, candidate, account snapshot, selected-order token, and eligibility mapping.
 - Do not quote raw English lifecycle labels such as "Requested", "Scheduled", or "Awaiting provider confirmation" in non-English answers.${avoid}`;
 }

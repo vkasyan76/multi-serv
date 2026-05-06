@@ -41,6 +41,9 @@ type Phase2Result = {
   assistantMessage: string;
   actions: GenerateSupportResponseResult["actions"];
   accountHelperMetadata: GenerateSupportResponseResult["accountHelperMetadata"];
+  triage: GenerateSupportResponseResult["triage"];
+  triageMappedHelper: GenerateSupportResponseResult["triageMappedHelper"];
+  triageEligibilityAllowed: GenerateSupportResponseResult["triageEligibilityAllowed"];
   dbCalls: DbCall[];
   checks: Record<string, boolean>;
 };
@@ -426,6 +429,18 @@ function hasMutation(calls: DbCall[]) {
   );
 }
 
+function hasMarkdownStructure(message: string) {
+  return (
+    /^\s{0,3}#{1,6}\s+/m.test(message) ||
+    /^\s*[-*]\s+/m.test(message) ||
+    /^\s*\d+[.)]\s+/m.test(message)
+  );
+}
+
+function countQuestionMarks(message: string) {
+  return message.match(/\?/g)?.length ?? 0;
+}
+
 function evaluateCase(
   testCase: SupportChatPhase2AccountAwareCase,
   result: GenerateSupportResponseResult,
@@ -477,6 +492,31 @@ function evaluateCase(
     expectedActionCount:
       testCase.expectedActionCount == null ||
       (result.actions ?? []).length === testCase.expectedActionCount,
+    maxAssistantChars:
+      testCase.maxAssistantChars == null ||
+      result.assistantMessage.length <= testCase.maxAssistantChars,
+    noMarkdownStructure:
+      testCase.forbidMarkdownStructure !== true ||
+      !hasMarkdownStructure(result.assistantMessage),
+    maxQuestionMarks:
+      testCase.maxQuestionMarks == null ||
+      countQuestionMarks(result.assistantMessage) <= testCase.maxQuestionMarks,
+    expectedTriageIntent:
+      testCase.expectedTriageIntent == null ||
+      result.triage?.intent === testCase.expectedTriageIntent,
+    expectedTriageTopic:
+      testCase.expectedTriageTopic == null ||
+      result.triage?.topic === testCase.expectedTriageTopic,
+    expectedTriageStatusFilter:
+      testCase.expectedTriageStatusFilter == null ||
+      result.triage?.statusFilter === testCase.expectedTriageStatusFilter,
+    expectedTriageEligibilityAllowed:
+      testCase.expectedTriageEligibilityAllowed == null ||
+      result.triageEligibilityAllowed ===
+        testCase.expectedTriageEligibilityAllowed,
+    expectedTriageMappedHelper:
+      testCase.expectedTriageMappedHelper == null ||
+      result.triageMappedHelper === testCase.expectedTriageMappedHelper,
     accountResponsesAreServerAuthored:
       metadata == null ||
       (result.responseOrigin === "server" && metadata.serverAuthored === true),
@@ -497,6 +537,9 @@ function evaluateCase(
     assistantMessage: result.assistantMessage,
     actions: result.actions,
     accountHelperMetadata: metadata,
+    triage: result.triage,
+    triageMappedHelper: result.triageMappedHelper,
+    triageEligibilityAllowed: result.triageEligibilityAllowed,
     dbCalls: calls,
     checks,
   };
@@ -514,6 +557,9 @@ function formatResult(result: Phase2Result) {
     `Needs human: expected=${result.expectedNeedsHumanSupport ?? "*"} actual=${result.actualNeedsHumanSupport}`,
     `Origin: expected=${result.expectedResponseOrigin ?? "*"} actual=${result.responseOrigin}`,
     `Helper metadata: ${JSON.stringify(result.accountHelperMetadata ?? null)}`,
+    `Triage: ${JSON.stringify(result.triage ?? null)}`,
+    `Triage mapped helper: ${result.triageMappedHelper ?? ""}`,
+    `Triage eligibility allowed: ${result.triageEligibilityAllowed ?? ""}`,
     `Actions: ${JSON.stringify(result.actions ?? [])}`,
     `DB calls: ${result.dbCalls.map((call) => `${call.method}:${call.collection ?? ""}:${call.id ?? ""}`).join(", ")}`,
     ...checkEntries,
@@ -555,6 +601,8 @@ async function main() {
         userId: account.userId,
       },
       selectedOrderContext,
+      conversationMemory: testCase.conversationMemory,
+      intentTriageOverride: testCase.intentTriageOverride,
     });
     results.push(evaluateCase(testCase, response, account.calls));
   }

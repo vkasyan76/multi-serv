@@ -59,7 +59,7 @@
   "provider": {
     "title": "Ustawienia usługodawcy",
     "labels": {
-      "business_name": "Nazwa firmy (dla adresu URL Twojej strony)",
+      "business_name": "Nazwa profilu oferenta (dla adresu URL Twojej strony)",
       "hourly_rate": "Stawka godzinowa ({currency})",
       "service_types": "Rodzaj usługi",
       "categories": "Kategorie",
@@ -75,7 +75,7 @@
       "online": "Online"
     },
     "placeholders": {
-      "business_name": "Wpisz nazwę firmy",
+      "business_name": "Wpisz nazwę profilu oferenta",
       "hourly_rate": "Wpisz stawkę godzinową w {currency}",
       "services": "Wybierz rodzaje usług",
       "categories": "Wybierz kategorie",
@@ -114,16 +114,16 @@
       "vat_validation_failed": "Weryfikacja numeru VAT nie powiodła się. Spróbuj ponownie.",
       "vat_eu_only": "VAT można ustawić tylko dla krajów UE.",
       "update_failed": "Nie udało się zaktualizować profilu. Spróbuj ponownie.",
-      "name_taken": "Ta nazwa firmy jest już zajęta. Wybierz inną.",
+      "name_taken": "Ta nazwa profilu oferenta jest już zajęta. Wybierz inną.",
       "create_failed": "Nie udało się utworzyć profilu usługodawcy. Spróbuj ponownie.",
       "upload_failed": "Nie udało się przesłać obrazu. Spróbuj ponownie.",
       "vat_invalid_vies": "Numer VAT jest nieprawidłowy.",
       "vat_invalid_status": "Nieprawidłowy numer VAT"
     },
     "validation": {
-      "name_required": "Nazwa firmy jest wymagana",
-      "name_max": "Nazwa firmy musi mieć mniej niż 50 znaków",
-      "name_format": "Nazwa firmy może zawierać litery, cyfry, myślniki i podkreślenia",
+      "name_required": "Nazwa profilu oferenta jest wymagana",
+      "name_max": "Nazwa profilu oferenta musi mieć mniej niż 50 znaków",
+      "name_format": "Nazwa profilu oferenta może zawierać litery, cyfry, myślniki i podkreślenia",
       "bio_max": "Opis musi mieć mniej niż 1200 znaków",
       "services_required": "Wybierz co najmniej jeden rodzaj usługi",
       "categories_required": "Wybierz co najmniej jedną kategorię",

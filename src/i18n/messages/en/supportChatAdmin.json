@@ -10,13 +10,14 @@
   "loadThreadError": "Failed to load support-chat thread detail.",
   "emptySummary": "No review data is available yet.",
   "emptyThreads": "No support-chat threads match the current filters.",
-  "selectThread": "Select a support-chat thread to inspect its persisted exchange and assistant metadata.",
+  "selectThread": "Select a support-chat conversation to review the transcript.",
   "filters": {
     "all": "All",
     "locale": "Locale",
     "status": "Status",
     "lastDisposition": "Last disposition",
-    "needsHumanSupport": "Needs human support"
+    "needsHumanSupport": "Needs human support",
+    "review": "Review"
   },
   "status": {
     "open": "Open",
@@ -26,8 +27,44 @@
   "disposition": {
     "answered": "Answered",
     "uncertain": "Uncertain",
-    "escalate": "Escalate",
+    "escalate": "Escalated",
+    "escalated": "Escalated",
     "unsupported_account_question": "Unsupported account question"
+  },
+  "reviewState": {
+    "needs_review": "Needs review",
+    "answered": "Answered",
+    "closed": "Closed",
+    "needsReview": "Needs review",
+    "orderSelectionRequested": "Order selection requested",
+    "uncertain": "Uncertain",
+    "accountBlocked": "Account request blocked"
+  },
+  "outcome": {
+    "answered": "Answered",
+    "uncertain": "Uncertain",
+    "escalated": "Escalated",
+    "unsupported_account_question": "Unsupported account question",
+    "accountBlocked": "Account request blocked"
+  },
+  "outcomeHelp": {
+    "uncertain": "The assistant did not have enough reliable approved context to answer confidently.",
+    "escalated": "The system decided this request should not be handled automatically.",
+    "unsupported_account_question": "The user asked for account, order, payment, or action access outside the safe support boundary.",
+    "accountBlocked": "The user asked for account, order, payment, or action access outside the safe support boundary."
+  },
+  "reviewReason": {
+    "answered": "The assistant answered from approved knowledge or support-safe account data.",
+    "orderSelectionRequested": "The assistant showed candidate orders and is waiting for the user to choose one.",
+    "uncertain": "The assistant could not answer confidently from approved context.",
+    "accountBlocked": "The request was outside the allowed account-support boundary.",
+    "needsReview": "The backend marked this conversation as requiring human review."
+  },
+  "thread": {
+    "anonymous": "Anonymous user",
+    "anonymousSubtitle": "No signed-in user is linked to this conversation.",
+    "noPreview": "No user message preview is available.",
+    "messageCount": "{count, plural, one {# message} other {# messages}}"
   },
   "common": {
     "yes": "Yes",
@@ -44,18 +81,32 @@
     "topSourceDocuments": "Top source documents"
   },
   "table": {
+    "user": "User",
+    "latestMessage": "Latest user message",
+    "reviewState": "Review",
     "threadId": "Thread ID",
     "locale": "Locale",
     "status": "Status",
     "lastDisposition": "Last disposition",
+    "lastAssistantOutcome": "Last assistant outcome",
     "needsHumanSupport": "Needs human",
     "messageCount": "Messages",
     "lastMessageAt": "Last message",
-    "retentionUntil": "Retention until"
+    "retentionUntil": "Retention until",
+    "statusSummary": "Status",
+    "lastActivity": "Last activity"
   },
   "detail": {
     "thread": "Thread",
+    "user": "User",
+    "assistant": "Assistant",
+    "downloadCsv": "Download CSV",
     "userId": "User ID",
+    "username": "Username",
+    "userLanguage": "User language",
+    "userCountry": "User country",
+    "userRoles": "User roles",
+    "lastActivity": "Last activity",
     "responseOrigin": "Response origin",
     "redactionApplied": "Redaction applied",
     "redactionTypes": "Redaction types",
@@ -65,17 +116,59 @@
     "guardrailVersion": "Guardrail version",
     "retrievalVersion": "Retrieval version",
     "knowledgePackVersion": "Knowledge pack version",
+    "openAIRequestId": "OpenAI request ID",
     "sources": "Sources",
+    "sourcesSummary": "Sources used ({count})",
+    "diagnostics": "AI audit details",
+    "threadDiagnostics": "Thread diagnostics",
     "documentId": "Document ID",
     "sectionId": "Section ID",
     "sourceType": "Source type",
     "sourceLocale": "Source locale",
     "score": "Score",
-    "matchedTerms": "Matched terms"
+    "matchedTerms": "Matched terms",
+    "latestAssistantMetadata": "Latest assistant response metadata",
+    "latestAssistantDecision": "Latest assistant decision",
+    "noStructuredEvidence": "No structured assistant evidence was stored for this message.",
+    "reviewLabelReason": "Review label reason",
+    "triageIntent": "Triage intent",
+    "triageTopic": "Topic",
+    "triageStatusFilter": "Status filter",
+    "triageConfidence": "Confidence",
+    "triageReason": "Reason",
+    "groundingKind": "Grounding",
+    "mappedHelper": "Mapped helper",
+    "eligibility": "Eligibility",
+    "eligibilityReason": "Eligibility reason",
+    "helperResultCategory": "Helper result",
+    "latestAccountContextKind": "Account context",
+    "allowed": "Allowed",
+    "blocked": "Blocked",
+    "backendStatus": "Backend status",
+    "order": "Order",
+    "accountContext": "Account context",
+    "orderCandidatesShown": "Order candidates shown",
+    "selectedOrderUsed": "Selected order used",
+    "accountHelperResult": "Account helper result",
+    "paymentOverviewExamples": "Recent order examples",
+    "helper": "Helper",
+    "resultCategory": "Result category",
+    "internalOrderId": "Internal order ID",
+    "internalReference": "Internal reference",
+    "serviceStatus": "Service status",
+    "paymentStatus": "Payment status",
+    "invoiceStatus": "Invoice status",
+    "nextStep": "Next step",
+    "noAccountMatches": "The helper ran, but no matching support-safe account items were found."
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",
     "previous": "Previous",
     "next": "Next"
+  },
+  "sort": {
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "notSorted": "Not sorted"
   }
 }

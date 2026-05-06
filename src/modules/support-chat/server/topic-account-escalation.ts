@@ -1,5 +1,13 @@
 import "server-only";
 
+/**
+ * FALLBACK: topic-context account escalation.
+ *
+ * This catches short account follow-ups while structured model triage is not
+ * yet the primary meaning layer. Do not expand it into a multilingual
+ * conversation engine; future patches should move that flexibility to triage.
+ */
+
 import type { AccountCandidateSelectionHelper } from "@/modules/support-chat/server/account-aware/action-tokens";
 import type { SupportOrderCandidateStatusFilter } from "@/modules/support-chat/server/account-aware/types";
 import type { SupportTopicContext } from "@/modules/support-chat/server/topics";

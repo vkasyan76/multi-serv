@@ -941,6 +941,10 @@ export interface SupportChatThread {
   lastDisposition?: ('answered' | 'uncertain' | 'escalate' | 'unsupported_account_question') | null;
   lastNeedsHumanSupport?: boolean | null;
   /**
+   * Derived from the latest assistant message's structured account-context snapshot.
+   */
+  lastAccountContextKind?: ('candidate_selection' | 'selected_order' | 'helper_result' | 'payment_overview') | null;
+  /**
    * Total stored messages in this support thread. Each completed exchange adds two.
    */
   messageCount: number;
@@ -990,6 +994,75 @@ export interface SupportChatMessage {
       )
     | null;
   accountRewriteFallbackUsed?: boolean | null;
+  /**
+   * Support-safe account/order context shown or used by account-aware support. Do not store raw records or Stripe payloads.
+   */
+  accountContextSnapshots?:
+    | {
+        kind: 'candidate_selection' | 'selected_order' | 'helper_result' | 'payment_overview';
+        helper?: string | null;
+        resultCategory?: string | null;
+        statusFilter?: string | null;
+        orders?:
+          | {
+              orderId?: string | null;
+              referenceType?: string | null;
+              referenceId?: string | null;
+              displayReference?: string | null;
+              label?: string | null;
+              description?: string | null;
+              providerDisplayName?: string | null;
+              serviceNames?:
+                | {
+                    name: string;
+                    id?: string | null;
+                  }[]
+                | null;
+              firstSlotStart?: string | null;
+              createdAt?: string | null;
+              serviceStatusCategory?: string | null;
+              paymentStatusCategory?: string | null;
+              invoiceStatusCategory?: string | null;
+              nextStepKey?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  triageIntent?:
+    | (
+        | 'general_support'
+        | 'account_candidate_lookup'
+        | 'selected_order_follow_up'
+        | 'unsafe_mutation'
+        | 'unsupported_account_scope'
+        | 'clarify'
+        | 'none'
+        | 'not_applicable'
+      )
+    | null;
+  triageTopic?: ('booking' | 'payment' | 'cancellation' | 'provider_onboarding') | null;
+  triageStatusFilter?: ('requested' | 'scheduled' | 'canceled' | 'paid' | 'payment_pending' | 'payment_not_due') | null;
+  triageConfidence?: ('low' | 'medium' | 'high') | null;
+  triageReason?: string | null;
+  triageMappedHelper?: string | null;
+  triageEligibilityAllowed?: boolean | null;
+  triageEligibilityReason?:
+    | (
+        | 'not_signed_in'
+        | 'account_aware_disabled'
+        | 'low_confidence'
+        | 'unsafe_mutation'
+        | 'broad_or_deferred'
+        | 'unsupported_intent'
+        | 'unsupported_topic'
+        | 'unsupported_status_filter'
+        | 'missing_selected_order'
+        | 'no_allowed_mapping'
+      )
+    | null;
+  groundingKind: 'knowledge' | 'account_safe_dto' | 'none';
   promptVersion?: string | null;
   guardrailVersion?: string | null;
   retrievalVersion?: string | null;
@@ -1613,6 +1686,7 @@ export interface SupportChatThreadsSelect<T extends boolean = true> {
   lastMessageAt?: T;
   lastDisposition?: T;
   lastNeedsHumanSupport?: T;
+  lastAccountContextKind?: T;
   messageCount?: T;
   retentionUntil?: T;
   updatedAt?: T;
@@ -1645,6 +1719,48 @@ export interface SupportChatMessagesSelect<T extends boolean = true> {
   accountRewriteModelVersion?: T;
   accountRewriteRejectedReason?: T;
   accountRewriteFallbackUsed?: T;
+  accountContextSnapshots?:
+    | T
+    | {
+        kind?: T;
+        helper?: T;
+        resultCategory?: T;
+        statusFilter?: T;
+        orders?:
+          | T
+          | {
+              orderId?: T;
+              referenceType?: T;
+              referenceId?: T;
+              displayReference?: T;
+              label?: T;
+              description?: T;
+              providerDisplayName?: T;
+              serviceNames?:
+                | T
+                | {
+                    name?: T;
+                    id?: T;
+                  };
+              firstSlotStart?: T;
+              createdAt?: T;
+              serviceStatusCategory?: T;
+              paymentStatusCategory?: T;
+              invoiceStatusCategory?: T;
+              nextStepKey?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  triageIntent?: T;
+  triageTopic?: T;
+  triageStatusFilter?: T;
+  triageConfidence?: T;
+  triageReason?: T;
+  triageMappedHelper?: T;
+  triageEligibilityAllowed?: T;
+  triageEligibilityReason?: T;
+  groundingKind?: T;
   promptVersion?: T;
   guardrailVersion?: T;
   retrievalVersion?: T;

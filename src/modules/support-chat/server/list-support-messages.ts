@@ -1,27 +1,81 @@
 import "server-only";
 
 import type { Payload } from "payload";
+import { normalizeToSupported } from "@/lib/i18n/app-lang";
 import type {
   SupportChatMessage,
   SupportChatThread,
+  User,
 } from "@/payload-types";
-import type { AdminSupportMessageRow } from "@/modules/support-chat/server/admin-procedures";
-
-function relationshipId(value: unknown) {
-  return typeof value === "string"
-    ? value
-    : ((value as { id?: string } | null)?.id ?? null);
-}
+import type {
+  AdminSupportAssistantOutcome,
+  AdminSupportMessageRow,
+  AdminSupportReviewState,
+  AdminSupportUserSummary,
+} from "@/modules/support-chat/server/admin-procedures";
 
 function safeText(message: SupportChatMessage) {
   return message.redactedText ?? message.text ?? null;
+}
+
+function userSummary(value: unknown): AdminSupportUserSummary {
+  if (!value || typeof value === "string") return null;
+
+  const user = value as Partial<User> & { id?: string };
+  if (!user.id) return null;
+
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    username: user.username ?? null,
+    firstName: user.firstName ?? null,
+    lastName: user.lastName ?? null,
+    roles: user.roles ?? [],
+    language: user.language ? normalizeToSupported(user.language) : null,
+    country: user.country ?? null,
+  };
+}
+
+function assistantOutcome(
+  disposition: SupportChatThread["lastDisposition"]
+): AdminSupportAssistantOutcome {
+  if (disposition === "escalate") return "escalated";
+  return disposition ?? null;
+}
+
+function reviewState(thread: SupportChatThread): AdminSupportReviewState {
+  if (
+    thread.status === "escalated" ||
+    thread.lastNeedsHumanSupport ||
+    thread.lastDisposition === "escalate"
+  ) {
+    return "needs_review";
+  }
+  if (thread.lastDisposition === "unsupported_account_question") {
+    return "account_blocked";
+  }
+  if (
+    thread.lastDisposition === "uncertain" &&
+    thread.lastAccountContextKind === "candidate_selection"
+  ) {
+    return "order_selection_requested";
+  }
+  if (thread.lastDisposition === "uncertain") return "uncertain";
+  return "answered";
+}
+
+function latestUserMessagePreview(messages: AdminSupportMessageRow[]) {
+  const latest = [...messages].reverse().find((message) => message.role === "user");
+  if (!latest?.text) return null;
+
+  return latest.text.replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
 export async function listSupportMessages(db: Payload, id: string) {
   const thread = (await db.findByID({
     collection: "support_chat_threads",
     id,
-    depth: 0,
+    depth: 1,
     disableErrors: true,
     overrideAccess: true,
   })) as SupportChatThread | null;
@@ -66,6 +120,42 @@ export async function listSupportMessages(db: Payload, id: string) {
     retrievalVersion: message.retrievalVersion ?? null,
     knowledgePackVersion: message.knowledgePackVersion ?? null,
     openAIRequestId: message.openAIRequestId ?? null,
+    accountContextSnapshots: (message.accountContextSnapshots ?? []).map(
+      (snapshot) => ({
+        kind: snapshot.kind,
+        helper: snapshot.helper ?? null,
+        resultCategory: snapshot.resultCategory ?? null,
+        statusFilter: snapshot.statusFilter ?? null,
+        orders: (snapshot.orders ?? []).map((order) => ({
+          orderId: order.orderId ?? null,
+          referenceType: order.referenceType ?? null,
+          referenceId: order.referenceId ?? null,
+          displayReference: order.displayReference ?? null,
+          label: order.label ?? null,
+          description: order.description ?? null,
+          providerDisplayName: order.providerDisplayName ?? null,
+          serviceNames: (order.serviceNames ?? []).map((item) => item.name),
+          firstSlotStart: order.firstSlotStart ?? null,
+          createdAt: order.createdAt ?? null,
+          serviceStatusCategory: order.serviceStatusCategory ?? null,
+          paymentStatusCategory: order.paymentStatusCategory ?? null,
+          invoiceStatusCategory: order.invoiceStatusCategory ?? null,
+          nextStepKey: order.nextStepKey ?? null,
+        })),
+      })
+    ),
+    triageIntent: message.triageIntent ?? null,
+    triageTopic: message.triageTopic ?? null,
+    triageStatusFilter: message.triageStatusFilter ?? null,
+    triageConfidence: message.triageConfidence ?? null,
+    triageReason: message.triageReason ?? null,
+    triageMappedHelper: message.triageMappedHelper ?? null,
+    triageEligibilityAllowed:
+      typeof message.triageEligibilityAllowed === "boolean"
+        ? message.triageEligibilityAllowed
+        : null,
+    triageEligibilityReason: message.triageEligibilityReason ?? null,
+    groundingKind: message.groundingKind ?? null,
     sources: (message.sources ?? []).map((source) => ({
       documentId: source.documentId,
       documentVersion: source.documentVersion,
@@ -87,11 +177,14 @@ export async function listSupportMessages(db: Payload, id: string) {
       locale: thread.locale,
       status: thread.status,
       messageCount: thread.messageCount,
-      lastDisposition: thread.lastDisposition ?? null,
+      reviewState: reviewState(thread),
+      lastAssistantOutcome: assistantOutcome(thread.lastDisposition),
       lastNeedsHumanSupport: Boolean(thread.lastNeedsHumanSupport),
+      latestUserMessagePreview: latestUserMessagePreview(messages),
       lastMessageAt: thread.lastMessageAt ?? null,
       retentionUntil: thread.retentionUntil,
-      userId: relationshipId(thread.user),
+      createdAt: thread.createdAt,
+      user: userSummary(thread.user),
     },
     messages,
   };

@@ -37,6 +37,54 @@ const SUPPORT_ACCOUNT_REWRITE_REJECTED_REASONS = [
   "missing_required_limitation",
 ] as const;
 
+const SUPPORT_TRIAGE_INTENTS = [
+  "general_support",
+  "account_candidate_lookup",
+  "selected_order_follow_up",
+  "unsafe_mutation",
+  "unsupported_account_scope",
+  "clarify",
+  "none",
+  "not_applicable",
+] as const;
+
+const SUPPORT_TRIAGE_TOPICS = [
+  "booking",
+  "payment",
+  "cancellation",
+  "provider_onboarding",
+] as const;
+
+const SUPPORT_TRIAGE_STATUS_FILTERS = [
+  "requested",
+  "scheduled",
+  "canceled",
+  "paid",
+  "payment_pending",
+  "payment_not_due",
+] as const;
+
+const SUPPORT_TRIAGE_CONFIDENCES = ["low", "medium", "high"] as const;
+
+const SUPPORT_GROUNDING_KINDS = [
+  "knowledge",
+  "account_safe_dto",
+  "none",
+] as const;
+
+const SUPPORT_TRIAGE_ELIGIBILITY_REASONS = [
+  "not_signed_in",
+  "account_aware_disabled",
+  "low_confidence",
+  "unsafe_mutation",
+  "broad_or_deferred",
+  "unsupported_intent",
+  "unsupported_topic",
+  "unsupported_status_filter",
+  "missing_selected_order",
+  "no_allowed_mapping",
+] as const;
+
 export const SupportChatMessages: CollectionConfig = {
   slug: "support_chat_messages",
   indexes: [
@@ -165,6 +213,118 @@ export const SupportChatMessages: CollectionConfig = {
       name: "accountRewriteFallbackUsed",
       type: "checkbox",
       defaultValue: false,
+      index: true,
+    },
+    {
+      name: "accountContextSnapshots",
+      type: "array",
+      fields: [
+        {
+          name: "kind",
+          type: "select",
+          required: true,
+          options: [
+            { label: "Candidate selection", value: "candidate_selection" },
+            { label: "Selected order", value: "selected_order" },
+            { label: "Helper result", value: "helper_result" },
+            { label: "Payment overview", value: "payment_overview" },
+          ],
+        },
+        { name: "helper", type: "text" },
+        { name: "resultCategory", type: "text" },
+        { name: "statusFilter", type: "text" },
+        {
+          name: "orders",
+          type: "array",
+          fields: [
+            { name: "orderId", type: "text" },
+            { name: "referenceType", type: "text" },
+            { name: "referenceId", type: "text" },
+            { name: "displayReference", type: "text" },
+            { name: "label", type: "text" },
+            { name: "description", type: "text" },
+            { name: "providerDisplayName", type: "text" },
+            {
+              name: "serviceNames",
+              type: "array",
+              fields: [{ name: "name", type: "text", required: true }],
+            },
+            { name: "firstSlotStart", type: "date" },
+            { name: "createdAt", type: "date" },
+            { name: "serviceStatusCategory", type: "text" },
+            { name: "paymentStatusCategory", type: "text" },
+            { name: "invoiceStatusCategory", type: "text" },
+            { name: "nextStepKey", type: "text" },
+          ],
+        },
+      ],
+      admin: {
+        description:
+          "Support-safe account/order context shown or used by account-aware support. Do not store raw records or Stripe payloads.",
+      },
+    },
+    {
+      name: "triageIntent",
+      type: "select",
+      options: SUPPORT_TRIAGE_INTENTS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    {
+      name: "triageTopic",
+      type: "select",
+      options: SUPPORT_TRIAGE_TOPICS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    {
+      name: "triageStatusFilter",
+      type: "select",
+      options: SUPPORT_TRIAGE_STATUS_FILTERS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    {
+      name: "triageConfidence",
+      type: "select",
+      options: SUPPORT_TRIAGE_CONFIDENCES.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    { name: "triageReason", type: "textarea" },
+    { name: "triageMappedHelper", type: "text" },
+    {
+      name: "triageEligibilityAllowed",
+      type: "checkbox",
+      defaultValue: false,
+      index: true,
+    },
+    {
+      name: "triageEligibilityReason",
+      type: "select",
+      options: SUPPORT_TRIAGE_ELIGIBILITY_REASONS.map((value) => ({
+        label: value,
+        value,
+      })),
+      index: true,
+    },
+    {
+      name: "groundingKind",
+      type: "select",
+      required: true,
+      defaultValue: "none",
+      options: SUPPORT_GROUNDING_KINDS.map((value) => ({
+        label: value,
+        value,
+      })),
       index: true,
     },
     { name: "promptVersion", type: "text" },

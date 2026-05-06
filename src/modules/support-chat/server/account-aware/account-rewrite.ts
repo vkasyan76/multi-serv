@@ -5,6 +5,7 @@ import type {
   SupportChatModelRequest,
   SupportChatModelResult,
 } from "@/modules/support-chat/server/openai-response";
+import { formatSupportChatAnswerForWidget } from "@/modules/support-chat/server/answer-style";
 import type { AccountAwareServerResponse } from "./server-responses";
 import {
   buildAccountRewritePrompt,
@@ -176,7 +177,7 @@ export async function rewriteAccountAwareServerResponse(input: {
   return withRewriteMetadata(
     {
       ...input.response,
-      assistantMessage: result.text.trim(),
+      assistantMessage: formatSupportChatAnswerForWidget(result.text),
     },
     metadata({
       accountAnswerMode: "model_rewritten",

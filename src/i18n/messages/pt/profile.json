@@ -59,7 +59,7 @@
   "provider": {
     "title": "Configurações do prestador de serviços",
     "labels": {
-      "business_name": "Nome do negócio (para o URL da sua página)",
+      "business_name": "Nome do prestador (para o URL da sua página)",
       "hourly_rate": "Tarifa horária ({currency})",
       "service_types": "Tipo de serviço",
       "categories": "Categorias",
@@ -75,7 +75,7 @@
       "online": "Online"
     },
     "placeholders": {
-      "business_name": "Introduza o nome do negócio",
+      "business_name": "Introduza o nome do prestador",
       "hourly_rate": "Introduza a tarifa horária em {currency}",
       "services": "Selecione tipos de serviço",
       "categories": "Selecione categorias",
@@ -114,16 +114,16 @@
       "vat_validation_failed": "A validação do IVA falhou. Tente novamente.",
       "vat_eu_only": "O IVA só pode ser definido para países da UE.",
       "update_failed": "Não foi possível atualizar o perfil. Tente novamente.",
-      "name_taken": "Esse nome de negócio já está em uso. Escolha outro.",
+      "name_taken": "Esse nome de prestador já está em uso. Escolha outro.",
       "create_failed": "Não foi possível criar o perfil de prestador. Tente novamente.",
       "upload_failed": "Não foi possível enviar a imagem. Tente novamente.",
       "vat_invalid_vies": "O número de IVA não é válido.",
       "vat_invalid_status": "Número de IVA inválido"
     },
     "validation": {
-      "name_required": "O nome do negócio é obrigatório",
-      "name_max": "O nome do negócio deve ter menos de 50 caracteres",
-      "name_format": "O nome do negócio pode conter letras, números, hífens e sublinhados",
+      "name_required": "O nome do prestador é obrigatório",
+      "name_max": "O nome do prestador deve ter menos de 50 caracteres",
+      "name_format": "O nome do prestador pode conter letras, números, hífens e sublinhados",
       "bio_max": "A descrição deve ter menos de 1200 caracteres",
       "services_required": "Selecione pelo menos um tipo de serviço",
       "categories_required": "Selecione pelo menos uma categoria",

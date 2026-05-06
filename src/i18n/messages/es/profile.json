@@ -59,7 +59,7 @@
   "provider": {
     "title": "Configuración del proveedor de servicios",
     "labels": {
-      "business_name": "Nombre del negocio (para la URL de tu página)",
+      "business_name": "Nombre del proveedor (para la URL de tu página)",
       "hourly_rate": "Tarifa por hora ({currency})",
       "service_types": "Tipo de servicio",
       "categories": "Categorías",
@@ -75,7 +75,7 @@
       "online": "Online"
     },
     "placeholders": {
-      "business_name": "Introduce el nombre del negocio",
+      "business_name": "Introduce el nombre del proveedor",
       "hourly_rate": "Introduce la tarifa por hora en {currency}",
       "services": "Selecciona tipos de servicio",
       "categories": "Selecciona categorías",
@@ -114,16 +114,16 @@
       "vat_validation_failed": "La validación del IVA falló. Inténtalo de nuevo.",
       "vat_eu_only": "El IVA solo se puede configurar para países de la UE.",
       "update_failed": "No se pudo actualizar el perfil. Inténtalo de nuevo.",
-      "name_taken": "Ese nombre de negocio ya está en uso. Elige otro.",
+      "name_taken": "Ese nombre de proveedor ya está en uso. Elige otro.",
       "create_failed": "No se pudo crear el perfil de proveedor. Inténtalo de nuevo.",
       "upload_failed": "No se pudo subir la imagen. Inténtalo de nuevo.",
       "vat_invalid_vies": "El número de IVA no es válido.",
       "vat_invalid_status": "Número de IVA no válido"
     },
     "validation": {
-      "name_required": "El nombre del negocio es obligatorio",
-      "name_max": "El nombre del negocio debe tener menos de 50 caracteres",
-      "name_format": "El nombre del negocio puede contener letras, números, guiones y guiones bajos",
+      "name_required": "El nombre del proveedor es obligatorio",
+      "name_max": "El nombre del proveedor debe tener menos de 50 caracteres",
+      "name_format": "El nombre del proveedor puede contener letras, números, guiones y guiones bajos",
       "bio_max": "La descripción debe tener menos de 1200 caracteres",
       "services_required": "Selecciona al menos un tipo de servicio",
       "categories_required": "Selecciona al menos una categoría",
