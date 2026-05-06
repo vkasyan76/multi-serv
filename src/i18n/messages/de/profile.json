@@ -59,7 +59,7 @@
   "provider": {
     "title": "Anbieter-Einstellungen",
     "labels": {
-      "business_name": "Firmenname (für Ihre Seiten-URL)",
+      "business_name": "Anbietername (für Ihre Seiten-URL)",
       "hourly_rate": "Stundensatz ({currency})",
       "service_types": "Art der Dienstleistung",
       "categories": "Kategorien",
@@ -75,7 +75,7 @@
       "online": "Online"
     },
     "placeholders": {
-      "business_name": "Firmennamen eingeben",
+      "business_name": "Anbietername eingeben",
       "hourly_rate": "Stundensatz in {currency} eingeben",
       "services": "Dienstleistungsarten auswählen",
       "categories": "Kategorien auswählen",
@@ -114,16 +114,16 @@
       "vat_validation_failed": "Die USt-IdNr. konnte nicht geprüft werden. Bitte versuchen Sie es erneut.",
       "vat_eu_only": "Die USt-IdNr. kann nur für EU-Länder gesetzt werden.",
       "update_failed": "Das Profil konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
-      "name_taken": "Dieser Firmenname ist bereits vergeben. Bitte wählen Sie einen anderen Namen.",
+      "name_taken": "Dieser Anbietername ist bereits vergeben. Bitte wählen Sie einen anderen Namen.",
       "create_failed": "Das Anbieterprofil konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
       "upload_failed": "Das Bild konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.",
       "vat_invalid_vies": "Die USt-IdNr. ist nicht gültig.",
       "vat_invalid_status": "Ungültige USt-IdNr."
     },
     "validation": {
-      "name_required": "Firmenname ist erforderlich",
-      "name_max": "Der Firmenname darf höchstens 50 Zeichen lang sein",
-      "name_format": "Der Firmenname darf Buchstaben, Zahlen, Bindestriche und Unterstriche enthalten",
+      "name_required": "Anbietername ist erforderlich",
+      "name_max": "Der Anbietername darf höchstens 50 Zeichen lang sein",
+      "name_format": "Der Anbietername darf Buchstaben, Zahlen, Bindestriche und Unterstriche enthalten",
       "bio_max": "Die Beschreibung darf maximal 1200 Zeichen lang sein",
       "services_required": "Wählen Sie mindestens eine Dienstleistungsart aus",
       "categories_required": "Wählen Sie mindestens eine Kategorie aus",
