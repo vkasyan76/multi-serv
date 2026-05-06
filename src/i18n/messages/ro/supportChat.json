@@ -62,8 +62,11 @@
     "clarifyProvider": "Ai nevoie de ajutor pentru crearea unui profil de furnizor, finalizarea onboardingului, gestionarea serviciilor sau plățile furnizorului?",
     "lowConfidenceFollowUp": "Nu sunt sigur ce detaliu îți trebuie. Vrei să verifici o rezervare anume, o plată, o anulare sau o regulă generală a platformei?",
     "unsupportedBroadAccount": "Nu pot afișa sau exporta întregul istoric al contului din acest chat. Pot ajuta cu o comandă, rezervare, plată sau factură specifică dacă o selectezi sau o indici.",
-    "accountContextUnavailable": "Nu pot accesa în siguranță datele contului pentru această cerere. Autentifică-te și selectează sau indică o comandă, rezervare, plată sau factură specifică.",
-    "unsafeActionBlocked": "Nu pot anula, rambursa, încasa sau modifica o comandă din acest chat. Pot explica pașii sau verifica în siguranță o comandă selectată."
+    "accountContextUnavailable": "Pot explica regulile. Pot face și o verificare limitată, sigură pentru suport, dacă ești autentificat și întrebi despre o rezervare, comandă, plată sau factură specifică.",
+    "unsafeActionBlocked": "Nu pot anula, rambursa, încasa sau modifica o comandă din acest chat. Pot explica pașii sau verifica în siguranță o comandă selectată.",
+    "offerPaymentPendingLookup": "Dacă vrei, pot căuta rezervări curente unde plata este încă în așteptare.",
+    "offerScheduledBookingLookup": "Dacă vrei, pot căuta rezervări programate curente care s-ar putea potrivi.",
+    "offerCancellationLookup": "Dacă vrei, pot căuta rezervări programate curente care ar putea fi relevante pentru anulare."
   },
   "handoffAccount": "Pentru ajutor specific contului, contactează asistența cu detaliile comenzii, facturii sau contului.",
   "handoffGeneral": "Dacă acest răspuns nu îți rezolvă întrebarea, contactează asistența."

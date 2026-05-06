@@ -123,7 +123,8 @@
     "helperResultCategory": "Helper result",
     "latestAccountContextKind": "Account context",
     "allowed": "Allowed",
-    "blocked": "Blocked"
+    "blocked": "Blocked",
+    "noAccountMatches": "L’helper è stato eseguito, ma non sono stati trovati elementi account sicuri per il supporto corrispondenti."
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",

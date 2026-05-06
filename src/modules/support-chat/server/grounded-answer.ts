@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { AppLang } from "@/lib/i18n/app-lang";
+import { formatSupportChatAnswerForWidget } from "@/modules/support-chat/server/answer-style";
 import { buildSupportPrompt } from "@/modules/support-chat/server/build-support-prompt";
 import type {
   SupportChatModelRequest,
@@ -106,7 +107,7 @@ export async function createKnowledgeGroundedAnswer(input: {
   }
 
   return {
-    assistantMessage: modelResult.text,
+    assistantMessage: formatSupportChatAnswerForWidget(modelResult.text),
     disposition: "answered",
     needsHumanSupport: false,
     responseOrigin: "model",

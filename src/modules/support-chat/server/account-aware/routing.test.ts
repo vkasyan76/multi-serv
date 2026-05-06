@@ -1110,10 +1110,12 @@ test("empty filtered candidate selection stays bounded and deterministic", async
     "clerk-user-other-tenant",
   );
 
-  assert.equal(response.disposition, "uncertain");
+  assert.equal(response.disposition, "answered");
   assert.match(response.assistantMessage, /could not find recent paid bookings/i);
   assert.match(response.assistantMessage, /not a full history check/i);
   assert.equal(response.actions?.length, 0);
+  assert.equal(response.accountContextSnapshots?.[0]?.orders.length, 0);
+  assert.equal(response.accountContextSnapshots?.[0]?.statusFilter, "paid");
 });
 
 test("paid candidate click answers paid status from invoice cache", async () => {

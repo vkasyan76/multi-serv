@@ -123,7 +123,8 @@
     "helperResultCategory": "Helper result",
     "latestAccountContextKind": "Account context",
     "allowed": "Allowed",
-    "blocked": "Blocked"
+    "blocked": "Blocked",
+    "noAccountMatches": "L’assistant a effectué la vérification, mais aucun élément de compte support-sûr correspondant n’a été trouvé."
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",

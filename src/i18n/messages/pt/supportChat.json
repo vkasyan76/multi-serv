@@ -62,8 +62,11 @@
     "clarifyProvider": "Precisa de ajuda para criar um perfil de prestador, concluir o onboarding, gerir serviços ou entender pagamentos de prestador?",
     "lowConfidenceFollowUp": "Não tenho certeza de que detalhe precisa. Quer verificar uma reserva específica, um pagamento, um cancelamento ou uma regra geral da plataforma?",
     "unsupportedBroadAccount": "Não posso mostrar nem exportar todo o histórico da conta a partir deste chat. Posso ajudar com um pedido, reserva, pagamento ou fatura específicos se os selecionar ou indicar.",
-    "accountContextUnavailable": "Não consigo aceder com segurança aos dados da sua conta para este pedido. Inicie sessão e selecione ou indique o pedido, reserva, pagamento ou fatura específicos.",
-    "unsafeActionBlocked": "Não posso cancelar, reembolsar, cobrar ou alterar um pedido neste chat. Posso explicar os passos ou verificar com segurança um pedido selecionado."
+    "accountContextUnavailable": "Posso explicar as regras. Também posso fazer uma verificação limitada e segura para suporte se tiver sessão iniciada e perguntar sobre uma reserva, pedido, pagamento ou fatura específica.",
+    "unsafeActionBlocked": "Não posso cancelar, reembolsar, cobrar ou alterar um pedido neste chat. Posso explicar os passos ou verificar com segurança um pedido selecionado.",
+    "offerPaymentPendingLookup": "Se quiser, posso procurar reservas atuais com pagamento ainda pendente.",
+    "offerScheduledBookingLookup": "Se quiser, posso procurar reservas programadas atuais que possam corresponder.",
+    "offerCancellationLookup": "Se quiser, posso procurar reservas programadas atuais que possam ser relevantes para cancelamento."
   },
   "handoffAccount": "Para ajuda específica da conta, contacte o suporte com os dados da sua encomenda, fatura ou conta.",
   "handoffGeneral": "Se isto não responder à sua pergunta, contacte o suporte."

@@ -88,6 +88,27 @@ test("knowledge grounded answer uses the model only with strong sources", async 
   assert.equal(answer.modelMetadata?.model, "test-model");
 });
 
+test("knowledge grounded answer removes raw markdown from chat output", async () => {
+  const answer = await createKnowledgeGroundedAnswer({
+    message: "How does payment work?",
+    locale: "en",
+    threadId: THREAD_ID,
+    matches: [match()],
+    modelResponder: async () => ({
+      ok: true,
+      text: "## Payment\n\n**Open your Orders page** to review payment status.",
+      model: "test-model",
+      modelVersion: "test-version",
+      requestId: "req_123",
+    }),
+  });
+
+  assert.equal(
+    answer.assistantMessage,
+    "Payment\n\nOpen your Orders page to review payment status.",
+  );
+});
+
 test("knowledge model failure falls back without claiming grounded answer text", async () => {
   const answer = await createKnowledgeGroundedAnswer({
     message: "How does booking work?",

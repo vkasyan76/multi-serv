@@ -88,6 +88,9 @@ function summarizeAccountContext(message: AdminSupportMessageRow) {
     const snapshotParts = [
       snapshot.kind,
       snapshot.statusFilter ? `filter: ${snapshot.statusFilter}` : null,
+      snapshot.helper ? `helper: ${snapshot.helper}` : null,
+      snapshot.resultCategory ? `result: ${snapshot.resultCategory}` : null,
+      !snapshot.orders.length ? "0 matching items" : null,
       orderParts.join(" || "),
     ].filter(Boolean);
 

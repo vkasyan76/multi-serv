@@ -283,6 +283,29 @@ function clarificationMessage(input: {
   return copy.clarifyGeneral;
 }
 
+function safeLookupOffer(input: {
+  locale: AppLang;
+  topic?: SupportChatTopic | null;
+  signedIn: boolean;
+}) {
+  if (!input.signedIn) return null;
+  const copy = getSupportChatCopy(input.locale).serverMessages;
+
+  if (input.topic === "payment") return copy.offerPaymentPendingLookup;
+  if (input.topic === "booking") return copy.offerScheduledBookingLookup;
+  if (input.topic === "cancellation") return copy.offerCancellationLookup;
+  return null;
+}
+
+function appendSafeLookupOffer(input: {
+  answer: string;
+  offer: string | null;
+}) {
+  if (!input.offer) return input.answer;
+  if (input.answer.includes(input.offer)) return input.answer;
+  return `${input.answer.trim()}\n\n${input.offer}`;
+}
+
 function supportResponse(
   input: Omit<GenerateSupportResponseResult, "needsHumanSupport" | "groundingKind"> & {
     needsHumanSupport?: boolean;
@@ -825,10 +848,24 @@ export async function generateSupportResponse(
     threadId,
     matches,
   });
+  const lookupOffer =
+    groundedAnswer.disposition === "answered" &&
+    triageOutcome?.ok &&
+    triageOutcome.result.confidence === "high" &&
+    triageOutcome.result.intent === "general_support"
+      ? safeLookupOffer({
+          locale: input.locale,
+          topic: triageOutcome.result.topic,
+          signedIn: Boolean(input.accountContext?.userId),
+        })
+      : null;
 
   return supportResponse({
     threadId,
-    assistantMessage: groundedAnswer.assistantMessage,
+    assistantMessage: appendSafeLookupOffer({
+      answer: groundedAnswer.assistantMessage,
+      offer: lookupOffer,
+    }),
     sources,
     disposition: groundedAnswer.disposition,
     needsHumanSupport: groundedAnswer.needsHumanSupport,

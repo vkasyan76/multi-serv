@@ -191,6 +191,33 @@ test("buildSupportThreadCsv summarizes account context and sources safely", () =
   assert.doesNotMatch(csv, /internal-order-id/);
 });
 
+test("buildSupportThreadCsv records zero-result helper evidence", () => {
+  const csv = buildSupportThreadCsv({
+    thread,
+    messages: [
+      message({
+        id: "message-1",
+        role: "assistant",
+        text: "No matching orders found.",
+        disposition: "uncertain",
+        accountContextSnapshots: [
+          {
+            kind: "candidate_selection",
+            helper: "getSupportOrderCandidatesForCurrentUser",
+            resultCategory: "order_candidates",
+            statusFilter: "payment_pending",
+            orders: [],
+          },
+        ],
+      }),
+    ],
+  });
+
+  assert.match(csv, /filter: payment_pending/);
+  assert.match(csv, /helper: getSupportOrderCandidatesForCurrentUser/);
+  assert.match(csv, /0 matching items/);
+});
+
 test("supportThreadCsvFilename uses locale thread prefix and timestamp", () => {
   assert.equal(
     supportThreadCsvFilename(

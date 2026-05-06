@@ -62,8 +62,11 @@
     "clarifyProvider": "Potrzebujesz pomocy przy tworzeniu profilu usługodawcy, onboardingu, zarządzaniu usługami czy płatnościach usługodawcy?",
     "lowConfidenceFollowUp": "Nie mam pewności, jakiego szczegółu potrzebujesz. Chcesz sprawdzić konkretną rezerwację, płatność, anulowanie czy ogólną zasadę platformy?",
     "unsupportedBroadAccount": "Nie mogę pokazać ani wyeksportować pełnej historii konta z tego czatu. Mogę pomóc z konkretnym zamówieniem, rezerwacją, płatnością lub fakturą, jeśli je wybierzesz albo wskażesz.",
-    "accountContextUnavailable": "Nie mogę bezpiecznie uzyskać danych konta dla tego zapytania. Zaloguj się i wybierz albo wskaż konkretne zamówienie, rezerwację, płatność lub fakturę.",
-    "unsafeActionBlocked": "Nie mogę anulować, zwrócić środków, obciążyć ani zmienić zamówienia z tego czatu. Mogę wyjaśnić kroki albo bezpiecznie sprawdzić wybrane zamówienie."
+    "accountContextUnavailable": "Mogę wyjaśnić zasady. Mogę też wykonać ograniczone, bezpieczne dla wsparcia sprawdzenie, jeśli jesteś zalogowany i pytasz o konkretną rezerwację, zamówienie, płatność lub fakturę.",
+    "unsafeActionBlocked": "Nie mogę anulować, zwrócić środków, obciążyć ani zmienić zamówienia z tego czatu. Mogę wyjaśnić kroki albo bezpiecznie sprawdzić wybrane zamówienie.",
+    "offerPaymentPendingLookup": "Jeśli chcesz, mogę wyszukać aktualne rezerwacje, w których płatność jest nadal oczekująca.",
+    "offerScheduledBookingLookup": "Jeśli chcesz, mogę wyszukać aktualne zaplanowane rezerwacje, które mogą pasować.",
+    "offerCancellationLookup": "Jeśli chcesz, mogę wyszukać aktualne zaplanowane rezerwacje, które mogą mieć znaczenie przy anulowaniu."
   },
   "handoffAccount": "Aby uzyskać pomoc dotyczącą konta, skontaktuj się ze wsparciem i podaj dane zamówienia, faktury lub konta.",
   "handoffGeneral": "Jeśli to nie odpowiada na Twoje pytanie, skontaktuj się ze wsparciem."

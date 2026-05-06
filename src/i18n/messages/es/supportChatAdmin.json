@@ -123,7 +123,8 @@
     "helperResultCategory": "Helper result",
     "latestAccountContextKind": "Account context",
     "allowed": "Allowed",
-    "blocked": "Blocked"
+    "blocked": "Blocked",
+    "noAccountMatches": "El asistente ejecutó la comprobación, pero no se encontraron elementos de cuenta seguros para soporte que coincidieran."
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",

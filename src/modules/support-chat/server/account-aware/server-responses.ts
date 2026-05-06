@@ -254,7 +254,9 @@ function helperResultSnapshot(input: {
 function nonEmptySnapshot(
   snapshot: SupportAccountContextSnapshot,
 ): SupportAccountContextSnapshot | undefined {
-  return snapshot.orders.length > 0 ? snapshot : undefined;
+  if (snapshot.orders.length > 0) return snapshot;
+  if (snapshot.helper && snapshot.resultCategory) return snapshot;
+  return undefined;
 }
 
 function snapshotArray(snapshot: SupportAccountContextSnapshot) {
@@ -705,7 +707,7 @@ export async function buildAccountAwareServerResponse(input: {
         input.route.statusFilter,
         accountCopy,
       ),
-      disposition: "uncertain",
+      disposition: result.data.candidates.length ? "uncertain" : "answered",
       needsHumanSupport: false,
       accountHelperMetadata: {
         helper: "getSupportOrderCandidatesForCurrentUser",

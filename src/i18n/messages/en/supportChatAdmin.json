@@ -158,7 +158,8 @@
     "serviceStatus": "Service status",
     "paymentStatus": "Payment status",
     "invoiceStatus": "Invoice status",
-    "nextStep": "Next step"
+    "nextStep": "Next step",
+    "noAccountMatches": "The helper ran, but no matching support-safe account items were found."
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",

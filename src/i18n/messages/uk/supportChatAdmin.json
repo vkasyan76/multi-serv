@@ -123,7 +123,8 @@
     "helperResultCategory": "Helper result",
     "latestAccountContextKind": "Account context",
     "allowed": "Allowed",
-    "blocked": "Blocked"
+    "blocked": "Blocked",
+    "noAccountMatches": "Помічник був запущений, але відповідних безпечних для підтримки елементів акаунта не знайдено."
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",

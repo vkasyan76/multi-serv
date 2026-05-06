@@ -123,7 +123,8 @@
     "helperResultCategory": "Helper result",
     "latestAccountContextKind": "Account context",
     "allowed": "Allowed",
-    "blocked": "Blocked"
+    "blocked": "Blocked",
+    "noAccountMatches": "O assistente executou a verificação, mas não foram encontrados itens de conta seguros para suporte correspondentes."
   },
   "pagination": {
     "pageOf": "Page {page} of {totalPages}",

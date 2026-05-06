@@ -96,7 +96,11 @@ function accountContextSnapshotRows(snapshots: SupportAccountContextSnapshot[]) 
         nextStepKey: order.nextStepKey,
       })),
     }))
-    .filter((snapshot) => snapshot.orders.length > 0);
+    .filter(
+      (snapshot) =>
+        snapshot.orders.length > 0 ||
+        Boolean(snapshot.helper && snapshot.resultCategory)
+    );
 }
 
 async function findThread(db: Payload, threadId: string) {

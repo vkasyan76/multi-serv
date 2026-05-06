@@ -28,6 +28,9 @@ type SupportChatServerCopy = {
     unsupportedAccount: string;
     unsupportedBroadAccount: string;
     accountContextUnavailable: string;
+    offerPaymentPendingLookup: string;
+    offerScheduledBookingLookup: string;
+    offerCancellationLookup: string;
     unsupportedAction: string;
     unsafeActionBlocked: string;
     uncertain: string;

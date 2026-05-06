@@ -62,8 +62,11 @@
     "clarifyProvider": "Brauchst du Hilfe beim Erstellen eines Dienstleisterprofils, beim Onboarding, bei Services oder bei Dienstleisterzahlungen?",
     "lowConfidenceFollowUp": "Ich möchte sicher sein, dass ich dich richtig verstehe. Geht es um eine bestimmte Buchung, eine Zahlung, eine Stornierung oder allgemeine Plattformregeln?",
     "unsupportedBroadAccount": "Ich kann aus diesem Chat keine vollständige Konto-Historie durchsuchen oder exportieren. Frage nach einer bestimmten Bestellung, Buchung, Zahlung oder Rechnung oder öffne die passende Dashboard-Seite für die vollständige Liste.",
-    "accountContextUnavailable": "Ich kann die Regeln erklären, aber kontospezifische Details nur prüfen, wenn du angemeldet bist und die Anfrage in den support-sicheren Suchbereich fällt.",
-    "unsafeActionBlocked": "Ich kann diese Aktion nicht aus dem Chat ausführen. Ich kann die Regeln erklären oder dir helfen zu prüfen, ob eine ausgewählte Bestellung berechtigt ist."
+    "accountContextUnavailable": "Ich kann die Regeln erklären. Eine begrenzte support-sichere Suche ist möglich, wenn du angemeldet bist und nach einer bestimmten Buchung, Bestellung, Zahlung oder Rechnung fragst.",
+    "unsafeActionBlocked": "Ich kann diese Aktion nicht aus dem Chat ausführen. Ich kann die Regeln erklären oder dir helfen zu prüfen, ob eine ausgewählte Bestellung berechtigt ist.",
+    "offerPaymentPendingLookup": "Wenn du möchtest, kann ich nach aktuellen Buchungen suchen, bei denen eine Zahlung noch aussteht.",
+    "offerScheduledBookingLookup": "Wenn du möchtest, kann ich nach aktuellen geplanten Buchungen suchen, die passen könnten.",
+    "offerCancellationLookup": "Wenn du möchtest, kann ich nach aktuellen geplanten Buchungen suchen, die für eine Stornierung relevant sein könnten."
   },
   "handoffAccount": "Für kontospezifische Hilfe kontaktieren Sie den Support mit Ihren Bestell-, Rechnungs- oder Kontodaten.",
   "handoffGeneral": "Wenn dies Ihre Frage nicht beantwortet, kontaktieren Sie den Support."

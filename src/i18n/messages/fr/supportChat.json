@@ -62,8 +62,11 @@
     "clarifyProvider": "Avez-vous besoin d’aide pour créer un profil prestataire, terminer l’onboarding, gérer des services ou comprendre les paiements prestataire ?",
     "lowConfidenceFollowUp": "Je veux être sûr de comprendre. Parlez-vous d’une réservation précise, d’un paiement, d’une annulation ou des règles générales de la plateforme ?",
     "unsupportedBroadAccount": "Je ne peux pas parcourir ni exporter tout l’historique de votre compte depuis ce chat. Posez une question sur une commande, réservation, paiement ou facture précise, ou ouvrez la page correspondante du tableau de bord.",
-    "accountContextUnavailable": "Je peux expliquer les règles, mais je ne peux vérifier des détails de compte que si vous êtes connecté et si la demande est dans le périmètre sûr de l’assistance.",
-    "unsafeActionBlocked": "Je ne peux pas effectuer cette action depuis le chat. Je peux expliquer les règles ou vous aider à vérifier si une commande sélectionnée est éligible."
+    "accountContextUnavailable": "Je peux expliquer les règles. Je peux aussi faire une vérification limitée et sûre si vous êtes connecté et si vous demandez une réservation, commande, paiement ou facture précise.",
+    "unsafeActionBlocked": "Je ne peux pas effectuer cette action depuis le chat. Je peux expliquer les règles ou vous aider à vérifier si une commande sélectionnée est éligible.",
+    "offerPaymentPendingLookup": "Si vous voulez, je peux chercher des réservations récentes avec un paiement encore en attente.",
+    "offerScheduledBookingLookup": "Si vous voulez, je peux chercher des réservations planifiées récentes qui peuvent correspondre.",
+    "offerCancellationLookup": "Si vous voulez, je peux chercher des réservations planifiées récentes qui peuvent être utiles pour une annulation."
   },
   "handoffAccount": "Pour une aide propre à votre compte, contactez l'assistance avec les détails de votre commande, facture ou compte.",
   "handoffGeneral": "Si cela ne répond pas à votre question, contactez l'assistance."

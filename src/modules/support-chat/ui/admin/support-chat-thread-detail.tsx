@@ -301,7 +301,9 @@ function AccountContextSnapshots({
 }) {
   const t = useTranslations("supportChatAdmin");
   const snapshots = message.accountContextSnapshots.filter(
-    (snapshot) => snapshot.orders.length > 0
+    (snapshot) =>
+      snapshot.orders.length > 0 ||
+      Boolean(snapshot.helper && snapshot.resultCategory)
   );
 
   if (!snapshots.length) return null;
@@ -326,6 +328,12 @@ function AccountContextSnapshots({
                 value={snapshot.resultCategory}
               />
             </div>
+
+            {!snapshot.orders.length ? (
+              <p className="rounded-md bg-white px-3 py-2 text-xs text-muted-foreground">
+                {t("detail.noAccountMatches")}
+              </p>
+            ) : null}
 
             {snapshot.orders.map((order, orderIndex) => {
               const date =

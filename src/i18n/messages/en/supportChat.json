@@ -62,8 +62,11 @@
     "clarifyProvider": "Do you need help creating a provider profile, completing onboarding, managing services, or understanding provider payments?",
     "lowConfidenceFollowUp": "I want to make sure I understand. Are you asking about a specific booking, a payment, a cancellation, or general platform rules?",
     "unsupportedBroadAccount": "I cannot browse or export your full account history from this chat. Ask about a specific order, booking, payment, or invoice, or open the relevant dashboard page for the full list.",
-    "accountContextUnavailable": "I can explain the rules, but I cannot check account-specific details unless you are signed in and the request is within the support-safe lookup scope.",
-    "unsafeActionBlocked": "I cannot perform that action from chat. I can explain the rules or help you check whether a selected order is eligible."
+    "accountContextUnavailable": "I can explain the rules. I can also do limited support-safe lookup when you are signed in and ask about a specific booking, order, payment, or invoice.",
+    "unsafeActionBlocked": "I cannot perform that action from chat. I can explain the rules or help you check whether a selected order is eligible.",
+    "offerPaymentPendingLookup": "If you want, I can look for current bookings where a payment is still pending.",
+    "offerScheduledBookingLookup": "If you want, I can look for current scheduled bookings that may match.",
+    "offerCancellationLookup": "If you want, I can look for current scheduled bookings that may be relevant for cancellation."
   },
   "handoffAccount": "For account-specific help, contact support with your order, invoice, or account details.",
   "handoffGeneral": "If this does not answer your question, contact support for help."
