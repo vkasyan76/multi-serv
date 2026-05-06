@@ -23,6 +23,7 @@ process.env.PAYLOAD_SECRET ??= "support-chat-action-test-secret";
 const ORIGINAL_SUPPORT_MODEL = process.env.OPENAI_SUPPORT_CHAT_MODEL;
 const ORIGINAL_SUPPORT_MODEL_VERSION =
   process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION;
+const ORIGINAL_OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 afterEach(() => {
   if (ORIGINAL_SUPPORT_MODEL === undefined) {
@@ -36,6 +37,12 @@ afterEach(() => {
   } else {
     process.env.OPENAI_SUPPORT_CHAT_MODEL_VERSION =
       ORIGINAL_SUPPORT_MODEL_VERSION;
+  }
+
+  if (ORIGINAL_OPENAI_API_KEY === undefined) {
+    delete process.env.OPENAI_API_KEY;
+  } else {
+    process.env.OPENAI_API_KEY = ORIGINAL_OPENAI_API_KEY;
   }
 });
 
@@ -403,6 +410,37 @@ function makeCtx(
   return { db, accountContext: { db, userId } as never };
 }
 
+function assertSupportSafeSnapshots(value: unknown) {
+  const forbidden = new Set([
+    "amount",
+    "currency",
+    "customerSnapshot",
+    "vendorSnapshot",
+    "stripeAccountId",
+    "checkoutSessionId",
+    "paymentIntentId",
+    "destination",
+    "slots",
+    "user",
+    "tenant",
+  ]);
+
+  function visit(current: unknown) {
+    if (!current || typeof current !== "object") return;
+    if (Array.isArray(current)) {
+      for (const item of current) visit(item);
+      return;
+    }
+
+    for (const [key, nested] of Object.entries(current)) {
+      assert.equal(forbidden.has(key), false, key);
+      visit(nested);
+    }
+  }
+
+  visit(value);
+}
+
 async function respond(
   message: string,
   userId: string | null = "clerk-user-a",
@@ -477,6 +515,7 @@ test("selected order status response includes support-safe order context", async
     /Provider\/customer note: Provider cannot accommodate this request/i,
   );
   assert.doesNotMatch(response.assistantMessage, /stripe|paymentIntent|checkoutSession/i);
+  assertSupportSafeSnapshots(response.accountContextSnapshots);
 });
 
 test("tenant exact order status uses tenant wording and safe authorization", async () => {
@@ -1003,6 +1042,7 @@ test("candidate selection returns clickable actions without exact helper calls",
   assert.match(response.actions?.[0]?.description ?? "", /requested/i);
   assert.match(response.actions?.[0]?.description ?? "", /payment not due/i);
   assert.ok(response.actions?.[0]?.token);
+  assertSupportSafeSnapshots(response.accountContextSnapshots);
   assert.doesNotMatch(response.actions?.[0]?.token ?? "", new RegExp(ORDER_REQUESTED_A));
   assert.doesNotMatch(response.assistantMessage, /your last order is/i);
   assert.doesNotMatch(response.assistantMessage, /reply\s+(1|one)/i);
@@ -1484,6 +1524,71 @@ test("intent triage maps high-confidence candidate lookups to allowed helpers", 
       item.message,
     );
   }
+});
+
+test("intent triage cannot invent unsupported helper mappings or filters", async () => {
+  useSupportModelEnv();
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "Which of my bookings are already paid?",
+    threadId: THREAD_ID,
+    locale: "en",
+    accountContext,
+    conversationMemory: {
+      previousUserMessage: "I need help with a booking.",
+      previousAssistantMessage: "Which booking do you mean?",
+      activeTopic: "booking",
+      hasSelectedOrderContext: false,
+      lastAssistantAskedForSelection: false,
+    },
+    intentTriageOverride: {
+      intent: "account_candidate_lookup",
+      topic: "booking",
+      statusFilter: "paid",
+      confidence: "high",
+      reason: "Invalid model-selected booking/payment combination.",
+    },
+  });
+
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
+  assert.equal(response.triageEligibilityAllowed, false);
+  assert.equal(response.triageEligibilityReason, "no_allowed_mapping");
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
+});
+
+test("intent triage model failure falls back without account helper execution", async () => {
+  useSupportModelEnv();
+  delete process.env.OPENAI_API_KEY;
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const response = await generateSupportResponse({
+    message: "Meine Buchung ist geplant.",
+    threadId: THREAD_ID,
+    locale: "de",
+    accountContext,
+    conversationMemory: {
+      previousUserMessage: "Ich brauche Hilfe mit einer Buchung.",
+      previousAssistantMessage: "Welche Buchung meinst du?",
+      activeTopic: "booking",
+      hasSelectedOrderContext: false,
+      lastAssistantAskedForSelection: false,
+    },
+  });
+
+  assert.equal(response.triage, undefined);
+  assert.equal(response.triageMappedHelper, undefined);
+  assert.equal(response.triageEligibilityAllowed, undefined);
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
 });
 
 test("intent triage does not route unsupported provider account lookup to helpers", async () => {

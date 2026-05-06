@@ -184,6 +184,14 @@ Required env groups are defined in `README.md`:
   approved retrieved knowledge or bounded support-safe account DTOs.
   Weak/missing knowledge grounding must return deterministic uncertain/fallback
   copy instead of asking the model to improvise.
+- Final support-chat architecture contract:
+  - model triage owns meaning only
+  - server eligibility owns authority, helper mapping, ownership, and result limits
+  - helpers retrieve bounded support-safe DTOs only
+  - grounding is required for factual answers
+  - regex is safety/fallback only, not the conversation brain
+  - admin evidence must be persisted for triage, eligibility, grounding, helper use, and account snapshots
+  - chat must never mutate orders, payments, bookings, provider profiles, invoices, or Stripe state
 - Account-aware support is server-routed and bounded. Deterministic routing and strict model intent triage may select existing safe helper categories only after server eligibility checks; the model must never choose DB queries, helper names, order IDs, filters, or perform mutations.
 - Selected-order context and support-topic context are server-issued signed tokens. Invalid selected-order follow-ups should ask the user to reselect the order; invalid/expired topic context is a soft hint and should be ignored.
 - General topic help must stay general unless the user clearly asks about their own bookings/orders/payments or has selected/referenced a specific item.

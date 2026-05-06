@@ -86,6 +86,34 @@ test("parseSupportIntentTriageResult rejects extra helper fields", () => {
   );
 });
 
+test("parseSupportIntentTriageResult rejects arbitrary DB-style fields", () => {
+  for (const payload of [
+    {
+      intent: "account_candidate_lookup",
+      topic: "booking",
+      statusFilter: "scheduled",
+      confidence: "high",
+      orderId: "100000000000000000000001",
+    },
+    {
+      intent: "account_candidate_lookup",
+      topic: "payment",
+      statusFilter: "paid",
+      confidence: "high",
+      dbQuery: { collection: "orders" },
+    },
+    {
+      intent: "account_candidate_lookup",
+      topic: "booking",
+      statusFilter: "scheduled",
+      confidence: "high",
+      filters: { tenant: "any" },
+    },
+  ]) {
+    assert.equal(parseSupportIntentTriageResult(JSON.stringify(payload)), null);
+  }
+});
+
 test("parseSupportIntentTriageResult accepts none and not_applicable", () => {
   assert.deepEqual(
     parseSupportIntentTriageResult(
