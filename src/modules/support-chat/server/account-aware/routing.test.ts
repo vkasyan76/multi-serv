@@ -1034,7 +1034,8 @@ test("candidate selection returns clickable actions without exact helper calls",
     "getSupportOrderCandidatesForCurrentUser",
   );
   assert.equal(response.accountHelperMetadata.resultCategory, "order_candidates");
-  assert.match(response.assistantMessage, /Which order do you mean/i);
+  assert.match(response.assistantMessage, /Which booking do you mean/i);
+  assert.doesNotMatch(response.assistantMessage, /\b(candidate|helper)\b/i);
   assert.equal(response.actions?.length, 3);
   assert.equal(response.actions?.[0]?.type, "account_candidate_select");
   assert.match(response.actions?.[0]?.label ?? "", /Provider/i);
@@ -1643,8 +1644,8 @@ test("intent triage cannot route account helpers without account context", async
 
   assert.equal(response.accountHelperMetadata, undefined);
   assert.equal(response.actions, undefined);
-  assert.equal(response.triageEligibilityAllowed, undefined);
-  assert.equal(response.triageEligibilityReason, undefined);
+  assert.equal(response.triageEligibilityAllowed, false);
+  assert.equal(response.triageEligibilityReason, "not_signed_in");
 });
 
 test("intent triage denies helper routing for signed-out account context", async () => {
@@ -2501,7 +2502,7 @@ test("candidate actions preserve payment and cancellation intent", async () => {
     lastPayment.response.accountHelperMetadata.helper,
     "getSupportOrderCandidatesForCurrentUser",
   );
-  assert.match(lastPayment.response.assistantMessage, /Which order do you mean/i);
+  assert.match(lastPayment.response.assistantMessage, /Which booking do you mean/i);
   assert.equal(lastPayment.response.actions?.[0]?.type, "account_candidate_select");
 
   const cancel = await respondWithRoute({
@@ -2611,7 +2612,7 @@ test("one candidate still asks for the exact order ID", async () => {
     threadId: THREAD_ID,
   });
 
-  assert.match(response.assistantMessage, /one recent order that may match/i);
+  assert.match(response.assistantMessage, /one recent booking that may match/i);
   assert.equal(response.actions?.length, 1);
   assert.doesNotMatch(response.assistantMessage, /eligible for in-app cancellation/i);
   assert.doesNotMatch(response.assistantMessage, /reply\s+(1|one)/i);

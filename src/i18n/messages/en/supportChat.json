@@ -21,7 +21,7 @@
     "cancel": "I need help canceling a booking.",
     "provider": "I want to become a provider."
   },
-  "disclaimer": "AI support may make mistakes. It can check only limited support-safe order or payment details you select or reference.",
+  "disclaimer": "AI support may make mistakes. It can check only limited support-safe booking, order, or payment details you select or reference.",
   "contactSupport": "Contact support",
   "writeEmail": "Write email",
   "emailMode": {
@@ -52,8 +52,8 @@
     "abusive": "I can help with support questions, but I cannot respond to abusive messages. Please contact support if you need help.",
     "nonsense": "I could not understand that request. Please rephrase your support question or contact support.",
     "clarify": "What do you need help with: a booking, payment, cancellation, provider profile, registration, or dispute?",
-    "unsupportedAccount": "I can check only limited support-safe details for a specific order, booking, payment, or invoice you select or reference. I cannot browse full account history, unrelated records, Stripe data, or raw account records.",
-    "unsupportedAction": "I cannot cancel, refund, charge, or update an order from this chat. I can explain the rules or help check a selected order safely.",
+    "unsupportedAccount": "I can check only limited support-safe details for a specific booking, order, payment, or invoice you select or reference. I cannot browse full account history, unrelated records, Stripe data, or raw account records.",
+    "unsupportedAction": "I cannot cancel, refund, charge, or modify a booking or order from this chat. I can explain the rules or help check a selected booking safely.",
     "uncertain": "I do not have enough approved support information to answer that reliably. Try asking about a specific booking, payment, cancellation, provider setup, registration, or marketplace rule.",
     "clarifyGeneral": "What do you need help with: a booking, payment, cancellation, provider profile, registration, or dispute?",
     "clarifyBooking": "Do you mean a requested booking, a planned booking, a canceled booking, payment for a booking, or changing/canceling it?",
@@ -61,9 +61,9 @@
     "clarifyCancellation": "Is the booking still requested, already planned, or canceled, and are you trying to cancel it or understand why cancellation is blocked?",
     "clarifyProvider": "Do you need help creating a provider profile, completing onboarding, managing services, or understanding provider payments?",
     "lowConfidenceFollowUp": "I want to make sure I understand. Are you asking about a specific booking, a payment, a cancellation, or general platform rules?",
-    "unsupportedBroadAccount": "I cannot browse or export your full account history from this chat. Ask about a specific order, booking, payment, or invoice, or open the relevant dashboard page for the full list.",
-    "accountContextUnavailable": "I can explain the rules. I can also do limited support-safe lookup when you are signed in and ask about a specific booking, order, payment, or invoice.",
-    "unsafeActionBlocked": "I cannot perform that action from chat. I can explain the rules or help you check whether a selected order is eligible.",
+    "unsupportedBroadAccount": "I cannot browse or export your full account history from this chat. Ask about a specific booking, payment, or invoice, or open the relevant dashboard page for the full list.",
+    "accountContextUnavailable": "I can explain the rules. Limited support-safe lookup is available when you are signed in and ask about a specific booking, order, payment, or invoice.",
+    "unsafeActionBlocked": "I cannot cancel, refund, charge, or modify anything from chat. I can explain the rules or help you check whether a selected booking is eligible.",
     "offerPaymentPendingLookup": "If you want, I can look for current bookings where a payment is still pending.",
     "offerScheduledBookingLookup": "If you want, I can look for current scheduled bookings that may match.",
     "offerCancellationLookup": "If you want, I can look for current scheduled bookings that may be relevant for cancellation."

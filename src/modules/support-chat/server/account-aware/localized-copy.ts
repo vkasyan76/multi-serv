@@ -96,16 +96,16 @@ export type AccountAwareLocalizedCopy = {
 
 const EN: AccountAwareLocalizedCopy = {
   candidate: {
-    fallbackLabel: "Matching order",
-    none: "I can help, but I could not find recent orders in the support-safe lookup. Please open your Orders page or contact support with the exact order ID.",
-    one: "I found one recent order that may match. Please select it below if it is the order you mean.",
-    many: "I found a few recent orders that may match. Which order do you mean?",
+    fallbackLabel: "Matching booking",
+    none: "I can help, but I could not find recent matching bookings in the support-safe lookup. Please open your Orders page or contact support with the exact booking or order ID.",
+    one: "I found one recent booking that may match. Please select it below if it is the booking you mean.",
+    many: "I found a few recent bookings that may match. Which booking do you mean?",
     filteredNone: (filter) =>
       `I could not find recent ${filter} bookings in the support-safe lookup. This is not a full history check. Please open your Orders page if you need the complete list.`,
     filteredOne: (filter) =>
-      `I found one recent ${filter} booking that may match. Please select it below if it is the order you mean.`,
+      `I found one recent ${filter} booking that may match. Please select it below if it is the booking you mean.`,
     filteredMany: (filter) =>
-      `I found recent ${filter} bookings that may match. Which order do you mean?`,
+      `I found recent ${filter} bookings that may match. Which booking do you mean?`,
   },
   fieldLabels: {
     provider: "Provider",
@@ -315,7 +315,7 @@ const EN: AccountAwareLocalizedCopy = {
     },
   },
   actionTokenExpired:
-    "That order selection expired. Please select the order again so I can check it safely.",
+    "That booking selection expired. Please select the booking again so I can check it safely.",
   genericAccountItem:
     "I found the account item, but I cannot safely summarize it yet.",
 };
@@ -552,16 +552,16 @@ const DE: AccountAwareLocalizedCopy = {
 const FR: AccountAwareLocalizedCopy = {
   ...EN,
   candidate: {
-    fallbackLabel: "Commande possible",
-    none: "Je peux aider, mais je n'ai trouvé aucune commande récente pouvant être affichée en toute sécurité. Ouvrez votre page Commandes ou contactez l'assistance avec l'ID exact de la commande.",
-    one: "J'ai trouvé une commande récente qui peut correspondre. Sélectionnez-la ci-dessous si c'est la commande concernée.",
-    many: "J'ai trouvé quelques commandes récentes qui peuvent correspondre. Laquelle voulez-vous dire ?",
+    fallbackLabel: "Réservation correspondante",
+    none: "Je peux aider, mais je n'ai trouvé aucune réservation récente correspondante dans la vérification sûre. Ouvrez votre page Commandes ou contactez l'assistance avec l'ID exact de réservation ou de commande.",
+    one: "J'ai trouvé une réservation récente qui peut correspondre. Sélectionnez-la ci-dessous si c'est la réservation concernée.",
+    many: "J'ai trouvé quelques réservations récentes qui peuvent correspondre. De quelle réservation parlez-vous ?",
     filteredNone: (filter) =>
       `Je n'ai trouvé aucune réservation récente correspondant au statut ${filter}. Ceci n'est pas une vérification complète de l'historique. Ouvrez votre page Commandes si vous avez besoin de la liste complète.`,
     filteredOne: (filter) =>
-      `J'ai trouvé une réservation récente avec le statut ${filter} qui peut correspondre. Sélectionnez-la ci-dessous si c'est la commande concernée.`,
+      `J'ai trouvé une réservation récente avec le statut ${filter} qui peut correspondre. Sélectionnez-la ci-dessous si c'est la réservation concernée.`,
     filteredMany: (filter) =>
-      `J'ai trouvé des réservations récentes avec le statut ${filter} qui peuvent correspondre. Laquelle voulez-vous dire ?`,
+      `J'ai trouvé des réservations récentes avec le statut ${filter} qui peuvent correspondre. De quelle réservation parlez-vous ?`,
   },
   fieldLabels: {
     provider: "Prestataire",
@@ -775,7 +775,7 @@ const FR: AccountAwareLocalizedCopy = {
   genericAccountItem:
     "J'ai trouvé l'élément du compte, mais je ne peux pas encore le résumer en toute sécurité.",
   actionTokenExpired:
-    "Cette sélection de commande a expiré. Sélectionnez à nouveau la commande pour que je puisse la vérifier en toute sécurité.",
+    "Cette sélection de réservation a expiré. Sélectionnez à nouveau la réservation pour que je puisse la vérifier en toute sécurité.",
 };
 
 function withRomanceCopy(overrides: Partial<AccountAwareLocalizedCopy>): AccountAwareLocalizedCopy {
@@ -819,18 +819,18 @@ function withRomanceCopy(overrides: Partial<AccountAwareLocalizedCopy>): Account
 
 const IT = withRomanceCopy({
   actionTokenExpired:
-    "Questa selezione dell'ordine è scaduta. Seleziona di nuovo l'ordine così posso verificarlo in modo sicuro.",
+    "Questa selezione della prenotazione è scaduta. Seleziona di nuovo la prenotazione così posso verificarla in modo sicuro.",
   candidate: {
-    fallbackLabel: "Ordine possibile",
-    none: "Posso aiutarti, ma non ho trovato ordini recenti sicuri da mostrare. Apri la pagina Ordini o contatta l'assistenza con l'ID esatto dell'ordine.",
-    one: "Ho trovato un ordine recente che può corrispondere. Selezionalo qui sotto se è l'ordine corretto.",
-    many: "Ho trovato alcuni ordini recenti che possono corrispondere. Quale ordine intendi?",
+    fallbackLabel: "Prenotazione corrispondente",
+    none: "Posso aiutarti, ma non ho trovato prenotazioni recenti corrispondenti nella verifica sicura. Apri la pagina Ordini o contatta l'assistenza con l'ID esatto della prenotazione o dell'ordine.",
+    one: "Ho trovato una prenotazione recente che può corrispondere. Selezionala qui sotto se è la prenotazione corretta.",
+    many: "Ho trovato alcune prenotazioni recenti che possono corrispondere. Quale prenotazione intendi?",
     filteredNone: (filter) =>
       `Non ho trovato prenotazioni recenti che possono corrispondere con stato ${filter}. Non è una verifica completa della cronologia. Apri la pagina Ordini se ti serve l'elenco completo.`,
     filteredOne: (filter) =>
-      `Ho trovato una prenotazione recente che può corrispondere con stato ${filter}. Selezionala qui sotto se è l'ordine corretto.`,
+      `Ho trovato una prenotazione recente che può corrispondere con stato ${filter}. Selezionala qui sotto se è la prenotazione corretta.`,
     filteredMany: (filter) =>
-      `Ho trovato prenotazioni recenti che possono corrispondere con stato ${filter}. Quale ordine intendi?`,
+      `Ho trovato prenotazioni recenti che possono corrispondere con stato ${filter}. Quale prenotazione intendi?`,
   },
   fieldLabels: {
     provider: "Fornitore",
@@ -1012,18 +1012,18 @@ const IT = withRomanceCopy({
 
 const ES = withRomanceCopy({
   actionTokenExpired:
-    "Esta selección de pedido ha caducado. Selecciona de nuevo el pedido para que pueda revisarlo de forma segura.",
+    "Esta selección de reserva ha caducado. Selecciona de nuevo la reserva para que pueda revisarla de forma segura.",
   candidate: {
-    fallbackLabel: "Pedido posible",
-    none: "Puedo ayudar, pero no encontré pedidos recientes que pueda mostrar de forma segura. Abre tu página de Pedidos o contacta con soporte con el ID exacto del pedido.",
-    one: "Encontré un pedido reciente que puede coincidir. Selecciónalo abajo si es el pedido correcto.",
-    many: "Encontré algunos pedidos recientes que pueden coincidir. ¿Qué pedido quieres decir?",
+    fallbackLabel: "Reserva coincidente",
+    none: "Puedo ayudar, pero no encontré reservas recientes que coincidan en la revisión segura. Abre tu página de Pedidos o contacta con soporte con el ID exacto de la reserva o del pedido.",
+    one: "Encontré una reserva reciente que puede coincidir. Selecciónala abajo si es la reserva correcta.",
+    many: "Encontré algunas reservas recientes que pueden coincidir. ¿A qué reserva te refieres?",
     filteredNone: (filter) =>
       `No encontré reservas recientes que coincidan con el estado ${filter}. Esto no es una revisión completa del historial. Abre tu página de Pedidos si necesitas la lista completa.`,
     filteredOne: (filter) =>
-      `Encontré una reserva reciente con estado ${filter} que puede coincidir. Selecciónala abajo si es el pedido correcto.`,
+      `Encontré una reserva reciente con estado ${filter} que puede coincidir. Selecciónala abajo si es la reserva correcta.`,
     filteredMany: (filter) =>
-      `Encontré reservas recientes con estado ${filter} que pueden coincidir. ¿Qué pedido quieres decir?`,
+      `Encontré reservas recientes con estado ${filter} que pueden coincidir. ¿A qué reserva te refieres?`,
   },
   fieldLabels: {
     provider: "Proveedor",
@@ -1205,18 +1205,18 @@ const ES = withRomanceCopy({
 
 const PT = withRomanceCopy({
   actionTokenExpired:
-    "Esta seleção de pedido expirou. Selecione novamente o pedido para que eu possa verificá-lo com segurança.",
+    "Esta seleção de reserva expirou. Selecione novamente a reserva para que eu possa verificá-la com segurança.",
   candidate: {
-    fallbackLabel: "Pedido possível",
-    none: "Posso ajudar, mas não encontrei pedidos recentes que possa mostrar com segurança. Abra a página Pedidos ou contacte o suporte com o ID exato do pedido.",
-    one: "Encontrei um pedido recente que pode corresponder. Selecione-o abaixo se for o pedido correto.",
-    many: "Encontrei alguns pedidos recentes que podem corresponder. Qual pedido quer dizer?",
+    fallbackLabel: "Reserva correspondente",
+    none: "Posso ajudar, mas não encontrei reservas recentes correspondentes na verificação segura. Abra a página Pedidos ou contacte o suporte com o ID exato da reserva ou do pedido.",
+    one: "Encontrei uma reserva recente que pode corresponder. Selecione-a abaixo se for a reserva correta.",
+    many: "Encontrei algumas reservas recentes que podem corresponder. A que reserva se refere?",
     filteredNone: (filter) =>
       `Não encontrei reservas recentes que correspondam ao estado ${filter}. Isto não é uma verificação completa do histórico. Abra a página Pedidos se precisar da lista completa.`,
     filteredOne: (filter) =>
-      `Encontrei uma reserva recente com estado ${filter} que pode corresponder. Selecione-a abaixo se for o pedido correto.`,
+      `Encontrei uma reserva recente com estado ${filter} que pode corresponder. Selecione-a abaixo se for a reserva correta.`,
     filteredMany: (filter) =>
-      `Encontrei reservas recentes com estado ${filter} que podem corresponder. Qual pedido quer dizer?`,
+      `Encontrei reservas recentes com estado ${filter} que podem corresponder. A que reserva se refere?`,
   },
   fieldLabels: {
     provider: "Prestador",
@@ -1398,18 +1398,18 @@ const PT = withRomanceCopy({
 
 const PL = withRomanceCopy({
   actionTokenExpired:
-    "Ten wybór zamówienia wygasł. Wybierz zamówienie ponownie, abym mógł je bezpiecznie sprawdzić.",
+    "Ten wybór rezerwacji wygasł. Wybierz rezerwację ponownie, abym mógł ją bezpiecznie sprawdzić.",
   candidate: {
-    fallbackLabel: "Kandydat zamówienia",
-    none: "Mogę pomóc, ale nie znalazłem ostatnich zamówień, które można bezpiecznie pokazać. Otwórz stronę Zamówienia albo skontaktuj się z pomocą, podając dokładny identyfikator zamówienia.",
-    one: "Znalazłem jedno ostatnie pasujące zamówienie. Wybierz je poniżej, jeśli to właściwe zamówienie.",
-    many: "Znalazłem kilka ostatnich pasujących zamówień. O które zamówienie chodzi?",
+    fallbackLabel: "Pasująca rezerwacja",
+    none: "Mogę pomóc, ale nie znalazłem ostatnich pasujących rezerwacji w bezpiecznym sprawdzeniu. Otwórz stronę Zamówienia albo skontaktuj się ze wsparciem, podając dokładny identyfikator rezerwacji lub zamówienia.",
+    one: "Znalazłem jedną ostatnią pasującą rezerwację. Wybierz ją poniżej, jeśli to właściwa rezerwacja.",
+    many: "Znalazłem kilka ostatnich pasujących rezerwacji. O którą rezerwację chodzi?",
     filteredNone: (filter) =>
       `Nie znalazłem ostatnich rezerwacji ze statusem ${filter}. To nie jest pełne sprawdzenie historii. Otwórz stronę Zamówienia, jeśli potrzebujesz pełnej listy.`,
     filteredOne: (filter) =>
-      `Znalazłem jedną ostatnią rezerwację ze statusem ${filter}. Wybierz ją poniżej, jeśli to właściwe zamówienie.`,
+      `Znalazłem jedną ostatnią rezerwację ze statusem ${filter}. Wybierz ją poniżej, jeśli to właściwa rezerwacja.`,
     filteredMany: (filter) =>
-      `Znalazłem ostatnie rezerwacje ze statusem ${filter}. O które zamówienie chodzi?`,
+      `Znalazłem ostatnie rezerwacje ze statusem ${filter}. O którą rezerwację chodzi?`,
   },
   fieldLabels: {
     provider: "Dostawca",
@@ -1591,18 +1591,18 @@ const PL = withRomanceCopy({
 
 const RO = withRomanceCopy({
   actionTokenExpired:
-    "Această selecție a comenzii a expirat. Selectează din nou comanda ca să o pot verifica în siguranță.",
+    "Această selecție a rezervării a expirat. Selectează din nou rezervarea ca să o pot verifica în siguranță.",
   candidate: {
-    fallbackLabel: "Comandă posibilă",
-    none: "Pot ajuta, dar nu am găsit comenzi recente care pot fi afișate în siguranță. Deschide pagina Comenzi sau contactează suportul cu ID-ul exact al comenzii.",
-    one: "Am găsit o comandă recentă care se poate potrivi. Selecteaz-o mai jos dacă aceasta este comanda dorită.",
-    many: "Am găsit câteva comenzi recente care se pot potrivi. La care comandă te referi?",
+    fallbackLabel: "Rezervare potrivită",
+    none: "Pot ajuta, dar nu am găsit rezervări recente potrivite în verificarea sigură. Deschide pagina Comenzi sau contactează suportul cu ID-ul exact al rezervării sau comenzii.",
+    one: "Am găsit o rezervare recentă care se poate potrivi. Selecteaz-o mai jos dacă aceasta este rezervarea dorită.",
+    many: "Am găsit câteva rezervări recente care se pot potrivi. La care rezervare te referi?",
     filteredNone: (filter) =>
       `Nu am găsit rezervări recente care se potrivesc cu statusul ${filter}. Aceasta nu este o verificare completă a istoricului. Deschide pagina Comenzi dacă ai nevoie de lista completă.`,
     filteredOne: (filter) =>
-      `Am găsit o rezervare recentă cu statusul ${filter} care se poate potrivi. Selecteaz-o mai jos dacă aceasta este comanda dorită.`,
+      `Am găsit o rezervare recentă cu statusul ${filter} care se poate potrivi. Selecteaz-o mai jos dacă aceasta este rezervarea dorită.`,
     filteredMany: (filter) =>
-      `Am găsit rezervări recente cu statusul ${filter} care se pot potrivi. La care comandă te referi?`,
+      `Am găsit rezervări recente cu statusul ${filter} care se pot potrivi. La care rezervare te referi?`,
   },
   fieldLabels: {
     provider: "Furnizor",
@@ -1784,18 +1784,18 @@ const RO = withRomanceCopy({
 
 const UK = withRomanceCopy({
   actionTokenExpired:
-    "Цей вибір замовлення застарів. Виберіть замовлення ще раз, щоб я міг безпечно його перевірити.",
+    "Цей вибір бронювання застарів. Виберіть бронювання ще раз, щоб я міг безпечно його перевірити.",
   candidate: {
-    fallbackLabel: "Можливе замовлення",
-    none: "Я можу допомогти, але не знайшов останніх замовлень, які можна безпечно показати. Відкрийте сторінку замовлень або зверніться до підтримки з точним ID замовлення.",
-    one: "Я знайшов одне нещодавнє можливе замовлення. Виберіть його нижче, якщо це потрібне замовлення.",
-    many: "Я знайшов кілька нещодавніх можливих замовлень. Яке замовлення ви маєте на увазі?",
+    fallbackLabel: "Відповідне бронювання",
+    none: "Я можу допомогти, але не знайшов нещодавніх відповідних бронювань у безпечній перевірці. Відкрийте сторінку замовлень або зверніться до підтримки з точним ID бронювання чи замовлення.",
+    one: "Я знайшов одне нещодавнє бронювання, яке може відповідати запиту. Виберіть його нижче, якщо це потрібне бронювання.",
+    many: "Я знайшов кілька нещодавніх бронювань, які можуть відповідати запиту. Яке бронювання ви маєте на увазі?",
     filteredNone: (filter) =>
       `Я не знайшов нещодавніх бронювань зі статусом ${filter}. Це не повна перевірка історії. Відкрийте сторінку замовлень, якщо потрібен повний список.`,
     filteredOne: (filter) =>
-      `Я знайшов одне нещодавнє бронювання зі статусом ${filter}. Виберіть його нижче, якщо це потрібне замовлення.`,
+      `Я знайшов одне нещодавнє бронювання зі статусом ${filter}. Виберіть його нижче, якщо це потрібне бронювання.`,
     filteredMany: (filter) =>
-      `Я знайшов нещодавні бронювання зі статусом ${filter}. Яке замовлення ви маєте на увазі?`,
+      `Я знайшов нещодавні бронювання зі статусом ${filter}. Яке бронювання ви маєте на увазі?`,
   },
   fieldLabels: {
     provider: "Постачальник",
