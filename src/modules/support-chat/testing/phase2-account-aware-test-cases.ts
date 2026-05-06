@@ -66,6 +66,204 @@ export type SupportChatPhase2AccountAwareCase = {
 
 const ids = PHASE2_ACCOUNT_FIXTURE_IDS;
 
+const INTERNAL_COPY_FORBIDDEN_PATTERNS = [
+  "candidate",
+  "helper",
+  "dto",
+  "account snapshot",
+  "selected-order token",
+  "eligibility mapping",
+];
+
+type CopyRegressionLocale = {
+  locale: AppLang;
+  broadHistoryPrompt: string;
+  broadHistoryPatterns: string[];
+  signedOutPaidPrompt: string;
+  signedOutBlockedPatterns: string[];
+  candidatePrompt: string;
+  candidatePatterns: string[];
+};
+
+const COPY_REGRESSION_LOCALES: CopyRegressionLocale[] = [
+  {
+    locale: "en",
+    broadHistoryPrompt: "Show all my payments.",
+    broadHistoryPatterns: ["full account history", "specific booking"],
+    signedOutPaidPrompt: "Have I paid for a booking?",
+    signedOutBlockedPatterns: ["signed in", "specific booking"],
+    candidatePrompt: "Which of my bookings are scheduled?",
+    candidatePatterns: ["booking"],
+  },
+  {
+    locale: "de",
+    broadHistoryPrompt: "Zeigen Sie mir alle meine Zahlungen.",
+    broadHistoryPatterns: ["vollst", "buchung"],
+    signedOutPaidPrompt: "Habe ich schon eine Buchung bezahlt?",
+    signedOutBlockedPatterns: ["angemeldet", "buchung"],
+    candidatePrompt: "Welche meiner Buchungen sind geplant?",
+    candidatePatterns: ["buchung"],
+  },
+  {
+    locale: "fr",
+    broadHistoryPrompt: "Montrez tous mes paiements.",
+    broadHistoryPatterns: ["historique", "réservation"],
+    signedOutPaidPrompt: "Ai-je déjà payé une réservation ?",
+    signedOutBlockedPatterns: ["connecté", "réservation"],
+    candidatePrompt: "Quelles réservations sont planifiées ?",
+    candidatePatterns: ["réservation"],
+  },
+  {
+    locale: "es",
+    broadHistoryPrompt: "Muéstrame todos mis pagos.",
+    broadHistoryPatterns: ["historial", "reserva"],
+    signedOutPaidPrompt: "¿Ya he pagado una reserva?",
+    signedOutBlockedPatterns: ["sesión", "reserva"],
+    candidatePrompt: "¿Qué reservas tengo programadas?",
+    candidatePatterns: ["reserva"],
+  },
+  {
+    locale: "it",
+    broadHistoryPrompt: "Mostrami tutti i miei pagamenti.",
+    broadHistoryPatterns: ["cronologia", "prenotazione"],
+    signedOutPaidPrompt: "Ho già pagato una prenotazione?",
+    signedOutBlockedPatterns: ["accesso", "prenotazione"],
+    candidatePrompt: "Quali prenotazioni sono programmate?",
+    candidatePatterns: ["prenotazione"],
+  },
+  {
+    locale: "pt",
+    broadHistoryPrompt: "Mostre todos os meus pagamentos.",
+    broadHistoryPatterns: ["histórico", "reserva"],
+    signedOutPaidPrompt: "Já paguei uma reserva?",
+    signedOutBlockedPatterns: ["sessão", "reserva"],
+    candidatePrompt: "Que reservas estão agendadas?",
+    candidatePatterns: ["reserva"],
+  },
+  {
+    locale: "pl",
+    broadHistoryPrompt: "Pokaż wszystkie moje płatności.",
+    broadHistoryPatterns: ["historii", "rezerw"],
+    signedOutPaidPrompt: "Czy zapłaciłem już za rezerwację?",
+    signedOutBlockedPatterns: ["zalogowany", "rezerw"],
+    candidatePrompt: "Które moje rezerwacje są zaplanowane?",
+    candidatePatterns: ["rezerw"],
+  },
+  {
+    locale: "ro",
+    broadHistoryPrompt: "Arată-mi toate plățile mele.",
+    broadHistoryPatterns: ["istoric", "rezerv"],
+    signedOutPaidPrompt: "Am plătit deja pentru o rezervare?",
+    signedOutBlockedPatterns: ["autentificat", "rezerv"],
+    candidatePrompt: "Ce rezervări sunt programate?",
+    candidatePatterns: ["rezerv"],
+  },
+  {
+    locale: "uk",
+    broadHistoryPrompt: "Покажіть усі мої оплати.",
+    broadHistoryPatterns: ["істор", "броню"],
+    signedOutPaidPrompt: "Чи я вже оплатив бронювання?",
+    signedOutBlockedPatterns: ["увійшли", "броню"],
+    candidatePrompt: "Які мої бронювання заплановані?",
+    candidatePatterns: ["броню"],
+  },
+];
+
+const CROSS_LOCALE_BROAD_HISTORY_COPY_CASES =
+  COPY_REGRESSION_LOCALES.map<SupportChatPhase2AccountAwareCase>((item) => ({
+    id: `copy-${item.locale}-broad-payment-history-blocked`,
+    category: "broad_lookup",
+    prompt: item.broadHistoryPrompt,
+    locale: item.locale,
+    authUser: "user-a",
+    expectedDisposition: "unsupported_account_question",
+    expectedNeedsHumanSupport: true,
+    expectedResponseOrigin: "server",
+    expectNoAccountDbCalls: true,
+    expectNoBroadLookup: true,
+    expectNoExactLookup: true,
+    expectNoMutation: true,
+    expectedAnswerPatterns: item.broadHistoryPatterns,
+    forbiddenAnswerPatterns: [
+      ...INTERNAL_COPY_FORBIDDEN_PATTERNS,
+      "not enough information",
+      "uncertain",
+    ],
+    expectedActionCount: 0,
+    maxQuestionMarks: 1,
+    intentTriageOverride: {
+      intent: "unsupported_account_scope",
+      topic: "payment",
+      confidence: "high",
+      reason: "User asks for full payment history.",
+    },
+  }));
+
+const CROSS_LOCALE_SIGNED_OUT_ACCOUNT_COPY_CASES =
+  COPY_REGRESSION_LOCALES.map<SupportChatPhase2AccountAwareCase>((item) => ({
+    id: `copy-${item.locale}-signed-out-paid-booking-blocked`,
+    category: "auth",
+    prompt: item.signedOutPaidPrompt,
+    locale: item.locale,
+    authUser: "signed-out",
+    expectedDisposition: "unsupported_account_question",
+    expectedNeedsHumanSupport: true,
+    expectedResponseOrigin: "server",
+    expectNoAccountHelper: true,
+    expectNoAccountDbCalls: true,
+    expectNoBroadLookup: true,
+    expectNoExactLookup: true,
+    expectNoMutation: true,
+    expectedAnswerPatterns: item.signedOutBlockedPatterns,
+    forbiddenAnswerPatterns: INTERNAL_COPY_FORBIDDEN_PATTERNS,
+    expectedActionCount: 0,
+    maxQuestionMarks: 1,
+    intentTriageOverride: {
+      intent: "account_candidate_lookup",
+      topic: "payment",
+      statusFilter: "paid",
+      confidence: "high",
+      reason: "Signed-out user asks whether their own booking was paid.",
+    },
+    expectedTriageIntent: "account_candidate_lookup",
+    expectedTriageTopic: "payment",
+    expectedTriageStatusFilter: "paid",
+    expectedTriageEligibilityAllowed: false,
+  }));
+
+const CROSS_LOCALE_CANDIDATE_COPY_CASES =
+  COPY_REGRESSION_LOCALES.map<SupportChatPhase2AccountAwareCase>((item) => ({
+    id: `copy-${item.locale}-candidate-selection-copy`,
+    category: "candidate_selection",
+    prompt: item.candidatePrompt,
+    locale: item.locale,
+    authUser: "user-a",
+    expectedDisposition: "uncertain",
+    expectedNeedsHumanSupport: false,
+    expectedResponseOrigin: "server",
+    expectedHelper: "getSupportOrderCandidatesForCurrentUser",
+    expectNoExactLookup: true,
+    expectNoMutation: true,
+    expectedAnswerPatterns: item.candidatePatterns,
+    forbiddenAnswerPatterns: [
+      ...INTERNAL_COPY_FORBIDDEN_PATTERNS,
+      "full account history",
+    ],
+    expectedActionCount: 1,
+    intentTriageOverride: {
+      intent: "account_candidate_lookup",
+      topic: "booking",
+      statusFilter: "scheduled",
+      confidence: "high",
+      reason: "User asks for scheduled booking candidates.",
+    },
+    expectedTriageIntent: "account_candidate_lookup",
+    expectedTriageTopic: "booking",
+    expectedTriageStatusFilter: "scheduled",
+    expectedTriageEligibilityAllowed: true,
+    expectedTriageMappedHelper: "getOrderStatusForCurrentUser",
+  }));
+
 export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2AccountAwareCase[] =
   [
     {
@@ -146,6 +344,9 @@ export const SUPPORT_CHAT_PHASE2_ACCOUNT_AWARE_TEST_CASES: SupportChatPhase2Acco
       expectNoMutation: true,
       expectedAnswerPatterns: ["limited support-safe"],
     },
+    ...CROSS_LOCALE_BROAD_HISTORY_COPY_CASES,
+    ...CROSS_LOCALE_SIGNED_OUT_ACCOUNT_COPY_CASES,
+    ...CROSS_LOCALE_CANDIDATE_COPY_CASES,
     {
       id: "de-signed-out-general-payment-policy",
       category: "policy_separation",
