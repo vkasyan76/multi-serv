@@ -1777,6 +1777,76 @@ test("intent triage routes selected-order follow-up typos to exact helpers", asy
   assert.equal(response.actions, undefined);
 });
 
+test("intent triage fails closed for unsupported selected-order follow-up topics", async () => {
+  useSupportModelEnv();
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const token = createSelectedOrderContextToken({
+    reference: ORDER_SCHEDULED_A,
+    threadId: THREAD_ID,
+  });
+  const response = await generateSupportResponse({
+    message: "help with provider onboarding for this",
+    threadId: THREAD_ID,
+    locale: "en",
+    accountContext,
+    selectedOrderContext: {
+      type: "selected_order",
+      token,
+    },
+    intentTriageOverride: {
+      intent: "selected_order_follow_up",
+      topic: "provider_onboarding",
+      confidence: "high",
+    },
+  });
+
+  assert.equal(response.triage?.intent, "selected_order_follow_up");
+  assert.equal(response.triage?.topic, "provider_onboarding");
+  assert.equal(response.triageEligibilityAllowed, false);
+  assert.equal(response.triageEligibilityReason, "unsupported_topic");
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
+});
+
+test("intent triage fails closed for missing selected-order follow-up topic", async () => {
+  useSupportModelEnv();
+  const { generateSupportResponse } = await import("../generate-support-response");
+  const { db, accountContext } = makeCtx("clerk-user-a");
+  const token = createSelectedOrderContextToken({
+    reference: ORDER_SCHEDULED_A,
+    threadId: THREAD_ID,
+  });
+  const response = await generateSupportResponse({
+    message: "help with this selected item",
+    threadId: THREAD_ID,
+    locale: "en",
+    accountContext,
+    selectedOrderContext: {
+      type: "selected_order",
+      token,
+    },
+    intentTriageOverride: {
+      intent: "selected_order_follow_up",
+      confidence: "high",
+    },
+  });
+
+  assert.equal(response.triage?.intent, "selected_order_follow_up");
+  assert.equal(response.triageEligibilityAllowed, false);
+  assert.equal(response.triageEligibilityReason, "unsupported_topic");
+  assert.equal(response.accountHelperMetadata, undefined);
+  assert.equal(response.actions, undefined);
+  assert.equal(
+    db.calls.some((call) => call.collection === "orders"),
+    false,
+  );
+});
+
 test("intent triage requires selected-order context for selected-order follow-ups", async () => {
   useSupportModelEnv();
   const { generateSupportResponse } = await import("../generate-support-response");

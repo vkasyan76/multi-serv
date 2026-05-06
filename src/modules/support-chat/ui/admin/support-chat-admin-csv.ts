@@ -173,5 +173,5 @@ export function downloadSupportThreadCsv(detail: SupportThreadCsvDetail) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }

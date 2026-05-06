@@ -1207,7 +1207,7 @@ const PT = withRomanceCopy({
   actionTokenExpired:
     "Esta seleção de pedido expirou. Selecione novamente o pedido para que eu possa verificá-lo com segurança.",
   candidate: {
-    fallbackLabel: "Pedido posible",
+    fallbackLabel: "Pedido possível",
     none: "Posso ajudar, mas não encontrei pedidos recentes que possa mostrar com segurança. Abra a página Pedidos ou contacte o suporte com o ID exato do pedido.",
     one: "Encontrei um pedido recente que pode corresponder. Selecione-o abaixo se for o pedido correto.",
     many: "Encontrei alguns pedidos recentes que podem corresponder. Qual pedido quer dizer?",

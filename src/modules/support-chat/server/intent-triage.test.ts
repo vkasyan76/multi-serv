@@ -158,9 +158,23 @@ test("sanitizeSupportConversationMemory keeps only short safe hints", () => {
   assert.equal(memory?.lastAssistantAskedForSelection, true);
 });
 
+test("sanitizeSupportConversationMemory drops unsupported runtime topics", () => {
+  const memory = sanitizeSupportConversationMemory({
+    previousUserMessage: "Can you check this?",
+    previousAssistantMessage: "What do you need?",
+    activeTopic: "orders" as never,
+    hasSelectedOrderContext: false,
+    lastAssistantAskedForSelection: false,
+  });
+
+  assert.equal(memory?.activeTopic, undefined);
+  assert.equal(memory?.previousUserMessage, "Can you check this?");
+});
+
 test("sanitizeSupportConversationMemory drops empty memory", () => {
   assert.equal(
     sanitizeSupportConversationMemory({
+      activeTopic: "orders" as never,
       previousUserMessage: "   ",
       previousAssistantMessage: "\n\t",
       hasSelectedOrderContext: false,

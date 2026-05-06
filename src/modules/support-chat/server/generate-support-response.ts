@@ -671,58 +671,6 @@ export async function generateSupportResponse(
   }
 
   if (!triageOutcome?.ok && input.accountContext) {
-    const legacyAccountRoute = routeSupportAccountAwareRequest(message, {
-      selectedOrder: selectedOrder?.ok ? selectedOrder.input : undefined,
-    });
-
-    if (legacyAccountRoute.kind !== "none") {
-      const accountFollowUpTopic =
-        !supportTopic &&
-        topicContext &&
-        legacyAccountRoute.kind === "candidate_selection"
-          ? {
-              topic: topicContext.topic,
-              source: "follow_up" as const,
-            }
-          : undefined;
-      const responseTopic = supportTopic ?? accountFollowUpTopic;
-      const accountResponse = await buildAccountAwareServerResponse({
-        route: legacyAccountRoute,
-        accountContext: input.accountContext,
-        locale: input.locale,
-        threadId,
-        selectedOrderDisplay: selectedOrder?.ok
-          ? {
-              label: selectedOrder.displayLabel,
-              description: selectedOrder.displayDescription,
-            }
-          : undefined,
-      });
-
-      return supportResponse({
-        threadId,
-        assistantMessage: accountResponse.assistantMessage,
-        sources: [],
-        disposition: accountResponse.disposition,
-        responseOrigin: "server",
-        needsHumanSupport: accountResponse.needsHumanSupport,
-        groundingKind: resolveAccountGroundingKind(accountResponse),
-        accountHelperMetadata: accountResponse.accountHelperMetadata,
-        accountAnswerMode: accountResponse.accountAnswerMode,
-        accountRewriteModel: accountResponse.accountRewriteModel,
-        accountRewriteModelVersion: accountResponse.accountRewriteModelVersion,
-        accountRewriteRejectedReason: accountResponse.accountRewriteRejectedReason,
-        accountRewriteFallbackUsed: accountResponse.accountRewriteFallbackUsed,
-        supportTopic: responseTopic ?? undefined,
-        supportTopicContext: responseTopic
-          ? createSupportTopicContext(responseTopic)
-          : undefined,
-        actions: accountResponse.actions,
-        selectedOrderContext: accountResponse.selectedOrderContext,
-        accountContextSnapshots: accountResponse.accountContextSnapshots,
-      });
-    }
-
     // Fallback only: this preserves short topic-context account follow-ups if
     // triage is unavailable. Do not expand it as the primary meaning layer.
     const topicEscalation = detectTopicAccountEscalation({

@@ -55,9 +55,10 @@ type CandidateMapping = {
 };
 
 function selectedOrderHelperForTriage(triage: SupportIntentTriageResult) {
+  if (triage.topic === "booking") return "getOrderStatusForCurrentUser";
   if (triage.topic === "payment") return "getPaymentStatusForCurrentUser";
   if (triage.topic === "cancellation") return "canCancelOrderForCurrentUser";
-  return "getOrderStatusForCurrentUser";
+  return null;
 }
 
 function candidateRouteForTriage(
@@ -151,6 +152,9 @@ export function evaluateSupportTriageEligibility(
       return { allowed: false, reason: "missing_selected_order" };
     }
     const helper = selectedOrderHelperForTriage(input.triage);
+    if (!helper) {
+      return { allowed: false, reason: "unsupported_topic" };
+    }
     return {
       allowed: true,
       mappedHelper: helper,

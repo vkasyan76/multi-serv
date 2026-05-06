@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { SupportAccountContextSnapshot } from "@/modules/support-chat/server/account-aware/server-responses";
 import type { SupportChatSource } from "@/modules/support-chat/server/generate-support-response";
 
