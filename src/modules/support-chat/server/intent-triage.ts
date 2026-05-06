@@ -114,6 +114,16 @@ const TRIAGE_EXAMPLES = [
     },
   },
   {
+    message: "Wie funktioniert die Zahlung bei einer Buchung?",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "general_support",
+      topic: "payment",
+      confidence: "high",
+      reason: "General payment policy question, not an account lookup.",
+    },
+  },
+  {
     message: "Have I paid for any order?",
     hasSelectedOrderContext: false,
     result: {
@@ -122,6 +132,16 @@ const TRIAGE_EXAMPLES = [
       statusFilter: "paid",
       confidence: "high",
       reason: "User asks whether their own orders were paid.",
+    },
+  },
+  {
+    message: "Show all my payments.",
+    hasSelectedOrderContext: false,
+    result: {
+      intent: "unsupported_account_scope",
+      topic: "payment",
+      confidence: "high",
+      reason: "User asks for full payment history.",
     },
   },
   {
@@ -331,6 +351,8 @@ export async function classifySupportIntent(input: {
       "Allowed topics: booking, payment, cancellation, provider_onboarding.",
       "Allowed status filters: requested, scheduled, canceled, paid, payment_pending, payment_not_due.",
       "Use account_candidate_lookup only when the user asks about their own orders/bookings/payments/invoices or asks which of their items match a support issue.",
+      "Questions about how booking, payment, invoices, cancellation, provider payouts, or platform rules work are general_support, even when the user is signed out.",
+      "Do not classify general policy questions as account_candidate_lookup only because they mention booking, payment, invoice, cancellation, or provider.",
       "If the previous assistant message offered a limited support-safe lookup and the current user message confirms it, classify the requested lookup instead of treating the confirmation as general chat.",
       "For a confirmed payment-pending lookup offer, use account_candidate_lookup with topic payment and statusFilter payment_pending.",
       "For a confirmed scheduled-booking lookup offer, use account_candidate_lookup with topic booking and statusFilter scheduled.",
@@ -338,7 +360,7 @@ export async function classifySupportIntent(input: {
       "Use general_support for policy/how-it-works questions that do not ask to inspect the user's own items.",
       "Use selected_order_follow_up only when a selected order exists and the message appears to refer to that selected item.",
       "Use unsafe_mutation when the user asks the chat to perform an action such as cancel, refund, charge, or update something.",
-      "Use unsupported_account_scope for broad account-history/export requests or unsupported live account scopes.",
+      "Use unsupported_account_scope for broad account-history/export requests or unsupported live account scopes, including all/full/export/history/list-all/last-payment requests.",
       "Use clarify for ambiguous messages that need one short question.",
       "Use none or not_applicable when the message is not relevant to support/account triage.",
       'Return shape: {"intent":"...","topic":"...","statusFilter":"...","confidence":"high|medium|low","reason":"..."}',

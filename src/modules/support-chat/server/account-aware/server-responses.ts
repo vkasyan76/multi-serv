@@ -735,7 +735,22 @@ export async function buildAccountAwareServerResponse(input: {
     });
   }
 
-  if (input.route.kind === "broad_or_deferred" || input.route.kind === "unsupported_reference") {
+  if (input.route.kind === "broad_or_deferred") {
+    return deterministicResponse({
+      assistantMessage:
+        getSupportChatCopy(input.locale).serverMessages.unsupportedBroadAccount,
+      disposition: "unsupported_account_question",
+      needsHumanSupport: true,
+      accountHelperMetadata: {
+        helperVersion: SUPPORT_ACCOUNT_HELPER_VERSION,
+        authenticated,
+        requiredInputPresent: false,
+        serverAuthored: true,
+      },
+    });
+  }
+
+  if (input.route.kind === "unsupported_reference") {
     return deterministicResponse({
       assistantMessage: fallback(input.locale),
       disposition: "unsupported_account_question",

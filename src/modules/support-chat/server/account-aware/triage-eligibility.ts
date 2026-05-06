@@ -129,9 +129,6 @@ export function evaluateSupportTriageEligibility(
   if (!input.accountAwareEnabled) {
     return { allowed: false, reason: "account_aware_disabled" };
   }
-  if (!input.accountContext?.userId) {
-    return { allowed: false, reason: "not_signed_in" };
-  }
   if (input.broadOrDeferred) {
     return { allowed: false, reason: "broad_or_deferred" };
   }
@@ -143,6 +140,15 @@ export function evaluateSupportTriageEligibility(
   }
   if (input.triage.intent === "unsupported_account_scope") {
     return { allowed: false, reason: "broad_or_deferred" };
+  }
+  if (
+    input.triage.intent !== "account_candidate_lookup" &&
+    input.triage.intent !== "selected_order_follow_up"
+  ) {
+    return { allowed: false, reason: "unsupported_intent" };
+  }
+  if (!input.accountContext?.userId) {
+    return { allowed: false, reason: "not_signed_in" };
   }
   if (input.triage.intent === "account_candidate_lookup") {
     return candidateRouteForTriage(input.triage);
