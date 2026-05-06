@@ -543,10 +543,10 @@ export async function generateSupportResponse(
       Boolean(input.conversationMemory?.lastAssistantAskedForSelection) ||
       hasAccountSpecificRequest(message) ||
       looksLikeAccountOrActionFollowUp(message));
-  const triageOutcome = shouldRunIntentTriage
-    ? input.intentTriageOverride
-      ? ({ ok: true, result: input.intentTriageOverride } as const)
-      : await classifySupportIntent({
+  const triageOutcome = input.intentTriageOverride
+    ? ({ ok: true, result: input.intentTriageOverride } as const)
+    : shouldRunIntentTriage
+      ? await classifySupportIntent({
           message,
           locale: input.locale,
           threadId,
@@ -554,7 +554,7 @@ export async function generateSupportResponse(
           hasSelectedOrderContext: Boolean(selectedOrder?.ok),
           conversationMemory: input.conversationMemory,
         })
-    : null;
+      : null;
   let triageMappedHelper: string | undefined;
   let triageEligibilityAllowed: boolean | undefined;
   let triageEligibilityReason: SupportTriageEligibilityReason | undefined;

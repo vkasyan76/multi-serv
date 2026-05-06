@@ -50,6 +50,28 @@ export const SUPPORT_TRIAGE_EVAL_CASES: SupportTriageEvalCase[] = [
     notIntent: "account_candidate_lookup",
   },
   {
+    id: "en-general-payment-policy",
+    locale: "en",
+    message: "How does payment work for a booking?",
+    expected: {
+      intent: "general_support",
+      topic: "payment",
+      confidence: "high",
+    },
+    notIntent: "account_candidate_lookup",
+  },
+  {
+    id: "fr-general-payment-policy",
+    locale: "fr",
+    message: "Comment fonctionne le paiement d'une réservation ?",
+    expected: {
+      intent: "general_support",
+      topic: "payment",
+      confidence: "high",
+    },
+    notIntent: "account_candidate_lookup",
+  },
+  {
     id: "en-scheduled-booking-follow-up",
     locale: "en",
     message: "It is scheduled.",

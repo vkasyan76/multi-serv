@@ -429,6 +429,18 @@ function hasMutation(calls: DbCall[]) {
   );
 }
 
+function hasMarkdownStructure(message: string) {
+  return (
+    /^\s{0,3}#{1,6}\s+/m.test(message) ||
+    /^\s*[-*]\s+/m.test(message) ||
+    /^\s*\d+[.)]\s+/m.test(message)
+  );
+}
+
+function countQuestionMarks(message: string) {
+  return message.match(/\?/g)?.length ?? 0;
+}
+
 function evaluateCase(
   testCase: SupportChatPhase2AccountAwareCase,
   result: GenerateSupportResponseResult,
@@ -480,6 +492,15 @@ function evaluateCase(
     expectedActionCount:
       testCase.expectedActionCount == null ||
       (result.actions ?? []).length === testCase.expectedActionCount,
+    maxAssistantChars:
+      testCase.maxAssistantChars == null ||
+      result.assistantMessage.length <= testCase.maxAssistantChars,
+    noMarkdownStructure:
+      testCase.forbidMarkdownStructure !== true ||
+      !hasMarkdownStructure(result.assistantMessage),
+    maxQuestionMarks:
+      testCase.maxQuestionMarks == null ||
+      countQuestionMarks(result.assistantMessage) <= testCase.maxQuestionMarks,
     expectedTriageIntent:
       testCase.expectedTriageIntent == null ||
       result.triage?.intent === testCase.expectedTriageIntent,
